@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:luminar_std/presentation/video_player_screen/video_player_screen.dart';
 
 // VideoGallery model class - MUST be defined before using it
 class VideoGallery {
@@ -11,6 +10,9 @@ class VideoGallery {
   final DateTime date;
   final String thumbnail;
   final String videoId;
+  final String duration;
+  final String views;
+  final String uploadTime;
 
   VideoGallery({
     required this.title,
@@ -20,6 +22,9 @@ class VideoGallery {
     required this.date,
     required this.thumbnail,
     required this.videoId,
+    this.duration = '15:30',
+    this.views = '1.2K',
+    this.uploadTime = '2 days ago',
   });
 }
 
@@ -34,58 +39,111 @@ class _VideosScreenState extends State<VideosScreen> {
   // Dummy video gallery data with YouTube video IDs
   final List<VideoGallery> _galleries = [
     VideoGallery(
-      title: 'ggf - Videos',
-      subtitle: 'Video gallery for ggf',
-      videoCount: 1,
-      folderCount: 0,
-      date: DateTime(2026, 2, 28),
-      thumbnail: 'https://img.youtube.com/vi/kzpS-A3QJqE/0.jpg',
-      videoId: 'kzpS-A3QJqE',
-    ),
-    VideoGallery(
-      title: 'common gallery',
-      subtitle: 'Video gallery for common',
-      videoCount: 5,
-      folderCount: 0,
-      date: DateTime(2025, 11, 27),
-      thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg',
-      videoId: 'dQw4w9WgXcQ',
-    ),
-    VideoGallery(
-      title: 'Angular Tutorials',
-      subtitle: 'Complete Angular course',
+      title: 'Getting Started with Flutter',
+      subtitle: 'Complete beginner tutorial for Flutter development',
       videoCount: 12,
-      folderCount: 3,
-      date: DateTime(2026, 3, 1),
-      thumbnail: 'https://img.youtube.com/vi/3qBXWUpoPHo/0.jpg',
-      videoId: '3qBXWUpoPHo',
-    ),
-    VideoGallery(
-      title: 'ASP.NET Core',
-      subtitle: 'Backend development',
-      videoCount: 8,
       folderCount: 2,
-      date: DateTime(2026, 2, 25),
-      thumbnail: 'https://img.youtube.com/vi/8jcL7Hn2KPI/0.jpg',
-      videoId: '8jcL7Hn2KPI',
-    ),
-    VideoGallery(
-      title: 'Flutter Tutorial',
-      subtitle: 'Learn Flutter development',
-      videoCount: 15,
-      folderCount: 4,
       date: DateTime(2026, 3, 5),
       thumbnail: 'https://img.youtube.com/vi/1ukSR1GRtMU/0.jpg',
       videoId: '1ukSR1GRtMU',
+      duration: '25:30',
+      views: '15K',
+      uploadTime: '3 days ago',
+    ),
+    VideoGallery(
+      title: 'Advanced Angular Concepts',
+      subtitle: 'Deep dive into Angular architecture',
+      videoCount: 8,
+      folderCount: 1,
+      date: DateTime(2026, 3, 1),
+      thumbnail: 'https://img.youtube.com/vi/3qBXWUpoPHo/0.jpg',
+      videoId: '3qBXWUpoPHo',
+      duration: '42:15',
+      views: '8.5K',
+      uploadTime: '1 week ago',
+    ),
+    VideoGallery(
+      title: 'ASP.NET Core Web API',
+      subtitle: 'Build RESTful APIs with .NET Core',
+      videoCount: 15,
+      folderCount: 3,
+      date: DateTime(2026, 2, 25),
+      thumbnail: 'https://img.youtube.com/vi/8jcL7Hn2KPI/0.jpg',
+      videoId: '8jcL7Hn2KPI',
+      duration: '38:20',
+      views: '12K',
+      uploadTime: '2 weeks ago',
+    ),
+    VideoGallery(
+      title: 'JavaScript ES6 Tutorial',
+      subtitle: 'Modern JavaScript features explained',
+      videoCount: 10,
+      folderCount: 2,
+      date: DateTime(2026, 2, 28),
+      thumbnail: 'https://img.youtube.com/vi/kzpS-A3QJqE/0.jpg',
+      videoId: 'kzpS-A3QJqE',
+      duration: '32:45',
+      views: '9.2K',
+      uploadTime: '5 days ago',
+    ),
+    VideoGallery(
+      title: 'React Native Basics',
+      subtitle: 'Cross-platform mobile development',
+      videoCount: 20,
+      folderCount: 4,
+      date: DateTime(2026, 2, 20),
+      thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg',
+      videoId: 'dQw4w9WgXcQ',
+      duration: '45:10',
+      views: '21K',
+      uploadTime: '1 month ago',
+    ),
+    VideoGallery(
+      title: 'Python for Beginners',
+      subtitle: 'Learn Python programming from scratch',
+      videoCount: 25,
+      folderCount: 5,
+      date: DateTime(2026, 3, 2),
+      thumbnail: 'https://img.youtube.com/vi/1ukSR1GRtMU/0.jpg',
+      videoId: '1ukSR1GRtMU',
+      duration: '28:15',
+      views: '34K',
+      uploadTime: '4 days ago',
+    ),
+    VideoGallery(
+      title: 'Docker Masterclass',
+      subtitle: 'Containerization fundamentals',
+      videoCount: 14,
+      folderCount: 2,
+      date: DateTime(2026, 2, 15),
+      thumbnail: 'https://img.youtube.com/vi/3qBXWUpoPHo/0.jpg',
+      videoId: '3qBXWUpoPHo',
+      duration: '52:30',
+      views: '6.8K',
+      uploadTime: '3 weeks ago',
+    ),
+    VideoGallery(
+      title: 'Kubernetes Guide',
+      subtitle: 'Orchestration made easy',
+      videoCount: 18,
+      folderCount: 3,
+      date: DateTime(2026, 2, 10),
+      thumbnail: 'https://img.youtube.com/vi/8jcL7Hn2KPI/0.jpg',
+      videoId: '8jcL7Hn2KPI',
+      duration: '41:20',
+      views: '5.2K',
+      uploadTime: '1 month ago',
     ),
   ];
+
+  final TextEditingController _searchController = TextEditingController();
+  bool _isGridView = false; // Toggle between grid and list view
 
   String _formatDate(DateTime date) {
     return '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}/${date.year}';
   }
 
   void _openVideoPlayer(String videoId, String title) {
-    // Add a smooth transition to video player
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -112,11 +170,11 @@ class _VideosScreenState extends State<VideosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
         child: Column(
           children: [
-            // Header with back button and title
+            // Simple Header with back button, title, and view toggle
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -145,11 +203,40 @@ class _VideosScreenState extends State<VideosScreen> {
                   const SizedBox(width: 16),
                   const Expanded(
                     child: Text(
-                      'Video Recordings',
+                      'Video Library',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF2D3436),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  // View toggle button (Grid/List)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _isGridView = !_isGridView;
+                        });
+                      },
+                      icon: Icon(
+                        _isGridView
+                            ? Icons.view_list_rounded
+                            : Icons.grid_view_rounded,
+                        color: const Color(0xFF6C5CE7),
+                        size: 20,
                       ),
                     ),
                   ),
@@ -161,13 +248,14 @@ class _VideosScreenState extends State<VideosScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
+                height: 50,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6C5CE7).withOpacity(0.05),
+                      color: const Color(0xFF6C5CE7).withOpacity(0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -175,24 +263,34 @@ class _VideosScreenState extends State<VideosScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.search_rounded,
-                      color: const Color(0xFF6C5CE7),
+                      color: Color(0xFF6C5CE7),
                       size: 24,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
+                        controller: _searchController,
                         decoration: InputDecoration(
                           hintText: 'Search videos...',
                           hintStyle: TextStyle(
                             color: Colors.grey[400],
-                            fontSize: 14,
+                            fontSize: 15,
                           ),
                           border: InputBorder.none,
                         ),
                       ),
                     ),
+                    if (_searchController.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        color: Colors.grey[400],
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -206,12 +304,17 @@ class _VideosScreenState extends State<VideosScreen> {
               child: Row(
                 children: [
                   Text(
-                    '${_galleries.length} Galleries',
+                    '${_galleries.length} videos',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF6C5CE7),
                     ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    _isGridView ? 'Grid View' : 'List View',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   ),
                 ],
               ),
@@ -219,55 +322,76 @@ class _VideosScreenState extends State<VideosScreen> {
 
             const SizedBox(height: 12),
 
-            // Video Galleries - List View
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: _galleries.length,
-                itemBuilder: (context, index) {
-                  final gallery = _galleries[index];
-                  return _buildVideoCard(gallery);
-                },
-              ),
-            ),
+            // Video List/Grid
+            Expanded(child: _isGridView ? _buildGridView() : _buildListView()),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildVideoCard(VideoGallery gallery) {
-    return GestureDetector(
-      onTap: () {
-        _openVideoPlayer(gallery.videoId, gallery.title);
+  // List View Builder
+  Widget _buildListView() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: _galleries.length,
+      itemBuilder: (context, index) {
+        final gallery = _galleries[index];
+        return _buildListVideoCard(gallery);
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6C5CE7).withOpacity(0.08),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
+    );
+  }
+
+  // Grid View Builder - Responsive
+  Widget _buildGridView() {
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2, // 2 columns for all screen sizes
+        childAspectRatio: 0.75, // Height relative to width
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: _galleries.length,
+      itemBuilder: (context, index) {
+        final gallery = _galleries[index];
+        return _buildGridVideoCard(gallery);
+      },
+    );
+  }
+
+  // List View Card (existing design)
+  Widget _buildListVideoCard(VideoGallery gallery) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6C5CE7).withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => _openVideoPlayer(gallery.videoId, gallery.title),
+        borderRadius: BorderRadius.circular(16),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Video Thumbnail with Play Icon
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
-                  child: Container(
-                    height: 180,
-                    width: double.infinity,
-                    color: Colors.grey[300],
+            // Thumbnail
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(16),
+              ),
+              child: Stack(
+                children: [
+                  Container(
+                    width: 120,
+                    height: 90,
+                    color: Colors.grey[200],
                     child: Image.network(
                       gallery.thumbnail,
                       fit: BoxFit.cover,
@@ -277,7 +401,151 @@ class _VideosScreenState extends State<VideosScreen> {
                           child: Center(
                             child: Icon(
                               Icons.video_library_rounded,
-                              size: 50,
+                              size: 30,
+                              color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  // Play icon overlay
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withOpacity(0.2),
+                      child: const Center(
+                        child: Icon(
+                          Icons.play_circle_filled_rounded,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Duration
+                  Positioned(
+                    bottom: 4,
+                    right: 4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        gallery.duration,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Video Info
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      gallery.title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2D3436),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    // Subtitle
+                    Text(
+                      gallery.subtitle,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    // Stats row
+                    Row(
+                      children: [
+                        _buildInfoChip(
+                          Icons.remove_red_eye_outlined,
+                          gallery.views,
+                        ),
+                        const SizedBox(width: 12),
+                        _buildInfoChip(
+                          Icons.access_time_outlined,
+                          gallery.uploadTime,
+                        ),
+                        const SizedBox(width: 12),
+                        _buildInfoChip(
+                          Icons.video_library_outlined,
+                          '${gallery.videoCount}',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Grid View Card - New Design
+  Widget _buildGridVideoCard(VideoGallery gallery) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6C5CE7).withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => _openVideoPlayer(gallery.videoId, gallery.title),
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Thumbnail
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                  child: Container(
+                    height: 110,
+                    width: double.infinity,
+                    color: Colors.grey[200],
+                    child: Image.network(
+                      gallery.thumbnail,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                          child: Center(
+                            child: Icon(
+                              Icons.video_library_rounded,
+                              size: 30,
                               color: const Color(0xFF6C5CE7).withOpacity(0.3),
                             ),
                           ),
@@ -286,49 +554,37 @@ class _VideosScreenState extends State<VideosScreen> {
                     ),
                   ),
                 ),
-                // Play button overlay
+                // Play icon overlay
                 Positioned.fill(
                   child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.2),
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                    ),
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6C5CE7).withOpacity(0.9),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.play_arrow_rounded,
-                          color: Colors.white,
-                          size: 40,
-                        ),
+                    color: Colors.black.withOpacity(0.2),
+                    child: const Center(
+                      child: Icon(
+                        Icons.play_circle_filled_rounded,
+                        color: Colors.white,
+                        size: 35,
                       ),
                     ),
                   ),
                 ),
-                // Duration badge (example - you might want to fetch actual duration)
+                // Duration
                 Positioned(
-                  bottom: 12,
-                  right: 12,
+                  bottom: 8,
+                  right: 8,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: 6,
+                      vertical: 2,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
-                      '15:30',
-                      style: TextStyle(
+                    child: Text(
+                      gallery.duration,
+                      style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -338,96 +594,93 @@ class _VideosScreenState extends State<VideosScreen> {
             ),
             // Video Info
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          gallery.title,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF2D3436),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6C5CE7).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${gallery.videoCount} videos',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF6C5CE7),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                  // Title
+                  Text(
+                    gallery.title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D3436),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
+                  // Subtitle (truncated)
                   Text(
                     gallery.subtitle,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
+                  // Stats row
                   Row(
                     children: [
                       Icon(
-                        Icons.folder_rounded,
-                        size: 14,
+                        Icons.remove_red_eye_outlined,
+                        size: 10,
                         color: Colors.grey[500],
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 2),
                       Text(
-                        '${gallery.folderCount} folders',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        gallery.views,
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 8),
                       Icon(
-                        Icons.calendar_today_rounded,
-                        size: 14,
+                        Icons.access_time_outlined,
+                        size: 10,
                         color: Colors.grey[500],
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 2),
                       Text(
-                        _formatDate(gallery.date),
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        gallery.uploadTime,
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  // Watch button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        _openVideoPlayer(gallery.videoId, gallery.title);
-                      },
-                      icon: const Icon(
-                        Icons.play_circle_fill_rounded,
-                        size: 18,
+                  const SizedBox(height: 6),
+                  // Video count
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.video_library_outlined,
+                        size: 10,
+                        color: Colors.grey[500],
                       ),
-                      label: const Text('Watch Video'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6C5CE7),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${gallery.videoCount} videos',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
                         ),
-                        elevation: 0,
                       ),
-                    ),
+                      const Spacer(),
+                      // More options button
+                      GestureDetector(
+                        onTap: () => _showBottomSheet(gallery),
+                        child: Icon(
+                          Icons.more_horiz_rounded,
+                          size: 16,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -437,222 +690,92 @@ class _VideosScreenState extends State<VideosScreen> {
       ),
     );
   }
-}
 
-class VideoPlayerScreen extends StatefulWidget {
-  final String videoId;
-  final String videoTitle;
-
-  const VideoPlayerScreen({
-    super.key,
-    required this.videoId,
-    required this.videoTitle,
-  });
-
-  @override
-  State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
-}
-
-class _VideoPlayerScreenState extends State<VideoPlayerScreen>
-    with WidgetsBindingObserver {
-  late YoutubePlayerController _controller;
-  bool _isPlayerReady = false;
-  bool _isFullScreen = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-
-    // Lock to portrait initially
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.videoId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: true,
-        mute: false,
-        disableDragSeek: false,
-        loop: false,
-        isLive: false,
-        forceHD: false,
-        enableCaption: false,
-        hideControls: false,
-        useHybridComposition: true,
-        controlsVisibleAtStart: true,
-      ),
-    );
-
-    _controller.addListener(_listener);
-  }
-
-  void _listener() {
-    if (_controller.value.isReady && !_isPlayerReady) {
-      if (mounted) {
-        setState(() {
-          _isPlayerReady = true;
-        });
-      }
-    }
-
-    // Detect fullscreen changes
-    if (_controller.value.isFullScreen != _isFullScreen) {
-      setState(() {
-        _isFullScreen = _controller.value.isFullScreen;
-      });
-
-      if (_controller.value.isFullScreen) {
-        // Enter fullscreen
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ]);
-      } else {
-        // Exit fullscreen
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-        ]);
-      }
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Pause video when app is minimized
-    if (state == AppLifecycleState.paused) {
-      _controller.pause();
-    }
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _controller.removeListener(_listener);
-    _controller.dispose();
-
-    // Reset to portrait when leaving
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // If in fullscreen, exit fullscreen first
-        if (_isFullScreen) {
-          _controller.toggleFullScreenMode();
-          return false;
-        }
-        return true;
-      },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        appBar: _isFullScreen
-            ? null
-            : AppBar(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                title: Text(
-                  widget.videoTitle,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                elevation: 0,
-              ),
-        body: SafeArea(
-          top: !_isFullScreen,
-          bottom: !_isFullScreen,
-          child: Column(
-            children: [
-              // Video Player
-              Expanded(
-                child: YoutubePlayerBuilder(
-                  onExitFullScreen: () {
-                    SystemChrome.setPreferredOrientations([
-                      DeviceOrientation.portraitUp,
-                      DeviceOrientation.portraitDown,
-                    ]);
-                  },
-                  onEnterFullScreen: () {
-                    SystemChrome.setPreferredOrientations([
-                      DeviceOrientation.landscapeLeft,
-                      DeviceOrientation.landscapeRight,
-                    ]);
-                  },
-                  player: YoutubePlayer(
-                    controller: _controller,
-                    aspectRatio: 16 / 9,
-                    onReady: () {
-                      print('Player is ready');
-                    },
-                    onEnded: (metaData) {
-                      print('Video ended');
-                      // Optional: Show a dialog or navigate back
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Video ended'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    actionsPadding: const EdgeInsets.all(8),
-                    bottomActions: [
-                      CurrentPosition(),
-                      const SizedBox(width: 10),
-                      ProgressBar(
-                        isExpanded: true,
-                        colors: const ProgressBarColors(
-                          playedColor: Color(0xFF6C5CE7),
-                          handleColor: Color(0xFF6C5CE7),
-                          backgroundColor: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      RemainingDuration(),
-                      const PlaybackSpeedButton(),
-                      FullScreenButton(),
-                    ],
-                  ),
-                  builder: (context, player) {
-                    return Container(
-                      color: Colors.black,
-                      child: Stack(
-                        children: [
-                          Center(child: player),
-                          if (!_isPlayerReady)
-                            Container(
-                              color: Colors.black,
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Color(0xFF6C5CE7),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+  Widget _buildInfoChip(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 12, color: Colors.grey[500]),
+        const SizedBox(width: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
           ),
+        ),
+      ],
+    );
+  }
+
+  void _showBottomSheet(VideoGallery gallery) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              height: 4,
+              width: 40,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.playlist_add_rounded,
+                color: Color(0xFF6C5CE7),
+              ),
+              title: const Text('Add to playlist'),
+              onTap: () {
+                Navigator.pop(context);
+                // Handle add to playlist
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.download_rounded,
+                color: Color(0xFF6C5CE7),
+              ),
+              title: const Text('Download video'),
+              subtitle: Text('${gallery.videoCount} videos available'),
+              onTap: () {
+                Navigator.pop(context);
+                // Handle download
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.share_rounded,
+                color: Color(0xFF6C5CE7),
+              ),
+              title: const Text('Share'),
+              onTap: () {
+                Navigator.pop(context);
+                // Handle share
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.favorite_border_rounded,
+                color: Color(0xFF6C5CE7),
+              ),
+              title: const Text('Add to favorites'),
+              onTap: () {
+                Navigator.pop(context);
+                // Handle favorite
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );

@@ -403,7 +403,6 @@
 // }
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
-import 'package:luminar_std/core/theme/app_colors.dart';
 
 class StudentDashboard extends StatelessWidget {
   const StudentDashboard({super.key});

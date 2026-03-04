@@ -3,6 +3,8 @@ import 'dart:ui';
 
 // Import your screens here
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
+import 'package:luminar_std/presentation/live_class/live_class.dart';
+import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
 import 'package:luminar_std/presentation/recorder_video_screen/recorder_video_screen.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -71,7 +73,7 @@ class _MoreScreenState extends State<MoreScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => VideosScreen(),
+        builder: (context) => PaymentsScreen(),
         settings: RouteSettings(
           arguments: {
             'title': 'Payments',
@@ -88,7 +90,7 @@ class _MoreScreenState extends State<MoreScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => VideosScreen(),
+        builder: (context) => LiveClassScreen(),
         settings: RouteSettings(
           arguments: {
             'title': 'Live Class',
