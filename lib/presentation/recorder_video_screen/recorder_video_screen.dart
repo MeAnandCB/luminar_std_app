@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/video_player_screen/video_player_screen.dart';
 
 // VideoGallery model class - MUST be defined before using it
@@ -167,6 +169,56 @@ class _VideosScreenState extends State<VideosScreen> {
     );
   }
 
+  void _showBottomSheet(VideoGallery gallery) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.textHint,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(
+                Icons.download_rounded,
+                color: AppColors.primary,
+              ),
+              title: const Text('Download', style: AppTextStyles.bodyText),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.share_rounded,
+                color: AppColors.primary,
+              ),
+              title: const Text('Share', style: AppTextStyles.bodyText),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.info_outline_rounded,
+                color: AppColors.primary,
+              ),
+              title: const Text('Details', style: AppTextStyles.bodyText),
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -181,11 +233,11 @@ class _VideosScreenState extends State<VideosScreen> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                          color: AppColors.primary.withOpacity(0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -195,7 +247,7 @@ class _VideosScreenState extends State<VideosScreen> {
                       onPressed: () => Navigator.pop(context),
                       icon: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: const Color(0xFF6C5CE7),
+                        color: AppColors.primary,
                         size: 20,
                       ),
                     ),
@@ -207,7 +259,7 @@ class _VideosScreenState extends State<VideosScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF2D3436),
+                        color: AppColors.textPrimary,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -215,11 +267,11 @@ class _VideosScreenState extends State<VideosScreen> {
                   // View toggle button (Grid/List)
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                          color: AppColors.primary.withOpacity(0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -235,7 +287,7 @@ class _VideosScreenState extends State<VideosScreen> {
                         _isGridView
                             ? Icons.view_list_rounded
                             : Icons.grid_view_rounded,
-                        color: const Color(0xFF6C5CE7),
+                        color: AppColors.primary,
                         size: 20,
                       ),
                     ),
@@ -251,11 +303,11 @@ class _VideosScreenState extends State<VideosScreen> {
                 height: 50,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                      color: AppColors.primary.withOpacity(0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -265,7 +317,7 @@ class _VideosScreenState extends State<VideosScreen> {
                   children: [
                     const Icon(
                       Icons.search_rounded,
-                      color: Color(0xFF6C5CE7),
+                      color: AppColors.primary,
                       size: 24,
                     ),
                     const SizedBox(width: 12),
@@ -275,7 +327,7 @@ class _VideosScreenState extends State<VideosScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search videos...',
                           hintStyle: TextStyle(
-                            color: Colors.grey[400],
+                            color: AppColors.textHint,
                             fontSize: 15,
                           ),
                           border: InputBorder.none,
@@ -285,7 +337,7 @@ class _VideosScreenState extends State<VideosScreen> {
                     if (_searchController.text.isNotEmpty)
                       IconButton(
                         icon: const Icon(Icons.clear, size: 20),
-                        color: Colors.grey[400],
+                        color: AppColors.textHint,
                         onPressed: () {
                           _searchController.clear();
                           setState(() {});
@@ -305,16 +357,16 @@ class _VideosScreenState extends State<VideosScreen> {
                 children: [
                   Text(
                     '${_galleries.length} videos',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF6C5CE7),
+                      color: AppColors.primary,
                     ),
                   ),
                   const Spacer(),
                   Text(
                     _isGridView ? 'Grid View' : 'List View',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    style: AppTextStyles.caption,
                   ),
                 ],
               ),
@@ -365,11 +417,11 @@ class _VideosScreenState extends State<VideosScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6C5CE7).withOpacity(0.05),
+            color: AppColors.primary.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -397,12 +449,12 @@ class _VideosScreenState extends State<VideosScreen> {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                          color: AppColors.primary.withOpacity(0.1),
                           child: Center(
                             child: Icon(
                               Icons.video_library_rounded,
                               size: 30,
-                              color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                              color: AppColors.primary.withOpacity(0.3),
                             ),
                           ),
                         );
@@ -416,7 +468,7 @@ class _VideosScreenState extends State<VideosScreen> {
                       child: const Center(
                         child: Icon(
                           Icons.play_circle_filled_rounded,
-                          color: Colors.white,
+                          color: AppColors.white,
                           size: 30,
                         ),
                       ),
@@ -438,7 +490,7 @@ class _VideosScreenState extends State<VideosScreen> {
                       child: Text(
                         gallery.duration,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 9,
                           fontWeight: FontWeight.w500,
                         ),
@@ -459,11 +511,7 @@ class _VideosScreenState extends State<VideosScreen> {
                     // Title
                     Text(
                       gallery.title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2D3436),
-                      ),
+                      style: AppTextStyles.activityTitle.copyWith(fontSize: 15),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -471,7 +519,7 @@ class _VideosScreenState extends State<VideosScreen> {
                     // Subtitle
                     Text(
                       gallery.subtitle,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: AppTextStyles.activitySubtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -509,11 +557,11 @@ class _VideosScreenState extends State<VideosScreen> {
   Widget _buildGridVideoCard(VideoGallery gallery) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6C5CE7).withOpacity(0.05),
+            color: AppColors.primary.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -541,12 +589,12 @@ class _VideosScreenState extends State<VideosScreen> {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                          color: AppColors.primary.withOpacity(0.1),
                           child: Center(
                             child: Icon(
                               Icons.video_library_rounded,
                               size: 30,
-                              color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                              color: AppColors.primary.withOpacity(0.3),
                             ),
                           ),
                         );
@@ -561,7 +609,7 @@ class _VideosScreenState extends State<VideosScreen> {
                     child: const Center(
                       child: Icon(
                         Icons.play_circle_filled_rounded,
-                        color: Colors.white,
+                        color: AppColors.white,
                         size: 35,
                       ),
                     ),
@@ -580,14 +628,7 @@ class _VideosScreenState extends State<VideosScreen> {
                       color: Colors.black.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Text(
-                      gallery.duration,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    child: Text(gallery.duration),
                   ),
                 ),
               ],
@@ -601,11 +642,7 @@ class _VideosScreenState extends State<VideosScreen> {
                   // Title
                   Text(
                     gallery.title,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2D3436),
-                    ),
+                    style: AppTextStyles.activityTitle.copyWith(fontSize: 13),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -613,7 +650,7 @@ class _VideosScreenState extends State<VideosScreen> {
                   // Subtitle (truncated)
                   Text(
                     gallery.subtitle,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                    style: AppTextStyles.activitySubtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -624,14 +661,12 @@ class _VideosScreenState extends State<VideosScreen> {
                       Icon(
                         Icons.remove_red_eye_outlined,
                         size: 10,
-                        color: Colors.grey[500],
+                        color: AppColors.textHint,
                       ),
                       const SizedBox(width: 2),
                       Text(
                         gallery.views,
-                        style: TextStyle(
-                          fontSize: 9,
-                          color: Colors.grey[600],
+                        style: AppTextStyles.caption.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -639,14 +674,12 @@ class _VideosScreenState extends State<VideosScreen> {
                       Icon(
                         Icons.access_time_outlined,
                         size: 10,
-                        color: Colors.grey[500],
+                        color: AppColors.textHint,
                       ),
                       const SizedBox(width: 2),
                       Text(
                         gallery.uploadTime,
-                        style: TextStyle(
-                          fontSize: 9,
-                          color: Colors.grey[600],
+                        style: AppTextStyles.caption.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -659,14 +692,12 @@ class _VideosScreenState extends State<VideosScreen> {
                       Icon(
                         Icons.video_library_outlined,
                         size: 10,
-                        color: Colors.grey[500],
+                        color: AppColors.textHint,
                       ),
                       const SizedBox(width: 2),
                       Text(
                         '${gallery.videoCount} videos',
-                        style: TextStyle(
-                          fontSize: 9,
-                          color: Colors.grey[600],
+                        style: AppTextStyles.caption.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -677,7 +708,7 @@ class _VideosScreenState extends State<VideosScreen> {
                         child: Icon(
                           Icons.more_horiz_rounded,
                           size: 16,
-                          color: Colors.grey[500],
+                          color: AppColors.textHint,
                         ),
                       ),
                     ],
@@ -694,90 +725,13 @@ class _VideosScreenState extends State<VideosScreen> {
   Widget _buildInfoChip(IconData icon, String label) {
     return Row(
       children: [
-        Icon(icon, size: 12, color: Colors.grey[500]),
+        Icon(icon, size: 12, color: AppColors.textHint),
         const SizedBox(width: 2),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w500),
         ),
       ],
-    );
-  }
-
-  void _showBottomSheet(VideoGallery gallery) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              height: 4,
-              width: 40,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.playlist_add_rounded,
-                color: Color(0xFF6C5CE7),
-              ),
-              title: const Text('Add to playlist'),
-              onTap: () {
-                Navigator.pop(context);
-                // Handle add to playlist
-              },
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.download_rounded,
-                color: Color(0xFF6C5CE7),
-              ),
-              title: const Text('Download video'),
-              subtitle: Text('${gallery.videoCount} videos available'),
-              onTap: () {
-                Navigator.pop(context);
-                // Handle download
-              },
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.share_rounded,
-                color: Color(0xFF6C5CE7),
-              ),
-              title: const Text('Share'),
-              onTap: () {
-                Navigator.pop(context);
-                // Handle share
-              },
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.favorite_border_rounded,
-                color: Color(0xFF6C5CE7),
-              ),
-              title: const Text('Add to favorites'),
-              onTap: () {
-                Navigator.pop(context);
-                // Handle favorite
-              },
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
     );
   }
 }

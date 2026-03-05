@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:luminar_std/presentation/bottom_nav_screen/bottom_nav_screen.dart';
-import 'package:luminar_std/presentation/login_screen/login_screen.dart';
 import 'package:provider/provider.dart';
-import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'presentation/splash_screen/splash_screen.dart';
 
@@ -26,8 +23,7 @@ class MyApp extends StatelessWidget {
       builder: (context, themeProvider, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
+
           themeMode: context.watch<ThemeProvider>().themeMode,
           home: const SplashScreen(),
         );

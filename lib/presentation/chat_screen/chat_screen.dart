@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/app_text_styles.dart';
 
 // ---------- Contact List Screen (First Screen) ----------
 class ContactListScreen extends StatelessWidget {
@@ -9,31 +11,28 @@ class ContactListScreen extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: Column(
           children: [
             // Creative header with gradient and search
             Container(
-              padding: EdgeInsets.fromLTRB(24, 20, 24, 30),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF6C5CE7),
-                    Color(0xFF8B7BF2),
-                    Color(0xFFA29BFE),
-                  ],
+                gradient: const LinearGradient(
+                  colors: AppColors.splashGradient,
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(36),
                   bottomRight: Radius.circular(36),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0xFF6C5CE7).withOpacity(0.3),
+                    color: AppColors.primary.withOpacity(0.3),
                     blurRadius: 20,
-                    offset: Offset(0, 8),
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
@@ -45,28 +44,29 @@ class ContactListScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Messages',
-                        style: TextStyle(
+                        style: AppTextStyles.heading1.copyWith(
                           fontSize: 34,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
+                          color: AppColors.white,
                         ),
                       ),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.edit_square,
-                            color: Colors.white,
+                            color: AppColors.white,
                             size: 26,
                           ),
-                          SizedBox(width: 16),
+                          const SizedBox(width: 16),
                           Container(
-                            padding: EdgeInsets.all(2),
+                            padding: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                              border: Border.all(
+                                color: AppColors.white,
+                                width: 2,
+                              ),
                             ),
-                            child: CircleAvatar(
+                            child: const CircleAvatar(
                               radius: 16,
                               backgroundImage: NetworkImage(
                                 'https://i.pravatar.cc/150?img=7',
@@ -77,15 +77,15 @@ class ContactListScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
                   // Search bar
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.whiteWithOpacity20,
                       borderRadius: BorderRadius.circular(30),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: AppColors.borderLight,
                         width: 1,
                       ),
                     ),
@@ -93,20 +93,20 @@ class ContactListScreen extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.search_rounded,
-                          color: Colors.white.withOpacity(0.8),
+                          color: AppColors.whiteWithOpacity80,
                           size: 24,
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: TextField(
                             decoration: InputDecoration(
                               hintText: 'Search contacts...',
                               hintStyle: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
+                                color: AppColors.whiteWithOpacity80,
                               ),
                               border: InputBorder.none,
                             ),
-                            style: TextStyle(color: Colors.white),
+                            style: const TextStyle(color: AppColors.white),
                           ),
                         ),
                       ],
@@ -118,7 +118,7 @@ class ContactListScreen extends StatelessWidget {
             // Contact list
             Expanded(
               child: ListView.builder(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 itemCount: contacts.length,
                 itemBuilder: (context, index) {
                   final contact = contacts[index];
@@ -132,16 +132,16 @@ class ContactListScreen extends StatelessWidget {
                       );
                     },
                     child: Container(
-                      margin: EdgeInsets.only(bottom: 12),
-                      padding: EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.cardBackground,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.05),
+                            color: AppColors.primary.withOpacity(0.05),
                             blurRadius: 15,
-                            offset: Offset(0, 5),
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
@@ -162,10 +162,10 @@ class ContactListScreen extends StatelessWidget {
                                     width: 14,
                                     height: 14,
                                     decoration: BoxDecoration(
-                                      color: Color(0xFF00B894),
+                                      color: AppColors.statsGreen,
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                         width: 2,
                                       ),
                                     ),
@@ -173,7 +173,7 @@ class ContactListScreen extends StatelessWidget {
                                 ),
                             ],
                           ),
-                          SizedBox(width: 16),
+                          const SizedBox(width: 16),
                           // Name and last message
                           Expanded(
                             child: Column(
@@ -181,19 +181,12 @@ class ContactListScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   contact.name,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF2D3436),
-                                  ),
+                                  style: AppTextStyles.headerName,
                                 ),
-                                SizedBox(height: 4),
+                                const SizedBox(height: 4),
                                 Text(
                                   contact.lastMessage,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
+                                  style: AppTextStyles.activitySubtitle,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -206,24 +199,22 @@ class ContactListScreen extends StatelessWidget {
                             children: [
                               Text(
                                 contact.time,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[500],
+                                style: AppTextStyles.caption.copyWith(
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               if (contact.unreadCount > 0)
                                 Container(
-                                  padding: EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFF6C5CE7),
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
                                     shape: BoxShape.circle,
                                   ),
                                   child: Text(
                                     contact.unreadCount.toString(),
-                                    style: TextStyle(
-                                      color: Colors.white,
+                                    style: const TextStyle(
+                                      color: AppColors.white,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -296,13 +287,13 @@ class _ChatScreenState extends State<ChatScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
       });
 
       // Simulate reply after 1 second
-      Future.delayed(Duration(seconds: 1), () {
+      Future.delayed(const Duration(seconds: 1), () {
         setState(() {
           _messages.add(
             ChatMessage(
@@ -316,7 +307,7 @@ class _ChatScreenState extends State<ChatScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _scrollController.animateTo(
             _scrollController.position.maxScrollExtent,
-            duration: Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 300),
             curve: Curves.easeOut,
           );
         });
@@ -336,24 +327,25 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.white,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             // Chat header with contact info
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+                color: AppColors.white,
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0xFF6C5CE7).withOpacity(0.1),
+                    color: AppColors.primary.withOpacity(0.1),
                     blurRadius: 15,
-                    offset: Offset(0, 5),
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
@@ -361,15 +353,15 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: Color(0xFF6C5CE7),
+                      color: AppColors.primary,
                       size: 22,
                     ),
                     padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
+                    constraints: const BoxConstraints(),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Stack(
                     children: [
                       CircleAvatar(
@@ -384,34 +376,33 @@ class _ChatScreenState extends State<ChatScreen> {
                             width: 10,
                             height: 10,
                             decoration: BoxDecoration(
-                              color: Color(0xFF00B894),
+                              color: AppColors.statsGreen,
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                              border: Border.all(
+                                color: AppColors.white,
+                                width: 2,
+                              ),
                             ),
                           ),
                         ),
                     ],
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           widget.contact.name,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF2D3436),
-                          ),
+                          style: AppTextStyles.headerName,
                         ),
                         Text(
                           widget.contact.isOnline ? 'Online' : 'Offline',
                           style: TextStyle(
                             fontSize: 13,
                             color: widget.contact.isOnline
-                                ? Color(0xFF00B894)
-                                : Colors.grey[500],
+                                ? AppColors.statsGreen
+                                : AppColors.textHint,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -420,7 +411,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   Icon(
                     Icons.more_vert_rounded,
-                    color: Color(0xFF6C5CE7),
+                    color: AppColors.primary,
                     size: 26,
                   ),
                 ],
@@ -430,7 +421,7 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 itemCount: _messages.length,
                 // No reverse, just normal order - index 0 at top, last at bottom
                 itemBuilder: (context, index) {
@@ -441,18 +432,18 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             // Message input bar
             Container(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+                color: AppColors.white,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: AppColors.shadowLight,
                     blurRadius: 10,
-                    offset: Offset(0, -5),
+                    offset: const Offset(0, -5),
                   ),
                 ],
               ),
@@ -460,44 +451,42 @@ class _ChatScreenState extends State<ChatScreen> {
                 top: false,
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.attach_file_rounded,
-                      color: Color(0xFF6C5CE7),
+                      color: AppColors.primary,
                       size: 26,
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: Color(0xFFF1F3FA),
+                          color: const Color(0xFFF1F3FA),
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: TextField(
                           controller: _messageController,
                           decoration: InputDecoration(
                             hintText: 'Type a message...',
-                            hintStyle: TextStyle(color: Colors.grey[500]),
+                            hintStyle: TextStyle(color: AppColors.textHint),
                             border: InputBorder.none,
                           ),
                           onSubmitted: (_) => _sendMessage(),
                         ),
                       ),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: _sendMessage,
                       child: Container(
-                        padding: EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF6C5CE7), Color(0xFF8B7BF2)],
-                          ),
+                          gradient: AppColors.primaryGradient,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.send_rounded,
-                          color: Colors.white,
+                          color: AppColors.white,
                           size: 20,
                         ),
                       ),
@@ -514,7 +503,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageBubble(ChatMessage message) {
     return Container(
-      margin: EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Row(
         mainAxisAlignment: message.isMe
             ? MainAxisAlignment.end
@@ -525,28 +514,28 @@ class _ChatScreenState extends State<ChatScreen> {
               radius: 16,
               backgroundImage: NetworkImage(widget.contact.avatar),
             ),
-          if (!message.isMe) SizedBox(width: 8),
+          if (!message.isMe) const SizedBox(width: 8),
           Flexible(
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: message.isMe ? Color(0xFF6C5CE7) : Colors.white,
+                color: message.isMe ? AppColors.primary : AppColors.white,
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+                  topLeft: const Radius.circular(20),
+                  topRight: const Radius.circular(20),
                   bottomLeft: message.isMe
-                      ? Radius.circular(20)
-                      : Radius.circular(4),
+                      ? const Radius.circular(20)
+                      : const Radius.circular(4),
                   bottomRight: message.isMe
-                      ? Radius.circular(4)
-                      : Radius.circular(20),
+                      ? const Radius.circular(4)
+                      : const Radius.circular(20),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (message.isMe ? Color(0xFF6C5CE7) : Colors.black)
+                    color: (message.isMe ? AppColors.primary : Colors.black)
                         .withOpacity(0.05),
                     blurRadius: 10,
-                    offset: Offset(0, 4),
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -556,17 +545,19 @@ class _ChatScreenState extends State<ChatScreen> {
                   Text(
                     message.text,
                     style: TextStyle(
-                      color: message.isMe ? Colors.white : Color(0xFF2D3436),
+                      color: message.isMe
+                          ? AppColors.white
+                          : AppColors.textPrimary,
                       fontSize: 14,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     message.time,
                     style: TextStyle(
                       color: message.isMe
-                          ? Colors.white.withOpacity(0.7)
-                          : Colors.grey[500],
+                          ? AppColors.whiteWithOpacity70
+                          : AppColors.textHint,
                       fontSize: 10,
                     ),
                   ),

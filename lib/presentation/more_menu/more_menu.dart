@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/app_text_styles.dart';
+
 // Import your screens here
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
 import 'package:luminar_std/presentation/live_class/live_class.dart';
@@ -39,8 +42,8 @@ class _MoreScreenState extends State<MoreScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AttendanceScreen(),
-        settings: RouteSettings(
+        builder: (context) => const AttendanceScreen(),
+        settings: const RouteSettings(
           arguments: {
             'title': 'Attendance',
             'course': 'Asp.net MVC with Angular',
@@ -55,8 +58,8 @@ class _MoreScreenState extends State<MoreScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => VideosScreen(),
-        settings: RouteSettings(
+        builder: (context) => const VideosScreen(),
+        settings: const RouteSettings(
           arguments: {
             'title': 'Videos',
             'course': 'Asp.net MVC with Angular',
@@ -73,8 +76,8 @@ class _MoreScreenState extends State<MoreScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PaymentsScreen(),
-        settings: RouteSettings(
+        builder: (context) => const PaymentsScreen(),
+        settings: const RouteSettings(
           arguments: {
             'title': 'Payments',
             'amount': '₹27,000',
@@ -90,8 +93,8 @@ class _MoreScreenState extends State<MoreScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LiveClassScreen(),
-        settings: RouteSettings(
+        builder: (context) => const LiveClassScreen(),
+        settings: const RouteSettings(
           arguments: {
             'title': 'Live Class',
             'nextClass': 'Today 5:00 PM',
@@ -106,11 +109,12 @@ class _MoreScreenState extends State<MoreScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
         child: Column(
           children: [
             // Simple Header without gradient and search
-            Padding(
+            const Padding(
               padding: EdgeInsets.fromLTRB(24, 16, 24, 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -123,14 +127,14 @@ class _MoreScreenState extends State<MoreScreen>
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF2D3436),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       Text(
                         'Explore all features',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          color: AppColors.textSecondary,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -139,26 +143,26 @@ class _MoreScreenState extends State<MoreScreen>
                 ],
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             // Main Content
             Expanded(
               child: ListView(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
                   // Quick Stats Row
                   // Removed as per your code, but keeping structure
-                  SizedBox(height: 28),
+                  const SizedBox(height: 28),
 
                   // Section Title
-                  Text(
+                  const Text(
                     'Features',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF2D3436),
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
                   // Attendance Card - Navigates to AttendanceScreen
                   _buildMenuItem(
@@ -166,7 +170,7 @@ class _MoreScreenState extends State<MoreScreen>
                       icon: Icons.calendar_month,
                       title: 'Attendance',
                       subtitle: 'Track your daily attendance',
-                      color: Color(0xFF6C5CE7),
+                      color: AppColors.primary,
                       badge: '85%',
                       stats: 'Present: 42 days',
                     ),
@@ -180,7 +184,7 @@ class _MoreScreenState extends State<MoreScreen>
                       icon: Icons.video_library_rounded,
                       title: 'Videos',
                       subtitle: 'Course recordings & lectures',
-                      color: Color(0xFF00B894),
+                      color: AppColors.statsGreen,
                       badge: '12 new',
                       stats: 'Total: 24 videos',
                     ),
@@ -194,7 +198,7 @@ class _MoreScreenState extends State<MoreScreen>
                       icon: Icons.payment_rounded,
                       title: 'Payments',
                       subtitle: 'Fee details & transactions',
-                      color: Color(0xFFFDCB6E),
+                      color: AppColors.statsOrange,
                       badge: 'Paid',
                       stats: 'Last: Mar 12, 2026',
                     ),
@@ -208,7 +212,7 @@ class _MoreScreenState extends State<MoreScreen>
                       icon: Icons.video_camera_front_rounded,
                       title: 'Live Class',
                       subtitle: 'Join ongoing sessions',
-                      color: Color(0xFFFF7675),
+                      color: const Color(0xFFFF7675),
                       badge: 'LIVE NOW',
                       stats: 'Next: Today 5:00 PM',
                     ),
@@ -216,7 +220,7 @@ class _MoreScreenState extends State<MoreScreen>
                     onTap: _navigateToLiveClass,
                   ),
 
-                  SizedBox(height: 30),
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
@@ -236,34 +240,27 @@ class _MoreScreenState extends State<MoreScreen>
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Color(0xFF6C5CE7).withOpacity(0.08),
+                color: AppColors.primary.withOpacity(0.08),
                 blurRadius: 10,
-                offset: Offset(0, 4),
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Column(
             children: [
-              Icon(icon, color: Color(0xFF6C5CE7), size: 20),
-              SizedBox(height: 4),
+              Icon(icon, color: AppColors.primary, size: 20),
+              const SizedBox(height: 4),
               Text(
                 value,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D3436),
-                ),
+                style: AppTextStyles.statValue.copyWith(fontSize: 14),
               ),
-              Text(
-                label,
-                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
-              ),
+              Text(label, style: AppTextStyles.caption),
             ],
           ),
         ),
@@ -274,37 +271,37 @@ class _MoreScreenState extends State<MoreScreen>
   Widget _buildMenuItem({
     required MoreItem item,
     required int index,
-    required VoidCallback onTap, // Add onTap parameter
+    required VoidCallback onTap,
   }) {
     return FadeTransition(
       opacity: _animationController.drive(
         CurveTween(curve: Interval(index * 0.15, 1.0, curve: Curves.easeOut)),
       ),
       child: Container(
-        margin: EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
               color: item.color.withOpacity(0.1),
               blurRadius: 15,
-              offset: Offset(0, 5),
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: onTap, // Use the passed onTap function
+            onTap: onTap,
             borderRadius: BorderRadius.circular(24),
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   // Icon with gradient background
                   Container(
-                    padding: EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -318,7 +315,7 @@ class _MoreScreenState extends State<MoreScreen>
                     ),
                     child: Icon(item.icon, color: item.color, size: 28),
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   // Title and subtitle
                   Expanded(
                     child: Column(
@@ -328,22 +325,18 @@ class _MoreScreenState extends State<MoreScreen>
                           children: [
                             Text(
                               item.title,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF2D3436),
-                              ),
+                              style: AppTextStyles.activityTitle,
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             if (item.badge.isNotEmpty)
                               Container(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
                                   color: item.title == 'Live Class'
-                                      ? Color(0xFFFF7675)
+                                      ? const Color(0xFFFF7675)
                                       : item.color.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -353,22 +346,19 @@ class _MoreScreenState extends State<MoreScreen>
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
                                     color: item.title == 'Live Class'
-                                        ? Colors.white
+                                        ? AppColors.white
                                         : item.color,
                                   ),
                                 ),
                               ),
                           ],
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           item.subtitle,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                          ),
+                          style: AppTextStyles.activitySubtitle,
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           item.stats,
                           style: TextStyle(
@@ -383,7 +373,7 @@ class _MoreScreenState extends State<MoreScreen>
                   // Arrow
                   Icon(
                     Icons.arrow_forward_ios_rounded,
-                    color: Colors.grey[400],
+                    color: AppColors.textHint,
                     size: 16,
                   ),
                 ],
@@ -401,52 +391,47 @@ class _MoreScreenState extends State<MoreScreen>
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(32),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: item.color.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(item.icon, color: item.color, size: 50),
               ),
-              SizedBox(height: 20),
-              Text(
-                item.title,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D3436),
-                ),
-              ),
-              SizedBox(height: 8),
+              const SizedBox(height: 20),
+              Text(item.title, style: AppTextStyles.heading2),
+              const SizedBox(height: 8),
               Text(
                 'This feature is coming soon!',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                style: AppTextStyles.bodyText.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               Row(
                 children: [
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
                       style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: Text('Close'),
+                      child: const Text('Close'),
                     ),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
@@ -463,13 +448,13 @@ class _MoreScreenState extends State<MoreScreen>
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: item.color,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 16),
+                        foregroundColor: AppColors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: Text('Open'),
+                      child: const Text('Open'),
                     ),
                   ),
                 ],
@@ -499,30 +484,3 @@ class MoreItem {
     required this.stats,
   });
 }
-
-// Example of how to receive data in destination screens:
-
-// In your AttendanceScreen, you can receive data like this:
-/*
-class AttendanceScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Get arguments passed from MoreScreen
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-    
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(args?['title'] ?? 'Attendance'),
-      ),
-      body: Container(
-        // Your attendance screen UI
-        child: Center(
-          child: Text('Course: ${args?['course']}\nBatch: ${args?['batch']}'),
-        ),
-      ),
-    );
-  }
-}
-*/
-
-// Similarly for other screens...

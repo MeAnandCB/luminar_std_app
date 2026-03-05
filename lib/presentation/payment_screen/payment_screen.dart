@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/app_text_styles.dart';
 
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
@@ -40,22 +42,22 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
-          padding: EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
               Container(
-                padding: EdgeInsets.all(6),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.whiteWithOpacity20,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.download_done_rounded,
-                  color: Colors.white,
+                  color: AppColors.white,
                   size: 18,
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,16 +65,16 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   children: [
                     Text(
                       'Downloading Receipt',
-                      style: TextStyle(
-                        color: Colors.white,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
                     ),
                     Text(
                       'Transaction: ${transactionId.substring(0, 12)}...',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.whiteWithOpacity70,
                         fontSize: 11,
                       ),
                     ),
@@ -84,16 +86,18 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.white,
+                  ),
                 ),
               ),
             ],
           ),
         ),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: Color(0xFF2D3436),
+        backgroundColor: AppColors.textPrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -105,6 +109,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     final progressValue = paidAmount / totalFee;
 
     return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -117,13 +122,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.1),
+                            color: AppColors.primary.withOpacity(0.1),
                             blurRadius: 20,
-                            offset: Offset(0, 5),
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
@@ -131,38 +136,38 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                         onPressed: () => Navigator.pop(context),
                         icon: Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFF6C5CE7),
+                          color: AppColors.primary,
                           size: 20,
                         ),
                       ),
                     ),
-                    SizedBox(width: 16),
-                    Text(
+                    const SizedBox(width: 16),
+                    const Text(
                       'Payments',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF2D3436),
+                        color: AppColors.textPrimary,
                         letterSpacing: -0.5,
                       ),
                     ),
-                    Spacer(),
+                    const Spacer(),
                     Container(
-                      padding: EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.1),
+                            color: AppColors.primary.withOpacity(0.1),
                             blurRadius: 20,
-                            offset: Offset(0, 5),
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
                       child: Icon(
                         Icons.account_balance_wallet_rounded,
-                        color: Color(0xFF6C5CE7),
+                        color: AppColors.primary,
                         size: 24,
                       ),
                     ),
@@ -172,24 +177,20 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
 
               // Progress Card
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 20),
-                padding: EdgeInsets.all(24),
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF6C5CE7),
-                      Color(0xFF8B7BF2),
-                      Color(0xFFA29BFE),
-                    ],
+                  gradient: const LinearGradient(
+                    colors: AppColors.splashGradient,
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF6C5CE7).withOpacity(0.3),
+                      color: AppColors.primary.withOpacity(0.3),
                       blurRadius: 30,
-                      offset: Offset(0, 10),
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
@@ -201,36 +202,34 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                       children: [
                         Text(
                           'Payment Overview',
-                          style: TextStyle(
+                          style: AppTextStyles.caption.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withOpacity(0.9),
+                            color: AppColors.whiteWithOpacity90,
                           ),
                         ),
                         Container(
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: AppColors.whiteWithOpacity20,
                             borderRadius: BorderRadius.circular(30),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                            ),
+                            border: Border.all(color: AppColors.borderLight),
                           ),
                           child: Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.verified_rounded,
-                                color: Colors.white,
+                                color: AppColors.white,
                                 size: 14,
                               ),
-                              SizedBox(width: 4),
-                              Text(
+                              const SizedBox(width: 4),
+                              const Text(
                                 'FULLY PAID',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 0.5,
@@ -241,7 +240,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
                     // Progress Ring Style
                     Row(
@@ -252,33 +251,33 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                             children: [
                               Text(
                                 'Total Fee',
-                                style: TextStyle(
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.whiteWithOpacity70,
                                   fontSize: 13,
-                                  color: Colors.white.withOpacity(0.7),
                                 ),
                               ),
-                              Text(
+                              const Text(
                                 '₹27,000',
                                 style: TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.w700,
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                 ),
                               ),
-                              SizedBox(height: 12),
+                              const SizedBox(height: 12),
                               Text(
                                 'Paid Amount',
-                                style: TextStyle(
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.whiteWithOpacity70,
                                   fontSize: 13,
-                                  color: Colors.white.withOpacity(0.7),
                                 ),
                               ),
-                              Text(
+                              const Text(
                                 '₹27,000',
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                 ),
                               ),
                             ],
@@ -302,7 +301,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                       ],
                     ),
 
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // Progress Bar
                     Column(
@@ -313,30 +312,30 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                           children: [
                             Text(
                               'Payment Progress',
-                              style: TextStyle(
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.whiteWithOpacity80,
                                 fontSize: 12,
-                                color: Colors.white.withOpacity(0.8),
                               ),
                             ),
                             Text(
                               '${(progressValue * 100).toInt()}% Complete',
-                              style: TextStyle(
+                              style: AppTextStyles.caption.copyWith(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: AppColors.white,
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
                             value: progressValue,
                             minHeight: 8,
-                            backgroundColor: Colors.white.withOpacity(0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                            backgroundColor: AppColors.whiteWithOpacity20,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColors.white,
                             ),
                           ),
                         ),
@@ -346,11 +345,11 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 ),
               ),
 
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               // Transaction History Header
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -358,35 +357,35 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                       children: [
                         Icon(
                           Icons.history_rounded,
-                          color: Color(0xFF6C5CE7),
+                          color: AppColors.primary,
                           size: 24,
                         ),
-                        SizedBox(width: 8),
-                        Text(
+                        const SizedBox(width: 8),
+                        const Text(
                           'Transaction History',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF2D3436),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ],
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 14,
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Color(0xFF6C5CE7).withOpacity(0.1),
-                            Color(0xFF8B7BF2).withOpacity(0.05),
+                            AppColors.primary.withOpacity(0.1),
+                            AppColors.primaryLight.withOpacity(0.05),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(
-                          color: Color(0xFF6C5CE7).withOpacity(0.2),
+                          color: AppColors.primary.withOpacity(0.2),
                         ),
                       ),
                       child: Text(
@@ -394,7 +393,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF6C5CE7),
+                          color: AppColors.primary,
                         ),
                       ),
                     ),
@@ -402,13 +401,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 ),
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Transaction Cards - Only Completed
               ListView.builder(
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 itemCount: _transactions.length,
                 itemBuilder: (context, index) {
                   final transaction = _transactions[index];
@@ -416,7 +415,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 },
               ),
 
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -426,16 +425,16 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
 
   Widget _buildTransactionCard(PaymentTransaction transaction) {
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFF6C5CE7).withOpacity(0.05),
+            color: AppColors.primary.withOpacity(0.05),
             blurRadius: 20,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -449,40 +448,34 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Color(0xFF6C5CE7).withOpacity(0.1),
-                            Color(0xFF8B7BF2).withOpacity(0.05),
+                            AppColors.primary.withOpacity(0.1),
+                            AppColors.primaryLight.withOpacity(0.05),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         Icons.receipt_long_rounded,
-                        color: Color(0xFF6C5CE7),
+                        color: AppColors.primary,
                         size: 18,
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Transaction ID',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey[500],
-                            ),
-                          ),
+                          Text('Transaction ID', style: AppTextStyles.caption),
                           Text(
                             transaction.id,
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF2D3436),
+                              color: AppColors.textPrimary,
                               fontFamily: 'Monospace',
                             ),
                           ),
@@ -493,12 +486,15 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xFF00B894).withOpacity(0.1),
-                      Color(0xFF00B894).withOpacity(0.05),
+                      AppColors.statsGreen.withOpacity(0.1),
+                      AppColors.statsGreen.withOpacity(0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
@@ -508,54 +504,59 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF00B894),
+                    color: AppColors.statsGreen,
                   ),
                 ),
               ),
             ],
           ),
 
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-          // Middle Row - Date and Method (Status removed since all are completed)
+          // Middle Row - Date and Method
           Row(
             children: [
               // Date
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey[200]!),
+                  border: Border.all(color: AppColors.borderLight),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.calendar_today_rounded,
                       size: 12,
-                      color: Colors.grey[600],
+                      color: AppColors.textSecondary,
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Text(
                       _formatDate(transaction.date),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[700],
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
 
               // Payment Method
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: Color(0xFF6C5CE7).withOpacity(0.05),
+                  color: AppColors.primary.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Color(0xFF6C5CE7).withOpacity(0.1)),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.1)),
                 ),
                 child: Row(
                   children: [
@@ -566,14 +567,14 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                           ? Icons.money_rounded
                           : Icons.credit_card_rounded,
                       size: 12,
-                      color: Color(0xFF6C5CE7),
+                      color: AppColors.primary,
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Text(
                       transaction.method,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Color(0xFF6C5CE7),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -581,42 +582,45 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 ),
               ),
 
-              Spacer(),
+              const Spacer(),
 
               // Success Badge
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xFF00B894),
-                      Color(0xFF00B894).withOpacity(0.8),
+                      AppColors.statsGreen,
+                      AppColors.statsGreen.withOpacity(0.8),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF00B894).withOpacity(0.2),
+                      color: AppColors.statsGreen.withOpacity(0.2),
                       blurRadius: 8,
-                      offset: Offset(0, 2),
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.check_circle_rounded,
                       size: 12,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
-                    SizedBox(width: 4),
-                    Text(
+                    const SizedBox(width: 4),
+                    const Text(
                       'Success',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: AppColors.white,
                       ),
                     ),
                   ],
@@ -625,7 +629,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             ],
           ),
 
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
 
           // Download Button Row - Always shown for completed transactions
           Row(
@@ -634,15 +638,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 child: Container(
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF6C5CE7), Color(0xFF8B7BF2)],
-                    ),
+                    gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Color(0xFF6C5CE7).withOpacity(0.3),
+                        color: AppColors.primary.withOpacity(0.3),
                         blurRadius: 10,
-                        offset: Offset(0, 4),
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
@@ -652,7 +654,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -661,9 +663,9 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.download_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text(
+                        const Icon(Icons.download_rounded, size: 18),
+                        const SizedBox(width: 8),
+                        const Text(
                           'Download Receipt',
                           style: TextStyle(
                             fontSize: 13,

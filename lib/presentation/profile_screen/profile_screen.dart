@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/profile_edit_screen/profile_edit_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -12,6 +14,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -24,13 +27,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.1),
+                            color: AppColors.primary.withOpacity(0.1),
                             blurRadius: 10,
-                            offset: Offset(0, 4),
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
@@ -38,18 +41,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onPressed: () => Navigator.pop(context),
                         icon: Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFF6C5CE7),
+                          color: AppColors.primary,
                           size: 20,
                         ),
                       ),
                     ),
-                    SizedBox(width: 16),
-                    Text(
+                    const SizedBox(width: 16),
+                    const Text(
                       'My Profile',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF2D3436),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -58,86 +61,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // Profile Header Card
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 20),
-                padding: EdgeInsets.all(24),
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF6C5CE7),
-                      Color(0xFF8B7BF2),
-                      Color(0xFFA29BFE),
-                    ],
+                  gradient: const LinearGradient(
+                    colors: AppColors.splashGradient,
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF6C5CE7).withOpacity(0.3),
+                      color: AppColors.primary.withOpacity(0.3),
                       blurRadius: 20,
-                      offset: Offset(0, 8),
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: AppColors.whiteWithOpacity20,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.person_rounded,
-                        color: Colors.white,
+                        color: AppColors.white,
                         size: 40,
                       ),
                     ),
-                    SizedBox(width: 20),
+                    const SizedBox(width: 20),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Amnanabeel',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: AppColors.white,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             'ID: LUM2026082',
-                            style: TextStyle(
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.whiteWithOpacity90,
                               fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Row(
                             children: [
                               Text(
                                 'This is also your referral code',
-                                style: TextStyle(
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.whiteWithOpacity80,
                                   fontSize: 12,
-                                  color: Colors.white.withOpacity(0.8),
                                 ),
                               ),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               Container(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Color(0xFF00B894),
+                                  color: AppColors.statsGreen,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Text(
+                                child: const Text(
                                   'Active',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -152,13 +151,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
 
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Personal Information Card
               _buildSectionCard(
                 title: 'Personal Information',
                 icon: Icons.person_outline_rounded,
-                color: Color(0xFF6C5CE7),
+                color: AppColors.primary,
                 children: [
                   _buildInfoRow('Full Name', 'amnanabeel'),
                   _buildInfoRow('Email Address', 'test57@gmail.com'),
@@ -170,13 +169,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Account Status Card
               _buildSectionCard(
                 title: 'Account Status',
                 icon: Icons.account_circle_rounded,
-                color: Color(0xFF00B894),
+                color: AppColors.statsGreen,
                 children: [
                   _buildStatusRow('Current Status', 'Active', isSuccess: true),
                   _buildStatusRow(
@@ -193,13 +192,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Your Counselor Card
               _buildSectionCard(
                 title: 'Your Counselor',
                 icon: Icons.support_agent_rounded,
-                color: Color(0xFFFDCB6E),
+                color: AppColors.statsOrange,
                 children: [
                   _buildInfoRow('Name', 'Admission Counselor'),
                   _buildInfoRow('Email', 'admissioncounselor@gmail.com'),
@@ -207,13 +206,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Academic Information Card
               _buildSectionCard(
                 title: 'Academic Information',
                 icon: Icons.school_rounded,
-                color: Color(0xFFFF7675),
+                color: const Color(0xFFFF7675),
                 children: [
                   _buildInfoRow('Qualification', 'M.Sc-Chemistry'),
                   _buildInfoRow('College', 'EWREWR'),
@@ -225,13 +224,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Contact Information Card
               _buildSectionCard(
                 title: 'Contact Information',
                 icon: Icons.contact_phone_rounded,
-                color: Color(0xFF6C5CE7),
+                color: AppColors.primary,
                 children: [
                   _buildInfoRow('Address', 'B'),
                   _buildInfoRow('District', 'Out of State'),
@@ -243,13 +242,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Placement Information Card
               _buildSectionCard(
                 title: 'Placement Information',
                 icon: Icons.work_rounded,
-                color: Color(0xFF00B894),
+                color: AppColors.statsGreen,
                 children: [
                   _buildStatusRow(
                     'Placement Assistance',
@@ -260,37 +259,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Documents Card
               _buildSectionCard(
                 title: 'Documents',
                 icon: Icons.folder_rounded,
-                color: Color(0xFFFDCB6E),
+                color: AppColors.statsOrange,
                 children: [
                   _buildDocumentRow('ID Proof 1', 'View'),
                   _buildDocumentRow('ID Proof 2', 'View'),
                 ],
               ),
 
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Quick Actions
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
                   width: double.infinity,
                   height: 56,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF6C5CE7), Color(0xFF8B7BF2)],
-                    ),
+                    gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Color(0xFF6C5CE7).withOpacity(0.3),
+                        color: AppColors.primary.withOpacity(0.3),
                         blurRadius: 10,
-                        offset: Offset(0, 4),
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
@@ -305,13 +302,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Update Profile',
                       style: TextStyle(
                         fontSize: 16,
@@ -322,7 +319,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
 
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -337,16 +334,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required List<Widget> children,
   }) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20),
-      padding: EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.1),
             blurRadius: 20,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -356,25 +353,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 20),
               ),
-              SizedBox(width: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D3436),
-                ),
-              ),
+              const SizedBox(width: 12),
+              Text(title, style: AppTextStyles.sectionTitle),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           ...children,
         ],
       ),
@@ -383,30 +373,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
+          Expanded(flex: 2, child: Text(label, style: AppTextStyles.statLabel)),
           Expanded(
             flex: 3,
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xFF2D3436),
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppTextStyles.statValue.copyWith(fontSize: 13),
             ),
           ),
         ],
@@ -420,36 +396,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required bool isSuccess,
   }) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
+          Expanded(flex: 2, child: Text(label, style: AppTextStyles.statLabel)),
           Expanded(
             flex: 3,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: isSuccess
-                    ? Color(0xFF00B894).withOpacity(0.1)
-                    : Color(0xFFFF7675).withOpacity(0.1),
+                    ? AppColors.statsGreen.withOpacity(0.1)
+                    : const Color(0xFFFF7675).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 value,
                 style: TextStyle(
                   fontSize: 12,
-                  color: isSuccess ? Color(0xFF00B894) : Color(0xFFFF7675),
+                  color: isSuccess
+                      ? AppColors.statsGreen
+                      : const Color(0xFFFF7675),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -462,18 +430,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildDocumentRow(String label, String action) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(label, style: AppTextStyles.statLabel),
           GestureDetector(
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -487,9 +448,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
             },
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Color(0xFF6C5CE7).withOpacity(0.1),
+                color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -497,14 +458,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Icon(
                     Icons.remove_red_eye_rounded,
                     size: 14,
-                    color: Color(0xFF6C5CE7),
+                    color: AppColors.primary,
                   ),
-                  SizedBox(width: 4),
+                  const SizedBox(width: 4),
                   Text(
                     action,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF6C5CE7),
+                      color: AppColors.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

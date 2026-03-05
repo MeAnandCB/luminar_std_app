@@ -1,5 +1,7 @@
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/app_text_styles.dart';
 
 class LiveClassScreen extends StatefulWidget {
   const LiveClassScreen({super.key});
@@ -29,6 +31,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -41,13 +44,13 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.1),
+                            color: AppColors.primary.withOpacity(0.1),
                             blurRadius: 10,
-                            offset: Offset(0, 4),
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
@@ -55,18 +58,18 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                         onPressed: () => Navigator.pop(context),
                         icon: Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFF6C5CE7),
+                          color: AppColors.primary,
                           size: 20,
                         ),
                       ),
                     ),
-                    SizedBox(width: 16),
-                    Text(
+                    const SizedBox(width: 16),
+                    const Text(
                       'Live Classes',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF2D3436),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -75,15 +78,15 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
 
               // Live Classes List
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
                     // Live Now Card
                     Container(
                       width: double.infinity,
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
+                        gradient: const LinearGradient(
                           colors: [Color(0xFFFF7675), Color(0xFFFF9F9F)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -91,9 +94,9 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFFFF7675).withOpacity(0.3),
+                            color: const Color(0xFFFF7675).withOpacity(0.3),
                             blurRadius: 20,
-                            offset: Offset(0, 8),
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
@@ -103,21 +106,21 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                           Row(
                             children: [
                               AvatarGlow(
-                                glowColor: Colors.white,
+                                glowColor: AppColors.white,
                                 child: Container(
                                   width: 10,
                                   height: 10,
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.statsGreen,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
                               ),
-                              SizedBox(width: 8),
-                              Text(
+                              const SizedBox(width: 8),
+                              const Text(
                                 'LIVE NOW',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 1,
@@ -125,50 +128,52 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Text(
                             'ggf',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.whiteWithOpacity90,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          SizedBox(height: 4),
-                          Text(
+                          const SizedBox(height: 4),
+                          const Text(
                             'ASP.NET MVC with Angular',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 22,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Icon(
                                 Icons.access_time_rounded,
-                                color: Colors.white.withOpacity(0.9),
+                                color: AppColors.whiteWithOpacity90,
                                 size: 16,
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
                                 '7:26 PM',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.whiteWithOpacity90,
                                   fontSize: 14,
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               onPressed: () {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Joining live class...'),
+                                    content: const Text(
+                                      'Joining live class...',
+                                    ),
                                     behavior: SnackBarBehavior.floating,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20),
@@ -177,14 +182,16 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Color(0xFFFF7675),
-                                padding: EdgeInsets.symmetric(vertical: 16),
+                                backgroundColor: AppColors.white,
+                                foregroundColor: const Color(0xFFFF7675),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
-                              child: Text(
+                              child: const Text(
                                 'Join Class',
                                 style: TextStyle(
                                   fontSize: 16,
@@ -197,20 +204,20 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                       ),
                     ),
 
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // Upcoming Class Card
                     Container(
                       width: double.infinity,
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.1),
+                            color: AppColors.primary.withOpacity(0.1),
                             blurRadius: 20,
-                            offset: Offset(0, 5),
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
@@ -218,82 +225,82 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Color(0xFF6C5CE7).withOpacity(0.1),
+                              color: AppColors.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               'UPCOMING',
                               style: TextStyle(
-                                color: Color(0xFF6C5CE7),
+                                color: AppColors.primary,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.5,
                               ),
                             ),
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Text(
                             'Morning Batch',
-                            style: TextStyle(
-                              color: Colors.grey[600],
+                            style: AppTextStyles.activitySubtitle.copyWith(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             'Flutter Development',
-                            style: TextStyle(
-                              color: Color(0xFF2D3436),
+                            style: AppTextStyles.courseCardTitle.copyWith(
                               fontSize: 20,
-                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Icon(
                                 Icons.calendar_today_rounded,
-                                color: Colors.grey[500],
+                                color: AppColors.textHint,
                                 size: 16,
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
                                 'Tomorrow',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textSecondary,
                                   fontSize: 14,
                                 ),
                               ),
-                              SizedBox(width: 16),
+                              const SizedBox(width: 16),
                               Icon(
                                 Icons.access_time_rounded,
-                                color: Colors.grey[500],
+                                color: AppColors.textHint,
                                 size: 16,
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
                                 '9:00 AM',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textSecondary,
                                   fontSize: 14,
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
                               onPressed: () {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Reminder set for tomorrow'),
+                                    content: const Text(
+                                      'Reminder set for tomorrow',
+                                    ),
                                     behavior: SnackBarBehavior.floating,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20),
@@ -302,16 +309,18 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                                 );
                               },
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: Color(0xFF6C5CE7),
-                                padding: EdgeInsets.symmetric(vertical: 16),
+                                foregroundColor: AppColors.primary,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                                 side: BorderSide(
-                                  color: Color(0xFF6C5CE7).withOpacity(0.3),
+                                  color: AppColors.primary.withOpacity(0.3),
                                 ),
                               ),
-                              child: Text(
+                              child: const Text(
                                 'Set Reminder',
                                 style: TextStyle(
                                   fontSize: 16,
@@ -327,7 +336,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                 ),
               ),
 
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
             ],
           ),
         ),

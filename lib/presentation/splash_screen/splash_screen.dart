@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'dart:async';
 
+import 'package:luminar_std/core/theme/app_colors.dart'; // Updated import
+import 'package:luminar_std/core/theme/app_text_styles.dart'; // Updated import
 import 'package:luminar_std/presentation/login_screen/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -95,11 +97,7 @@ class _SplashScreenState extends State<SplashScreen>
         height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: const [
-              Color(0xFF6C5CE7),
-              Color(0xFF8B7BF2),
-              Color(0xFFA29BFE),
-            ],
+            colors: AppColors.splashGradient,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -124,7 +122,7 @@ class _SplashScreenState extends State<SplashScreen>
                         width: 100 + (index * 20),
                         height: 100 + (index * 20),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(
+                          color: AppColors.shapeBackground(
                             0.05 - (index * 0.005),
                           ),
                           shape: index % 2 == 0
@@ -161,7 +159,7 @@ class _SplashScreenState extends State<SplashScreen>
                         width: 4,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
+                          color: AppColors.particle,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -189,10 +187,10 @@ class _SplashScreenState extends State<SplashScreen>
                               width: 120,
                               height: 120,
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.5),
+                                  color: AppColors.borderLighter,
                                   width: 2,
                                 ),
                               ),
@@ -225,19 +223,13 @@ class _SplashScreenState extends State<SplashScreen>
                               vertical: 15,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: AppColors.whiteWithOpacity20,
                               borderRadius: BorderRadius.circular(30),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                              ),
+                              border: Border.all(color: AppColors.borderLight),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Empowering Futures Through Technology',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: AppTextStyles.tagline,
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -257,7 +249,7 @@ class _SplashScreenState extends State<SplashScreen>
                                     width: 10,
                                     height: 10,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(
+                                      color: AppColors.white.withOpacity(
                                         0.3 +
                                             (math.sin(
                                                       _controller.value *
@@ -297,7 +289,7 @@ class _SplashScreenState extends State<SplashScreen>
                       width: 200,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: AppColors.loadingBackground,
                         borderRadius: BorderRadius.circular(2),
                       ),
                       child: Stack(
@@ -306,13 +298,16 @@ class _SplashScreenState extends State<SplashScreen>
                             widthFactor: value,
                             child: Container(
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Colors.white, Colors.white],
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.loadingProgress,
+                                    AppColors.loadingProgress,
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(2),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.white.withOpacity(0.5),
+                                    color: AppColors.loadingShadow,
                                     blurRadius: 10,
                                   ),
                                 ],
@@ -333,13 +328,7 @@ class _SplashScreenState extends State<SplashScreen>
               right: 20,
               child: Opacity(
                 opacity: 0.5,
-                child: Text(
-                  'v1.0.0',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 12,
-                  ),
-                ),
+                child: Text('v1.0.0', style: AppTextStyles.version),
               ),
             ),
           ],

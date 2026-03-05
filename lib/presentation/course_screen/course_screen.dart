@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/app_text_styles.dart';
 
 class CourseDetailsScreen extends StatelessWidget {
   const CourseDetailsScreen({super.key});
@@ -9,32 +11,29 @@ class CourseDetailsScreen extends StatelessWidget {
     final isSmall = size.width < 360;
 
     return Scaffold(
+      backgroundColor: AppColors.white,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             // App bar with creative gradient & profile
             Container(
-              padding: EdgeInsets.fromLTRB(24, 16, 24, 28),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF6C5CE7),
-                    Color(0xFF8B7BF2),
-                    Color(0xFFA29BFE),
-                  ],
+                gradient: const LinearGradient(
+                  colors: AppColors.splashGradient,
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(36),
                   bottomRight: Radius.circular(36),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0xFF6C5CE7).withOpacity(0.3),
+                    color: AppColors.primary.withOpacity(0.3),
                     blurRadius: 20,
-                    offset: Offset(0, 8),
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
@@ -46,29 +45,32 @@ class CourseDetailsScreen extends StatelessWidget {
                     children: [
                       IconButton(
                         onPressed: () {},
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white,
+                          color: AppColors.white,
                           size: 22,
                         ),
                         padding: EdgeInsets.zero,
-                        constraints: BoxConstraints(),
+                        constraints: const BoxConstraints(),
                       ),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.notifications_none_rounded,
-                            color: Colors.white,
+                            color: AppColors.white,
                             size: 26,
                           ),
-                          SizedBox(width: 16),
+                          const SizedBox(width: 16),
                           Container(
-                            padding: EdgeInsets.all(2),
+                            padding: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                              border: Border.all(
+                                color: AppColors.white,
+                                width: 2,
+                              ),
                             ),
-                            child: CircleAvatar(
+                            child: const CircleAvatar(
                               radius: 16,
                               backgroundImage: NetworkImage(
                                 'https://i.pravatar.cc/150?img=7',
@@ -79,39 +81,41 @@ class CourseDetailsScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   Text(
                     'My Courses',
                     style: TextStyle(
                       fontSize: isSmall ? 28 : 34,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: AppColors.white,
                       letterSpacing: -0.5,
                       height: 1.1,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.whiteWithOpacity20,
                       borderRadius: BorderRadius.circular(40),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.check_circle_rounded,
-                          color: Colors.white,
+                          color: AppColors.white,
                           size: 18,
                         ),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Text(
                           'Full Payment Completed',
-                          style: TextStyle(
-                            color: Colors.white,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.white,
                             fontWeight: FontWeight.w500,
-                            fontSize: 13,
                           ),
                         ),
                       ],
@@ -123,21 +127,21 @@ class CourseDetailsScreen extends StatelessWidget {
             // Scrollable content
             Expanded(
               child: SingleChildScrollView(
-                physics: BouncingScrollPhysics(),
-                padding: EdgeInsets.all(20),
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
                     // Course card with creative glassmorphism
                     Container(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.cardBackground,
                         borderRadius: BorderRadius.circular(32),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.08),
+                            color: AppColors.primary.withOpacity(0.08),
                             blurRadius: 25,
-                            offset: Offset(0, 10),
+                            offset: const Offset(0, 10),
                           ),
                         ],
                       ),
@@ -147,61 +151,58 @@ class CourseDetailsScreen extends StatelessWidget {
                           Row(
                             children: [
                               Container(
-                                padding: EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      Color(0xFF6C5CE7).withOpacity(0.1),
-                                      Color(0xFFA29BFE).withOpacity(0.2),
+                                      AppColors.primary.withOpacity(0.1),
+                                      AppColors.primaryLighter.withOpacity(0.2),
                                     ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                child: Icon(
+                                child: const Icon(
                                   Icons.code_rounded,
-                                  color: Color(0xFF6C5CE7),
+                                  color: AppColors.primary,
                                   size: 30,
                                 ),
                               ),
-                              SizedBox(width: 16),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Asp.net MVC with Angular',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF2D3436),
-                                      ),
+                                      style: AppTextStyles.courseCardTitle
+                                          .copyWith(
+                                            fontSize: 18,
+                                            color: AppColors.textPrimary,
+                                          ),
                                     ),
                                     Text(
                                       'Full Stack • ggf',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey[600],
-                                      ),
+                                      style: AppTextStyles.activitySubtitle,
                                     ),
                                   ],
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           // Enrollment chip
                           Container(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Color(0xFFF1F3FA),
+                              color: const Color(0xFFF1F3FA),
                               borderRadius: BorderRadius.circular(30),
                             ),
-                            child: Text(
+                            child: const Text(
                               'Enrollment #ENR2026033570',
                               style: TextStyle(
                                 fontSize: 12,
@@ -213,7 +214,7 @@ class CourseDetailsScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // Stats cards in a row (progress, attendance, payment)
                     Row(
@@ -222,41 +223,41 @@ class CourseDetailsScreen extends StatelessWidget {
                           icon: Icons.trending_up_rounded,
                           label: 'Progress',
                           value: '0%',
-                          color: Color(0xFF6C5CE7),
-                          bgColor: Color(0xFF6C5CE7).withOpacity(0.1),
+                          color: AppColors.primary,
+                          bgColor: AppColors.primary.withOpacity(0.1),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         _buildStatCard(
                           icon: Icons.event_available_rounded,
                           label: 'Attendance',
                           value: '0%',
-                          color: Color(0xFF00B894),
-                          bgColor: Color(0xFF00B894).withOpacity(0.1),
+                          color: AppColors.statsGreen,
+                          bgColor: AppColors.statsGreen.withOpacity(0.1),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         _buildStatCard(
                           icon: Icons.payment_rounded,
                           label: 'Payment',
                           value: '100%',
-                          color: Color(0xFFFDCB6E),
-                          bgColor: Color(0xFFFDCB6E).withOpacity(0.1),
+                          color: AppColors.statsOrange,
+                          bgColor: AppColors.statsOrange.withOpacity(0.1),
                           suffix: 'Completed',
                         ),
                       ],
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
                     // Overall progress with modern indicator
                     Container(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.cardBackground,
                         borderRadius: BorderRadius.circular(32),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.05),
+                            color: AppColors.primary.withOpacity(0.05),
                             blurRadius: 20,
-                            offset: Offset(0, 5),
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
@@ -268,67 +269,61 @@ class CourseDetailsScreen extends StatelessWidget {
                             children: [
                               Text(
                                 'Overall Course Progress',
-                                style: TextStyle(
+                                style: AppTextStyles.sectionTitle.copyWith(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2D3436),
                                 ),
                               ),
                               Container(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Color(0xFF6C5CE7).withOpacity(0.1),
+                                  color: AppColors.primary.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(40),
                                 ),
                                 child: Text(
                                   '0%',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF6C5CE7),
+                                  style: AppTextStyles.statValue.copyWith(
+                                    color: AppColors.primary,
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: LinearProgressIndicator(
                               value: 0.0,
                               minHeight: 12,
-                              backgroundColor: Color(0xFFE9ECF5),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF6C5CE7),
+                              backgroundColor: const Color(0xFFE9ECF5),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
                               ),
                             ),
                           ),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Text(
                             'Keep going! You\'re 0% through this course.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
+                            style: AppTextStyles.activitySubtitle,
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // Course information grid
                     Container(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.cardBackground,
                         borderRadius: BorderRadius.circular(32),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.05),
+                            color: AppColors.primary.withOpacity(0.05),
                             blurRadius: 20,
-                            offset: Offset(0, 5),
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
@@ -337,16 +332,12 @@ class CourseDetailsScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Course Information',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF2D3436),
-                            ),
+                            style: AppTextStyles.sectionTitle,
                           ),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           GridView.count(
                             shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
+                            physics: const NeverScrollableScrollPhysics(),
                             crossAxisCount: 2,
                             mainAxisSpacing: 20,
                             crossAxisSpacing: 16,
@@ -356,107 +347,104 @@ class CourseDetailsScreen extends StatelessWidget {
                                 icon: Icons.calendar_month_rounded,
                                 label: 'Start Date',
                                 value: 'Mar 12, 2026',
-                                color: Color(0xFF6C5CE7),
+                                color: AppColors.primary,
                               ),
                               _infoTile(
                                 icon: Icons.schedule_rounded,
                                 label: 'Schedule',
                                 value: '05:00:00',
-                                color: Color(0xFF00B894),
+                                color: AppColors.statsGreen,
                               ),
                               _infoTile(
                                 icon: Icons.devices_rounded,
                                 label: 'Mode',
                                 value: 'Hybrid',
-                                color: Color(0xFFFDCB6E),
+                                color: AppColors.statsOrange,
                               ),
                               _infoTile(
                                 icon: Icons.group_rounded,
                                 label: 'Batch',
                                 value: 'ggf',
-                                color: Color(0xFFFF7675),
+                                color: Colors.pinkAccent,
                               ),
                             ],
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // Payment details card
                     Container(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFF6F9FC), Colors.white],
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFF6F9FC), AppColors.white],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(32),
                         border: Border.all(
-                          color: Color(0xFF6C5CE7).withOpacity(0.1),
+                          color: AppColors.primary.withOpacity(0.1),
                           width: 1,
                         ),
                       ),
                       child: Row(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Color(0xFF6C5CE7).withOpacity(0.1),
+                              color: AppColors.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(18),
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.receipt_rounded,
-                              color: Color(0xFF6C5CE7),
+                              color: AppColors.primary,
                               size: 26,
                             ),
                           ),
-                          SizedBox(width: 16),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'Payment Details',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
+                                  style: AppTextStyles.statValue.copyWith(
                                     fontSize: 16,
-                                    color: Color(0xFF2D3436),
                                   ),
                                 ),
-                                SizedBox(height: 8),
+                                const SizedBox(height: 8),
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'Amount Paid',
-                                      style: TextStyle(color: Colors.grey[600]),
+                                      style: AppTextStyles.activitySubtitle,
                                     ),
                                     Text(
                                       '₹27,000',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF2D3436),
+                                      style: AppTextStyles.statValue.copyWith(
+                                        fontSize: 14,
                                       ),
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: 4),
+                                const SizedBox(height: 4),
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'Total Course Fee',
-                                      style: TextStyle(color: Colors.grey[600]),
+                                      style: AppTextStyles.activitySubtitle,
                                     ),
                                     Text(
                                       '₹27,000',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF00B894),
+                                      style: AppTextStyles.statValue.copyWith(
+                                        fontSize: 14,
+                                        color: AppColors.statsGreen,
                                       ),
                                     ),
                                   ],
@@ -467,25 +455,25 @@ class CourseDetailsScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    SizedBox(height: 30),
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
             ),
             // Bottom continue button
             Container(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+                color: AppColors.white,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(36),
                   topRight: Radius.circular(36),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: AppColors.shadowLight,
                     blurRadius: 10,
-                    offset: Offset(0, -5),
+                    offset: const Offset(0, -5),
                   ),
                 ],
               ),
@@ -497,14 +485,14 @@ class CourseDetailsScreen extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF6C5CE7),
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(28),
                       ),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Continue Learning',
                       style: TextStyle(
                         fontSize: 18,
@@ -532,35 +520,33 @@ class CourseDetailsScreen extends StatelessWidget {
   }) {
     return Expanded(
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.1),
               blurRadius: 12,
-              offset: Offset(0, 4),
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
           children: [
             Container(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
               child: Icon(icon, color: color, size: 22),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 11,
+              style: AppTextStyles.caption.copyWith(
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
               ),
             ),
-            SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text(
               value,
               style: TextStyle(
@@ -572,10 +558,9 @@ class CourseDetailsScreen extends StatelessWidget {
             if (suffix != null)
               Text(
                 suffix,
-                style: TextStyle(
+                style: AppTextStyles.caption.copyWith(
                   fontSize: 8,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[500],
                 ),
               ),
           ],
@@ -594,14 +579,14 @@ class CourseDetailsScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          padding: EdgeInsets.all(8),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Icon(icon, color: color, size: 18),
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -609,9 +594,7 @@ class CourseDetailsScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
+                style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 1,
@@ -619,11 +602,7 @@ class CourseDetailsScreen extends StatelessWidget {
               ),
               Text(
                 value,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D3436),
-                ),
+                style: AppTextStyles.statValue.copyWith(fontSize: 13),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

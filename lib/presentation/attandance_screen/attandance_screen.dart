@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/app_text_styles.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -162,11 +164,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Color(0xFF6C5CE7),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Color(0xFF2D3436),
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: AppColors.white,
+              surface: AppColors.white,
+              onSurface: AppColors.textPrimary,
             ),
           ),
           child: child!,
@@ -201,15 +203,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               backgroundColor: Colors.transparent,
               child: Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: AppColors.shadowLight,
                       blurRadius: 30,
-                      offset: Offset(0, 10),
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
@@ -223,35 +225,24 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       children: [
                         Text(
                           'Filter Attendance',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF2D3436),
-                          ),
+                          style: AppTextStyles.heading2,
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
                           icon: Icon(
                             Icons.close_rounded,
-                            color: Colors.grey[600],
+                            color: AppColors.textSecondary,
                           ),
                           padding: EdgeInsets.zero,
-                          constraints: BoxConstraints(),
+                          constraints: const BoxConstraints(),
                         ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // Date Range Section
-                    Text(
-                      'Date Range',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2D3436),
-                      ),
-                    ),
-                    SizedBox(height: 12),
+                    Text('Date Range', style: AppTextStyles.statLabel),
+                    const SizedBox(height: 12),
 
                     // Start Date
                     InkWell(
@@ -264,11 +255,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           builder: (context, child) {
                             return Theme(
                               data: Theme.of(context).copyWith(
-                                colorScheme: ColorScheme.light(
-                                  primary: Color(0xFF6C5CE7),
-                                  onPrimary: Colors.white,
-                                  surface: Colors.white,
-                                  onSurface: Color(0xFF2D3436),
+                                colorScheme: const ColorScheme.light(
+                                  primary: AppColors.primary,
+                                  onPrimary: AppColors.white,
+                                  surface: AppColors.white,
+                                  onSurface: AppColors.textPrimary,
                                 ),
                               ),
                               child: child!,
@@ -283,33 +274,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       },
                       child: Container(
                         width: double.infinity,
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 14,
                         ),
                         decoration: BoxDecoration(
-                          color: Color(0xFFF1F3FA),
+                          color: const Color(0xFFF1F3FA),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.grey.withOpacity(0.1),
-                          ),
+                          border: Border.all(color: AppColors.borderLight),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.calendar_today_rounded,
-                              color: Color(0xFF6C5CE7),
+                              color: AppColors.primary,
                               size: 18,
                             ),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
                             Text(
                               _tempStartDate == null
                                   ? 'Start Date'
                                   : 'From: ${_formatDate(_tempStartDate)}',
                               style: TextStyle(
                                 color: _tempStartDate == null
-                                    ? Colors.grey[500]
-                                    : Color(0xFF2D3436),
+                                    ? AppColors.textHint
+                                    : AppColors.textPrimary,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -317,7 +306,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
                     // End Date
                     InkWell(
@@ -330,11 +319,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           builder: (context, child) {
                             return Theme(
                               data: Theme.of(context).copyWith(
-                                colorScheme: ColorScheme.light(
-                                  primary: Color(0xFF6C5CE7),
-                                  onPrimary: Colors.white,
-                                  surface: Colors.white,
-                                  onSurface: Color(0xFF2D3436),
+                                colorScheme: const ColorScheme.light(
+                                  primary: AppColors.primary,
+                                  onPrimary: AppColors.white,
+                                  surface: AppColors.white,
+                                  onSurface: AppColors.textPrimary,
                                 ),
                               ),
                               child: child!,
@@ -349,33 +338,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       },
                       child: Container(
                         width: double.infinity,
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 14,
                         ),
                         decoration: BoxDecoration(
-                          color: Color(0xFFF1F3FA),
+                          color: const Color(0xFFF1F3FA),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.grey.withOpacity(0.1),
-                          ),
+                          border: Border.all(color: AppColors.borderLight),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.calendar_today_rounded,
-                              color: Color(0xFF6C5CE7),
+                              color: AppColors.primary,
                               size: 18,
                             ),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
                             Text(
                               _tempEndDate == null
                                   ? 'End Date'
                                   : 'To: ${_formatDate(_tempEndDate)}',
                               style: TextStyle(
                                 color: _tempEndDate == null
-                                    ? Colors.grey[500]
-                                    : Color(0xFF2D3436),
+                                    ? AppColors.textHint
+                                    : AppColors.textPrimary,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -383,24 +370,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // Status Dropdown
-                    Text(
-                      'Status',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2D3436),
-                      ),
-                    ),
-                    SizedBox(height: 12),
+                    Text('Status', style: AppTextStyles.statLabel),
+                    const SizedBox(height: 12),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: Color(0xFFF1F3FA),
+                        color: const Color(0xFFF1F3FA),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                        border: Border.all(color: AppColors.borderLight),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -408,7 +388,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           isExpanded: true,
                           icon: Icon(
                             Icons.arrow_drop_down_rounded,
-                            color: Color(0xFF6C5CE7),
+                            color: AppColors.primary,
                           ),
                           items: _statusOptions.map((status) {
                             return DropdownMenuItem(
@@ -425,12 +405,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                       ),
                                     ),
                                   if (status != 'All Status')
-                                    SizedBox(width: 8),
+                                    const SizedBox(width: 8),
                                   Text(
                                     status,
                                     style: TextStyle(
                                       color: status == 'All Status'
-                                          ? Colors.grey[600]
+                                          ? AppColors.textSecondary
                                           : _getStatusColor(status),
                                       fontWeight: FontWeight.w500,
                                       fontSize: 14,
@@ -448,7 +428,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
                     // Action Buttons
                     Row(
@@ -464,19 +444,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               });
                             },
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Color(0xFF6C5CE7),
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              foregroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               side: BorderSide(
-                                color: Color(0xFF6C5CE7).withOpacity(0.3),
+                                color: AppColors.primary.withOpacity(0.3),
                               ),
                             ),
-                            child: Text('Clear'),
+                            child: const Text('Clear'),
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
@@ -491,7 +471,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Filters applied successfully'),
+                                  content: const Text(
+                                    'Filters applied successfully',
+                                  ),
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
@@ -500,14 +482,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF6C5CE7),
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            child: Text('Apply'),
+                            child: const Text('Apply'),
                           ),
                         ),
                       ],
@@ -534,15 +516,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Online':
-        return Color(0xFF00B894);
+        return AppColors.statsGreen;
       case 'Offline':
         return Colors.grey;
       case 'Recording':
-        return Color(0xFFFDCB6E);
+        return AppColors.statsOrange;
       case 'Absent':
-        return Color(0xFFFF7675);
+        return const Color(0xFFFF7675);
       default:
-        return Color(0xFF6C5CE7);
+        return AppColors.primary;
     }
   }
 
@@ -564,6 +546,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -575,13 +558,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.1),
+                            color: AppColors.primary.withOpacity(0.1),
                             blurRadius: 10,
-                            offset: Offset(0, 4),
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
@@ -589,19 +572,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         onPressed: () => Navigator.pop(context),
                         icon: Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFF6C5CE7),
+                          color: AppColors.primary,
                           size: 20,
                         ),
                       ),
                     ),
-                    SizedBox(width: 16),
+                    const SizedBox(width: 16),
                     Text(
                       'Attendance & Recordings',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF2D3436),
-                      ),
+                      style: AppTextStyles.heading2.copyWith(fontSize: 22),
                     ),
                   ],
                 ),
@@ -609,28 +588,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
               // Course Info Card
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 20),
-                padding: EdgeInsets.all(16),
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF6C5CE7).withOpacity(0.08),
+                      color: AppColors.primary.withOpacity(0.08),
                       blurRadius: 15,
-                      offset: Offset(0, 5),
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Color(0xFF6C5CE7).withOpacity(0.2),
-                            Color(0xFF8B7BF2).withOpacity(0.1),
+                            AppColors.primary.withOpacity(0.2),
+                            AppColors.primaryLight.withOpacity(0.1),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -639,30 +618,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       ),
                       child: Icon(
                         Icons.code_rounded,
-                        color: Color(0xFF6C5CE7),
+                        color: AppColors.primary,
                         size: 28,
                       ),
                     ),
-                    SizedBox(width: 16),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Asp.net MVC with Angular',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF2D3436),
-                            ),
+                            style: AppTextStyles.activityTitle,
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             'Full Stack • ggf',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
+                            style: AppTextStyles.activitySubtitle,
                           ),
                         ],
                       ),
@@ -673,16 +645,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
               // Legend Section
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                padding: EdgeInsets.all(20),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: AppColors.shadowLight,
                       blurRadius: 10,
-                      offset: Offset(0, 5),
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
@@ -691,10 +666,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildLegendItem('Online', Color(0xFF00B894)),
+                        _buildLegendItem('Online', AppColors.statsGreen),
                         _buildLegendItem('Offline', Colors.grey),
-                        _buildLegendItem('Recording', Color(0xFFFDCB6E)),
-                        _buildLegendItem('Absent', Color(0xFFFF7675)),
+                        _buildLegendItem('Recording', AppColors.statsOrange),
+                        _buildLegendItem('Absent', const Color(0xFFFF7675)),
                       ],
                     ),
                   ],
@@ -703,10 +678,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
               // Stats Grid
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: GridView.count(
                   shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
+                  physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 3,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
@@ -715,13 +690,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     _buildStatCard(
                       'Total',
                       _stats['total'].toString(),
-                      Color(0xFF6C5CE7),
+                      AppColors.primary,
                       Icons.people_rounded,
                     ),
                     _buildStatCard(
                       'Online',
                       _stats['online'].toString(),
-                      Color(0xFF00B894),
+                      AppColors.statsGreen,
                       Icons.wifi_rounded,
                     ),
                     _buildStatCard(
@@ -733,45 +708,43 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     _buildStatCard(
                       'Recording',
                       _stats['recording'].toString(),
-                      Color(0xFFFDCB6E),
+                      AppColors.statsOrange,
                       Icons.videocam_rounded,
                     ),
                     _buildStatCard(
                       'Absent',
                       _stats['absent'].toString(),
-                      Color(0xFFFF7675),
+                      const Color(0xFFFF7675),
                       Icons.person_off_rounded,
                     ),
                     _buildStatCard(
                       'Present',
                       _stats['present'].toString(),
-                      Color(0xFF6C5CE7),
+                      AppColors.primary,
                       Icons.check_circle_rounded,
                     ),
                   ],
                 ),
               ),
 
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Filter Button
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Expanded(
                       child: Container(
                         height: 54,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF6C5CE7), Color(0xFF8B7BF2)],
-                          ),
+                          gradient: AppColors.primaryGradient,
                           borderRadius: BorderRadius.circular(30),
                           boxShadow: [
                             BoxShadow(
-                              color: Color(0xFF6C5CE7).withOpacity(0.3),
+                              color: AppColors.primary.withOpacity(0.3),
                               blurRadius: 10,
-                              offset: Offset(0, 4),
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
@@ -779,7 +752,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           onPressed: _showFilterDialog,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
-                            foregroundColor: Colors.white,
+                            foregroundColor: AppColors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
@@ -788,9 +761,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.filter_list_rounded),
-                              SizedBox(width: 8),
-                              Text(
+                              const Icon(Icons.filter_list_rounded),
+                              const SizedBox(width: 8),
+                              const Text(
                                 'Filter Attendance',
                                 style: TextStyle(
                                   fontSize: 16,
@@ -806,22 +779,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         _endDate != null ||
                         _selectedStatus != 'All Status')
                       Padding(
-                        padding: EdgeInsets.only(left: 12),
+                        padding: const EdgeInsets.only(left: 12),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.white,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Color(0xFF6C5CE7).withOpacity(0.1),
+                                color: AppColors.primary.withOpacity(0.1),
                                 blurRadius: 10,
-                                offset: Offset(0, 4),
+                                offset: const Offset(0, 4),
                               ),
                             ],
                           ),
                           child: IconButton(
                             onPressed: _clearFilters,
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.close_rounded,
                               color: Color(0xFFFF7675),
                             ),
@@ -837,15 +810,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   _endDate != null ||
                   _selectedStatus != 'All Status')
                 Padding(
-                  padding: EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   child: Container(
                     width: double.infinity,
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Color(0xFF6C5CE7).withOpacity(0.05),
+                      color: AppColors.primary.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Color(0xFF6C5CE7).withOpacity(0.1),
+                        color: AppColors.primary.withOpacity(0.1),
                       ),
                     ),
                     child: Column(
@@ -856,47 +829,47 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF6C5CE7),
+                            color: AppColors.primary,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: [
                             if (_startDate != null)
                               Container(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
                                   'From: ${_formatDate(_startDate)}',
-                                  style: TextStyle(fontSize: 12),
+                                  style: const TextStyle(fontSize: 12),
                                 ),
                               ),
                             if (_endDate != null)
                               Container(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
                                   'To: ${_formatDate(_endDate)}',
-                                  style: TextStyle(fontSize: 12),
+                                  style: const TextStyle(fontSize: 12),
                                 ),
                               ),
                             if (_selectedStatus != 'All Status')
                               Container(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 6,
                                 ),
@@ -917,7 +890,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                         shape: BoxShape.circle,
                                       ),
                                     ),
-                                    SizedBox(width: 6),
+                                    const SizedBox(width: 6),
                                     Text(
                                       _selectedStatus,
                                       style: TextStyle(
@@ -935,11 +908,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                 ),
 
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
 
               // Results count
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Text(
@@ -947,61 +920,58 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF6C5CE7),
+                        color: AppColors.primary,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
 
               // Attendance Records List
               _filteredRecords.isEmpty
                   ? Container(
-                      margin: EdgeInsets.symmetric(horizontal: 20),
-                      padding: EdgeInsets.all(30),
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.all(30),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(32),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.05),
+                            color: AppColors.primary.withOpacity(0.05),
                             blurRadius: 20,
-                            offset: Offset(0, 5),
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
                       child: Column(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: Color(0xFF6C5CE7).withOpacity(0.1),
+                              color: AppColors.primary.withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.search_off_rounded,
-                              color: Color(0xFF6C5CE7),
+                              color: AppColors.primary,
                               size: 64,
                             ),
                           ),
-                          SizedBox(height: 24),
-                          Text(
+                          const SizedBox(height: 24),
+                          const Text(
                             'No Records Found',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2D3436),
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Text(
                             'No attendance records match your current filters.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
+                            style: AppTextStyles.bodyText,
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -1009,16 +979,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     )
                   : ListView.builder(
                       shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       itemCount: _filteredRecords.length,
                       itemBuilder: (context, index) {
                         final record = _filteredRecords[index];
                         return Container(
-                          margin: EdgeInsets.only(bottom: 12),
-                          padding: EdgeInsets.all(16),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.white,
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
@@ -1026,7 +996,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   record.status,
                                 ).withOpacity(0.1),
                                 blurRadius: 10,
-                                offset: Offset(0, 4),
+                                offset: const Offset(0, 4),
                               ),
                             ],
                           ),
@@ -1052,20 +1022,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   ),
                                 ),
                               ),
-                              SizedBox(width: 16),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       record.studentName,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF2D3436),
-                                      ),
+                                      style: AppTextStyles.activityTitle,
                                     ),
-                                    SizedBox(height: 4),
+                                    const SizedBox(height: 4),
                                     Row(
                                       children: [
                                         Container(
@@ -1078,7 +1044,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                             shape: BoxShape.circle,
                                           ),
                                         ),
-                                        SizedBox(width: 6),
+                                        const SizedBox(width: 6),
                                         Text(
                                           record.status,
                                           style: TextStyle(
@@ -1089,23 +1055,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
-                                        SizedBox(width: 12),
+                                        const SizedBox(width: 12),
                                         Text(
                                           '${record.date.day}/${record.date.month}/${record.date.year}',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey[500],
-                                          ),
+                                          style: AppTextStyles.caption,
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 4),
+                                    const SizedBox(height: 4),
                                     Text(
                                       'Check-in: ${record.checkInTime} • ${record.duration}',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey[600],
-                                      ),
+                                      style: AppTextStyles.caption,
                                     ),
                                   ],
                                 ),
@@ -1116,251 +1076,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       },
                     ),
 
-              SizedBox(height: 24),
-
-              // Recordings Section Header
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.video_library_rounded,
-                      color: Color(0xFFFDCB6E),
-                      size: 24,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Class Recordings',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF2D3436),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 16),
-
-              // Recording Videos Grid
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.8,
-                  ),
-                  itemCount: _recordingVideos.length,
-                  itemBuilder: (context, index) {
-                    final video = _recordingVideos[index];
-                    return _buildRecordingCard(video);
-                  },
-                ),
-              ),
-
-              SizedBox(height: 20),
+              const SizedBox(height: 24),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecordingCard(RecordingVideo video) {
-    return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Playing: ${video.title}'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0xFFFDCB6E).withOpacity(0.1),
-              blurRadius: 15,
-              offset: Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Thumbnail with play button
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  child: Container(
-                    height: 100,
-                    width: double.infinity,
-                    color: Colors.grey[300],
-                    child: Image.network(
-                      video.thumbnail,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Color(0xFFFDCB6E).withOpacity(0.1),
-                          child: Center(
-                            child: Icon(
-                              Icons.video_library_rounded,
-                              size: 30,
-                              color: Color(0xFFFDCB6E).withOpacity(0.3),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.3),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      video.duration,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFDCB6E),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.play_arrow_rounded,
-                      color: Colors.white,
-                      size: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    video.title,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF2D3436),
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.person_rounded,
-                        size: 10,
-                        color: Colors.grey[500],
-                      ),
-                      SizedBox(width: 2),
-                      Expanded(
-                        child: Text(
-                          video.uploadedBy,
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.visibility_rounded,
-                            size: 8,
-                            color: Colors.grey[400],
-                          ),
-                          SizedBox(width: 2),
-                          Text(
-                            '${video.views} views',
-                            style: TextStyle(
-                              fontSize: 8,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time_rounded,
-                            size: 8,
-                            color: Colors.grey[400],
-                          ),
-                          SizedBox(width: 2),
-                          Text(
-                            _formatUploadDate(video.uploadedDate),
-                            style: TextStyle(
-                              fontSize: 8,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -1373,15 +1091,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     IconData icon,
   ) {
     return Container(
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.1),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1389,7 +1107,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: color, size: 24),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
@@ -1398,15 +1116,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               color: color,
             ),
           ),
-          SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          const SizedBox(height: 2),
+          Text(label, style: AppTextStyles.caption),
         ],
       ),
     );
@@ -1420,12 +1131,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           height: 12,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        SizedBox(width: 4),
+        const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Color(0xFF2D3436),
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
           ),
         ),
