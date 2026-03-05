@@ -1,3 +1,4 @@
+import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 
 class LiveClassScreen extends StatefulWidget {
@@ -101,12 +102,15 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                         children: [
                           Row(
                             children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
+                              AvatarGlow(
+                                glowColor: Colors.white,
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
                               ),
                               SizedBox(width: 8),

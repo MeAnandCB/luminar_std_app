@@ -607,67 +607,75 @@ class ChatMessage {
   ChatMessage({required this.text, required this.isMe, required this.time});
 }
 
-// ---------- Dummy Data ----------
+// ---------- Dummy Data with Malayali Names and Actor Photos ----------
 final List<Contact> contacts = [
   Contact(
-    name: 'Alice Johnson',
-    avatar: 'https://i.pravatar.cc/150?img=1',
+    name: 'Mohanlal',
+    avatar:
+        'https://i.pinimg.com/1200x/e3/5a/0c/e35a0cfa1b0589435cf6f9f11a94adec.jpg',
     lastMessage: 'See you at the meeting!',
     time: '10:35 AM',
     unreadCount: 2,
     isOnline: true,
   ),
   Contact(
-    name: 'Bob Smith',
-    avatar: 'https://i.pravatar.cc/150?img=2',
+    name: 'Mammootty',
+    avatar:
+        'https://i.pinimg.com/736x/08/8c/8d/088c8dd53c224f9be9b8fbe0242be9b9.jpg',
     lastMessage: 'Can you send the files?',
     time: '09:20 AM',
     unreadCount: 0,
     isOnline: false,
   ),
   Contact(
-    name: 'Carol Davis',
-    avatar: 'https://i.pravatar.cc/150?img=3',
+    name: 'Prithviraj Sukumaran',
+    avatar:
+        'https://i.pinimg.com/736x/db/39/82/db39829124de844351f27564a9082c9e.jpg',
     lastMessage: 'Thanks for your help!',
     time: 'Yesterday',
     unreadCount: 5,
     isOnline: true,
   ),
   Contact(
-    name: 'David Wilson',
-    avatar: 'https://i.pravatar.cc/150?img=4',
+    name: 'Dulquer Salmaan',
+    avatar:
+        'https://i.pinimg.com/736x/ef/12/cf/ef12cf0805412a6be140bf8fbac71525.jpg',
     lastMessage: 'Let\'s catch up later',
     time: 'Yesterday',
     unreadCount: 1,
     isOnline: false,
   ),
   Contact(
-    name: 'Emma Brown',
-    avatar: 'https://i.pravatar.cc/150?img=5',
+    name: 'Fahadh Faasil',
+    avatar:
+        'https://i.pinimg.com/736x/12/83/9e/12839e3cc64a06ac851ba5b5f6aa2618.jpg',
     lastMessage: 'I love the design!',
     time: 'Monday',
     unreadCount: 0,
     isOnline: true,
   ),
   Contact(
-    name: 'Frank Miller',
-    avatar: 'https://i.pravatar.cc/150?img=6',
+    name: 'Nivin Pauly',
+    avatar:
+        'https://i.pinimg.com/736x/96/c5/69/96c5699942db9322fee68eea8b53ec82.jpg',
     lastMessage: 'Check this out 🔥',
     time: 'Monday',
     unreadCount: 3,
     isOnline: false,
   ),
   Contact(
-    name: 'Grace Lee',
-    avatar: 'https://i.pravatar.cc/150?img=8',
+    name: 'Manju Warrier',
+    avatar:
+        'https://i.pinimg.com/736x/2c/a2/c9/2ca2c9f77bd42eea91f0e66120ffa33f.jpg',
     lastMessage: 'Are we still on for today?',
     time: 'Sunday',
     unreadCount: 0,
     isOnline: true,
   ),
   Contact(
-    name: 'Henry Garcia',
-    avatar: 'https://i.pravatar.cc/150?img=9',
+    name: 'Nazriya Nazim',
+    avatar:
+        'https://i.pinimg.com/1200x/09/da/bf/09dabf991fb2d07b6d377d74728d3e95.jpg',
     lastMessage: 'Great work!',
     time: 'Sunday',
     unreadCount: 1,

@@ -403,6 +403,8 @@
 // }
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
+import 'package:luminar_std/presentation/notification_screen/notification_screen.dart';
+import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
 
 class StudentDashboard extends StatelessWidget {
   const StudentDashboard({super.key});
@@ -415,7 +417,7 @@ class StudentDashboard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildHeader(),
+            buildHeader(context),
             _buildWelcomeHeader(),
             const SizedBox(height: 24),
             _buildCourseCard(),
@@ -537,7 +539,58 @@ class StudentDashboard extends StatelessWidget {
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
+          Text(
+            'Progress: 34.5%',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF00B894),
+                      Color(0xFF00B894).withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFF00B894).withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle_rounded,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Continue Learning',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -673,15 +726,24 @@ class StudentDashboard extends StatelessWidget {
     );
   }
 
-  Widget buildHeader() {
+  Widget buildHeader(BuildContext context) {
     return Row(
       children: [
-        const CircleAvatar(
-          radius: 25,
-          backgroundColor: Color(0xFF7B51FF),
-          child: CircleAvatar(
-            radius: 23,
-            backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a'),
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ProfileScreen()),
+            );
+          },
+
+          child: const CircleAvatar(
+            radius: 25,
+            backgroundColor: Color(0xFF7B51FF),
+            child: CircleAvatar(
+              radius: 23,
+              backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a'),
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -699,17 +761,25 @@ class StudentDashboard extends StatelessWidget {
           ],
         ),
         const Spacer(),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(shape: BoxShape.circle),
-          child: AvatarGlow(
-            glowColor: Colors.purple,
-            child: CircleAvatar(
-              backgroundColor: Colors.transparent,
-              child: Icon(
-                Icons.notifications_active_outlined,
-                color: Colors.purple,
-                size: 20,
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NotificationScreen()),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(shape: BoxShape.circle),
+            child: AvatarGlow(
+              glowColor: Colors.purple,
+              child: CircleAvatar(
+                backgroundColor: Colors.transparent,
+                child: Icon(
+                  Icons.notifications_active_outlined,
+                  color: Colors.purple,
+                  size: 20,
+                ),
               ),
             ),
           ),
