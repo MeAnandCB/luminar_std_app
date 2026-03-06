@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/presentation/login_screen/controller.dart';
 import 'dart:math' as math;
-
-import 'package:luminar_std/core/theme/app_colors.dart';
-import 'package:luminar_std/core/theme/app_text_styles.dart';
-import 'package:luminar_std/presentation/bottom_nav_screen/bottom_nav_screen.dart';
+import 'package:provider/provider.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../presentation/bottom_nav_screen/bottom_nav_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,11 +24,11 @@ class _LoginScreenState extends State<LoginScreen>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
-  bool _rememberMe = false;
 
   @override
   void initState() {
     super.initState();
+    _checkAutoLogin();
 
     _animationController = AnimationController(
       vsync: this,
@@ -66,6 +67,17 @@ class _LoginScreenState extends State<LoginScreen>
     _animationController.forward();
   }
 
+  Future<void> _checkAutoLogin() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isLoggedIn = await authProvider.checkLoginStatus();
+    if (isLoggedIn && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const BottomNavScreen()),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -74,16 +86,54 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  void _handleLogin() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const BottomNavScreen()),
+  Future<void> _handleLogin() async {
+    // Validate inputs
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showErrorSnackBar('Please enter email and password');
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.clearError();
+
+    // Perform login
+    final success = await authProvider.login(
+      context: context,
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    if (success && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const BottomNavScreen()),
+      );
+    } else if (mounted) {
+      _showErrorSnackBar(authProvider.errorMessage ?? 'Login failed');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
       body: Container(
@@ -307,31 +357,30 @@ class _LoginScreenState extends State<LoginScreen>
 
                                 // Remember Me & Forgot Password
                                 Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Checkbox(
-                                          value: _rememberMe,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              _rememberMe = value ?? false;
-                                            });
-                                          },
-                                          activeColor: AppColors.primary,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              5,
-                                            ),
-                                          ),
-                                        ),
-                                        const Text(
-                                          'Remember me',
-                                          style: AppTextStyles.caption,
-                                        ),
-                                      ],
-                                    ),
+                                    // Row(
+                                    //   children: [
+                                    //     Checkbox(
+                                    //       value: _rememberMe,
+                                    //       onChanged: (value) {
+                                    //         setState(() {
+                                    //           _rememberMe = value ?? false;
+                                    //         });
+                                    //       },
+                                    //       activeColor: AppColors.primary,
+                                    //       shape: RoundedRectangleBorder(
+                                    //         borderRadius: BorderRadius.circular(
+                                    //           5,
+                                    //         ),
+                                    //       ),
+                                    //     ),
+                                    //     const Text(
+                                    //       'Remember me',
+                                    //       style: AppTextStyles.caption,
+                                    //     ),
+                                    //   ],
+                                    // ),
                                     TextButton(
                                       onPressed: () {
                                         // Navigate to forgot password
@@ -368,7 +417,9 @@ class _LoginScreenState extends State<LoginScreen>
                                     ],
                                   ),
                                   child: ElevatedButton(
-                                    onPressed: _handleLogin,
+                                    onPressed: authProvider.isLoading
+                                        ? null
+                                        : _handleLogin,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.transparent,
                                       foregroundColor: AppColors.textWhite,
@@ -377,13 +428,22 @@ class _LoginScreenState extends State<LoginScreen>
                                         borderRadius: BorderRadius.circular(30),
                                       ),
                                     ),
-                                    child: const Text(
-                                      'Sign In',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
+                                    child: authProvider.isLoading
+                                        ? const SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              color: AppColors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Sign In',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
                                   ),
                                 ),
 
