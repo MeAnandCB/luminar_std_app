@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 //  String token =
 //       "IGAARYxzHq6nZABZAFk2WGM1eG9DT1FwOGl5a09ZAZAkZAiRzJzd1MwWm9QcFVud09KT0dZAakhxVTRVc2MyZAHplSjNEcUh0YjV5eEtlUWVWNUp5SmswZAHdWLWptOG1Xa3QyXzgwNXpGa2xKcjM2V0d2alhsXzZAudjBjOU56Qkp3U2d1VQZDZD";
 
@@ -15,7 +16,7 @@ Future<List<String>> fetchInstagramImages() async {
         "https://graph.instagram.com/me/media?fields=id,media_type,media_url&access_token=$token";
 
     // Continue fetching while there's a next page and we haven't reached 200+ images
-    while (nextUrl != null && allImages.length < 2) {
+    while (nextUrl != null && allImages.length < 30) {
       final response = await http.get(Uri.parse(nextUrl));
 
       if (response.statusCode == 200) {
@@ -77,7 +78,41 @@ class _InstaCarouselState extends State<InstaCarousel> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: Stack(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: ShimmerWidget(width: double.infinity, height: 180),
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  flex: 3,
+                  child: ShimmerWidget(width: double.infinity, height: 200),
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  child: ShimmerWidget(width: double.infinity, height: 180),
+                ),
+              ],
+            ),
+            Positioned(
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: SizedBox(
+                  height: 30,
+                  width: 30,
+                  child: CircularProgressIndicator(color: Colors.grey),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     if (images.isEmpty) {

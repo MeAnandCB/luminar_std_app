@@ -1,11 +1,10 @@
-import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
+import 'package:luminar_std/presentation/home_screen/widget/header_card.dart';
+import 'package:luminar_std/presentation/home_screen/widget/top_status_card.dart';
 import 'package:luminar_std/presentation/login_screen/controller.dart';
 import 'package:luminar_std/presentation/login_screen/login_screen.dart';
-import 'package:luminar_std/presentation/notification_screen/notification_screen.dart';
-import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/instagram_view_screen.dart';
@@ -46,54 +45,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
       });
       print('📝 Name loaded: $_displayName');
     }
-  }
-
-  Future<void> _handleLogout(BuildContext context) async {
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.logout();
-
-    if (context.mounted) {
-      Navigator.pop(context); // Close loading dialog
-      // Navigate to login screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    }
-  }
-
-  void _showLogoutConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // Close confirmation dialog
-              _handleLogout(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
   }
 
   String _formatCurrency(int? amount) {
@@ -177,25 +128,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      buildHeader(context, _displayName, dashboardProvider),
+                      HeaderWidget(
+                        studentName: studentName,
+                        provider: dashboardProvider,
+                      ),
+                      StatusCard(
+                        status:
+                            dashboard
+                                ?.studentDetails
+                                ?.statusInfo
+                                ?.currentStatus
+                                ?.name ??
+                            'Active',
+                      ),
 
-                      _buildWelcomeHeader(dashboard),
-
-                      Center(child: _buildSectionTitle("Our Success Stories")),
-
-                      // // Logout Button
-                      // Center(
-                      //   child: ElevatedButton.icon(
-                      //     onPressed: () => _showLogoutConfirmation(context),
-                      //     icon: const Icon(Icons.logout),
-                      //     label: const Text('Logout'),
-                      //     style: ElevatedButton.styleFrom(
-                      //       backgroundColor: Colors.red,
-                      //       foregroundColor: Colors.white,
-                      //       minimumSize: const Size(200, 45),
-                      //     ),
-                      //   ),
-                      // ),
+                      Center(child: _buildSectionTitle("Our  Success Stories")),
                       const SizedBox(height: 10),
                       InstaCarousel(),
                       const SizedBox(height: 20),
@@ -216,26 +163,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 ),
         );
       },
-    );
-  }
-
-  Widget _buildWelcomeHeader(Dashboard? dashboard) {
-    final status =
-        dashboard?.studentDetails?.statusInfo?.currentStatus?.name ?? 'Active';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.statusActiveBackground,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text("Status: $status", style: AppTextStyles.welcomeStatus),
-        ),
-      ],
     );
   }
 
@@ -338,7 +265,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
           const SizedBox(height: 20),
           LinearProgressIndicator(
             minHeight: 8,
-            value: progress / 100,
+            value:
+                dashboard
+                    .academicProgress
+                    ?.overallMetrics
+                    ?.averageCompletionPercentage
+                    ?.toDouble() ??
+                0,
             backgroundColor: AppColors.whiteWithOpacity20,
             valueColor: const AlwaysStoppedAnimation<Color>(
               AppColors.textWhite,
@@ -561,171 +494,5 @@ class _StudentDashboardState extends State<StudentDashboard> {
     } else {
       return DateFormat('MMM d').format(date);
     }
-  }
-
-  Widget buildHeader(
-    BuildContext context,
-    String studentName,
-    DashboardController provider,
-  ) {
-    print('🖼️ Building header with name: "$studentName"');
-
-    // Get first letter for avatar fallback
-    String firstLetter = studentName.isNotEmpty
-        ? studentName[0].toUpperCase()
-        : '?';
-
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ProfileScreen()),
-            );
-          },
-          child: Stack(
-            children: [
-              CircleAvatar(
-                radius: 25,
-                backgroundColor: AppColors.avatarBackground,
-                child: CircleAvatar(
-                  backgroundColor: AppColors.white,
-                  radius: 23,
-                  backgroundImage:
-                      studentName != 'Guest' && studentName != 'Loading...'
-                      ? const NetworkImage(
-                          'https://pbs.twimg.com/media/FO4RRcaWQAELKS7.jpg',
-                        )
-                      : null,
-                  child:
-                      studentName == 'Guest' ||
-                          studentName == 'Loading...' ||
-                          studentName.isEmpty
-                      ? Text(
-                          firstLetter,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        )
-                      : null,
-                ),
-              ),
-              Positioned(
-                right: 2,
-                top: 2,
-                child: AvatarGlow(
-                  child: CircleAvatar(
-                    radius: 6,
-                    backgroundColor: AppColors.statsGreen,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // This will now show the name consistently
-            Text(
-              "Welcome Back",
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.headerName,
-            ),
-            SizedBox(
-              width: MediaQuery.sizeOf(context).width * .60,
-              child: Text(
-                studentName.toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.headerSubtitle.copyWith(fontSize: 17),
-              ),
-            ),
-            SizedBox(
-              width: MediaQuery.sizeOf(context).width * .60,
-              child: Text(
-                provider.dashboard?.studentDetails?.basicInfo?.studentId ?? "",
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.headerSubtitle.copyWith(fontSize: 11),
-              ),
-            ),
-
-            //
-          ],
-        ),
-        const Spacer(),
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const NotificationScreen(),
-              ),
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(shape: BoxShape.circle),
-            child: AvatarGlow(
-              glowColor: AppColors.notificationGlow,
-              child: CircleAvatar(
-                backgroundColor: Colors.transparent,
-                child: Stack(
-                  children: [
-                    const Icon(
-                      Icons.notifications_active_outlined,
-                      color: AppColors.notificationIcon,
-                      size: 20,
-                    ),
-                    if (provider
-                                .dashboard
-                                ?.notificationsSummary
-                                ?.summary
-                                ?.unreadCount !=
-                            null &&
-                        provider
-                                .dashboard!
-                                .notificationsSummary!
-                                .summary!
-                                .unreadCount! >
-                            0)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 12,
-                            minHeight: 12,
-                          ),
-                          child: Text(
-                            '${provider.dashboard!.notificationsSummary!.summary!.unreadCount}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
   }
 }

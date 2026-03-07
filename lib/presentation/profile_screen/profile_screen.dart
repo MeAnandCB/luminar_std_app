@@ -1,7 +1,15 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
+import 'package:luminar_std/presentation/login_screen/controller.dart';
+import 'package:luminar_std/presentation/login_screen/login_screen.dart';
 import 'package:luminar_std/presentation/profile_edit_screen/profile_edit_screen.dart';
+import 'package:luminar_std/presentation/profile_screen/controller.dart';
+import 'package:luminar_std/presentation/test_screen.dart';
+import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -12,317 +20,608 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      await Provider.of<ProfileController>(
+        context,
+        listen: false,
+      ).getProfileData(context: context);
+    });
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // Close confirmation dialog
+              _handleLogout(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await authProvider.logout();
+
+    if (context.mounted) {
+      Navigator.pop(context); // Close loading dialog
+      // Navigate to login screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final profileProvider = Provider.of<ProfileController>(context);
+    final String proof1 = profileProvider.profile?.personalInfo?.idProof ?? "";
+    final String proof2 = profileProvider.profile?.personalInfo?.idProof2 ?? "";
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with back button and title
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
+        child: profileProvider.isLoading
+            ? Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Text(
-                      'My Profile',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Profile Header Card
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: AppColors.splashGradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.whiteWithOpacity20,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person_rounded,
-                        color: AppColors.white,
-                        size: 40,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    // Header with back button and title
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Amnanabeel',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'ID: LUM2026082',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.whiteWithOpacity90,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
                           Row(
                             children: [
-                              Text(
-                                'This is also your referral code',
-                                style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.whiteWithOpacity80,
-                                  fontSize: 12,
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: IconButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  icon: Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.statsGreen,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Text(
-                                  'Active',
-                                  style: TextStyle(
-                                    color: AppColors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              const SizedBox(width: 16),
+                              const Text(
+                                'My Profile',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                             ],
                           ),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: IconButton(
+                              onPressed: () {
+                                // Logout Button
+                                _showLogoutConfirmation(context);
+                              },
+                              icon: Icon(
+                                Icons.logout,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
+
+                    // Profile Header Card
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: AppColors.splashGradient,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(32),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.whiteWithOpacity20,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.person_rounded,
+                              color: AppColors.white,
+                              size: 40,
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  profileProvider
+                                          .profile
+                                          ?.personalInfo
+                                          ?.fullName ??
+                                      "",
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  profileProvider
+                                          .profile
+                                          ?.personalInfo
+                                          ?.studentId ??
+                                      "",
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.whiteWithOpacity90,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'This is also your referral code',
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.whiteWithOpacity80,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.statsGreen,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        profileProvider
+                                                .profile
+                                                ?.statusInfo
+                                                ?.status
+                                                ?.value ??
+                                            "",
+                                        style: TextStyle(
+                                          color: AppColors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Personal Information Card
+                    _buildSectionCard(
+                      title: 'Personal Information',
+                      icon: Icons.person_outline_rounded,
+                      color: AppColors.primary,
+                      children: [
+                        _buildInfoRow(
+                          'Full Name',
+                          profileProvider.profile?.personalInfo?.fullName ?? "",
+                        ),
+                        _buildInfoRow(
+                          'Email Address',
+                          profileProvider.profile?.personalInfo?.email ?? "",
+                        ),
+                        _buildInfoRow(
+                          'Phone Number',
+                          profileProvider.profile?.personalInfo?.phone ?? "",
+                        ),
+                        _buildInfoRow(
+                          'WhatsApp Number',
+                          profileProvider
+                                  .profile
+                                  ?.personalInfo
+                                  ?.whatsappNumber ??
+                              "",
+                        ),
+                        _buildInfoRow(
+                          'Date of Birth',
+
+                          profileProvider.profile?.personalInfo?.dateOfBirth !=
+                                  null
+                              ? DateFormat('dd MM yyyy').format(
+                                  profileProvider
+                                      .profile!
+                                      .personalInfo!
+                                      .dateOfBirth!,
+                                )
+                              : "",
+                        ),
+                        _buildInfoRow(
+                          'Age',
+                          profileProvider.profile?.personalInfo?.age
+                                  .toString() ??
+                              "",
+                        ),
+                        _buildInfoRow(
+                          'Student/Working Professional',
+                          profileProvider
+                                  .profile
+                                  ?.academicInfo
+                                  ?.studentOrWorkingProfessional ??
+                              "",
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Account Status Card
+                    _buildSectionCard(
+                      title: 'Account Status',
+                      icon: Icons.account_circle_rounded,
+                      color: AppColors.statsGreen,
+                      children: [
+                        _buildStatusRow(
+                          'Current Status',
+                          profileProvider.profile?.statusInfo?.status?.name ??
+                              "",
+                          isSuccess: true,
+                        ),
+                        _buildStatusRow(
+                          'Placement Status',
+                          profileProvider.profile?.statusInfo?.isPlaced == true
+                              ? "Placed"
+                              : "Not Placed",
+                          isSuccess:
+                              profileProvider.profile?.statusInfo?.isPlaced ??
+                              false,
+                        ),
+                        _buildStatusRow(
+                          'Portal Access',
+                          profileProvider
+                                      .profile
+                                      ?.statusInfo
+                                      ?.portalAccessEnabled ==
+                                  true
+                              ? 'Enabled'
+                              : 'Disabled',
+                          isSuccess:
+                              profileProvider
+                                  .profile
+                                  ?.statusInfo
+                                  ?.portalAccessEnabled ??
+                              false,
+                        ),
+                        _buildStatusRow(
+                          'Arrears Status',
+                          profileProvider.profile?.academicInfo?.anyArrears ==
+                                  true
+                              ? 'No Arrears (Papers Cleared)'
+                              : 'Has Arrears',
+                          isSuccess:
+                              profileProvider
+                                  .profile
+                                  ?.academicInfo
+                                  ?.anyArrears ??
+                              false,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Your Counselor Card
+                    _buildSectionCard(
+                      title: 'Your Counselor',
+                      icon: Icons.support_agent_rounded,
+                      color: AppColors.statsOrange,
+                      children: [
+                        _buildInfoRow(
+                          'Name',
+                          profileProvider.profile?.counselor?.name ?? "",
+                        ),
+                        _buildInfoRow(
+                          'Email',
+                          profileProvider.profile?.counselor?.email ?? "",
+                        ),
+                        _buildInfoRow(
+                          'Phone',
+                          profileProvider.profile?.counselor?.phone ?? "",
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Academic Information Card
+                    _buildSectionCard(
+                      title: 'Academic Information',
+                      icon: Icons.school_rounded,
+                      color: const Color(0xFFFF7675),
+                      children: [
+                        _buildInfoRow(
+                          'Qualification',
+                          profileProvider
+                                  .profile
+                                  ?.academicInfo
+                                  ?.qualification
+                                  ?.name ??
+                              "",
+                        ),
+                        _buildInfoRow(
+                          'College',
+                          profileProvider.profile?.academicInfo?.college ?? "",
+                        ),
+                        _buildInfoRow(
+                          'Pass Out Year',
+                          profileProvider.profile?.academicInfo?.passOutYear
+                                  .toString() ??
+                              "",
+                        ),
+                        _buildInfoRow(
+                          'Specialization',
+                          profileProvider
+                                  .profile
+                                  ?.academicInfo
+                                  ?.specialization ??
+                              "",
+                        ),
+                        _buildInfoRow('CGPA', '1'),
+                        _buildStatusRow(
+                          'Any Arrears',
+                          profileProvider.profile?.academicInfo?.anyArrears ==
+                                  true
+                              ? 'Yes'
+                              : "NO",
+                          isSuccess:
+                              profileProvider
+                                      .profile
+                                      ?.academicInfo
+                                      ?.anyArrears ==
+                                  true
+                              ? false
+                              : true,
+                        ),
+                        _buildInfoRow(
+                          'Admission Date',
+                          profileProvider
+                                      .profile
+                                      ?.academicInfo
+                                      ?.admissionDate !=
+                                  null
+                              ? DateFormat('dd MM yyyy').format(
+                                  profileProvider
+                                      .profile!
+                                      .academicInfo!
+                                      .admissionDate!,
+                                )
+                              : "",
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Contact Information Card
+                    _buildSectionCard(
+                      title: 'Contact Information',
+                      icon: Icons.contact_phone_rounded,
+                      color: AppColors.primary,
+                      children: [
+                        _buildInfoRow(
+                          'Address',
+                          profileProvider.profile?.contactInfo?.address ?? "",
+                        ),
+                        _buildInfoRow(
+                          'District',
+                          profileProvider.profile?.contactInfo?.district ?? "",
+                        ),
+                        _buildInfoRow(
+                          'Pincode',
+                          profileProvider.profile?.contactInfo?.pincode ?? "",
+                        ),
+                        _buildInfoRow(
+                          'Preferred Location',
+                          profileProvider
+                                  .profile
+                                  ?.contactInfo
+                                  ?.preferredLocation
+                                  ?.name ??
+                              "",
+                        ),
+                        _buildInfoRow(
+                          'Parent/Guardian Name',
+                          profileProvider.profile?.contactInfo?.parentName ??
+                              "",
+                        ),
+                        _buildInfoRow(
+                          'Parent/Guardian Phone',
+                          profileProvider.profile?.contactInfo?.parentPhone ??
+                              "",
+                        ),
+                        _buildInfoRow(
+                          'How did you hear about us?  ',
+                          profileProvider.profile?.contactInfo?.howDidYouHear ??
+                              "",
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Placement Information Card
+                    _buildSectionCard(
+                      title: 'Placement Information',
+                      icon: Icons.work_rounded,
+                      color: AppColors.statsGreen,
+                      children: [
+                        _buildStatusRow(
+                          'Placement Assistance',
+                          profileProvider
+                                      .profile
+                                      ?.placementInfo
+                                      ?.placementAssistance ==
+                                  true
+                              ? "YES"
+                              : "NO",
+                          isSuccess:
+                              profileProvider
+                                  .profile
+                                  ?.placementInfo
+                                  ?.placementAssistance ??
+                              true,
+                        ),
+                        _buildInfoRow(
+                          'Preferred Job Location',
+                          profileProvider
+                                  .profile
+                                  ?.placementInfo
+                                  ?.preferredJobLocation ??
+                              "",
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Documents Card
+                    _buildSectionCard(
+                      title: 'Documents',
+                      icon: Icons.folder_rounded,
+                      color: AppColors.statsOrange,
+                      children: [
+                        _buildDocumentRow(
+                          'ID Proof 1',
+                          "VIEW",
+                          proof1,
+                          // profileProvider.profile?.personalInfo?.idProof ?? "",
+                        ),
+                        _buildDocumentRow('ID Proof 2', "VIEW", proof2),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Quick Actions
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        width: double.infinity,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const EditProfileScreen(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: AppColors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: const Text(
+                            'Update Profile',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 20),
-
-              // Personal Information Card
-              _buildSectionCard(
-                title: 'Personal Information',
-                icon: Icons.person_outline_rounded,
-                color: AppColors.primary,
-                children: [
-                  _buildInfoRow('Full Name', 'amnanabeel'),
-                  _buildInfoRow('Email Address', 'test57@gmail.com'),
-                  _buildInfoRow('Phone Number', '+913434343435'),
-                  _buildInfoRow('WhatsApp Number', '+913434343435'),
-                  _buildInfoRow('Date of Birth', '12/03/2026'),
-                  _buildInfoRow('Age', '-1 years'),
-                  _buildInfoRow('Student/Working Professional', 'Student'),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Account Status Card
-              _buildSectionCard(
-                title: 'Account Status',
-                icon: Icons.account_circle_rounded,
-                color: AppColors.statsGreen,
-                children: [
-                  _buildStatusRow('Current Status', 'Active', isSuccess: true),
-                  _buildStatusRow(
-                    'Placement Status',
-                    'Not Placed',
-                    isSuccess: false,
-                  ),
-                  _buildStatusRow('Portal Access', 'Enabled', isSuccess: true),
-                  _buildStatusRow(
-                    'Arrears Status',
-                    'Has Arrears',
-                    isSuccess: false,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Your Counselor Card
-              _buildSectionCard(
-                title: 'Your Counselor',
-                icon: Icons.support_agent_rounded,
-                color: AppColors.statsOrange,
-                children: [
-                  _buildInfoRow('Name', 'Admission Counselor'),
-                  _buildInfoRow('Email', 'admissioncounselor@gmail.com'),
-                  _buildInfoRow('Phone', '912222233333'),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Academic Information Card
-              _buildSectionCard(
-                title: 'Academic Information',
-                icon: Icons.school_rounded,
-                color: const Color(0xFFFF7675),
-                children: [
-                  _buildInfoRow('Qualification', 'M.Sc-Chemistry'),
-                  _buildInfoRow('College', 'EWREWR'),
-                  _buildInfoRow('Pass Out Year', '2028'),
-                  _buildInfoRow('Specialization', 'CS'),
-                  _buildInfoRow('CGPA', '1'),
-                  _buildStatusRow('Any Arrears', 'Yes', isSuccess: false),
-                  _buildInfoRow('Admission Date', '02/03/2026'),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Contact Information Card
-              _buildSectionCard(
-                title: 'Contact Information',
-                icon: Icons.contact_phone_rounded,
-                color: AppColors.primary,
-                children: [
-                  _buildInfoRow('Address', 'B'),
-                  _buildInfoRow('District', 'Out of State'),
-                  _buildInfoRow('Pincode', '345345'),
-                  _buildInfoRow('Preferred Location', 'Cochin'),
-                  _buildInfoRow('Parent/Guardian Name', 'WEREW'),
-                  _buildInfoRow('Parent/Guardian Phone', '+915555555555'),
-                  _buildInfoRow('How did you hear about us?', 'facebook'),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Placement Information Card
-              _buildSectionCard(
-                title: 'Placement Information',
-                icon: Icons.work_rounded,
-                color: AppColors.statsGreen,
-                children: [
-                  _buildStatusRow(
-                    'Placement Assistance',
-                    'Yes',
-                    isSuccess: true,
-                  ),
-                  _buildInfoRow('Preferred Job Location', 'WER'),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Documents Card
-              _buildSectionCard(
-                title: 'Documents',
-                icon: Icons.folder_rounded,
-                color: AppColors.statsOrange,
-                children: [
-                  _buildDocumentRow('ID Proof 1', 'View'),
-                  _buildDocumentRow('ID Proof 2', 'View'),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              // Quick Actions
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  width: double.infinity,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const EditProfileScreen(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: const Text(
-                      'Update Profile',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -378,6 +677,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(flex: 2, child: Text(label, style: AppTextStyles.statLabel)),
+          SizedBox(width: 10),
           Expanded(
             flex: 3,
             child: Text(
@@ -428,7 +728,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildDocumentRow(String label, String action) {
+  Widget _buildDocumentRow(String label, String action, String proof) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -437,15 +737,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Text(label, style: AppTextStyles.statLabel),
           GestureDetector(
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Opening $label...'),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              );
+              _showFullScreenImage(context, proof);
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -474,6 +766,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FullScreenImageViewer(imageUrl: imageUrl),
       ),
     );
   }

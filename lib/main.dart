@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/login_screen/controller.dart';
+import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/splash_screen/splash_screen.dart';
-import 'package:luminar_std/presentation/instagram_view_screen.dart';
-
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 
@@ -15,6 +14,7 @@ void main() async {
         ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DashboardController()),
+        ChangeNotifierProvider(create: (_) => ProfileController()),
       ],
       child: const MyApp(),
     ),

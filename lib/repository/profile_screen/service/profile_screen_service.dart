@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/login_screen/login_screen.dart';
 import 'package:luminar_std/repository/global/helper.dart';
-import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
+
+import 'package:luminar_std/repository/profile_screen/model/profile_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class DashboardService {
+class ProfileScreenService {
   final ApiHelper _apiHelper = ApiHelper();
 
-  Future<DashBoardModel> GetDashboardData({
-    required BuildContext context,
-  }) async {
+  Future<ProfileModel> GetProfileData({required BuildContext context}) async {
     try {
       final accessKey = await AppUtils.getAccessKey();
 
@@ -23,11 +22,11 @@ class DashboardService {
       final response = await _apiHelper.get(
         headers: {'Authorization': 'Bearer $accessKey'},
         context,
-        '/api/student_portal/dashboard/',
+        '/api/student_portal/profile/',
       );
 
       if (response['status'] == 'success' || response['statusCode'] == 200) {
-        return DashBoardModel.fromJson(response);
+        return ProfileModel.fromJson(response);
       } else if (response['status'] == 'error' ||
           response['statusCode'] >= 400) {
         // Handle 401 Unauthorized specifically

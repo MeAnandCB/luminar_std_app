@@ -94,4 +94,10 @@ class AppColors {
 
   // Version Text
   static Color versionText = Colors.white.withOpacity(0.5);
+
+  // Add these to your existing AppColors class
+  static const Color surface = Color(0xFFF5F5F5);
+  static const Color borderColor = Color(0xFFE0E0E0);
+
+  static const Color error = Color(0xFFD32F2F);
 }

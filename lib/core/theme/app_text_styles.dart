@@ -121,4 +121,35 @@ class AppTextStyles {
     fontSize: 12,
     color: AppColors.textSecondary,
   );
+
+  //
+
+  // Add these to your existing AppTextStyles class
+  static const TextStyle bodyText1 = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: Color(0xFF212121),
+  );
+
+  static const TextStyle bodyText2 = TextStyle(
+    fontSize: 14,
+    color: Color(0xFF424242),
+  );
+
+  static const TextStyle subtitle1 = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    color: Color(0xFF212121),
+  );
+
+  static const TextStyle hintText = TextStyle(
+    fontSize: 14,
+    color: Color(0xFF9E9E9E),
+  );
+
+  static const TextStyle buttonText = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: Colors.white,
+  );
 }
