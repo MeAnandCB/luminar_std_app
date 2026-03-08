@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart'; // Added import
-import 'package:luminar_std/presentation/chat_screen/chat_screen.dart';
-import 'package:luminar_std/presentation/course_screen/course_screen.dart';
-import 'package:luminar_std/presentation/home_screen/home_screen.dart';
-import 'package:luminar_std/presentation/loginform/loginform.dart';
-import 'package:luminar_std/presentation/more_menu/more_menu.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/chat_screen/chat_screen.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/course_screen/course_screen.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/home_screen.dart';
+import 'package:luminar_std/presentation/auth_screens/loginform/loginform.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/more_menu/more_menu.dart';
 import 'package:luminar_std/presentation/scan_screen/scan_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';

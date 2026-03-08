@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:luminar_std/presentation/login_screen/controller.dart';
+import 'package:luminar_std/presentation/auth_screens/forgot_password/forgot_password.dart';
+import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
 import 'dart:math' as math;
 import 'package:provider/provider.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
-import '../../presentation/bottom_nav_screen/bottom_nav_screen.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -122,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen>
       // Perform login
       final success = await authProvider.login(
         context: context,
-        email: _emailController.text.trim(),
+        email: _emailController.text.toLowerCase().trim(),
         password: _passwordController.text.trim(),
       );
 
@@ -406,7 +407,13 @@ class _LoginScreenState extends State<LoginScreen>
                                     children: [
                                       TextButton(
                                         onPressed: () {
-                                          // Navigate to forgot password
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ForgotPasswordScreen(),
+                                            ),
+                                          );
                                         },
                                         child: const Text(
                                           'Forgot Password?',

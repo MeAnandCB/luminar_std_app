@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/repository/global/helper.dart';
 import 'package:luminar_std/repository/loginscreen/model.dart';
 
-class ApiService {
+class LoginService {
   final ApiHelper _apiHelper = ApiHelper();
 
   Future<LoginResponseModel> login({

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:luminar_std/repository/global/global_links.dart';
+import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/repository/shared_pref.dart';
 
 class ApiHelper {
@@ -350,6 +350,8 @@ class ApiException implements Exception {
   final Map<String, dynamic>? responseData;
 
   ApiException(this.message, [this.responseData]);
+
+  get statusCode => null;
 
   @override
   String toString() => message;

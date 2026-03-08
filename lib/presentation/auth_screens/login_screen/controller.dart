@@ -5,7 +5,7 @@ import 'package:luminar_std/repository/loginscreen/service.dart';
 import 'package:luminar_std/repository/shared_pref.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final ApiService _apiService = ApiService();
+  final LoginService _apiService = LoginService();
 
   bool _isLoading = false;
   String? _errorMessage;

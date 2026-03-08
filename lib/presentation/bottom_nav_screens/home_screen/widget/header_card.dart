@@ -2,7 +2,7 @@ import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
-import 'package:luminar_std/presentation/home_screen/controller.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
 import 'package:luminar_std/presentation/notification_screen/notification_screen.dart';
 import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
 
