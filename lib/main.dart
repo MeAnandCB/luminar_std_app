@@ -30,7 +30,6 @@ class MyApp extends StatelessWidget {
       builder: (context, themeProvider, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-
           themeMode: context.watch<ThemeProvider>().themeMode,
           home: SplashScreen(),
         );
