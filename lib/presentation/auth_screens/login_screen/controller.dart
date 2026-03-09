@@ -5,7 +5,7 @@ import 'package:luminar_std/repository/loginscreen/service.dart';
 import 'package:luminar_std/repository/shared_pref.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final ApiService _apiService = ApiService();
+  final LoginService _apiService = LoginService();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -19,18 +19,13 @@ class AuthProvider extends ChangeNotifier {
   // Get full name directly with better fallback
   String get fullName {
     // First try from login response
-    if (_loginResponse?.student.profile.fullName != null &&
-        _loginResponse!.student.profile.fullName.isNotEmpty) {
+    if (_loginResponse?.student.profile.fullName != null && _loginResponse!.student.profile.fullName.isNotEmpty) {
       return _loginResponse!.student.profile.fullName;
     }
     return 'Student';
   }
 
-  Future<bool> login({
-    required BuildContext context,
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> login({required BuildContext context, required String email, required String password}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -38,31 +33,25 @@ class AuthProvider extends ChangeNotifier {
     try {
       print('🚀 AuthProvider: Starting login process...');
 
-      final response = await _apiService.login(
-        context: context,
-        email: email,
-        password: password,
-      );
+      final response = await _apiService.login(body: {'email': email, 'password': password});
 
-      print('📊 AuthProvider: Login response received');
-      print('📊 Status: ${response.status}');
-
-      if (response.status == 'success') {
+      if (response.success == true) {
+        LoginResponseModel loginResponseModel = response.data;
         // Get the full name from response
-        final String fullName = response.student.profile.fullName;
+        final String fullName = loginResponseModel.student.profile.fullName;
 
         // Save tokens with full name
         await SharedPrefService.saveTokens(
-          response.tokens.access,
-          response.tokens.refresh,
+          loginResponseModel.tokens.access,
+          loginResponseModel.tokens.refresh,
           fullName, // Save the name here
         );
 
         // Convert the entire response to JSON and save
-        final responseJson = response.toJson();
+        final responseJson = response.data.toJson();
         await SharedPrefService.saveUserData(responseJson);
 
-        _loginResponse = response;
+        _loginResponse = response.data;
         _isLoading = false;
         notifyListeners();
 
@@ -71,8 +60,8 @@ class AuthProvider extends ChangeNotifier {
         print('✅ LOGIN SUCCESSFUL');
         print('=' * 50);
         print('👤 Student Name: $fullName');
-        print('🆔 Student ID: ${response.student.profile.studentId}');
-        print('📧 Email: ${response.student.profile.email}');
+        print('🆔 Student ID: ${loginResponseModel.student.profile.studentId}');
+        print('📧 Email: ${loginResponseModel.student.profile.email}');
         print('=' * 50);
 
         return true;
@@ -123,9 +112,7 @@ class AuthProvider extends ChangeNotifier {
             // Reconstruct LoginResponseModel from saved data
             _loginResponse = LoginResponseModel.fromJson(userData);
             print('✅ Successfully reconstructed user data');
-            print(
-              '👤 Reconstructed name: ${_loginResponse?.student.profile.fullName}',
-            );
+            print('👤 Reconstructed name: ${_loginResponse?.student.profile.fullName}');
             notifyListeners();
             return true;
           } catch (e) {
@@ -159,9 +146,7 @@ class AuthProvider extends ChangeNotifier {
       if (userData != null) {
         _loginResponse = LoginResponseModel.fromJson(userData);
         notifyListeners();
-        print(
-          '🔄 User data refreshed: ${_loginResponse?.student.profile.fullName}',
-        );
+        print('🔄 User data refreshed: ${_loginResponse?.student.profile.fullName}');
       }
     } catch (e) {
       print('❌ Error refreshing user data: $e');

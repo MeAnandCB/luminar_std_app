@@ -4,7 +4,7 @@ import 'dart:async';
 
 import 'package:luminar_std/core/theme/app_colors.dart'; // Updated import
 import 'package:luminar_std/core/theme/app_text_styles.dart'; // Updated import
-import 'package:luminar_std/presentation/login_screen/login_screen.dart';
+import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

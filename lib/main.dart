@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:luminar_std/presentation/home_screen/controller.dart';
-import 'package:luminar_std/presentation/login_screen/controller.dart';
+import 'package:luminar_std/presentation/auth_screens/forgot_password/controller/forgot_password.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
+import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/splash_screen/splash_screen.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +16,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DashboardController()),
         ChangeNotifierProvider(create: (_) => ProfileController()),
+        ChangeNotifierProvider(create: (_) => ForgotPasswordController()),
       ],
       child: const MyApp(),
     ),

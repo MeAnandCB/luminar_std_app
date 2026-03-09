@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
-import 'package:luminar_std/presentation/login_screen/login_screen.dart';
+import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.dart';
 import 'package:luminar_std/repository/global/helper.dart';
 import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';

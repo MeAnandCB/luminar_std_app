@@ -1,33 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
+import 'package:luminar_std/core/services/api_services.dart';
+import 'package:luminar_std/core/services/response.dart';
 
 import 'package:luminar_std/repository/global/helper.dart';
 import 'package:luminar_std/repository/loginscreen/model.dart';
 
-class ApiService {
-  final ApiHelper _apiHelper = ApiHelper();
+class LoginService {
+  Future<ApiResponse> login({required Map<String, dynamic> body}) async {
+    final response = await ApiService().post(
+      endpoint: '/api/auth/student/login/',
+      body: body, //,
+    );
 
-  Future<LoginResponseModel> login({
-    required BuildContext context,
-    required String email,
-    required String password,
-  }) async {
-    try {
-      final response = await _apiHelper.post(
-        context,
-        '/api/auth/student/login/',
-        body: {'email': email, 'password': password},
-        requiresAuth: false,
-        showErrorSnackbar: false, // Handle error manually
-      );
-
-      if (response['status'] == 'success') {
-        return LoginResponseModel.fromJson(response);
-      } else {
-        throw ApiException(response['message'] ?? 'Login failed', response);
-      }
-    } on ApiException catch (e) {
-      // Re-throw with clean message
-      throw ApiException(_getCleanErrorMessage(e.message));
+    if (response.success) {
+      LoginResponseModel resModel = LoginResponseModel.fromJson(response.data);
+      return ApiResponse(success: true, data: resModel, message: response.message, statusCode: response.statusCode);
+    } else {
+      return ApiResponse(success: false, data: '', message: response.message, statusCode: response.statusCode);
     }
   }
 

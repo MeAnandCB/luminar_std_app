@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
-import 'package:luminar_std/presentation/home_screen/controller.dart';
-import 'package:luminar_std/presentation/home_screen/widget/header_card.dart';
-import 'package:luminar_std/presentation/home_screen/widget/top_status_card.dart';
-import 'package:luminar_std/presentation/login_screen/controller.dart';
-import 'package:luminar_std/presentation/login_screen/login_screen.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/widget/header_card.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/widget/top_status_card.dart';
+import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
+import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/instagram_view_screen.dart';
