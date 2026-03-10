@@ -1,303 +1,254 @@
-class EntrolmentModel {
-  String? status;
-  List<Enrollment>? enrollments;
-  Summary? summary;
+class EnrollmentResponse {
+  final String status;
+  final List<Enrollment> enrollments;
+  final Summary summary;
 
-  EntrolmentModel({this.status, this.enrollments, this.summary});
+  EnrollmentResponse({
+    required this.status,
+    required this.enrollments,
+    required this.summary,
+  });
 
-  factory EntrolmentModel.fromJson(Map<String, dynamic> json) =>
-      EntrolmentModel(
-        status: json["status"],
-        enrollments: json["enrollments"] == null
-            ? []
-            : List<Enrollment>.from(
-                json["enrollments"]!.map((x) => Enrollment.fromJson(x)),
-              ),
-        summary: json["summary"] == null
-            ? null
-            : Summary.fromJson(json["summary"]),
-      );
-
-  Map<String, dynamic> toJson() => {
-    "status": status,
-    "enrollments": enrollments == null
-        ? []
-        : List<dynamic>.from(enrollments!.map((x) => x.toJson())),
-    "summary": summary?.toJson(),
-  };
+  factory EnrollmentResponse.fromJson(Map<String, dynamic> json) {
+    return EnrollmentResponse(
+      status: json['status'],
+      enrollments: (json['enrollments'] as List)
+          .map((e) => Enrollment.fromJson(e))
+          .toList(),
+      summary: Summary.fromJson(json['summary']),
+    );
+  }
 }
 
 class Enrollment {
-  String? uid;
-  String? enrollmentNumber;
-  DateTime? enrollmentDate;
-  int? originalCourseFeesDiscount;
-  String? source;
-  Status? status;
-  Batch? batch;
-  Course? course;
-  AttendanceMode? attendanceMode;
-  PaymentInfo? paymentInfo;
-  Progress? progress;
-  String? specialNotes;
-  List<dynamic>? tags;
+  final String uid;
+  final String enrollmentNumber;
+  final DateTime enrollmentDate;
+  final double originalCourseFeesDiscount;
+  final String source;
+  final Status status;
+  final Batch batch;
+  final Course course;
+  final AttendanceMode attendanceMode;
+  final PaymentInfo paymentInfo;
+  final Progress progress;
+  final String specialNotes;
+  final List<String> tags;
 
   Enrollment({
-    this.uid,
-    this.enrollmentNumber,
-    this.enrollmentDate,
-    this.originalCourseFeesDiscount,
-    this.source,
-    this.status,
-    this.batch,
-    this.course,
-    this.attendanceMode,
-    this.paymentInfo,
-    this.progress,
-    this.specialNotes,
-    this.tags,
+    required this.uid,
+    required this.enrollmentNumber,
+    required this.enrollmentDate,
+    required this.originalCourseFeesDiscount,
+    required this.source,
+    required this.status,
+    required this.batch,
+    required this.course,
+    required this.attendanceMode,
+    required this.paymentInfo,
+    required this.progress,
+    required this.specialNotes,
+    required this.tags,
   });
 
-  factory Enrollment.fromJson(Map<String, dynamic> json) => Enrollment(
-    uid: json["uid"],
-    enrollmentNumber: json["enrollment_number"],
-    enrollmentDate: json["enrollment_date"] == null
-        ? null
-        : DateTime.parse(json["enrollment_date"]),
-    originalCourseFeesDiscount: json["original_course_fees_discount"],
-    source: json["source"],
-    status: json["status"] == null ? null : Status.fromJson(json["status"]),
-    batch: json["batch"] == null ? null : Batch.fromJson(json["batch"]),
-    course: json["course"] == null ? null : Course.fromJson(json["course"]),
-    attendanceMode: json["attendance_mode"] == null
-        ? null
-        : AttendanceMode.fromJson(json["attendance_mode"]),
-    paymentInfo: json["payment_info"] == null
-        ? null
-        : PaymentInfo.fromJson(json["payment_info"]),
-    progress: json["progress"] == null
-        ? null
-        : Progress.fromJson(json["progress"]),
-    specialNotes: json["special_notes"],
-    tags: json["tags"] == null
-        ? []
-        : List<dynamic>.from(json["tags"]!.map((x) => x)),
-  );
-
-  Map<String, dynamic> toJson() => {
-    "uid": uid,
-    "enrollment_number": enrollmentNumber,
-    "enrollment_date": enrollmentDate?.toIso8601String(),
-    "original_course_fees_discount": originalCourseFeesDiscount,
-    "source": source,
-    "status": status?.toJson(),
-    "batch": batch?.toJson(),
-    "course": course?.toJson(),
-    "attendance_mode": attendanceMode?.toJson(),
-    "payment_info": paymentInfo?.toJson(),
-    "progress": progress?.toJson(),
-    "special_notes": specialNotes,
-    "tags": tags == null ? [] : List<dynamic>.from(tags!.map((x) => x)),
-  };
-}
-
-class AttendanceMode {
-  String? name;
-  String? value;
-
-  AttendanceMode({this.name, this.value});
-
-  factory AttendanceMode.fromJson(Map<String, dynamic> json) =>
-      AttendanceMode(name: json["name"], value: json["value"]);
-
-  Map<String, dynamic> toJson() => {"name": name, "value": value};
-}
-
-class Batch {
-  String? uid;
-  String? batchName;
-  DateTime? startDate;
-  DateTime? endDate;
-  dynamic joinUrl;
-  String? time;
-  String? status;
-
-  Batch({
-    this.uid,
-    this.batchName,
-    this.startDate,
-    this.endDate,
-    this.joinUrl,
-    this.time,
-    this.status,
-  });
-
-  factory Batch.fromJson(Map<String, dynamic> json) => Batch(
-    uid: json["uid"],
-    batchName: json["batch_name"],
-    startDate: json["start_date"] == null
-        ? null
-        : DateTime.parse(json["start_date"]),
-    endDate: json["end_date"] == null ? null : DateTime.parse(json["end_date"]),
-    joinUrl: json["join_url"],
-    time: json["time"],
-    status: json["status"],
-  );
-
-  Map<String, dynamic> toJson() => {
-    "uid": uid,
-    "batch_name": batchName,
-    "start_date":
-        "${startDate!.year.toString().padLeft(4, '0')}-${startDate!.month.toString().padLeft(2, '0')}-${startDate!.day.toString().padLeft(2, '0')}",
-    "end_date":
-        "${endDate!.year.toString().padLeft(4, '0')}-${endDate!.month.toString().padLeft(2, '0')}-${endDate!.day.toString().padLeft(2, '0')}",
-    "join_url": joinUrl,
-    "time": time,
-    "status": status,
-  };
-}
-
-class Course {
-  String? courseName;
-  dynamic duration;
-
-  Course({this.courseName, this.duration});
-
-  factory Course.fromJson(Map<String, dynamic> json) =>
-      Course(courseName: json["course_name"], duration: json["duration"]);
-
-  Map<String, dynamic> toJson() => {
-    "course_name": courseName,
-    "duration": duration,
-  };
-}
-
-class PaymentInfo {
-  int? grossAmount;
-  int? totalDiscount;
-  int? netAmount;
-  int? amountPaid;
-  int? pendingAmount;
-  double? paymentCompletionPercentage;
-  bool? isFullyPaid;
-  bool? hasOverpayment;
-
-  PaymentInfo({
-    this.grossAmount,
-    this.totalDiscount,
-    this.netAmount,
-    this.amountPaid,
-    this.pendingAmount,
-    this.paymentCompletionPercentage,
-    this.isFullyPaid,
-    this.hasOverpayment,
-  });
-
-  factory PaymentInfo.fromJson(Map<String, dynamic> json) => PaymentInfo(
-    grossAmount: json["gross_amount"],
-    totalDiscount: json["total_discount"],
-    netAmount: json["net_amount"],
-    amountPaid: json["amount_paid"],
-    pendingAmount: json["pending_amount"],
-    paymentCompletionPercentage: json["payment_completion_percentage"]
-        ?.toDouble(),
-    isFullyPaid: json["is_fully_paid"],
-    hasOverpayment: json["has_overpayment"],
-  );
-
-  Map<String, dynamic> toJson() => {
-    "gross_amount": grossAmount,
-    "total_discount": totalDiscount,
-    "net_amount": netAmount,
-    "amount_paid": amountPaid,
-    "pending_amount": pendingAmount,
-    "payment_completion_percentage": paymentCompletionPercentage,
-    "is_fully_paid": isFullyPaid,
-    "has_overpayment": hasOverpayment,
-  };
-}
-
-class Progress {
-  int? attendancePercentage;
-  int? completionPercentage;
-  String? finalGrade;
-  bool? certificateIssued;
-  dynamic certificateIssueDate;
-
-  Progress({
-    this.attendancePercentage,
-    this.completionPercentage,
-    this.finalGrade,
-    this.certificateIssued,
-    this.certificateIssueDate,
-  });
-
-  factory Progress.fromJson(Map<String, dynamic> json) => Progress(
-    attendancePercentage: json["attendance_percentage"],
-    completionPercentage: json["completion_percentage"],
-    finalGrade: json["final_grade"],
-    certificateIssued: json["certificate_issued"],
-    certificateIssueDate: json["certificate_issue_date"],
-  );
-
-  Map<String, dynamic> toJson() => {
-    "attendance_percentage": attendancePercentage,
-    "completion_percentage": completionPercentage,
-    "final_grade": finalGrade,
-    "certificate_issued": certificateIssued,
-    "certificate_issue_date": certificateIssueDate,
-  };
+  factory Enrollment.fromJson(Map<String, dynamic> json) {
+    return Enrollment(
+      uid: json['uid'] ?? '', // Handle null
+      enrollmentNumber: json['enrollment_number'] ?? '', // Handle null
+      enrollmentDate: json['enrollment_date'] != null
+          ? DateTime.parse(json['enrollment_date'])
+          : DateTime.now(), // Handle null with default
+      originalCourseFeesDiscount: (json['original_course_fees_discount'] ?? 0)
+          .toDouble(),
+      source: json['source'] ?? '', // Handle null
+      status: Status.fromJson(
+        json['status'] ?? {},
+      ), // Handle null with empty map
+      batch: Batch.fromJson(json['batch'] ?? {}), // Handle null with empty map
+      course: Course.fromJson(
+        json['course'] ?? {},
+      ), // Handle null with empty map
+      attendanceMode: AttendanceMode.fromJson(
+        json['attendance_mode'] ?? {},
+      ), // Handle null
+      paymentInfo: PaymentInfo.fromJson(
+        json['payment_info'] ?? {},
+      ), // Handle null
+      progress: Progress.fromJson(json['progress'] ?? {}), // Handle null
+      specialNotes: json['special_notes'] ?? '', // Handle null
+      tags: List<String>.from(json['tags'] ?? []), // Handle null
+    );
+  }
 }
 
 class Status {
-  String? name;
-  String? value;
-  String? color;
+  final String name;
+  final String value;
+  final String color;
 
-  Status({this.name, this.value, this.color});
+  Status({required this.name, required this.value, required this.color});
 
-  factory Status.fromJson(Map<String, dynamic> json) =>
-      Status(name: json["name"], value: json["value"], color: json["color"]);
+  factory Status.fromJson(Map<String, dynamic> json) {
+    return Status(
+      name: json['name'] ?? '', // Handle null
+      value: json['value'] ?? '', // Handle null
+      color: json['color'] ?? '#000000', // Handle null with default color
+    );
+  }
+}
 
-  Map<String, dynamic> toJson() => {
-    "name": name,
-    "value": value,
-    "color": color,
-  };
+class Batch {
+  final String uid;
+  final String batchName;
+  final DateTime startDate;
+  final DateTime endDate;
+  final String joinUrl;
+  final String time;
+  final String status;
+
+  Batch({
+    required this.uid,
+    required this.batchName,
+    required this.startDate,
+    required this.endDate,
+    required this.joinUrl,
+    required this.time,
+    required this.status,
+  });
+
+  factory Batch.fromJson(Map<String, dynamic> json) {
+    return Batch(
+      uid: json['uid'] ?? '', // Handle null
+      batchName: json['batch_name'] ?? '', // Handle null
+      startDate: json['start_date'] != null
+          ? DateTime.parse(json['start_date'])
+          : DateTime.now(), // Handle null
+      endDate: json['end_date'] != null
+          ? DateTime.parse(json['end_date'])
+          : DateTime.now().add(const Duration(days: 30)), // Handle null
+      joinUrl: json['join_url'] ?? '', // Handle null
+      time: json['time'] ?? '', // Handle null
+      status: json['status'] ?? '', // Handle null
+    );
+  }
+}
+
+class Course {
+  final String courseName;
+  final String? duration; // Made nullable since it can be null
+
+  Course({required this.courseName, this.duration});
+
+  factory Course.fromJson(Map<String, dynamic> json) {
+    return Course(
+      courseName: json['course_name'] ?? '', // Handle null with empty string
+      duration: json['duration'] as String?, // Keep as nullable
+    );
+  }
+}
+
+class AttendanceMode {
+  final String name;
+  final String value;
+
+  AttendanceMode({required this.name, required this.value});
+
+  factory AttendanceMode.fromJson(Map<String, dynamic> json) {
+    return AttendanceMode(
+      name: json['name'] ?? '', // Handle null
+      value: json['value'] ?? '', // Handle null
+    );
+  }
+}
+
+class PaymentInfo {
+  final double grossAmount;
+  final double totalDiscount;
+  final double netAmount;
+  final double amountPaid;
+  final double pendingAmount;
+  final double paymentCompletionPercentage;
+  final bool isFullyPaid;
+  final bool hasOverpayment;
+
+  PaymentInfo({
+    required this.grossAmount,
+    required this.totalDiscount,
+    required this.netAmount,
+    required this.amountPaid,
+    required this.pendingAmount,
+    required this.paymentCompletionPercentage,
+    required this.isFullyPaid,
+    required this.hasOverpayment,
+  });
+
+  factory PaymentInfo.fromJson(Map<String, dynamic> json) {
+    return PaymentInfo(
+      grossAmount: (json['gross_amount'] ?? 0).toDouble(),
+      totalDiscount: (json['total_discount'] ?? 0).toDouble(),
+      netAmount: (json['net_amount'] ?? 0).toDouble(),
+      amountPaid: (json['amount_paid'] ?? 0).toDouble(),
+      pendingAmount: (json['pending_amount'] ?? 0).toDouble(),
+      paymentCompletionPercentage: (json['payment_completion_percentage'] ?? 0)
+          .toDouble(),
+      isFullyPaid: json['is_fully_paid'] ?? false, // Handle null
+      hasOverpayment: json['has_overpayment'] ?? false, // Handle null
+    );
+  }
+}
+
+class Progress {
+  final double attendancePercentage;
+  final double completionPercentage;
+  final String finalGrade;
+  final bool certificateIssued;
+  final dynamic
+  certificateIssueDate; // Keep as dynamic since it can be null or date string
+
+  Progress({
+    required this.attendancePercentage,
+    required this.completionPercentage,
+    required this.finalGrade,
+    required this.certificateIssued,
+    this.certificateIssueDate,
+  });
+
+  factory Progress.fromJson(Map<String, dynamic> json) {
+    return Progress(
+      attendancePercentage: (json['attendance_percentage'] ?? 0).toDouble(),
+      completionPercentage: (json['completion_percentage'] ?? 0).toDouble(),
+      finalGrade: json['final_grade'] ?? '', // Handle null with empty string
+      certificateIssued: json['certificate_issued'] ?? false, // Handle null
+      certificateIssueDate: json['certificate_issue_date'], // Can be null
+    );
+  }
 }
 
 class Summary {
-  int? totalEnrollments;
-  int? activeEnrollments;
-  int? completedEnrollments;
-  int? demoEnrollments;
-  int? totalFeesPaid;
-  int? totalFeesPending;
+  final int totalEnrollments;
+  final int activeEnrollments;
+  final int completedEnrollments;
+  final int demoEnrollments;
+  final double totalFeesPaid;
+  final double totalFeesPending;
 
   Summary({
-    this.totalEnrollments,
-    this.activeEnrollments,
-    this.completedEnrollments,
-    this.demoEnrollments,
-    this.totalFeesPaid,
-    this.totalFeesPending,
+    required this.totalEnrollments,
+    required this.activeEnrollments,
+    required this.completedEnrollments,
+    required this.demoEnrollments,
+    required this.totalFeesPaid,
+    required this.totalFeesPending,
   });
 
-  factory Summary.fromJson(Map<String, dynamic> json) => Summary(
-    totalEnrollments: json["total_enrollments"],
-    activeEnrollments: json["active_enrollments"],
-    completedEnrollments: json["completed_enrollments"],
-    demoEnrollments: json["demo_enrollments"],
-    totalFeesPaid: json["total_fees_paid"],
-    totalFeesPending: json["total_fees_pending"],
-  );
-
-  Map<String, dynamic> toJson() => {
-    "total_enrollments": totalEnrollments,
-    "active_enrollments": activeEnrollments,
-    "completed_enrollments": completedEnrollments,
-    "demo_enrollments": demoEnrollments,
-    "total_fees_paid": totalFeesPaid,
-    "total_fees_pending": totalFeesPending,
-  };
+  factory Summary.fromJson(Map<String, dynamic> json) {
+    return Summary(
+      totalEnrollments: json['total_enrollments'] ?? 0, // Handle null
+      activeEnrollments: json['active_enrollments'] ?? 0, // Handle null
+      completedEnrollments: json['completed_enrollments'] ?? 0, // Handle null
+      demoEnrollments: json['demo_enrollments'] ?? 0, // Handle null
+      totalFeesPaid: (json['total_fees_paid'] ?? 0).toDouble(),
+      totalFeesPending: (json['total_fees_pending'] ?? 0).toDouble(),
+    );
+  }
 }

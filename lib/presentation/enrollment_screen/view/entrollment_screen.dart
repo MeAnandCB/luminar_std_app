@@ -1,17 +1,23 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
+import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/widget/emi_card.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/widget/pay_in_full_card.dart';
+import 'package:luminar_std/presentation/global_widget/shimmer.dart';
+import 'package:provider/provider.dart';
 
-class PaymentScreen extends StatefulWidget {
-  const PaymentScreen({Key? key}) : super(key: key);
-
+class EnrollmentDetailsScreen extends StatefulWidget {
+  const EnrollmentDetailsScreen({Key? key, required this.index});
+  final int index;
   @override
-  State<PaymentScreen> createState() => _PaymentScreenState();
+  State<EnrollmentDetailsScreen> createState() =>
+      _EnrollmentDetailsScreenState();
 }
 
-class _PaymentScreenState extends State<PaymentScreen> {
+class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   int selectedPaymentMethod = 0;
   int? selectedEmiPlan;
   bool isEmiExpanded = false;
@@ -22,144 +28,207 @@ class _PaymentScreenState extends State<PaymentScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      await Provider.of<EnrollmentProvider>(
+        context,
+        listen: false,
+      ).fetchEnrollData(context: context);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final enrollmentProvider = Provider.of<EnrollmentProvider>(context);
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
+
       body: SafeArea(
-        child: Column(
-          children: [
-            // App Bar (keep as is)
-            _buildAppBar(),
-
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-                    _buildCourseHeader(),
-                    const SizedBox(height: 20),
-                    _buildPaymentOptionsTitle(),
-                    const SizedBox(height: 24),
-
-                    // Full Payment Tile
-                    PaymentTile(
-                      icon: Icons.flash_on_rounded,
-                      iconColor: AppColors.primary,
-                      title: 'Pay Full Amount',
-                      subtitle: 'One-time payment',
-                      amount: '₹26,000',
-                      discount: 'Save ₹2,000',
-                      showOriginalPrice: true,
-                      isSelected: selectedPaymentMethod == 0,
-                      isFullpayment: true,
-                      onTap: () {
-                        setState(() {
-                          if (selectedPaymentMethod == 0) {
-                            // If already selected, deselect it
-                            selectedPaymentMethod =
-                                -1; // or any value that's not 0 or 1
-                            showFullPaymentDetails = false;
-                          } else {
-                            // Select this option
-                            selectedPaymentMethod = 0;
-                            showFullPaymentDetails = true;
-                            isEmiExpanded = false;
-                            selectedEmiPlan = null;
-                          }
-                        });
-                      },
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // EMI Payment Tile
-                    PaymentTile(
-                      icon: Icons.calendar_month_rounded,
-                      iconColor: AppColors.statsOrange,
-                      title: 'EMI Payment Plan',
-                      subtitle: 'Pay in installments',
-                      amount: 'Multiple plans available',
-                      isSelected: selectedPaymentMethod == 1,
-                      isFullpayment: false,
-                      onTap: () {
-                        setState(() {
-                          if (selectedPaymentMethod == 1) {
-                            // If already selected, deselect it
-                            selectedPaymentMethod = -1;
-                            showFullPaymentDetails = false;
-                            isEmiExpanded = false;
-                            selectedEmiPlan = null;
-                          } else {
-                            // Select this option
-                            selectedPaymentMethod = 1;
-                            showFullPaymentDetails = false;
-                            isEmiExpanded = true;
-                          }
-                        });
-                      },
-                    ),
-
-                    if (selectedPaymentMethod == 1 && isEmiExpanded) ...[
-                      const SizedBox(height: 20),
-                      ...emiPlans.asMap().entries.map(
-                        (entry) => EmiBreakdownCard(
-                          plan: entry.value,
-                          onConfirm: () {
-                            setState(() {
-                              if (selectedEmiPlan == entry.key) {
-                                // If already selected, deselect it
-                                selectedEmiPlan = null;
-                              } else {
-                                // Select this plan
-                                selectedEmiPlan = entry.key;
-                              }
-                            });
-                          },
+        child: enrollmentProvider.isLoading
+            ? const DashboardShimmer()
+            : enrollmentProvider.errorMessage != null
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 60,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading EnrollmentScreen',
+                        style: AppTextStyles.headerName.copyWith(
+                          color: Colors.red,
                         ),
-
-                        // EmiCard(
-
-                        //   plan: entry.value,
-                        //   isSelected: selectedEmiPlan == entry.key,
-                        //   onTap: () {
-                        //     setState(() {
-                        //       if (selectedEmiPlan == entry.key) {
-                        //         // If already selected, deselect it
-                        //         selectedEmiPlan = null;
-                        //       } else {
-                        //         // Select this plan
-                        //         selectedEmiPlan = entry.key;
-                        //       }
-                        //     });
-                        //   },
-                        // ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        enrollmentProvider.errorMessage!,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.activitySubtitle,
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () {
+                          enrollmentProvider.refreshData(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(200, 45),
+                        ),
+                        child: const Text('Try Again'),
                       ),
                     ],
-
-                    if (selectedPaymentMethod == 0 &&
-                        showFullPaymentDetails) ...[
-                      const SizedBox(height: 32),
-                      _buildPaymentBreakdown(),
-                      const SizedBox(height: 20),
-                      _buildRazorpayInfo(),
-                    ],
-
-                    const SizedBox(height: 40),
-                    _buildSecuritySection(),
-                    const SizedBox(height: 30),
-                    _buildTrustBadges(),
-                    const SizedBox(height: 100),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              )
+            : Column(
+                children: [
+                  // App Bar (keep as is)
+                  _buildAppBar(),
 
-            _buildBottomButton(),
-          ],
-        ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 12),
+                          _buildCourseHeader(),
+                          const SizedBox(height: 20),
+                          _buildPaymentOptionsTitle(),
+                          const SizedBox(height: 24),
+
+                          // Full Payment Tile
+                          PaymentTile(
+                            icon: Icons.flash_on_rounded,
+                            iconColor: AppColors.primary,
+                            title:
+                                enrollmentProvider
+                                    .enrollmentDataRes
+                                    ?.enrollments[widget.index]
+                                    .course
+                                    .courseName ??
+                                "",
+                            subtitle: 'One-time payment',
+                            amount: '₹26,000',
+                            discount: 'Save ₹2,000',
+                            showOriginalPrice: true,
+                            isSelected: selectedPaymentMethod == 0,
+                            isFullpayment: true,
+                            onTap: () {
+                              setState(() {
+                                if (selectedPaymentMethod == 0) {
+                                  // If already selected, deselect it
+                                  selectedPaymentMethod =
+                                      -1; // or any value that's not 0 or 1
+                                  showFullPaymentDetails = false;
+                                } else {
+                                  // Select this option
+                                  selectedPaymentMethod = 0;
+                                  showFullPaymentDetails = true;
+                                  isEmiExpanded = false;
+                                  selectedEmiPlan = null;
+                                }
+                              });
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // EMI Payment Tile
+                          PaymentTile(
+                            icon: Icons.calendar_month_rounded,
+                            iconColor: AppColors.statsOrange,
+                            title: 'EMI Payment Plan',
+                            subtitle: 'Pay in installments',
+                            amount: 'Multiple plans available',
+                            isSelected: selectedPaymentMethod == 1,
+                            isFullpayment: false,
+                            onTap: () {
+                              setState(() {
+                                if (selectedPaymentMethod == 1) {
+                                  // If already selected, deselect it
+                                  selectedPaymentMethod = -1;
+                                  showFullPaymentDetails = false;
+                                  isEmiExpanded = false;
+                                  selectedEmiPlan = null;
+                                } else {
+                                  // Select this option
+                                  selectedPaymentMethod = 1;
+                                  showFullPaymentDetails = false;
+                                  isEmiExpanded = true;
+                                }
+                              });
+                            },
+                          ),
+
+                          if (selectedPaymentMethod == 1 && isEmiExpanded) ...[
+                            const SizedBox(height: 20),
+                            ...emiPlans.asMap().entries.map(
+                              (entry) => EmiBreakdownCard(
+                                plan: entry.value,
+                                onConfirm: () {
+                                  setState(() {
+                                    if (selectedEmiPlan == entry.key) {
+                                      // If already selected, deselect it
+                                      selectedEmiPlan = null;
+                                    } else {
+                                      // Select this plan
+                                      selectedEmiPlan = entry.key;
+                                    }
+                                  });
+                                },
+                              ),
+
+                              // EmiCard(
+
+                              //   plan: entry.value,
+                              //   isSelected: selectedEmiPlan == entry.key,
+                              //   onTap: () {
+                              //     setState(() {
+                              //       if (selectedEmiPlan == entry.key) {
+                              //         // If already selected, deselect it
+                              //         selectedEmiPlan = null;
+                              //       } else {
+                              //         // Select this plan
+                              //         selectedEmiPlan = entry.key;
+                              //       }
+                              //     });
+                              //   },
+                              // ),
+                            ),
+                          ],
+
+                          if (selectedPaymentMethod == 0 &&
+                              showFullPaymentDetails) ...[
+                            const SizedBox(height: 32),
+                            _buildPaymentBreakdown(),
+                            const SizedBox(height: 20),
+                            _buildRazorpayInfo(),
+                          ],
+
+                          const SizedBox(height: 40),
+                          _buildSecuritySection(),
+                          const SizedBox(height: 30),
+                          _buildTrustBadges(),
+                          const SizedBox(height: 100),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  _buildBottomButton(),
+                ],
+              ),
       ),
     );
   }
