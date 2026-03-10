@@ -6,6 +6,7 @@ import 'package:luminar_std/presentation/bottom_nav_screens/course_screen/course
 import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/home_screen.dart';
 import 'package:luminar_std/presentation/auth_screens/loginform/loginform.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/more_menu/more_menu.dart';
+import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/scan_screen/scan_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
@@ -22,7 +23,8 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 
   final List<Widget> _pages = const [
     StudentDashboard(), // Removed Center widget since StudentDashboard already has its own structure
-    CourseDetailsScreen(),
+    //CourseDetailsScreen(),
+    PaymentScreen(),
     // CompleteProfileScreen(),
     ScannerApp(),
     ContactListScreen(),
