@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
+import 'package:luminar_std/repository/enrollment_screen/model/emiplans_model.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -212,8 +213,15 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                EnrollmentDetailsScreen(index: index),
+                            builder: (context) => EmiPlansScreen(
+                              enrollmentId:
+                                  provider
+                                      .enrollmentDataRes
+                                      ?.enrollments[index]
+                                      .enrollmentNumber ??
+                                  "",
+                            ),
+                            // EnrollmentDetailsScreen(index: index),
                           ),
                         );
                       },

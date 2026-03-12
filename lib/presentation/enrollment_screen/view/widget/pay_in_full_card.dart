@@ -6,6 +6,7 @@ class PaymentTile extends StatelessWidget {
   final Color iconColor;
   final String title;
   final String subtitle;
+  final String wasnow;
   final String amount;
   final bool isSelected;
   final VoidCallback onTap;
@@ -21,6 +22,7 @@ class PaymentTile extends StatelessWidget {
     required this.subtitle,
     required this.amount,
     required this.isSelected,
+    required this.wasnow,
     required this.onTap,
     required this.isFullpayment,
     this.discount,

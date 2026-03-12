@@ -1,17 +1,25 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
-import 'package:luminar_std/presentation/enrollment_screen/view/widget/emi_card.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/widget/pay_in_full_card.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
+import 'package:luminar_std/repository/enrollment_screen/model/emiplans_model.dart';
+import 'package:luminar_std/repository/enrollment_screen/service/installment_service.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:luminar_std/core/constants/app_endpoints.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
+import 'dart:convert';
 
 class EnrollmentDetailsScreen extends StatefulWidget {
-  const EnrollmentDetailsScreen({Key? key, required this.index});
+  const EnrollmentDetailsScreen({
+    Key? key,
+    required this.index,
+    required this.enrollmentId,
+  });
   final int index;
+  final String enrollmentId;
   @override
   State<EnrollmentDetailsScreen> createState() =>
       _EnrollmentDetailsScreenState();
@@ -19,13 +27,16 @@ class EnrollmentDetailsScreen extends StatefulWidget {
 
 class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   int selectedPaymentMethod = 0;
-  int? selectedEmiPlan;
-  bool isEmiExpanded = false;
-  bool showFullPaymentDetails = true; // Set to true for initial display
+  String? selectedEmiPlanId;
+  int? expandedEmiTile;
+  bool showFullPaymentDetails = true;
 
-  final List<Map<String, dynamic>> emiPlans = [
-    {'months': 3, 'monthly': 8667.0, 'total': 26000.0, 'isPopular': true},
-  ];
+  late Future<List<EmiPlan>> emiPlans;
+  EmiPlan? _selectedPlan;
+  EmiPreviewResponse? _previewData;
+  bool _isLoadingPreview = false;
+  String? _errorMessage;
+  final PaymentDetailsApiService _apiService = PaymentDetailsApiService();
 
   @override
   void initState() {
@@ -36,64 +47,82 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
         listen: false,
       ).fetchEnrollData(context: context);
     });
+    _apiService.setEnrollmentId(widget.enrollmentId);
+    emiPlans = _apiService.fetchEmiPlans();
+  }
+
+  void _selectPlan(EmiPlan plan) async {
+    if (plan.id.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Error'),
+          content: Text('Selected plan has no ID. Please try again.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('OK')),
+          ],
+        ),
+      );
+
+      setState(() {
+        _errorMessage = 'Invalid plan selected: Plan ID is missing';
+      });
+      return;
+    }
+
+    setState(() {
+      _selectedPlan = plan;
+      selectedEmiPlanId = plan.id;
+      _isLoadingPreview = true;
+      _previewData = null;
+      _errorMessage = null;
+    });
+
+    try {
+      final preview = await _apiService.fetchEmiPreview(plan.id);
+      setState(() {
+        _previewData = preview;
+        _isLoadingPreview = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingPreview = false;
+        _errorMessage = e.toString();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load preview: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _deselectPlan() {
+    setState(() {
+      _selectedPlan = null;
+      _previewData = null;
+      selectedEmiPlanId = null;
+      expandedEmiTile = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final enrollmentProvider = Provider.of<EnrollmentProvider>(context);
+    final paymentDetailsScreenProvider = Provider.of<EnrollmentProvider>(
+      context,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-
       body: SafeArea(
-        child: enrollmentProvider.isLoading
+        child: paymentDetailsScreenProvider.isLoading
             ? const DashboardShimmer()
-            : enrollmentProvider.errorMessage != null
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 60,
-                        color: Colors.red,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading EnrollmentScreen',
-                        style: AppTextStyles.headerName.copyWith(
-                          color: Colors.red,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        enrollmentProvider.errorMessage!,
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.activitySubtitle,
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {
-                          enrollmentProvider.refreshData(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(200, 45),
-                        ),
-                        child: const Text('Try Again'),
-                      ),
-                    ],
-                  ),
-                ),
-              )
+            : paymentDetailsScreenProvider.errorMessage != null
+            ? _buildErrorWidget(paymentDetailsScreenProvider)
             : Column(
                 children: [
-                  // App Bar (keep as is)
                   _buildAppBar(),
-
                   Expanded(
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
@@ -102,7 +131,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 12),
-                          _buildCourseHeader(),
+                          _buildCourseHeader(paymentDetailsScreenProvider),
                           const SizedBox(height: 20),
                           _buildPaymentOptionsTitle(),
                           const SizedBox(height: 24),
@@ -111,32 +140,27 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                           PaymentTile(
                             icon: Icons.flash_on_rounded,
                             iconColor: AppColors.primary,
-                            title:
-                                enrollmentProvider
-                                    .enrollmentDataRes
-                                    ?.enrollments[widget.index]
-                                    .course
-                                    .courseName ??
-                                "",
+                            title: "Pay Full Amount",
                             subtitle: 'One-time payment',
-                            amount: '₹26,000',
-                            discount: 'Save ₹2,000',
+                            wasnow:
+                                "₹${paymentDetailsScreenProvider.enrollmentDataRes?.enrollments[widget.index].paymentInfo.amountPaid ?? ""}",
+                            amount:
+                                "₹${paymentDetailsScreenProvider.enrollmentDataRes?.enrollments[widget.index].paymentInfo.pendingAmount ?? ""}",
+                            discount:
+                                'Save ₹${paymentDetailsScreenProvider.enrollmentDataRes?.enrollments[widget.index].paymentInfo.totalDiscount ?? ""}',
                             showOriginalPrice: true,
                             isSelected: selectedPaymentMethod == 0,
                             isFullpayment: true,
                             onTap: () {
                               setState(() {
                                 if (selectedPaymentMethod == 0) {
-                                  // If already selected, deselect it
-                                  selectedPaymentMethod =
-                                      -1; // or any value that's not 0 or 1
+                                  selectedPaymentMethod = -1;
                                   showFullPaymentDetails = false;
                                 } else {
-                                  // Select this option
                                   selectedPaymentMethod = 0;
                                   showFullPaymentDetails = true;
-                                  isEmiExpanded = false;
-                                  selectedEmiPlan = null;
+                                  expandedEmiTile = null;
+                                  _deselectPlan();
                                 }
                               });
                             },
@@ -144,8 +168,9 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
 
                           const SizedBox(height: 12),
 
-                          // EMI Payment Tile
+                          // EMI Payment Main Tile
                           PaymentTile(
+                            wasnow: "",
                             icon: Icons.calendar_month_rounded,
                             iconColor: AppColors.statsOrange,
                             title: 'EMI Payment Plan',
@@ -156,62 +181,118 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                             onTap: () {
                               setState(() {
                                 if (selectedPaymentMethod == 1) {
-                                  // If already selected, deselect it
                                   selectedPaymentMethod = -1;
                                   showFullPaymentDetails = false;
-                                  isEmiExpanded = false;
-                                  selectedEmiPlan = null;
+                                  expandedEmiTile = null;
+                                  _deselectPlan();
                                 } else {
-                                  // Select this option
                                   selectedPaymentMethod = 1;
                                   showFullPaymentDetails = false;
-                                  isEmiExpanded = true;
                                 }
                               });
                             },
                           ),
 
-                          if (selectedPaymentMethod == 1 && isEmiExpanded) ...[
+                          // EMI Plans List
+                          if (selectedPaymentMethod == 1) ...[
                             const SizedBox(height: 20),
-                            ...emiPlans.asMap().entries.map(
-                              (entry) => EmiBreakdownCard(
-                                plan: entry.value,
-                                onConfirm: () {
-                                  setState(() {
-                                    if (selectedEmiPlan == entry.key) {
-                                      // If already selected, deselect it
-                                      selectedEmiPlan = null;
-                                    } else {
-                                      // Select this plan
-                                      selectedEmiPlan = entry.key;
-                                    }
-                                  });
-                                },
-                              ),
+                            _buildEmiPlansHeader(),
+                            const SizedBox(height: 12),
+                            FutureBuilder<List<EmiPlan>>(
+                              future: emiPlans,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(20),
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  );
+                                }
 
-                              // EmiCard(
+                                if (snapshot.hasError) {
+                                  return Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(20),
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            Icons.error_outline,
+                                            size: 48,
+                                            color: Colors.red,
+                                          ),
+                                          SizedBox(height: 16),
+                                          Text(
+                                            'Error loading EMI plans',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            snapshot.error.toString(),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.red,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          SizedBox(height: 16),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                emiPlans = _apiService
+                                                    .fetchEmiPlans();
+                                              });
+                                            },
+                                            child: Text('Retry'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
 
-                              //   plan: entry.value,
-                              //   isSelected: selectedEmiPlan == entry.key,
-                              //   onTap: () {
-                              //     setState(() {
-                              //       if (selectedEmiPlan == entry.key) {
-                              //         // If already selected, deselect it
-                              //         selectedEmiPlan = null;
-                              //       } else {
-                              //         // Select this plan
-                              //         selectedEmiPlan = entry.key;
-                              //       }
-                              //     });
-                              //   },
-                              // ),
+                                if (!snapshot.hasData ||
+                                    snapshot.data!.isEmpty) {
+                                  return Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(20),
+                                      child: Text(
+                                        'No EMI plans available',
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                final plans = snapshot.data!;
+                                return Column(
+                                  children: [
+                                    ...plans.asMap().entries.map(
+                                      (entry) => _buildEmiTile(
+                                        index: entry.key,
+                                        plan: entry.value,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                           ],
 
+                          // Full Payment Details
                           if (selectedPaymentMethod == 0 &&
                               showFullPaymentDetails) ...[
                             const SizedBox(height: 32),
-                            _buildPaymentBreakdown(),
+                            _buildPaymentBreakdown(
+                              paymentDetailsScreenProvider,
+                            ),
                             const SizedBox(height: 20),
                             _buildRazorpayInfo(),
                           ],
@@ -225,12 +306,387 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                       ),
                     ),
                   ),
-
-                  _buildBottomButton(),
+                  _buildBottomButton(paymentDetailsScreenProvider),
                 ],
               ),
       ),
     );
+  }
+
+  Widget _buildErrorWidget(EnrollmentProvider provider) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 60, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading EnrollmentScreen',
+              style: AppTextStyles.headerName.copyWith(color: Colors.red),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              provider.errorMessage!,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.activitySubtitle,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => provider.refreshData(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(200, 45),
+              ),
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmiPlansHeader() {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.statsOrange.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: const Icon(
+            Icons.format_list_bulleted_rounded,
+            size: 16,
+            color: AppColors.statsOrange,
+          ),
+        ),
+        const SizedBox(width: 8),
+        const Text(
+          'AVAILABLE EMI PLANS',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+            letterSpacing: 0.5,
+          ),
+        ),
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(left: 12),
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.textSecondary.withOpacity(0.3),
+                  AppColors.textSecondary.withOpacity(0.1),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmiTile({required int index, required EmiPlan plan}) {
+    final isExpanded = expandedEmiTile == index;
+    final isSelected = _selectedPlan?.id == plan.id;
+
+    return Column(
+      children: [
+        // EMI Tile Header
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              if (isExpanded) {
+                expandedEmiTile = null;
+                if (isSelected) {
+                  _deselectPlan();
+                }
+              } else {
+                expandedEmiTile = index;
+                // Automatically select and load details when expanded
+                if (!isSelected) {
+                  _selectPlan(plan);
+                }
+              }
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isExpanded
+                    ? AppColors.statsOrange.withOpacity(0.5)
+                    : isSelected
+                    ? AppColors.primary
+                    : Colors.transparent,
+                width: isSelected ? 2 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadowLight,
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // Plan icon with month count
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withOpacity(0.1)
+                        : AppColors.statsOrange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${plan.planDurationMonths.toStringAsFixed(0)}m',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.statsOrange,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Plan details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              plan.name,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (plan.planDurationMonths <= 3)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.statsOrange,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'POPULAR',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            '₹${_formatAmount(plan.minimumAmount)} - ₹${_formatAmount(plan.maximumAmount)}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          '${plan.installmentCount} installments • First EMI after ${plan.firstEmiAfterDays} days',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textHint,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Expand/collapse icon
+                Icon(
+                  isExpanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                  size: 28,
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Expanded EMI Details - Show directly when expanded
+        if (isExpanded) ...[
+          const SizedBox(height: 12),
+          // Show loading or preview based on selection state
+          if (_selectedPlan?.id == plan.id)
+            _buildPlanPreview()
+          else if (_isLoadingPreview && _selectedPlan?.id == plan.id)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+              ),
+              child: const Center(
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 12),
+                    Text('Loading EMI details...'),
+                  ],
+                ),
+              ),
+            )
+          else
+            // Show placeholder while loading
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderColor),
+              ),
+              child: const Center(
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 12),
+                    Text('Loading EMI details...'),
+                  ],
+                ),
+              ),
+            ),
+        ],
+
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _buildPlanPreview() {
+    if (_isLoadingPreview) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        ),
+        child: const Center(
+          child: Column(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 12),
+              Text('Loading EMI details...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.red),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _selectPlan(_selectedPlan!),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Retry'),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_previewData != null) {
+      return EmiPreviewDetails(
+        response: _previewData!,
+        plan: _selectedPlan!,
+        isSelected: true,
+        onSelect: () {},
+        onDeselect: _deselectPlan,
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderColor),
+      ),
+      child: const Center(child: Text('No preview available')),
+    );
+  }
+
+  String _formatAmount(dynamic amount) {
+    if (amount == null) return '0';
+    try {
+      if (amount is String) {
+        return double.parse(amount).toStringAsFixed(0);
+      } else if (amount is num) {
+        return amount.toStringAsFixed(0);
+      }
+      return '0';
+    } catch (e) {
+      return '0';
+    }
   }
 
   Widget _buildAppBar() {
@@ -245,28 +701,6 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
       ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadowLight,
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: AppColors.textPrimary,
-                size: 16,
-              ),
-            ),
-          ),
           const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -305,7 +739,29 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     );
   }
 
-  Widget _buildCourseHeader() {
+  Widget _buildCourseHeader(EnrollmentProvider provider) {
+    final pendingAmount =
+        provider
+            .enrollmentDataRes
+            ?.enrollments[widget.index]
+            .paymentInfo
+            .pendingAmount ??
+        "";
+    final amountPaid =
+        provider
+            .enrollmentDataRes
+            ?.enrollments[widget.index]
+            .paymentInfo
+            .amountPaid ??
+        "";
+    final discount =
+        provider
+            .enrollmentDataRes
+            ?.enrollments[widget.index]
+            .paymentInfo
+            .totalDiscount ??
+        "";
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -322,7 +778,12 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'ASP.NET MVC with Angular',
+            provider
+                    .enrollmentDataRes
+                    ?.enrollments[widget.index]
+                    .course
+                    .courseName ??
+                "",
             style: AppTextStyles.courseCardTitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -336,28 +797,42 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
             ),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  Text("Amount to Pay:", style: TextStyle(color: Colors.white)),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      const Text(
+                        "Amount You Paid",
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      const SizedBox(width: 20),
                       Text(
-                        "₹28000",
-                        style: TextStyle(
+                        "₹$amountPaid",
+                        style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
-                          decoration: TextDecoration.lineThrough,
-                          decorationColor: Colors.red,
-                          decorationThickness: 3,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(width: 10),
-                      Text(
-                        "₹26000",
+                    ],
+                  ),
+                  const Divider(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Amount to Pay:",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "₹$pendingAmount",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -367,7 +842,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
               ),
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           if (selectedPaymentMethod == 0 && showFullPaymentDetails)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -378,15 +853,15 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.discount_rounded,
                     size: 16,
                     color: AppColors.white,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Save ₹2,000',
-                    style: TextStyle(
+                    'Save ₹$discount',
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.white,
@@ -405,7 +880,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
       children: [
         Icon(Icons.payment_rounded, size: 16, color: AppColors.primary),
         const SizedBox(width: 8),
-        Text(
+        const Text(
           'PAYMENT OPTIONS',
           style: TextStyle(
             fontSize: 12,
@@ -433,7 +908,29 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     );
   }
 
-  Widget _buildPaymentBreakdown() {
+  Widget _buildPaymentBreakdown(EnrollmentProvider provider) {
+    final grossAmount =
+        provider
+            .enrollmentDataRes
+            ?.enrollments[widget.index]
+            .paymentInfo
+            .grossAmount ??
+        "";
+    final discount =
+        provider
+            .enrollmentDataRes
+            ?.enrollments[widget.index]
+            .paymentInfo
+            .totalDiscount ??
+        "";
+    final pendingAmount =
+        provider
+            .enrollmentDataRes
+            ?.enrollments[widget.index]
+            .paymentInfo
+            .pendingAmount ??
+        "";
+
     return Column(
       children: [
         Row(
@@ -444,7 +941,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
               color: AppColors.primary,
             ),
             const SizedBox(width: 8),
-            Text(
+            const Text(
               'PAYMENT BREAKDOWN',
               style: TextStyle(
                 fontSize: 12,
@@ -487,14 +984,14 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
           child: Column(
             children: [
               _buildBreakdownRow(
-                'Original Pending Amount:',
-                '₹28,000',
+                'Total Amount:',
+                '₹$grossAmount',
                 Icons.receipt_rounded,
               ),
               const SizedBox(height: 16),
               _buildBreakdownRow(
                 'Full Payment Discount:',
-                '- ₹2,000',
+                '₹$discount',
                 Icons.discount_rounded,
                 valueColor: AppColors.statsGreen,
               ),
@@ -504,7 +1001,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
               ),
               _buildBreakdownRow(
                 'Final Amount to Pay:',
-                '₹26,000',
+                '₹$pendingAmount',
                 Icons.payment_rounded,
                 isBold: true,
                 valueColor: AppColors.primary,
@@ -524,7 +1021,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                       color: AppColors.statsGreen,
                     ),
                     const SizedBox(width: 8),
-                    Expanded(
+                    const Expanded(
                       child: Text(
                         'Total Savings:',
                         style: TextStyle(
@@ -534,8 +1031,8 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                       ),
                     ),
                     Text(
-                      '₹2,000',
-                      style: TextStyle(
+                      '₹$discount',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: AppColors.statsGreen,
@@ -592,20 +1089,9 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.primary.withOpacity(0.1)),
       ),
-      child: Row(
+      child: const Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.payment_rounded,
-              color: AppColors.primary,
-              size: 20,
-            ),
-          ),
+          Icon(Icons.payment_rounded, color: AppColors.primary, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -708,92 +1194,154 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     );
   }
 
-  Widget _buildBottomButton() {
-    return selectedPaymentMethod == 1
-        ? SizedBox()
-        : Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.shadowLight,
-                  blurRadius: 20,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: _showPaymentConfirmation,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        foregroundColor: AppColors.textWhite,
-                        minimumSize: const Size(double.infinity, 60),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.flash_on_rounded, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Pay ₹26,000 Now',
+  Widget _buildBottomButton(EnrollmentProvider provider) {
+    if (selectedPaymentMethod == -1) return const SizedBox();
 
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.lock_outline_rounded,
-                        size: 12,
-                        color: AppColors.textHint,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Secured with 256-bit SSL encryption',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textHint,
-                        ),
-                      ),
-                    ],
+    if (selectedPaymentMethod == 1 && _selectedPlan == null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadowLight,
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Container(
+            width: double.infinity,
+            height: 60,
+            decoration: BoxDecoration(
+              color: AppColors.textHint.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Center(
+              child: Text(
+                'Select an EMI plan to continue',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final pendingAmount =
+        provider
+            .enrollmentDataRes
+            ?.enrollments[widget.index]
+            .paymentInfo
+            .pendingAmount ??
+        "";
+
+    String amountToShow = '';
+    String buttonText = '';
+
+    if (selectedPaymentMethod == 0) {
+      amountToShow = '₹$pendingAmount';
+      buttonText = 'Pay $amountToShow Now';
+    } else if (selectedPaymentMethod == 1 && _previewData != null) {
+      final monthlyAmount =
+          _previewData!.emiPreview.totalEmiAmount /
+          _previewData!.emiPreview.installmentCount;
+      amountToShow = '₹${monthlyAmount.toStringAsFixed(0)}/mo';
+      buttonText = 'Pay First $amountToShow';
+    } else {
+      amountToShow = '';
+      buttonText = 'Proceed with EMI';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: double.infinity,
+              height: 60,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
+              child: ElevatedButton(
+                onPressed: _showPaymentConfirmation,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  foregroundColor: AppColors.textWhite,
+                  minimumSize: const Size(double.infinity, 60),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  elevation: 0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      selectedPaymentMethod == 0
+                          ? Icons.flash_on_rounded
+                          : Icons.calendar_month_rounded,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      buttonText,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          );
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.lock_outline_rounded,
+                  size: 12,
+                  color: AppColors.textHint,
+                ),
+                const SizedBox(width: 4),
+                const Text(
+                  'Secured with 256-bit SSL encryption',
+                  style: TextStyle(fontSize: 11, color: AppColors.textHint),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showPaymentConfirmation() {
@@ -806,6 +1354,29 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   Widget _buildConfirmationSheet() {
+    final provider = Provider.of<EnrollmentProvider>(context, listen: false);
+    final grossAmount =
+        provider
+            .enrollmentDataRes
+            ?.enrollments[widget.index]
+            .paymentInfo
+            .grossAmount ??
+        "";
+    final discount =
+        provider
+            .enrollmentDataRes
+            ?.enrollments[widget.index]
+            .paymentInfo
+            .totalDiscount ??
+        "";
+    final pendingAmount =
+        provider
+            .enrollmentDataRes
+            ?.enrollments[widget.index]
+            .paymentInfo
+            .pendingAmount ??
+        "";
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
@@ -863,35 +1434,60 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                   ),
                   child: Column(
                     children: [
-                      _buildConfirmRow(
-                        'Amount',
-                        selectedPaymentMethod == 0 ? '₹26,000' : '₹8,667',
-                        Icons.currency_rupee_rounded,
-                      ),
+                      if (selectedPaymentMethod == 1 &&
+                          _previewData != null) ...[
+                        _buildConfirmRow(
+                          'Plan',
+                          _previewData!.emiPlanDetails.planName,
+                          Icons.timer_rounded,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildConfirmRow(
+                          'Monthly Payment',
+                          '₹${(_previewData!.emiPreview.totalEmiAmount / _previewData!.emiPreview.installmentCount).toStringAsFixed(0)}',
+                          Icons.currency_rupee_rounded,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildConfirmRow(
+                          'Total Amount',
+                          '₹${_previewData!.emiPreview.totalEmiAmount.toStringAsFixed(0)}',
+                          Icons.account_balance_wallet_rounded,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildConfirmRow(
+                          'Installments',
+                          '${_previewData!.emiPreview.installmentCount} payments',
+                          Icons.calendar_month_rounded,
+                        ),
+                      ] else if (selectedPaymentMethod == 0) ...[
+                        _buildConfirmRow(
+                          'Gross Amount',
+                          '₹$grossAmount',
+                          Icons.receipt_rounded,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildConfirmRow(
+                          'Discount',
+                          '₹$discount',
+                          Icons.discount_rounded,
+                          valueColor: AppColors.statsGreen,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildConfirmRow(
+                          'Final Amount',
+                          '₹$pendingAmount',
+                          Icons.payment_rounded,
+                          valueColor: AppColors.primary,
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       _buildConfirmRow(
                         'Payment method',
                         selectedPaymentMethod == 0
                             ? 'Full payment'
-                            : 'EMI - 3 months',
+                            : 'EMI - ${_previewData?.emiPlanDetails.planName ?? ''}',
                         Icons.payment_rounded,
                       ),
-                      if (selectedPaymentMethod == 1) ...[
-                        const SizedBox(height: 16),
-                        _buildConfirmRow(
-                          'Total payable',
-                          '₹26,000',
-                          Icons.account_balance_wallet_rounded,
-                        ),
-                      ] else ...[
-                        const SizedBox(height: 16),
-                        _buildConfirmRow(
-                          'You save',
-                          '₹2,000',
-                          Icons.savings_rounded,
-                          valueColor: AppColors.statsGreen,
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -950,18 +1546,18 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                             ),
                             elevation: 0,
                           ),
-                          child: Row(
+                          child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text(
+                              Text(
                                 'Pay now',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.arrow_forward_rounded, size: 18),
+                              SizedBox(width: 4),
+                              Icon(Icons.arrow_forward_rounded, size: 18),
                             ],
                           ),
                         ),
@@ -1047,5 +1643,412 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+}
+
+// ==================== EMI PREVIEW DETAILS WIDGET ====================
+
+class EmiPreviewDetails extends StatelessWidget {
+  final EmiPreviewResponse response;
+  final EmiPlan plan;
+  final bool isSelected;
+  final VoidCallback onSelect;
+  final VoidCallback onDeselect;
+
+  const EmiPreviewDetails({
+    required this.response,
+    required this.plan,
+    required this.isSelected,
+    required this.onSelect,
+    required this.onDeselect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Summary Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.05),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total EMI Amount',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      '₹${response.emiPreview.totalEmiAmount.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Divider(color: AppColors.borderColor),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Installments',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      '${response.emiPreview.installmentCount} Payments',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'First EMI',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      _formatDate(response.emiPreview.firstEmiDate),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Last EMI',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      _formatDate(response.emiPreview.lastEmiDate),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // EMI Plan Details Expansion Tile
+          _buildExpansionTile(
+            title: 'EMI Plan Details',
+            icon: Icons.info_outline,
+            children: [
+              _buildDetailRow('Plan Name', response.emiPlanDetails.planName),
+              _buildDetailRow(
+                'Description',
+                response.emiPlanDetails.description,
+              ),
+              _buildDetailRow(
+                'Installments',
+                '${response.emiPlanDetails.installmentCount} payments',
+              ),
+              _buildDetailRow(
+                'Frequency',
+                response.emiPlanDetails.installmentFrequencyReadable,
+              ),
+              _buildDetailRow(
+                'First EMI After',
+                '${response.emiPlanDetails.firstEmiAfterDays} days',
+              ),
+              _buildDetailRow(
+                'Amount Range',
+                '₹${_formatAmount(response.emiPlanDetails.minimumAmount)} - ₹${_formatAmount(response.emiPlanDetails.maximumAmount)}',
+              ),
+              _buildDetailRow(
+                'Duration',
+                '${response.emiPlanDetails.planDurationMonths.toStringAsFixed(1)} months',
+              ),
+            ],
+          ),
+
+          // Payment Schedule Expansion Tile
+          if (response.installmentBreakdown.schedule.isNotEmpty)
+            _buildExpansionTile(
+              title: 'Payment Schedule',
+              icon: Icons.calendar_month,
+              initiallyExpanded: true,
+              children: [
+                // Schedule header
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: AppColors.borderColor),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          'Due Date',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          '#',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          'Amount',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Schedule items
+                ...response.installmentBreakdown.schedule.map(
+                  (item) => Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: AppColors.borderColor.withOpacity(0.5),
+                        ),
+                      ),
+                      color: item.isFirstInstallment
+                          ? AppColors.statsGreen.withOpacity(0.1)
+                          : item.isLastInstallment
+                          ? AppColors.statsOrange.withOpacity(0.1)
+                          : null,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.formattedDueDate,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 13,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              if (item.isFirstInstallment)
+                                Text(
+                                  'First',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.statsGreen,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                )
+                              else if (item.isLastInstallment)
+                                Text(
+                                  'Last',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.statsOrange,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: Text(
+                            '#${item.installmentNumber}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: Text(
+                            '₹${item.amount.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: item.isLastInstallment
+                                  ? AppColors.statsOrange
+                                  : AppColors.textPrimary,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpansionTile({
+    required String title,
+    required IconData icon,
+    List<Widget> children = const [],
+    bool initiallyExpanded = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.borderColor),
+      ),
+      child: ExpansionTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.primary),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        initiallyExpanded: initiallyExpanded,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String dateStr) {
+    if (dateStr.isEmpty) return 'N/A';
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('dd MMM yyyy').format(date);
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  String _formatAmount(dynamic amount) {
+    if (amount == null) return '0';
+    try {
+      if (amount is String) {
+        return double.parse(amount).toStringAsFixed(0);
+      } else if (amount is num) {
+        return amount.toStringAsFixed(0);
+      }
+      return '0';
+    } catch (e) {
+      return '0';
+    }
   }
 }

@@ -19,13 +19,18 @@ class AuthProvider extends ChangeNotifier {
   // Get full name directly with better fallback
   String get fullName {
     // First try from login response
-    if (_loginResponse?.student.profile.fullName != null && _loginResponse!.student.profile.fullName.isNotEmpty) {
+    if (_loginResponse?.student.profile.fullName != null &&
+        _loginResponse!.student.profile.fullName.isNotEmpty) {
       return _loginResponse!.student.profile.fullName;
     }
     return 'Student';
   }
 
-  Future<bool> login({required BuildContext context, required String email, required String password}) async {
+  Future<bool> login({
+    required BuildContext context,
+    required String email,
+    required String password,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -33,7 +38,9 @@ class AuthProvider extends ChangeNotifier {
     try {
       print('🚀 AuthProvider: Starting login process...');
 
-      final response = await _apiService.login(body: {'email': email, 'password': password});
+      final response = await _apiService.login(
+        body: {'email': email, 'password': password},
+      );
 
       if (response.success == true) {
         LoginResponseModel loginResponseModel = response.data;
@@ -112,7 +119,9 @@ class AuthProvider extends ChangeNotifier {
             // Reconstruct LoginResponseModel from saved data
             _loginResponse = LoginResponseModel.fromJson(userData);
             print('✅ Successfully reconstructed user data');
-            print('👤 Reconstructed name: ${_loginResponse?.student.profile.fullName}');
+            print(
+              '👤 Reconstructed name: ${_loginResponse?.student.profile.fullName}',
+            );
             notifyListeners();
             return true;
           } catch (e) {
@@ -146,7 +155,9 @@ class AuthProvider extends ChangeNotifier {
       if (userData != null) {
         _loginResponse = LoginResponseModel.fromJson(userData);
         notifyListeners();
-        print('🔄 User data refreshed: ${_loginResponse?.student.profile.fullName}');
+        print(
+          '🔄 User data refreshed: ${_loginResponse?.student.profile.fullName}',
+        );
       }
     } catch (e) {
       print('❌ Error refreshing user data: $e');

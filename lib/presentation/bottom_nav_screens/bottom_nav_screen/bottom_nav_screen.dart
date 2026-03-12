@@ -1,17 +1,15 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
-import 'package:luminar_std/core/theme/app_text_styles.dart'; // Added import
+import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/chat_screen/chat_screen.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/course_screen/course_screen.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/home_screen.dart';
-import 'package:luminar_std/presentation/auth_screens/loginform/loginform.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/more_menu/more_menu.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollments.dart';
 import 'package:luminar_std/presentation/scan_screen/scan_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:luminar_std/core/theme/theme_provider.dart';
 
 class BottomNavScreen extends StatefulWidget {
   const BottomNavScreen({super.key});
@@ -21,13 +19,12 @@ class BottomNavScreen extends StatefulWidget {
 }
 
 class _BottomNavScreenState extends State<BottomNavScreen> {
-  late EnrollmentProvider enrollmentProvider;
+  late EnrollmentProvider enrollmentProvider; // This is fine
   int _currentIndex = 0;
 
-  // Initialize with a default value, will be updated later
   List<Widget> _pages = [
     const StudentDashboard(),
-    const EnrollmentScreen(), // Default to enrollment screen
+    const EnrollmentScreen(),
     const ScannerApp(),
     const ContactListScreen(),
     const MoreScreen(),
@@ -36,32 +33,16 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   @override
   void initState() {
     super.initState();
+    // DON'T try to access enrollmentProvider here yet
+    // Just schedule the post-frame callback
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Now it's safe to access Provider
       enrollmentProvider = Provider.of<EnrollmentProvider>(
         context,
         listen: false,
       );
-
-      // Update pages based on enrollment data
-      _updatePages();
       _loadData();
     });
-  }
-
-  void _updatePages() {
-    if (enrollmentProvider.enrollmentDataRes != null) {
-      setState(() {
-        _pages = [
-          const StudentDashboard(),
-          enrollmentProvider.enrollmentDataRes!.enrollments.isEmpty
-              ? const EnrollmentScreen()
-              : const EnrollmentDetailsScreen(index: 0),
-          const ScannerApp(),
-          const ContactListScreen(),
-          const MoreScreen(),
-        ];
-      });
-    }
   }
 
   Future<void> _loadData() async {
@@ -71,8 +52,36 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
     }
   }
 
+  void _updatePages() {
+    if (enrollmentProvider.enrollmentDataRes != null) {
+      setState(() {
+        _pages = [
+          const StudentDashboard(),
+          enrollmentProvider.enrollmentDataRes!.enrollments.isEmpty
+              ? const EnrollmentScreen()
+              : const EnrollmentDetailsScreen(
+                  index: 0,
+                  enrollmentId: "fc383b4e-5e24-4563-96c6-8f79a1ac5310",
+                ),
+          const ScannerApp(),
+          const ContactListScreen(),
+          const MoreScreen(),
+        ];
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Check if enrollmentProvider is initialized before using it
+    // In your build method, you should use Provider.of directly instead
+    final provider = Provider.of<EnrollmentProvider>(context);
+
+    // Log safely
+    if (provider.enrollmentDataRes != null) {
+      log(provider.enrollmentDataRes!.enrollments.length.toString());
+    }
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(child: _pages[_currentIndex]),
