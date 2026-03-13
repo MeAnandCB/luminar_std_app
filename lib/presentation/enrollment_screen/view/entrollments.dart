@@ -1,10 +1,11 @@
 // enrollment_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/presentation/course_screen/course_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
-import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
-import 'package:luminar_std/repository/enrollment_screen/model/emiplans_model.dart';
+
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -76,21 +77,27 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text(
-          'My Enrollments',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
+        title: Padding(
+          padding: EdgeInsets.only(left: 20),
+          child: const Text(
+            'My Enrollments',
+            style: TextStyle(
+              color: AppColors.bottomNavSelected,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
           ),
         ),
-        centerTitle: true,
+
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.blue.shade400, Colors.purple.shade400],
+              colors: [
+                const Color.fromARGB(255, 255, 255, 255),
+                const Color.fromARGB(255, 255, 255, 255),
+              ],
             ),
           ),
         ),
@@ -209,22 +216,69 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                     child: EnrollmentCard(
                       enrollment: enrollment,
                       index: index,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EmiPlansScreen(
-                              enrollmentId:
-                                  provider
-                                      .enrollmentDataRes
-                                      ?.enrollments[index]
-                                      .enrollmentNumber ??
-                                  "",
-                            ),
-                            // EnrollmentDetailsScreen(index: index),
-                          ),
-                        );
-                      },
+                      onTap:
+                          (enrollments[index].status.value ==
+                                  "admission_fee_paid" ||
+                              enrollments[index].status.value == "not_set" ||
+                              enrollments[index].status.value == "demo_expired")
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EnrollmentDetailsScreen(
+                                    index: index,
+                                    backbuttonValue: true,
+                                  ),
+                                ),
+                              );
+                            }
+                          : () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CourseScreen(
+                                    institute: "Luminar Technolab",
+                                    courseName:
+                                        enrollments[index].course.courseName,
+                                    batchName:
+                                        enrollments[index].batch.batchName,
+                                    enrollmentId:
+                                        enrollments[index].enrollmentNumber,
+                                    startDate: enrollments[index]
+                                        .batch
+                                        .startDate
+                                        .toString(),
+                                    schedule: enrollments[index].batch.time,
+                                    attendanceMode:
+                                        enrollments[index].attendanceMode.name,
+                                    progress: enrollments[index]
+                                        .progress
+                                        .completionPercentage
+                                        .toInt(),
+                                    attendance: enrollments[index]
+                                        .progress
+                                        .completionPercentage
+                                        .toString(),
+                                    paymentCompleted: enrollments[index]
+                                        .paymentInfo
+                                        .amountPaid
+                                        .toInt(),
+                                    amountPaid: enrollments[index]
+                                        .paymentInfo
+                                        .amountPaid
+                                        .toInt(),
+                                    pendingAmount: enrollments[index]
+                                        .paymentInfo
+                                        .pendingAmount
+                                        .toInt(),
+                                    totalFee: enrollments[index]
+                                        .paymentInfo
+                                        .grossAmount
+                                        .toInt(),
+                                  ),
+                                ),
+                              );
+                            },
                       getProgressColor: _getProgressColor,
                       getStatusColor: _getStatusColor,
                     ),
@@ -443,10 +497,10 @@ class EnrollmentCard extends StatelessWidget {
                               Text(
                                 enrollment.course.courseName,
                                 style: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
@@ -478,29 +532,48 @@ class EnrollmentCard extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  Icon(
-                                    enrollment.attendanceMode.value == 'online'
-                                        ? Icons.videocam
-                                        : Icons.location_on,
-                                    size: 12,
-                                    color:
-                                        enrollment.attendanceMode.value ==
-                                            'online'
-                                        ? Colors.purple.shade400
-                                        : Colors.green.shade400,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    enrollment.attendanceMode.name,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color:
-                                          enrollment.attendanceMode.value ==
-                                              'online'
-                                          ? Colors.purple.shade400
-                                          : Colors.green.shade400,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        switch (enrollment
+                                            .attendanceMode
+                                            .value) {
+                                          'online' => Icons.computer,
+                                          'offline' => Icons.location_on,
+                                          'hybrid' => Icons.sync_alt,
+                                          'recording' => Icons.video_library,
+                                          _ => Icons.help_outline,
+                                        },
+                                        size: 12,
+                                        color: switch (enrollment
+                                            .attendanceMode
+                                            .value) {
+                                          'online' => Colors.blue.shade400,
+                                          'offline' => Colors.green.shade400,
+                                          'hybrid' => Colors.amber.shade400,
+                                          'recording' => Colors.orange.shade400,
+                                          _ => Colors.grey.shade400,
+                                        },
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        enrollment.attendanceMode.name,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: switch (enrollment
+                                              .attendanceMode
+                                              .value) {
+                                            'online' => Colors.blue.shade400,
+                                            'offline' => Colors.green.shade400,
+                                            'hybrid' => Colors.amber.shade400,
+                                            'recording' =>
+                                              Colors.orange.shade400,
+                                            _ => Colors.grey.shade400,
+                                          },
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

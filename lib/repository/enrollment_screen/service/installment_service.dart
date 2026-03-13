@@ -72,17 +72,17 @@ class PaymentDetailsApiService {
 
     // Validate emiPlanId
     if (emiPlanId.isEmpty) {
-      throw Exception('emi_plan_id cannot be empty');
+      throw ApiException(message: 'emi_plan_id cannot be empty');
     }
 
     // Check if enrollment ID is set
     if (_enrollmentId == null || _enrollmentId!.isEmpty) {
-      throw Exception('Enrollment ID is required but not set');
+      throw ApiException(message: 'Enrollment ID is required but not set');
     }
 
     final Map<String, dynamic> payload = {
-      'emi_plan_id': "fc383b4e-5e24-4563-96c6-8f79a1ac5310",
-      'enrollment_id': "137f329b-d002-4042-b30a-088de2058736",
+      'emi_plan_id': emiPlanId,
+      'enrollment_id': _enrollmentId,
     };
 
     try {
@@ -91,7 +91,6 @@ class PaymentDetailsApiService {
 
       final url = Uri.parse('$baseUrl/student-enrollment/emi-preview/');
       print('🌐 URL: $url');
-
       print('📤 Payload: $payload');
 
       final response = await http.post(
@@ -104,19 +103,52 @@ class PaymentDetailsApiService {
       );
 
       print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      // Parse the response body
+      final Map<String, dynamic> jsonData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
         print('✅ JSON parsed successfully');
         return EmiPreviewResponse.fromJson(jsonData);
       } else {
-        print('❌ HTTP Error: ${response.statusCode}');
-        print('❌ Response body: ${response.body}');
-        throw Exception('Failed to load EMI preview: ${response.statusCode}');
+        // Handle error responses
+        String errorMessage = 'Failed to load EMI preview';
+
+        if (jsonData.containsKey('message')) {
+          errorMessage = jsonData['message'];
+        } else if (jsonData.containsKey('error')) {
+          errorMessage = jsonData['error'];
+        }
+
+        print('❌ API Error: $errorMessage');
+        throw ApiException(
+          message: errorMessage,
+          statusCode: response.statusCode,
+          data: jsonData,
+        );
       }
     } catch (e) {
       print('❌ Exception in fetchEmiPreview: $e');
-      throw Exception('Failed to connect to server: $e');
+
+      if (e is ApiException) {
+        rethrow;
+      } else if (e is FormatException) {
+        throw ApiException(message: 'Invalid response format from server');
+      } else {
+        throw ApiException(message: 'Failed to connect to server: $e');
+      }
     }
   }
+}
+
+class ApiException implements Exception {
+  final String message;
+  final int? statusCode;
+  final dynamic data;
+
+  ApiException({required this.message, this.statusCode, this.data});
+
+  @override
+  String toString() => '$message';
 }

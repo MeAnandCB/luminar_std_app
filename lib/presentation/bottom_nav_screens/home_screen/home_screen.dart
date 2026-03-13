@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/widget/header_card.dart';
@@ -156,9 +157,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         const SizedBox(height: 10),
                         InstaCarousel(),
                         const SizedBox(height: 24),
-                        _buildSectionTitle("Recent Activities"),
-                        const SizedBox(height: 12),
-                        _buildActivityList(dashboard),
+                        // _buildSectionTitle("Recent Activities"),
+                        // const SizedBox(height: 12),
+                        // _buildActivityList(dashboard),
                       ],
                     ],
                   ),
@@ -287,36 +288,47 @@ class _StudentDashboardState extends State<StudentDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  gradient: AppColors.successGradient,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadowSuccess,
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+              InkWell(
+                onTap: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BottomNavScreen(initialIndex: 4),
                     ),
-                  ],
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.check_circle_rounded,
-                      size: 12,
-                      color: AppColors.textWhite,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Continue Learning',
-                      style: AppTextStyles.courseCardButton,
-                    ),
-                  ],
+                    (route) => false,
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.successGradient,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.shadowSuccess,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 12,
+                        color: AppColors.textWhite,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Continue Learning',
+                        style: AppTextStyles.courseCardButton,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -401,7 +413,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
       itemCount: activities.length > 4
           ? 4
           : activities.length, // Show max 5 activities
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      separatorBuilder: (context, index) =>
+          Divider(color: const Color.fromARGB(255, 239, 239, 239)),
       itemBuilder: (context, index) {
         final item = activities[index];
 
@@ -449,11 +462,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
             ),
             title: Text(
               item.title ?? 'Activity',
-              style: AppTextStyles.activityTitle,
+              style: AppTextStyles.activityTitle.copyWith(fontSize: 14),
             ),
             subtitle: Text(
               item.description ?? '',
-              style: AppTextStyles.activitySubtitle,
+              style: AppTextStyles.activitySubtitle.copyWith(fontSize: 12),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

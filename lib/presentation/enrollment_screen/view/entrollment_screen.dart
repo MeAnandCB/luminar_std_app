@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
@@ -8,18 +10,16 @@ import 'package:luminar_std/repository/enrollment_screen/model/emiplans_model.da
 import 'package:luminar_std/repository/enrollment_screen/service/installment_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:luminar_std/core/constants/app_endpoints.dart';
-import 'package:luminar_std/core/utils/app_utils.dart';
-import 'dart:convert';
 
 class EnrollmentDetailsScreen extends StatefulWidget {
   const EnrollmentDetailsScreen({
     Key? key,
     required this.index,
-    required this.enrollmentId,
+    required this.backbuttonValue,
   });
   final int index;
-  final String enrollmentId;
+  final bool backbuttonValue;
+
   @override
   State<EnrollmentDetailsScreen> createState() =>
       _EnrollmentDetailsScreenState();
@@ -47,7 +47,13 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
         listen: false,
       ).fetchEnrollData(context: context);
     });
-    _apiService.setEnrollmentId(widget.enrollmentId);
+    _apiService.setEnrollmentId(
+      Provider.of<EnrollmentProvider>(
+            context,
+            listen: false,
+          ).enrollmentDataRes?.enrollments[widget.index].uid ??
+          "",
+    );
     emiPlans = _apiService.fetchEmiPlans();
   }
 
@@ -85,14 +91,45 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
         _isLoadingPreview = false;
       });
     } catch (e) {
+      String errorMsg = e.toString();
+
+      // Try to extract meaningful error message
+      if (errorMsg.contains('400')) {
+        // The error might contain the response body
+        try {
+          // Check if the error message contains JSON
+          if (errorMsg.contains('{') && errorMsg.contains('}')) {
+            final jsonStart = errorMsg.indexOf('{');
+            final jsonEnd = errorMsg.lastIndexOf('}') + 1;
+            if (jsonStart >= 0 && jsonEnd > jsonStart) {
+              final jsonStr = errorMsg.substring(jsonStart, jsonEnd);
+              final errorData = json.decode(jsonStr);
+              if (errorData.containsKey('message')) {
+                errorMsg = errorData['message'];
+              }
+            }
+          }
+        } catch (parseError) {
+          // If parsing fails, keep original message
+          print('Error parsing error: $parseError');
+        }
+      }
+
       setState(() {
         _isLoadingPreview = false;
-        _errorMessage = e.toString();
+        _errorMessage = errorMsg;
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to load preview: $e'),
+          content: Text(
+            errorMsg.length > 100 ? 'Failed to load EMI preview' : errorMsg,
+            style: const TextStyle(fontSize: 13),
+          ),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -122,7 +159,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
             ? _buildErrorWidget(paymentDetailsScreenProvider)
             : Column(
                 children: [
-                  _buildAppBar(),
+                  _buildAppBar(widget.backbuttonValue),
                   Expanded(
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
@@ -449,7 +486,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${plan.planDurationMonths.toStringAsFixed(0)}m',
+                    (index + 1).toString(),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -503,18 +540,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Text(
-                            '₹${_formatAmount(plan.minimumAmount)} - ₹${_formatAmount(plan.maximumAmount)}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
+
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
@@ -616,39 +642,163 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     }
 
     if (_errorMessage != null) {
+      // Parse the error response if it's a JSON string
+      String errorTitle = 'Error';
+      String errorDetail = _errorMessage!;
+      Map<String, dynamic>? errorData;
+
+      try {
+        // Check if the error message contains JSON
+        if (_errorMessage!.contains('{') && _errorMessage!.contains('}')) {
+          final jsonStart = _errorMessage!.indexOf('{');
+          final jsonEnd = _errorMessage!.lastIndexOf('}') + 1;
+          if (jsonStart >= 0 && jsonEnd > jsonStart) {
+            final jsonStr = _errorMessage!.substring(jsonStart, jsonEnd);
+            errorData = json.decode(jsonStr);
+
+            if (errorData != null) {
+              errorTitle =
+                  errorData['status']?.toString().toUpperCase() ?? 'ERROR';
+              errorDetail = errorData['message'] ?? _errorMessage!;
+            }
+          }
+        }
+      } catch (e) {
+        // If JSON parsing fails, use the original error message
+        print('Error parsing error JSON: $e');
+      }
+
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.1),
+          color: Colors.red.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.red.withOpacity(0.3)),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.error_outline, color: Colors.red),
-                SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.error_outline, color: Colors.red, size: 24),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    _errorMessage!,
-                    style: TextStyle(color: Colors.red),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        errorTitle,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Unable to load EMI details',
+                        style: TextStyle(
+                          color: Colors.red.withOpacity(0.8),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            SizedBox(
+
+            // Display error details in a card
+            Container(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _selectPlan(_selectedPlan!),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Retry'),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    errorDetail,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                      height: 1.4,
+                    ),
+                  ),
+
+                  // Show payment analysis if available
+                  if (errorData != null &&
+                      errorData.containsKey('payment_analysis')) ...[
+                    const SizedBox(height: 12),
+                    const Divider(color: AppColors.borderColor),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Payment Analysis:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildAnalysisRow(
+                      'Batch EMI Fees',
+                      '₹${_formatAmount(errorData['payment_analysis']['batch_emi_fees'])}',
+                    ),
+                    _buildAnalysisRow(
+                      'Total Paid',
+                      '₹${_formatAmount(errorData['payment_analysis']['total_paid'])}',
+                      valueColor: AppColors.statsGreen,
+                    ),
+                    _buildAnalysisRow(
+                      'Total Discount',
+                      '₹${_formatAmount(errorData['payment_analysis']['total_discount'])}',
+                      valueColor: AppColors.statsGreen,
+                    ),
+                    const Divider(color: AppColors.borderColor),
+                    _buildAnalysisRow(
+                      'Amount to Finance',
+                      '₹${_formatAmount(errorData['payment_analysis']['amount_to_finance'])}',
+                      valueColor: Colors.red,
+                      isBold: true,
+                    ),
+                    if (errorData['payment_analysis'].containsKey(
+                      'calculation',
+                    )) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardBackground,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          errorData['payment_analysis']['calculation'],
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textHint,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ],
               ),
             ),
+
+            const SizedBox(height: 16),
           ],
         ),
       );
@@ -675,6 +825,35 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     );
   }
 
+  // Helper method for building analysis rows
+  Widget _buildAnalysisRow(
+    String label,
+    String value, {
+    Color valueColor = AppColors.textPrimary,
+    bool isBold = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
+              color: valueColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _formatAmount(dynamic amount) {
     if (amount == null) return '0';
     try {
@@ -689,7 +868,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     }
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(bool backbuttonValue) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       decoration: BoxDecoration(
@@ -701,6 +880,29 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
       ),
       child: Row(
         children: [
+          backbuttonValue == true
+              ? Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                )
+              : SizedBox(),
           const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1795,14 +1997,6 @@ class EmiPreviewDetails extends StatelessWidget {
               _buildDetailRow(
                 'First EMI After',
                 '${response.emiPlanDetails.firstEmiAfterDays} days',
-              ),
-              _buildDetailRow(
-                'Amount Range',
-                '₹${_formatAmount(response.emiPlanDetails.minimumAmount)} - ₹${_formatAmount(response.emiPlanDetails.maximumAmount)}',
-              ),
-              _buildDetailRow(
-                'Duration',
-                '${response.emiPlanDetails.planDurationMonths.toStringAsFixed(1)} months',
               ),
             ],
           ),

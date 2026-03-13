@@ -4,39 +4,45 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/chat_screen/chat_screen.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/home_screen.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/more_menu/more_menu.dart';
+
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollments.dart';
+import 'package:luminar_std/presentation/more_enrollment_screen_bottom/more_entrollment_bottom.dart';
 import 'package:luminar_std/presentation/scan_screen/scan_screen.dart';
 import 'package:provider/provider.dart';
 
 class BottomNavScreen extends StatefulWidget {
-  const BottomNavScreen({super.key});
+  final int initialIndex; // Add this
+
+  const BottomNavScreen({
+    super.key,
+    this.initialIndex = 0, // Default to 0
+  });
 
   @override
   State<BottomNavScreen> createState() => _BottomNavScreenState();
 }
 
 class _BottomNavScreenState extends State<BottomNavScreen> {
-  late EnrollmentProvider enrollmentProvider; // This is fine
-  int _currentIndex = 0;
+  late EnrollmentProvider enrollmentProvider;
+  late int _currentIndex; // Make it late
 
   List<Widget> _pages = [
     const StudentDashboard(),
     const EnrollmentScreen(),
     const ScannerApp(),
     const ContactListScreen(),
-    const MoreScreen(),
+    MoreEnrollmentScreen(),
+    // const MoreScreen(),
   ];
 
   @override
   void initState() {
     super.initState();
-    // DON'T try to access enrollmentProvider here yet
-    // Just schedule the post-frame callback
+    _currentIndex = widget.initialIndex; // Set from widget
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Now it's safe to access Provider
       enrollmentProvider = Provider.of<EnrollmentProvider>(
         context,
         listen: false,
@@ -57,15 +63,12 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
       setState(() {
         _pages = [
           const StudentDashboard(),
-          enrollmentProvider.enrollmentDataRes!.enrollments.isEmpty
-              ? const EnrollmentScreen()
-              : const EnrollmentDetailsScreen(
-                  index: 0,
-                  enrollmentId: "fc383b4e-5e24-4563-96c6-8f79a1ac5310",
-                ),
+          enrollmentProvider.enrollmentDataRes!.enrollments.length == 1
+              ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false)
+              : const EnrollmentScreen(),
           const ScannerApp(),
           const ContactListScreen(),
-          const MoreScreen(),
+          const MoreEnrollmentScreen(),
         ];
       });
     }
