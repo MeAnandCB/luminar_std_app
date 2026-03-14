@@ -55,6 +55,7 @@ dependencies:
   flutter_instagram_api: ^1.0.3
   photo_view: ^0.15.0
   flutter_spinkit: ^5.2.2
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
