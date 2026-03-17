@@ -3,6 +3,7 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
 import 'package:luminar_std/presentation/more_enrollment_screen_bottom/widgets/more_card.dart';
+import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -90,11 +91,11 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
 
     setState(() {
       _selectedCourse = {
-        'id': enrollments[index].uid ?? '',
-        'batchId': enrollments[index].batch?.uid ?? '',
-        'name': enrollments[index].course?.courseName ?? "Course Name",
-        'batch': enrollments[index].batch?.batchName ?? "Batch Name",
-        'mode': enrollments[index].attendanceMode?.name ?? "Regular",
+        'id': enrollments[index].uid,
+        'batchId': enrollments[index].batch.uid,
+        'name': enrollments[index].course.courseName,
+        'batch': enrollments[index].batch.batchName,
+        'mode': enrollments[index].attendanceMode.name,
       };
     });
   }
@@ -221,13 +222,13 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: List.generate(
-                        provider.enrollmentDataRes?.enrollments?.length != null
-                            ? (provider.enrollmentDataRes!.enrollments!.length >
+                        provider.enrollmentDataRes?.enrollments.length != null
+                            ? (provider.enrollmentDataRes!.enrollments.length >
                                       3
                                   ? 3
                                   : provider
                                         .enrollmentDataRes!
-                                        .enrollments!
+                                        .enrollments
                                         .length)
                             : 0,
                         (index) => Container(
@@ -779,14 +780,14 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                       color: const Color(0xFF6C5CE7),
 
                       onTap: () {
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) {
-                        //       return VideosScreen();
-                        //     },
-                        //   ),
-                        // );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return PaymentScreen();
+                            },
+                          ),
+                        );
                       },
                     ),
                   ],
