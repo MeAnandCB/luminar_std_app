@@ -1,482 +1,994 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:luminar_std/core/theme/app_colors.dart';
-import 'package:luminar_std/core/theme/app_text_styles.dart';
+import 'package:intl/intl.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
+import 'package:luminar_std/repository/payment_screen/model.dart';
+import 'package:luminar_std/repository/payment_screen/service.dart';
+import 'package:provider/provider.dart';
 
-class PaymentsScreen extends StatefulWidget {
-  const PaymentsScreen({super.key});
+class PaymentScreen extends StatefulWidget {
+  const PaymentScreen({super.key});
 
   @override
-  State<PaymentsScreen> createState() => _PaymentsScreenState();
+  State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
-class _PaymentsScreenState extends State<PaymentsScreen> {
-  // Only completed transactions
-  final List<PaymentTransaction> _transactions = [
-    PaymentTransaction(
-      id: 'TXN202603031708568186',
-      date: DateTime(2026, 3, 3),
-      method: 'razorpay',
-      amount: 26000,
-      status: 'Completed',
-      receiptUrl: 'receipt_mar2026.pdf',
-    ),
-    PaymentTransaction(
-      id: 'TXN202603021329309731',
-      date: DateTime(2026, 3, 2),
-      method: 'Cash',
-      amount: 1000,
-      status: 'Completed',
-      receiptUrl: 'receipt_mar2026_cash.pdf',
-    ),
-  ];
+class _PaymentScreenState extends State<PaymentScreen>
+    with SingleTickerProviderStateMixin {
+  TabController? _tabController;
+  List<PaymentData> _paymentDataList = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+  Map<String, EnrollmentDetailResponse?> _enrollmentDetailsCache = {};
 
-  String _formatCurrency(int amount) {
-    return '₹${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
+    });
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  Future<void> _initializeData() async {
+    if (!mounted) return;
+
+    try {
+      final controller = Provider.of<DashboardController>(
+        context,
+        listen: false,
+      );
+      await controller.getDashboardData(context: context);
+
+      await _fetchAllEnrollmentDetails();
+      _processPaymentData();
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load payment data: $e';
+          _isLoading = false;
+        });
+      }
+    }
   }
 
-  void _downloadReceipt(String transactionId, String receiptUrl) {
+  Future<void> _fetchAllEnrollmentDetails() async {
+    final controller = Provider.of<DashboardController>(context, listen: false);
+    final dashboardData = controller.dashboardModel?.dashboard;
+
+    if (dashboardData == null) return;
+
+    final enrollments = dashboardData.enrollmentDetails?.enrollments ?? [];
+    if (enrollments.isEmpty) return;
+
+    final accessKey = await AppUtils.getAccessKey();
+    if (accessKey == null || accessKey.isEmpty) return;
+
+    for (var enrollment in enrollments) {
+      final enrollmentUid = enrollment.basicInfo?.uid;
+      if (enrollmentUid != null && enrollmentUid.isNotEmpty) {
+        try {
+          final details = await PaymentScreenService.fetchEnrollmentDetails(
+            enrollmentUid,
+            accessKey,
+          );
+          if (details != null && mounted) {
+            setState(() {
+              _enrollmentDetailsCache[enrollmentUid] = details;
+            });
+          }
+        } catch (e) {
+          debugPrint('Error fetching details for $enrollmentUid: $e');
+          continue;
+        }
+      }
+    }
+  }
+
+  void _processPaymentData() {
+    final controller = Provider.of<DashboardController>(context, listen: false);
+    final dashboardData = controller.dashboardModel?.dashboard;
+
+    if (dashboardData == null) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'No dashboard data available';
+        });
+      }
+      return;
+    }
+
+    final enrollments = dashboardData.enrollmentDetails?.enrollments ?? [];
+
+    if (enrollments.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'No enrollments found';
+        });
+      }
+      return;
+    }
+
+    List<PaymentData> paymentDataList = [];
+
+    for (var enrollment in enrollments) {
+      final basicInfo = enrollment.basicInfo;
+      final enrollmentUid = basicInfo?.uid ?? '';
+
+      final detailedData = _enrollmentDetailsCache[enrollmentUid];
+
+      if (detailedData != null) {
+        final paymentData = _mapDetailedDataToPaymentData(detailedData);
+        paymentDataList.add(paymentData);
+      } else {}
+    }
+
+    if (mounted) {
+      setState(() {
+        _paymentDataList = paymentDataList;
+        // Only create TabController if we have multiple enrollments
+        if (paymentDataList.length > 1) {
+          _tabController = TabController(
+            length: paymentDataList.length,
+            vsync: this,
+          );
+        } else {
+          _tabController = null; // No tabs needed for single enrollment
+        }
+      });
+    }
+  }
+
+  PaymentData _mapDetailedDataToPaymentData(EnrollmentDetailResponse data) {
+    List<Transaction> transactions = [];
+    if (data.paymentTransactions != null) {
+      for (var txn in data.paymentTransactions!) {
+        transactions.add(
+          Transaction(
+            id:
+                txn.transactionId ??
+                'TXN${DateTime.now().millisecondsSinceEpoch}',
+            date: txn.paymentDate ?? DateTime.now(),
+            method: txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'Unknown',
+            amount: txn.amount ?? 0,
+            status: _mapTransactionStatus(txn.status),
+          ),
+        );
+      }
+    }
+
+    List<EmiInstallment> emiSchedule = [];
+    if (data.emiInstallments != null) {
+      for (var emi in data.emiInstallments!) {
+        if (emi.installmentNumber != null && emi.dueDate != null) {
+          emiSchedule.add(
+            EmiInstallment(
+              number: emi.installmentNumber!,
+              dueDate: emi.dueDate!,
+              amount: emi.totalAmount ?? 0,
+              status: _mapEmiStatus(emi.status, emi.isOverdue ?? false),
+            ),
+          );
+        }
+      }
+    }
+
+    emiSchedule.sort((a, b) => a.number.compareTo(b.number));
+
+    DateTime nextDueDate = DateTime.now();
+    double nextDueAmount = 0;
+
+    final pendingEmis = emiSchedule
+        .where((e) => e.status != EmiStatus.paid)
+        .toList();
+    if (pendingEmis.isNotEmpty) {
+      nextDueDate = pendingEmis.first.dueDate;
+      nextDueAmount = pendingEmis.first.amount;
+    } else if (data.nextEmiDueDate != null) {
+      nextDueDate = DateTime.tryParse(data.nextEmiDueDate!) ?? DateTime.now();
+    }
+
+    return PaymentData(
+      enrollmentId: data.enrollmentNumber ?? 'N/A',
+      enrollmentUid: data.uid ?? '',
+      courseName: data.batch?.courseName ?? 'Unknown Course',
+      batchName: data.batch?.batchName ?? 'Unknown Batch',
+      totalFee: data.netFees ?? data.originalCourseFees ?? 0,
+      paidAmount: data.totalAmountPaid ?? 0,
+      remainingAmount: data.totalPendingAmount ?? 0,
+      paymentType: data.paymentType?.toUpperCase() ?? 'N/A',
+      nextDueAmount: nextDueAmount,
+      nextDueDate: nextDueDate,
+      progress: data.paymentCompletionPercentage ?? 0,
+      transactions: transactions,
+      emiSchedule: emiSchedule,
+      isOverdue: data.isPaymentOverdue ?? false,
+      studentName: data.studentName ?? '',
+      studentId: data.studentId ?? '',
+    );
+  }
+
+  TransactionStatus _mapTransactionStatus(String? status) {
+    if (status == null) return TransactionStatus.pending;
+    switch (status.toLowerCase()) {
+      case 'completed':
+      case 'success':
+        return TransactionStatus.completed;
+      case 'failed':
+        return TransactionStatus.failed;
+      default:
+        return TransactionStatus.pending;
+    }
+  }
+
+  EmiStatus _mapEmiStatus(String? status, bool isOverdue) {
+    if (status == null) return EmiStatus.pending;
+    if (status.toLowerCase() == 'paid') return EmiStatus.paid;
+    if (isOverdue) return EmiStatus.overdue;
+    return EmiStatus.pending;
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.arrow_back,
+              color: Colors.black87,
+              size: 18,
+            ),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Payments',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(
+                    Icons.notifications_none,
+                    color: Colors.black87,
+                    size: 18,
+                  ),
+                  if (!_isLoading)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            onPressed: () {},
+          ),
+        ],
+        // Only show bottom bar if we have multiple enrollments
+        bottom:
+            _paymentDataList.length > 1 && !_isLoading && _tabController != null
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(70),
+                child: _buildTabBar(),
+              )
+            : null,
+      ),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildTabBar() {
+    final tabController = _tabController!;
+
+    return Container(
+      height: 70,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TabBar(
+        controller: tabController,
+        indicator: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.purple.withOpacity(0.1),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: Colors.purple,
+        unselectedLabelColor: Colors.grey[500],
+        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Colors.grey[500],
+        ),
+        isScrollable: true,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        tabs: _paymentDataList.asMap().entries.map((entry) {
+          final index = entry.key;
+          final data = entry.value;
+          return Tab(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: tabController.index == index
+                          ? Colors.purple
+                          : Colors.grey[200],
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: tabController.index == index
+                              ? Colors.white
+                              : Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _getShortCourseName(data.courseName),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (data.remainingAmount > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: data.isOverdue ? Colors.red : Colors.orange,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSingleEnrollmentHeader() {
+    if (_paymentDataList.isEmpty) return const SizedBox.shrink();
+
+    final data = _paymentDataList.first;
+    return Container(
+      height: 70,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.purple[50],
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Icon(Icons.school, color: Colors.purple, size: 18),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  data.courseName,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  data.batchName,
+                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (data.remainingAmount > 0)
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: data.isOverdue ? Colors.red : Colors.orange,
+                shape: BoxShape.circle,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabCountIndicator() {
+    if (_tabController == null || _paymentDataList.length <= 1) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(right: 16),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.purple.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.grid_view, size: 14, color: Colors.purple[400]),
+                const SizedBox(width: 4),
+                Text(
+                  '${_tabController!.index + 1}/${_paymentDataList.length}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.purple[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getShortCourseName(String courseName) {
+    if (courseName.length > 12) {
+      return '${courseName.substring(0, 10)}...';
+    }
+    return courseName;
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage!,
+              style: TextStyle(color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _isLoading = true;
+                  _errorMessage = null;
+                  _tabController = null;
+                });
+                _initializeData();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_paymentDataList.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.payment, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'No payment data available',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // For single enrollment - just show the content without tabs
+    if (_paymentDataList.length == 1) {
+      return Column(
+        children: [
+          _buildSingleEnrollmentHeader(),
+          Expanded(child: _buildPaymentContent(_paymentDataList.first)),
+        ],
+      );
+    }
+
+    // For multiple enrollments - show tabs
+    if (_tabController == null) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [_buildTabCountIndicator()],
+          ),
+        ),
+
+        Expanded(
+          child: TabBarView(
+            controller: _tabController!,
+            children: _paymentDataList.map((data) {
+              return _buildPaymentContent(data);
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showEmiDetails(BuildContext context, EmiInstallment emi) {
+    final dateFormat = DateFormat('d/M/yyyy');
+    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: emi.status == EmiStatus.paid
+                        ? Colors.green[50]
+                        : emi.status == EmiStatus.overdue
+                        ? Colors.red[50]
+                        : Colors.blue[50],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${emi.number}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: emi.status == EmiStatus.paid
+                            ? Colors.green[700]
+                            : emi.status == EmiStatus.overdue
+                            ? Colors.red[700]
+                            : Colors.blue[700],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Installment ${emi.number}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: emi.status == EmiStatus.paid
+                              ? Colors.green[50]
+                              : emi.status == EmiStatus.overdue
+                              ? Colors.red[50]
+                              : Colors.blue[50],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          emi.status == EmiStatus.paid
+                              ? 'Paid'
+                              : emi.status == EmiStatus.overdue
+                              ? 'Overdue'
+                              : 'Pending',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: emi.status == EmiStatus.paid
+                                ? Colors.green[700]
+                                : emi.status == EmiStatus.overdue
+                                ? Colors.red[700]
+                                : Colors.blue[700],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _buildDetailItem('Amount', currencyFormat.format(emi.amount)),
+            _buildDetailItem('Due Date', dateFormat.format(emi.dueDate)),
+            const SizedBox(height: 24),
+            if (emi.status != EmiStatus.paid)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        side: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      child: const Text('Later'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _handlePayment(emi);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: emi.status == EmiStatus.overdue
+                            ? Colors.red[600]
+                            : Colors.blue[600],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text('Pay Now'),
+                    ),
+                  ),
+                ],
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Close'),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handlePayment(EmiInstallment emi) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
+        content: Text(
+          'Processing payment of ₹${emi.amount.toStringAsFixed(0)}',
+        ),
+        backgroundColor: Colors.blue,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value, {Color? statusColor}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: statusColor ?? Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.whiteWithOpacity20,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.download_done_rounded,
-                  color: AppColors.white,
-                  size: 18,
-                ),
+              Icon(icon, size: 20, color: color),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Downloading Receipt',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                    Text(
-                      'Transaction: ${transactionId.substring(0, 12)}...',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.whiteWithOpacity70,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    AppColors.white,
-                  ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: color,
                 ),
               ),
             ],
           ),
         ),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.textPrimary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        duration: const Duration(seconds: 2),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final totalFee = 27000;
-    final paidAmount = 27000;
-    final progressValue = paidAmount / totalFee;
+  Widget _buildAttractiveNextDueCard(PaymentData data) {
+    final isOverdue = data.isOverdue;
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Text(
-                      'Payments',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.account_balance_wallet_rounded,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
-                    ),
-                  ],
-                ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Stack(
+        children: [
+          Container(
+            height: 180,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isOverdue
+                    ? [
+                        Colors.red[400]!,
+                        Colors.orange[400]!,
+                        Colors.yellow[400]!,
+                      ]
+                    : const [
+                        Color(0xFF4158D0),
+                        Color(0xFFC850C0),
+                        Color(0xFFFFCC70),
+                      ],
               ),
-
-              // Progress Card
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: AppColors.splashGradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: (isOverdue ? Colors.red : Colors.purple).withOpacity(
+                    0.3,
                   ),
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 30,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Payment Overview',
-                          style: AppTextStyles.caption.copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.whiteWithOpacity90,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.whiteWithOpacity20,
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: AppColors.borderLight),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.verified_rounded,
-                                color: AppColors.white,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 4),
-                              const Text(
-                                'FULLY PAID',
-                                style: TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+              ],
+            ),
+          ),
 
-                    // Progress Ring Style
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Total Fee',
-                                style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.whiteWithOpacity70,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              const Text(
-                                '₹27,000',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'Paid Amount',
-                                style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.whiteWithOpacity70,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              const Text(
-                                '₹27,000',
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              SizedBox(
-                                height: 100,
-                                width: 100,
-                                child: Image.asset(
-                                  "assets/images/atm-card.png",
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Progress Bar
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Payment Progress',
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.whiteWithOpacity80,
-                                fontSize: 12,
-                              ),
-                            ),
-                            Text(
-                              '${(progressValue * 100).toInt()}% Complete',
-                              style: AppTextStyles.caption.copyWith(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: progressValue,
-                            minHeight: 8,
-                            backgroundColor: AppColors.whiteWithOpacity20,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppColors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Transaction History Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
+          Container(
+            height: 180,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          Icons.history_rounded,
-                          color: AppColors.primary,
-                          size: 24,
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            isOverdue
+                                ? Icons.warning_amber
+                                : Icons.calendar_today,
+                            color: Colors.white,
+                            size: 14,
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Transaction History',
+                        Text(
+                          isOverdue ? 'Overdue Payment' : 'Next Payment',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withOpacity(0.9),
                           ),
                         ),
                       ],
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
+                        horizontal: 12,
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary.withOpacity(0.1),
-                            AppColors.primaryLight.withOpacity(0.05),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(30),
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: AppColors.primary.withOpacity(0.2),
+                          color: Colors.white.withOpacity(0.3),
                         ),
                       ),
-                      child: Text(
-                        '${_transactions.length} Transactions',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Transaction Cards - Only Completed
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: _transactions.length,
-                itemBuilder: (context, index) {
-                  final transaction = _transactions[index];
-                  return _buildTransactionCard(transaction);
-                },
-              ),
-
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTransactionCard(PaymentTransaction transaction) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Top Row - ID and Amount
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary.withOpacity(0.1),
-                            AppColors.primaryLight.withOpacity(0.05),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        Icons.receipt_long_rounded,
-                        color: AppColors.primary,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Transaction ID', style: AppTextStyles.caption),
+                          Icon(Icons.schedule, size: 12, color: Colors.white),
+                          const SizedBox(width: 4),
                           Text(
-                            transaction.id,
-                            style: TextStyle(
-                              fontSize: 13,
+                            data.paymentType,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.white,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                              fontFamily: 'Monospace',
                             ),
                           ),
                         ],
@@ -484,221 +996,848 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     ),
                   ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.statsGreen.withOpacity(0.1),
-                      AppColors.statsGreen.withOpacity(0.05),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _formatCurrency(transaction.amount),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.statsGreen,
-                  ),
-                ),
-              ),
-            ],
-          ),
 
-          const SizedBox(height: 16),
-
-          // Middle Row - Date and Method
-          Row(
-            children: [
-              // Date
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.borderLight),
-                ),
-                child: Row(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Icon(
-                      Icons.calendar_today_rounded,
-                      size: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _formatDate(transaction.date),
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // Payment Method
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.1)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      transaction.method == 'razorpay'
-                          ? Icons.payment_rounded
-                          : transaction.method == 'Cash'
-                          ? Icons.money_rounded
-                          : Icons.credit_card_rounded,
-                      size: 12,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      transaction.method,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const Spacer(),
-
-              // Success Badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.statsGreen,
-                      AppColors.statsGreen.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.statsGreen.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.check_circle_rounded,
-                      size: 12,
-                      color: AppColors.white,
-                    ),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'Success',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // Download Button Row - Always shown for completed transactions
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 44,
-                  decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _downloadReceipt(transaction.id, transaction.receiptUrl);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.download_rounded, size: 18),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Download Receipt',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                        Text(
+                          isOverdue ? 'Overdue Amount' : 'Due Amount',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
                           ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '₹${NumberFormat('#,##0').format(data.nextDueAmount)}',
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.event,
+                              size: 12,
+                              color: Colors.white.withOpacity(0.7),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              DateFormat(
+                                'dd MMMM, yyyy',
+                              ).format(data.nextDueDate),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withOpacity(0.9),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withOpacity(0.3),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            if (data.emiSchedule.isNotEmpty) {
+                              _handlePayment(data.emiSchedule.first);
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  isOverdue ? 'Pay Now' : 'Pay Now',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF4158D0),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(
+                                  Icons.arrow_forward,
+                                  size: 16,
+                                  color: Color(0xFF4158D0),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+              ],
+            ),
+          ),
+
+          Positioned(
+            top: -20,
+            right: -20,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
               ),
-            ],
+            ),
+          ),
+          Positioned(
+            bottom: -30,
+            left: -30,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
-}
 
-class PaymentTransaction {
-  final String id;
-  final DateTime date;
-  final String method;
-  final int amount;
-  final String status;
-  final String receiptUrl;
+  Widget _buildPaymentHistoryList(
+    BuildContext context,
+    List<Transaction> transactions,
+  ) {
+    if (transactions.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(Icons.history, size: 32, color: Colors.grey[400]),
+              const SizedBox(height: 8),
+              Text(
+                'No transactions found',
+                style: TextStyle(color: Colors.grey[500]),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
-  PaymentTransaction({
-    required this.id,
-    required this.date,
-    required this.method,
-    required this.amount,
-    required this.status,
-    required this.receiptUrl,
-  });
+    final dateFormat = DateFormat('d/M/yyyy');
+    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: transactions.length,
+      separatorBuilder: (_, __) => const Divider(height: 12),
+      itemBuilder: (context, index) {
+        final txn = transactions[index];
+        return InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!, width: 1),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: txn.status == TransactionStatus.completed
+                        ? Colors.green[50]
+                        : txn.status == TransactionStatus.failed
+                        ? Colors.red[50]
+                        : Colors.orange[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    txn.status == TransactionStatus.completed
+                        ? Icons.check_circle
+                        : txn.status == TransactionStatus.failed
+                        ? Icons.cancel
+                        : Icons.pending,
+                    size: 16,
+                    color: txn.status == TransactionStatus.completed
+                        ? Colors.green[600]
+                        : txn.status == TransactionStatus.failed
+                        ? Colors.red[600]
+                        : Colors.orange[600],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Payment',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${dateFormat.format(txn.date)} • ${txn.method}',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      currencyFormat.format(txn.amount),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: txn.status == TransactionStatus.completed
+                            ? Colors.green[600]
+                            : txn.status == TransactionStatus.failed
+                            ? Colors.red[600]
+                            : Colors.orange[600],
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: txn.status == TransactionStatus.completed
+                            ? Colors.green[50]
+                            : txn.status == TransactionStatus.failed
+                            ? Colors.red[50]
+                            : Colors.orange[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        txn.status == TransactionStatus.completed
+                            ? 'Success'
+                            : txn.status == TransactionStatus.failed
+                            ? 'Failed'
+                            : 'Pending',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w500,
+                          color: txn.status == TransactionStatus.completed
+                              ? Colors.green[700]
+                              : txn.status == TransactionStatus.failed
+                              ? Colors.red[700]
+                              : Colors.orange[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmiScheduleList(
+    BuildContext context,
+    List<EmiInstallment> schedule,
+  ) {
+    if (schedule.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(Icons.schedule, size: 32, color: Colors.grey[400]),
+              const SizedBox(height: 8),
+              Text(
+                'No EMI schedule available',
+                style: TextStyle(color: Colors.grey[500]),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final dateFormat = DateFormat('d/M/yyyy');
+    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: schedule.length,
+      separatorBuilder: (_, __) => const Divider(height: 8),
+      itemBuilder: (context, index) {
+        final emi = schedule[index];
+        return InkWell(
+          onTap: () => _showEmiDetails(context, emi),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: emi.status == EmiStatus.overdue
+                    ? Colors.red[100]!
+                    : emi.status == EmiStatus.paid
+                    ? Colors.green[100]!
+                    : Colors.grey[200]!,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: emi.status == EmiStatus.paid
+                        ? Colors.green[50]
+                        : emi.status == EmiStatus.overdue
+                        ? Colors.red[50]
+                        : Colors.blue[50],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${emi.number}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: emi.status == EmiStatus.paid
+                            ? Colors.green[700]
+                            : emi.status == EmiStatus.overdue
+                            ? Colors.red[700]
+                            : Colors.blue[700],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Installment ${emi.number}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Due: ${dateFormat.format(emi.dueDate)}',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      currencyFormat.format(emi.amount),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: emi.status == EmiStatus.overdue
+                            ? Colors.red[600]
+                            : emi.status == EmiStatus.paid
+                            ? Colors.green[600]
+                            : Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    if (emi.status != EmiStatus.paid)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (emi.status == EmiStatus.overdue)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red[50],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Overdue',
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  color: Colors.red[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          if (emi.status == EmiStatus.pending)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange[50],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Pending',
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  color: Colors.orange[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[50],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Pay',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPaymentContent(PaymentData data) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.05),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.school,
+                        color: Colors.blue,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            data.courseName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            data.batchName,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: data.isOverdue
+                            ? Colors.red[50]
+                            : Colors.green[50],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        data.isOverdue ? 'Overdue' : 'Active',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: data.isOverdue
+                              ? Colors.red[700]
+                              : Colors.green[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (data.studentName.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.person_outline,
+                        size: 14,
+                        color: Colors.grey[500],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        data.studentName,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        Icons.badge_outlined,
+                        size: 14,
+                        color: Colors.grey[500],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        data.studentId,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                _buildStatCard(
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: 'Total Fee',
+                  value: '₹${NumberFormat('#,##0').format(data.totalFee)}',
+                  color: Colors.blue,
+                ),
+                const SizedBox(width: 12),
+                _buildStatCard(
+                  icon: Icons.check_circle_outline,
+                  label: 'Paid',
+                  value: '₹${NumberFormat('#,##0').format(data.paidAmount)}',
+                  color: Colors.green,
+                ),
+                const SizedBox(width: 12),
+                _buildStatCard(
+                  icon: Icons.pending_outlined,
+                  label: 'Remaining',
+                  value:
+                      '₹${NumberFormat('#,##0').format(data.remainingAmount)}',
+                  color: Colors.orange,
+                ),
+              ],
+            ),
+          ),
+
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          //   child: Container(
+          //     padding: EdgeInsets.all(10),
+          //     decoration: BoxDecoration(
+          //       borderRadius: BorderRadius.circular(10),
+          //       color: Colors.green,
+          //     ),
+          //     child: Column(
+          //       children: [
+          //         Text(
+          //           'Total Discount',
+          //           style: TextStyle(color: Colors.white, fontSize: 12),
+          //         ),
+          //         Text(
+          //           '₹${NumberFormat('#,##0').format(data.)}',
+          //           style: TextStyle(
+          //             color: Colors.white,
+          //             fontSize: 18,
+          //             fontWeight: FontWeight.bold,
+          //           ),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
+          _buildAttractiveNextDueCard(data),
+
+          const SizedBox(height: 16),
+
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.05),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Progress',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${data.progress.toStringAsFixed(1)}%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue[600],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: (data.progress / 100).clamp(0.0, 1.0),
+                    backgroundColor: Colors.grey[100],
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      data.isOverdue ? Colors.red : Colors.blue,
+                    ),
+                    minHeight: 8,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '₹${NumberFormat('#,##0').format(data.paidAmount)} of ₹${NumberFormat('#,##0').format(data.totalFee)}',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.05),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Theme(
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: const EdgeInsets.all(16),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.purple[50],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.history,
+                    color: Colors.purple,
+                    size: 18,
+                  ),
+                ),
+                title: const Text(
+                  'Payment History',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${data.transactions.length} transactions',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.keyboard_arrow_down,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: _buildPaymentHistoryList(context, data.transactions),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          if (data.paymentType.toLowerCase().contains('emi'))
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Theme(
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  tilePadding: const EdgeInsets.all(16),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.schedule,
+                      color: Colors.orange,
+                      size: 18,
+                    ),
+                  ),
+                  title: const Text(
+                    'EMI Schedule',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    '${data.emiSchedule.where((e) => e.status != EmiStatus.paid).length} pending',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  ),
+                  trailing: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: _buildEmiScheduleList(context, data.emiSchedule),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
 }
