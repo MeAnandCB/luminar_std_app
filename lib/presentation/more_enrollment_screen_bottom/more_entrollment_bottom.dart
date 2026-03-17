@@ -4,7 +4,7 @@ import 'package:luminar_std/presentation/enrollment_screen/controller/controller
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
 import 'package:luminar_std/presentation/live_class/live_class.dart';
 import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
-import 'package:luminar_std/presentation/recorder_video_screen/recorder_video_screen.dart';
+import 'package:luminar_std/presentation/recorder_video_screen/video_gallery_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -94,6 +94,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
       _selectedCourse = {
         'id': enrollments[index].uid ?? '',
         'batchId': enrollments[index].batch?.uid ?? '',
+
         'name': enrollments[index].course?.courseName ?? "Course Name",
         'batch': enrollments[index].batch?.batchName ?? "Batch Name",
         'mode': enrollments[index].attendanceMode?.name ?? "Regular",
@@ -627,6 +628,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
         final batchId = currentEnrollment.batch?.uid ?? '';
         final batchName = currentEnrollment.batch?.batchName ?? 'Batch';
         final enrollmentId = currentEnrollment.uid ?? '';
+        final courseName = currentEnrollment.course.courseName ?? "";
 
         return Container(
           decoration: const BoxDecoration(
@@ -706,10 +708,30 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                AttendanceScreen(batchId: batchId),
+                            builder: (context) => AttendanceScreen(
+                              batchId: batchId,
+                              courseName: batchName,
+                              batchName: courseName,
+                            ),
                           ),
                         );
+                      },
+                    ),
+                    MoreCard(
+                      icon: Icons.calendar_month_rounded,
+                      title: "Recoder Class Videos",
+                      subtitle: "subtitle",
+                      color: const Color(0xFF6C5CE7),
+
+                      onTap: () {
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) {
+                        //       return VideosScreen();
+                        //     },
+                        //   ),
+                        // );
                       },
                     ),
                   ],

@@ -178,7 +178,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           child: _buildSectionTitle("Our Success Stories"),
                         ),
                         const SizedBox(height: 10),
-                        const InstaCarousel(),
+                        const AdvancedInstaCarousel(),
                         const SizedBox(height: 24),
                         // _buildSectionTitle("Recent Activities"),
                         // const SizedBox(height: 12),

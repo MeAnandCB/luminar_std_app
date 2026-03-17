@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:luminar_std/presentation/attandance_screen/controller.dart';
 import 'package:luminar_std/presentation/auth_screens/forgot_password/controller/forgot_password.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/controller/bottom_nav_controller.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
+
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/splash_screen/splash_screen.dart';
