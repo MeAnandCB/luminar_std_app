@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
-import 'package:luminar_std/presentation/live_class/live_class.dart';
-import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
-import 'package:luminar_std/presentation/recorder_video_screen/video_gallery_screen.dart';
+import 'package:luminar_std/presentation/more_enrollment_screen_bottom/widgets/more_card.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -94,7 +92,6 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
       _selectedCourse = {
         'id': enrollments[index].uid ?? '',
         'batchId': enrollments[index].batch?.uid ?? '',
-
         'name': enrollments[index].course?.courseName ?? "Course Name",
         'batch': enrollments[index].batch?.batchName ?? "Batch Name",
         'mode': enrollments[index].attendanceMode?.name ?? "Regular",
@@ -175,25 +172,49 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                         if (courseName.length > 15) {
                           displayName = '${courseName.substring(0, 20)}...';
                         }
-
                         return Tab(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 8,
                             ),
-                            child: Text(
-                              displayName,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.data_usage, size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  displayName,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         );
                       }).toList(),
                     ),
                   ),
+                  //       return Tab(
+                  //         child: Container(
+                  //           padding: const EdgeInsets.symmetric(
+                  //             horizontal: 16,
+                  //             vertical: 8,
+                  //           ),
+                  //           child: Text(
+                  //             displayName,
+                  //             style: const TextStyle(
+                  //               fontSize: 14,
+                  //               fontWeight: FontWeight.w500,
+                  //             ),
+                  //           ),
+                  //         ),
+                  //       );
+                  //     }).toList(),
+                  //   ),
+                  // ),
                   const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -701,7 +722,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                     MoreCard(
                       icon: Icons.calendar_month_rounded,
                       title: "Attandance",
-                      subtitle: "subtitle",
+                      subtitle: "Track your daily class attendance",
                       color: const Color(0xFF6C5CE7),
 
                       onTap: () {
@@ -718,9 +739,43 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                       },
                     ),
                     MoreCard(
-                      icon: Icons.calendar_month_rounded,
+                      icon: Icons.video_collection_outlined,
                       title: "Recoder Class Videos",
-                      subtitle: "subtitle",
+                      subtitle: "Watch your recorded class videos",
+                      color: const Color(0xFF6C5CE7),
+
+                      onTap: () {
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) {
+                        //       return VideosScreen();
+                        //     },
+                        //   ),
+                        // );
+                      },
+                    ),
+                    MoreCard(
+                      icon: Icons.computer_rounded,
+                      title: "Class Link",
+                      subtitle: "Join your live class instantly",
+                      color: const Color(0xFF6C5CE7),
+
+                      onTap: () {
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) {
+                        //       return VideosScreen();
+                        //     },
+                        //   ),
+                        // );
+                      },
+                    ),
+                    MoreCard(
+                      icon: Icons.add_moderator_outlined,
+                      title: "Payment",
+                      subtitle: "Track your fee payments",
                       color: const Color(0xFF6C5CE7),
 
                       onTap: () {
@@ -737,232 +792,10 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                   ],
                 ),
               ),
-
-              //   ListView(
-              //     padding: const EdgeInsets.symmetric(horizontal: 20),
-              //     children: [
-              //       const SizedBox(height: 12),
-              //       _buildFeatureItem(
-              //         icon: Icons.calendar_month_rounded,
-              //         title: 'Attendance',
-              //         subtitle: 'Track daily attendance',
-              //         color: const Color(0xFF6C5CE7),
-              //         badge: _getAttendanceBadge(),
-              //         onTap: () => _navigateToAttendance(
-              //           batchId: batchId,
-              //           batchName: batchName,
-              //         ),
-              //       ),
-              //       const SizedBox(height: 12),
-              //       _buildFeatureItem(
-              //         icon: Icons.video_library_rounded,
-              //         title: 'Videos',
-              //         subtitle: 'Course recordings',
-              //         color: const Color(0xFF00B894),
-              //         badge: '12 new',
-              //         onTap: () => _navigateToVideos(),
-              //       ),
-              //       const SizedBox(height: 12),
-              //       _buildFeatureItem(
-              //         icon: Icons.payment_rounded,
-              //         title: 'Payments',
-              //         subtitle: 'Fee details',
-              //         color: const Color(0xFFF39C12),
-              //         badge: 'Paid',
-              //         onTap: () => _navigateToPayments(),
-              //       ),
-              //       const SizedBox(height: 12),
-              //       _buildFeatureItem(
-              //         icon: Icons.video_camera_front_rounded,
-              //         title: 'Live Class',
-              //         subtitle: 'Join now',
-              //         color: const Color(0xFFFF7675),
-              //         badge: 'LIVE',
-              //         onTap: () => _navigateToLiveClass(),
-              //       ),
-              //       const SizedBox(height: 12),
-              //       _buildFeatureItem(
-              //         icon: Icons.assignment_rounded,
-              //         title: 'Assignments',
-              //         subtitle: 'Pending tasks',
-              //         color: const Color(0xFF0984E3),
-              //         badge: '3',
-              //         onTap: () => _showComingSoon('Assignments'),
-              //       ),
-              //       const SizedBox(height: 12),
-              //       _buildFeatureItem(
-              //         icon: Icons.quiz_rounded,
-              //         title: 'Tests',
-              //         subtitle: 'Upcoming exams',
-              //         color: const Color(0xFFE84393),
-              //         badge: '2',
-              //         onTap: () => _showComingSoon('Tests'),
-              //       ),
-              //       const SizedBox(height: 20),
-              //     ],
-              //   ),
-              // ),
             ],
           ),
         );
       },
-    );
-  }
-
-  //   String _getAttendanceBadge() {
-  //     // This would come from your actual data
-  //     return '85%';
-  //   }
-
-  //   void _navigateToAttendance({
-  //     required String batchId,
-  //     required String batchName,
-  //   }) {
-  //     if (_selectedCourse.isEmpty) return;
-
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(
-  //         builder: (context) => AttendanceScreen(
-  //           batchId:
-  //               enrollmentProvider?.enrollmentDataRes?.enrollments[0].uid ?? "",
-  //         ),
-  //       ),
-  //     );
-  //   }
-
-  //   void _navigateToVideos() {
-  //     if (_selectedCourse.isEmpty) return;
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(builder: (context) => const VideosScreen()),
-  //     );
-  //   }
-
-  //   void _navigateToPayments() {
-  //     if (_selectedCourse.isEmpty) return;
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(builder: (context) => const PaymentsScreen()),
-  //     );
-  //   }
-
-  //   void _navigateToLiveClass() {
-  //     if (_selectedCourse.isEmpty) return;
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(builder: (context) => const LiveClassScreen()),
-  //     );
-  //   }
-
-  //   void _showComingSoon(String feature) {
-  //     if (_selectedCourse.isEmpty) return;
-
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text(
-  //           '$feature feature coming soon for ${_selectedCourse['name'] ?? 'this course'}!',
-  //         ),
-  //         behavior: SnackBarBehavior.floating,
-  //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-  //       ),
-  //     );
-  //   }
-}
-
-class MoreCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-
-  final VoidCallback onTap;
-
-  const MoreCard({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-
-    required this.onTap,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.zero,
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
-          border: Border.all(color: color.withOpacity(0.2), width: 1),
-        ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // Icon with background (square corners)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    child: Icon(icon, color: color, size: 28),
-                  ),
-                  const SizedBox(width: 16),
-
-                  // Title and subtitle
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          subtitle,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Arrow icon
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: AppColors.textSecondary.withOpacity(0.3),
-                    size: 16,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
