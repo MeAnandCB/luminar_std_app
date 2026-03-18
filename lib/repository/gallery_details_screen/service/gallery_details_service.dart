@@ -56,8 +56,8 @@ class FolderBrowserService {
       return ApiResponse(success: false, data: null, message: 'Error fetching folder videos: $e', statusCode: 500);
     }
   }
+  // services/folder_browser_service.dart - Update getFolderContents method
 
-  // Get both subfolders and videos for a folder
   Future<ApiResponse> getFolderContents({
     required String batchId,
     required String galleryUid,
@@ -71,8 +71,15 @@ class FolderBrowserService {
         getSubfolders(batchId: batchId, galleryUid: galleryUid, parentFolderUid: folderUid),
       ];
 
-      // Only fetch videos if we have a folderUid (videos without folder are shown in root)
-      if (folderUid != null) {
+      // For root (folderUid = null), fetch videos without folder
+      // For subfolders (folderUid != null), fetch videos in that folder
+      if (folderUid == null) {
+        // Fetch videos without folder for root
+        futures.add(
+          getVideosWithoutFolder(batchId: batchId, galleryUid: galleryUid, page: videoPage, pageSize: videoPageSize),
+        );
+      } else {
+        // Fetch videos in specific folder
         futures.add(
           getFolderVideos(
             batchId: batchId,
@@ -87,14 +94,14 @@ class FolderBrowserService {
       final results = await Future.wait(futures);
 
       final foldersResponse = results[0];
-      ApiResponse? videosResponse = results.length > 1 ? results[1] : null;
+      final videosResponse = results[1];
 
-      if (foldersResponse.success && (videosResponse?.success ?? true)) {
+      if (foldersResponse.success && videosResponse.success) {
         return ApiResponse(
           success: true,
           data: {
             'folders': foldersResponse.data,
-            'videos': videosResponse?.data,
+            'videos': videosResponse.data,
             'currentFolderUid': folderUid,
             'currentFolderName': folderName,
           },
@@ -106,6 +113,30 @@ class FolderBrowserService {
       }
     } catch (e) {
       return ApiResponse(success: false, data: null, message: 'Error: $e', statusCode: 500);
+    }
+  }
+
+  // Add this new method to fetch videos without folder
+  Future<ApiResponse> getVideosWithoutFolder({
+    required String batchId,
+    required String galleryUid,
+    int page = 1,
+    int pageSize = 10,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        endpoint:
+            '/api/videos/?batch_uid=$batchId&gallery_uid=$galleryUid&is_active=true&without_folder=true&page=$page&page_size=$pageSize',
+      );
+
+      if (response.success) {
+        VideoResponseModel resModel = VideoResponseModel.fromJson(response.data);
+        return ApiResponse(success: true, data: resModel, message: response.message, statusCode: response.statusCode);
+      } else {
+        return ApiResponse(success: false, data: null, message: response.message, statusCode: response.statusCode);
+      }
+    } catch (e) {
+      return ApiResponse(success: false, data: null, message: 'Error fetching videos: $e', statusCode: 500);
     }
   }
 }
