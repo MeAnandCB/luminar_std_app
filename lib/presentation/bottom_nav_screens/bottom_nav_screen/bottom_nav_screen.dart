@@ -61,7 +61,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
               ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false)
               : const EnrollmentScreen(),
           const ContactListScreen(),
-          const MoreEnrollmentScreen(),
+          MoreEnrollmentScreen(),
         ];
       });
     }
