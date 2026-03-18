@@ -1,11 +1,17 @@
-// lib/main.dart
+// lib/main.dart - Updated to use existing model classes
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
-import 'package:luminar_std/repository/payment_screen/model.dart';
+import 'package:luminar_std/repository/payment_screen/model.dart'; // This already has all model classes
 import 'package:luminar_std/repository/payment_screen/service.dart';
 import 'package:provider/provider.dart';
+
+// Define enums locally if needed
+enum TransactionStatus { completed, failed, pending }
+
+enum EmiStatus { paid, pending, overdue }
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -17,10 +23,11 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen>
     with SingleTickerProviderStateMixin {
   TabController? _tabController;
-  List<PaymentData> _paymentDataList = [];
+  List<EnrollmentDetailResponse> _paymentDataList =
+      []; // Use API model directly
   bool _isLoading = true;
   String? _errorMessage;
-  Map<String, EnrollmentDetailResponse?> _enrollmentDetailsCache = {};
+  final Map<String, EnrollmentDetailResponse?> _enrollmentDetailsCache = {};
 
   @override
   void initState() {
@@ -41,11 +48,23 @@ class _PaymentScreenState extends State<PaymentScreen>
       await controller.getDashboardData(context: context);
 
       await _fetchAllEnrollmentDetails();
-      _processPaymentData();
 
       if (mounted) {
         setState(() {
+          _paymentDataList = _enrollmentDetailsCache.values
+              .whereType<EnrollmentDetailResponse>()
+              .toList();
           _isLoading = false;
+
+          // Only create TabController if we have multiple enrollments
+          if (_paymentDataList.length > 1) {
+            _tabController = TabController(
+              length: _paymentDataList.length,
+              vsync: this,
+            );
+          } else {
+            _tabController = null;
+          }
         });
       }
     } catch (e) {
@@ -91,129 +110,6 @@ class _PaymentScreenState extends State<PaymentScreen>
     }
   }
 
-  void _processPaymentData() {
-    final controller = Provider.of<DashboardController>(context, listen: false);
-    final dashboardData = controller.dashboardModel?.dashboard;
-
-    if (dashboardData == null) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'No dashboard data available';
-        });
-      }
-      return;
-    }
-
-    final enrollments = dashboardData.enrollmentDetails?.enrollments ?? [];
-
-    if (enrollments.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'No enrollments found';
-        });
-      }
-      return;
-    }
-
-    List<PaymentData> paymentDataList = [];
-
-    for (var enrollment in enrollments) {
-      final basicInfo = enrollment.basicInfo;
-      final enrollmentUid = basicInfo?.uid ?? '';
-
-      final detailedData = _enrollmentDetailsCache[enrollmentUid];
-
-      if (detailedData != null) {
-        final paymentData = _mapDetailedDataToPaymentData(detailedData);
-        paymentDataList.add(paymentData);
-      } else {}
-    }
-
-    if (mounted) {
-      setState(() {
-        _paymentDataList = paymentDataList;
-        // Only create TabController if we have multiple enrollments
-        if (paymentDataList.length > 1) {
-          _tabController = TabController(
-            length: paymentDataList.length,
-            vsync: this,
-          );
-        } else {
-          _tabController = null; // No tabs needed for single enrollment
-        }
-      });
-    }
-  }
-
-  PaymentData _mapDetailedDataToPaymentData(EnrollmentDetailResponse data) {
-    List<Transaction> transactions = [];
-    if (data.paymentTransactions != null) {
-      for (var txn in data.paymentTransactions!) {
-        transactions.add(
-          Transaction(
-            id:
-                txn.transactionId ??
-                'TXN${DateTime.now().millisecondsSinceEpoch}',
-            date: txn.paymentDate ?? DateTime.now(),
-            method: txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'Unknown',
-            amount: txn.amount ?? 0,
-            status: _mapTransactionStatus(txn.status),
-          ),
-        );
-      }
-    }
-
-    List<EmiInstallment> emiSchedule = [];
-    if (data.emiInstallments != null) {
-      for (var emi in data.emiInstallments!) {
-        if (emi.installmentNumber != null && emi.dueDate != null) {
-          emiSchedule.add(
-            EmiInstallment(
-              number: emi.installmentNumber!,
-              dueDate: emi.dueDate!,
-              amount: emi.totalAmount ?? 0,
-              status: _mapEmiStatus(emi.status, emi.isOverdue ?? false),
-            ),
-          );
-        }
-      }
-    }
-
-    emiSchedule.sort((a, b) => a.number.compareTo(b.number));
-
-    DateTime nextDueDate = DateTime.now();
-    double nextDueAmount = 0;
-
-    final pendingEmis = emiSchedule
-        .where((e) => e.status != EmiStatus.paid)
-        .toList();
-    if (pendingEmis.isNotEmpty) {
-      nextDueDate = pendingEmis.first.dueDate;
-      nextDueAmount = pendingEmis.first.amount;
-    } else if (data.nextEmiDueDate != null) {
-      nextDueDate = DateTime.tryParse(data.nextEmiDueDate!) ?? DateTime.now();
-    }
-
-    return PaymentData(
-      enrollmentId: data.enrollmentNumber ?? 'N/A',
-      enrollmentUid: data.uid ?? '',
-      courseName: data.batch?.courseName ?? 'Unknown Course',
-      batchName: data.batch?.batchName ?? 'Unknown Batch',
-      totalFee: data.netFees ?? data.originalCourseFees ?? 0,
-      paidAmount: data.totalAmountPaid ?? 0,
-      remainingAmount: data.totalPendingAmount ?? 0,
-      paymentType: data.paymentType?.toUpperCase() ?? 'N/A',
-      nextDueAmount: nextDueAmount,
-      nextDueDate: nextDueDate,
-      progress: data.paymentCompletionPercentage ?? 0,
-      transactions: transactions,
-      emiSchedule: emiSchedule,
-      isOverdue: data.isPaymentOverdue ?? false,
-      studentName: data.studentName ?? '',
-      studentId: data.studentId ?? '',
-    );
-  }
-
   TransactionStatus _mapTransactionStatus(String? status) {
     if (status == null) return TransactionStatus.pending;
     switch (status.toLowerCase()) {
@@ -232,6 +128,28 @@ class _PaymentScreenState extends State<PaymentScreen>
     if (status.toLowerCase() == 'paid') return EmiStatus.paid;
     if (isOverdue) return EmiStatus.overdue;
     return EmiStatus.pending;
+  }
+
+  String _getFormattedAmount(dynamic amount) {
+    if (amount == null) return '₹0';
+    if (amount is String) {
+      return '₹${NumberFormat('#,##0').format(double.tryParse(amount) ?? 0)}';
+    }
+    if (amount is num) {
+      return '₹${NumberFormat('#,##0').format(amount)}';
+    }
+    return '₹0';
+  }
+
+  double _getNumericAmount(dynamic amount) {
+    if (amount == null) return 0;
+    if (amount is String) {
+      return double.tryParse(amount) ?? 0;
+    }
+    if (amount is num) {
+      return amount.toDouble();
+    }
+    return 0;
   }
 
   @override
@@ -320,7 +238,6 @@ class _PaymentScreenState extends State<PaymentScreen>
             onPressed: () {},
           ),
         ],
-        // Only show bottom bar if we have multiple enrollments
         bottom:
             _paymentDataList.length > 1 && !_isLoading && _tabController != null
             ? PreferredSize(
@@ -370,6 +287,9 @@ class _PaymentScreenState extends State<PaymentScreen>
         tabs: _paymentDataList.asMap().entries.map((entry) {
           final index = entry.key;
           final data = entry.value;
+          final remainingAmount = _getNumericAmount(data.totalPendingAmount);
+          final isOverdue = data.isPaymentOverdue ?? false;
+
           return Tab(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -400,17 +320,17 @@ class _PaymentScreenState extends State<PaymentScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    _getShortCourseName(data.courseName),
+                    _getShortCourseName(data.batch?.courseName ?? 'Course'),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (data.remainingAmount > 0)
+                  if (remainingAmount > 0)
                     Padding(
                       padding: const EdgeInsets.only(left: 4),
                       child: Container(
                         width: 6,
                         height: 6,
                         decoration: BoxDecoration(
-                          color: data.isOverdue ? Colors.red : Colors.orange,
+                          color: isOverdue ? Colors.red : Colors.orange,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -428,6 +348,9 @@ class _PaymentScreenState extends State<PaymentScreen>
     if (_paymentDataList.isEmpty) return const SizedBox.shrink();
 
     final data = _paymentDataList.first;
+    final remainingAmount = _getNumericAmount(data.totalPendingAmount);
+    final isOverdue = data.isPaymentOverdue ?? false;
+
     return Container(
       height: 70,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -463,7 +386,7 @@ class _PaymentScreenState extends State<PaymentScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  data.courseName,
+                  data.batch?.courseName ?? 'Unknown Course',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -473,7 +396,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  data.batchName,
+                  data.batch?.batchName ?? 'Unknown Batch',
                   style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -481,12 +404,12 @@ class _PaymentScreenState extends State<PaymentScreen>
               ],
             ),
           ),
-          if (data.remainingAmount > 0)
+          if (remainingAmount > 0)
             Container(
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: data.isOverdue ? Colors.red : Colors.orange,
+                color: isOverdue ? Colors.red : Colors.orange,
                 shape: BoxShape.circle,
               ),
             ),
@@ -631,7 +554,6 @@ class _PaymentScreenState extends State<PaymentScreen>
             children: [_buildTabCountIndicator()],
           ),
         ),
-
         Expanded(
           child: TabBarView(
             controller: _tabController!,
@@ -686,7 +608,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   ),
                   child: Center(
                     child: Text(
-                      '${emi.number}',
+                      '${emi.installmentNumber}',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -705,7 +627,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Installment ${emi.number}',
+                        'Installment ${emi.installmentNumber}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -748,8 +670,11 @@ class _PaymentScreenState extends State<PaymentScreen>
               ],
             ),
             const SizedBox(height: 24),
-            _buildDetailItem('Amount', currencyFormat.format(emi.amount)),
-            _buildDetailItem('Due Date', dateFormat.format(emi.dueDate)),
+            _buildDetailItem(
+              'Amount',
+              currencyFormat.format(emi.totalAmount ?? 0),
+            ),
+            _buildDetailItem('Due Date', dateFormat.format(emi.dueDate!)),
             const SizedBox(height: 24),
             if (emi.status != EmiStatus.paid)
               Row(
@@ -814,7 +739,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Processing payment of ₹${emi.amount.toStringAsFixed(0)}',
+          'Processing payment of ₹${(emi.totalAmount ?? 0).toStringAsFixed(0)}',
         ),
         backgroundColor: Colors.blue,
         behavior: SnackBarBehavior.floating,
@@ -891,8 +816,29 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 
-  Widget _buildAttractiveNextDueCard(PaymentData data) {
-    final isOverdue = data.isOverdue;
+  Widget _buildAttractiveNextDueCard(EnrollmentDetailResponse data) {
+    final isOverdue = data.isPaymentOverdue ?? false;
+
+    // Find next due EMI
+    EmiInstallment? nextDueEmi;
+    num nextDueAmount = 0;
+    DateTime nextDueDate = DateTime.now();
+
+    if (data.emiInstallments != null && data.emiInstallments!.isNotEmpty) {
+      final pendingEmis = data.emiInstallments!
+          .where((e) => e.status?.toLowerCase() != 'paid')
+          .toList();
+      if (pendingEmis.isNotEmpty) {
+        pendingEmis.sort((a, b) {
+          if (a.dueDate == null) return 1;
+          if (b.dueDate == null) return -1;
+          return a.dueDate!.compareTo(b.dueDate!);
+        });
+        nextDueEmi = pendingEmis.first;
+        nextDueAmount = nextDueEmi?.totalAmount ?? 0;
+        nextDueDate = nextDueEmi?.dueDate ?? DateTime.now();
+      }
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -928,7 +874,6 @@ class _PaymentScreenState extends State<PaymentScreen>
               ],
             ),
           ),
-
           Container(
             height: 180,
             padding: const EdgeInsets.all(20),
@@ -984,7 +929,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                           Icon(Icons.schedule, size: 12, color: Colors.white),
                           const SizedBox(width: 4),
                           Text(
-                            data.paymentType,
+                            data.paymentType?.toUpperCase() ?? 'N/A',
                             style: const TextStyle(
                               fontSize: 11,
                               color: Colors.white,
@@ -996,7 +941,6 @@ class _PaymentScreenState extends State<PaymentScreen>
                     ),
                   ],
                 ),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -1013,7 +957,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '₹${NumberFormat('#,##0').format(data.nextDueAmount)}',
+                          '₹${NumberFormat('#,##0').format(nextDueAmount)}',
                           style: const TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w800,
@@ -1031,9 +975,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              DateFormat(
-                                'dd MMMM, yyyy',
-                              ).format(data.nextDueDate),
+                              DateFormat('dd MMMM, yyyy').format(nextDueDate),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.white.withOpacity(0.9),
@@ -1043,7 +985,6 @@ class _PaymentScreenState extends State<PaymentScreen>
                         ),
                       ],
                     ),
-
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
@@ -1059,8 +1000,8 @@ class _PaymentScreenState extends State<PaymentScreen>
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            if (data.emiSchedule.isNotEmpty) {
-                              _handlePayment(data.emiSchedule.first);
+                            if (nextDueEmi != null) {
+                              _handlePayment(nextDueEmi);
                             }
                           },
                           borderRadius: BorderRadius.circular(16),
@@ -1101,7 +1042,6 @@ class _PaymentScreenState extends State<PaymentScreen>
               ],
             ),
           ),
-
           Positioned(
             top: -20,
             right: -20,
@@ -1133,9 +1073,9 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildPaymentHistoryList(
     BuildContext context,
-    List<Transaction> transactions,
+    List<PaymentTransaction>? transactions,
   ) {
-    if (transactions.isEmpty) {
+    if (transactions == null || transactions.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Center(
@@ -1163,6 +1103,9 @@ class _PaymentScreenState extends State<PaymentScreen>
       separatorBuilder: (_, __) => const Divider(height: 12),
       itemBuilder: (context, index) {
         final txn = transactions[index];
+        final amount = _getNumericAmount(txn.amount);
+        final status = _mapTransactionStatus(txn.status);
+
         return InkWell(
           onTap: () {},
           borderRadius: BorderRadius.circular(12),
@@ -1178,23 +1121,23 @@ class _PaymentScreenState extends State<PaymentScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: txn.status == TransactionStatus.completed
+                    color: status == TransactionStatus.completed
                         ? Colors.green[50]
-                        : txn.status == TransactionStatus.failed
+                        : status == TransactionStatus.failed
                         ? Colors.red[50]
                         : Colors.orange[50],
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    txn.status == TransactionStatus.completed
+                    status == TransactionStatus.completed
                         ? Icons.check_circle
-                        : txn.status == TransactionStatus.failed
+                        : status == TransactionStatus.failed
                         ? Icons.cancel
                         : Icons.pending,
                     size: 16,
-                    color: txn.status == TransactionStatus.completed
+                    color: status == TransactionStatus.completed
                         ? Colors.green[600]
-                        : txn.status == TransactionStatus.failed
+                        : status == TransactionStatus.failed
                         ? Colors.red[600]
                         : Colors.orange[600],
                   ),
@@ -1213,7 +1156,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${dateFormat.format(txn.date)} • ${txn.method}',
+                        '${dateFormat.format(txn.paymentDate ?? DateTime.now())} • ${txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'Unknown'}',
                         style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                       ),
                     ],
@@ -1223,13 +1166,13 @@ class _PaymentScreenState extends State<PaymentScreen>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      currencyFormat.format(txn.amount),
+                      currencyFormat.format(amount),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: txn.status == TransactionStatus.completed
+                        color: status == TransactionStatus.completed
                             ? Colors.green[600]
-                            : txn.status == TransactionStatus.failed
+                            : status == TransactionStatus.failed
                             ? Colors.red[600]
                             : Colors.orange[600],
                       ),
@@ -1241,25 +1184,25 @@ class _PaymentScreenState extends State<PaymentScreen>
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: txn.status == TransactionStatus.completed
+                        color: status == TransactionStatus.completed
                             ? Colors.green[50]
-                            : txn.status == TransactionStatus.failed
+                            : status == TransactionStatus.failed
                             ? Colors.red[50]
                             : Colors.orange[50],
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        txn.status == TransactionStatus.completed
+                        status == TransactionStatus.completed
                             ? 'Success'
-                            : txn.status == TransactionStatus.failed
+                            : status == TransactionStatus.failed
                             ? 'Failed'
                             : 'Pending',
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w500,
-                          color: txn.status == TransactionStatus.completed
+                          color: status == TransactionStatus.completed
                               ? Colors.green[700]
-                              : txn.status == TransactionStatus.failed
+                              : status == TransactionStatus.failed
                               ? Colors.red[700]
                               : Colors.orange[700],
                         ),
@@ -1277,9 +1220,9 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildEmiScheduleList(
     BuildContext context,
-    List<EmiInstallment> schedule,
+    List<EmiInstallment>? schedule,
   ) {
-    if (schedule.isEmpty) {
+    if (schedule == null || schedule.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Center(
@@ -1300,13 +1243,22 @@ class _PaymentScreenState extends State<PaymentScreen>
     final dateFormat = DateFormat('d/M/yyyy');
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
 
+    // Sort by installment number
+    final sortedSchedule = List<EmiInstallment>.from(schedule)
+      ..sort(
+        (a, b) =>
+            (a.installmentNumber ?? 0).compareTo(b.installmentNumber ?? 0),
+      );
+
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: schedule.length,
+      itemCount: sortedSchedule.length,
       separatorBuilder: (_, __) => const Divider(height: 8),
       itemBuilder: (context, index) {
-        final emi = schedule[index];
+        final emi = sortedSchedule[index];
+        final emiStatus = _mapEmiStatus(emi.status, emi.isOverdue ?? false);
+
         return InkWell(
           onTap: () => _showEmiDetails(context, emi),
           borderRadius: BorderRadius.circular(12),
@@ -1316,9 +1268,9 @@ class _PaymentScreenState extends State<PaymentScreen>
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: emi.status == EmiStatus.overdue
+                color: emiStatus == EmiStatus.overdue
                     ? Colors.red[100]!
-                    : emi.status == EmiStatus.paid
+                    : emiStatus == EmiStatus.paid
                     ? Colors.green[100]!
                     : Colors.grey[200]!,
                 width: 1,
@@ -1330,22 +1282,22 @@ class _PaymentScreenState extends State<PaymentScreen>
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: emi.status == EmiStatus.paid
+                    color: emiStatus == EmiStatus.paid
                         ? Colors.green[50]
-                        : emi.status == EmiStatus.overdue
+                        : emiStatus == EmiStatus.overdue
                         ? Colors.red[50]
                         : Colors.blue[50],
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Text(
-                      '${emi.number}',
+                      '${emi.installmentNumber ?? index + 1}',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: emi.status == EmiStatus.paid
+                        color: emiStatus == EmiStatus.paid
                             ? Colors.green[700]
-                            : emi.status == EmiStatus.overdue
+                            : emiStatus == EmiStatus.overdue
                             ? Colors.red[700]
                             : Colors.blue[700],
                       ),
@@ -1358,7 +1310,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Installment ${emi.number}',
+                        'Installment ${emi.installmentNumber ?? index + 1}',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -1366,7 +1318,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Due: ${dateFormat.format(emi.dueDate)}',
+                        'Due: ${dateFormat.format(emi.dueDate ?? DateTime.now())}',
                         style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                       ),
                     ],
@@ -1376,23 +1328,23 @@ class _PaymentScreenState extends State<PaymentScreen>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      currencyFormat.format(emi.amount),
+                      currencyFormat.format(emi.totalAmount ?? 0),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: emi.status == EmiStatus.overdue
+                        color: emiStatus == EmiStatus.overdue
                             ? Colors.red[600]
-                            : emi.status == EmiStatus.paid
+                            : emiStatus == EmiStatus.paid
                             ? Colors.green[600]
                             : Colors.grey[800],
                       ),
                     ),
                     const SizedBox(height: 2),
-                    if (emi.status != EmiStatus.paid)
+                    if (emiStatus != EmiStatus.paid)
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (emi.status == EmiStatus.overdue)
+                          if (emiStatus == EmiStatus.overdue)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
@@ -1411,7 +1363,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                                 ),
                               ),
                             ),
-                          if (emi.status == EmiStatus.pending)
+                          if (emiStatus == EmiStatus.pending)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
@@ -1461,12 +1413,19 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 
-  Widget _buildPaymentContent(PaymentData data) {
+  Widget _buildPaymentContent(EnrollmentDetailResponse data) {
+    final totalFee = _getNumericAmount(data.netFees);
+    final paidAmount = _getNumericAmount(data.totalAmountPaid);
+    final remainingAmount = _getNumericAmount(data.totalPendingAmount);
+    final discount = _getNumericAmount(data.totalDiscountAmount);
+    final admission = _getNumericAmount(data.originalAdmissionFees);
+    final progress = data.paymentCompletionPercentage ?? 0;
+    final isOverdue = data.isPaymentOverdue ?? false;
+
     return SingleChildScrollView(
       child: Column(
         children: [
           const SizedBox(height: 8),
-
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             padding: const EdgeInsets.all(16),
@@ -1504,7 +1463,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            data.courseName,
+                            data.batch?.courseName ?? 'Unknown Course',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -1512,7 +1471,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            data.batchName,
+                            data.batch?.batchName ?? 'Unknown Batch',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[500],
@@ -1527,16 +1486,14 @@ class _PaymentScreenState extends State<PaymentScreen>
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: data.isOverdue
-                            ? Colors.red[50]
-                            : Colors.green[50],
+                        color: isOverdue ? Colors.red[50] : Colors.green[50],
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        data.isOverdue ? 'Overdue' : 'Active',
+                        isOverdue ? 'Overdue' : 'Active',
                         style: TextStyle(
                           fontSize: 11,
-                          color: data.isOverdue
+                          color: isOverdue
                               ? Colors.red[700]
                               : Colors.green[700],
                           fontWeight: FontWeight.w500,
@@ -1545,7 +1502,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     ),
                   ],
                 ),
-                if (data.studentName.isNotEmpty) ...[
+                if ((data.studentName ?? '').isNotEmpty) ...[
                   const SizedBox(height: 12),
                   const Divider(),
                   const SizedBox(height: 8),
@@ -1558,7 +1515,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        data.studentName,
+                        data.studentName ?? '',
                         style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                       ),
                       const SizedBox(width: 16),
@@ -1569,7 +1526,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        data.studentId,
+                        data.studentId ?? '',
                         style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                       ),
                     ],
@@ -1578,9 +1535,11 @@ class _PaymentScreenState extends State<PaymentScreen>
               ],
             ),
           ),
-
           const SizedBox(height: 16),
-
+          data.paymentTypeDisplay == "Full Amount"
+              ? SizedBox()
+              : _buildAttractiveNextDueCard(data),
+          const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -1588,57 +1547,48 @@ class _PaymentScreenState extends State<PaymentScreen>
                 _buildStatCard(
                   icon: Icons.account_balance_wallet_outlined,
                   label: 'Total Fee',
-                  value: '₹${NumberFormat('#,##0').format(data.totalFee)}',
+                  value: '₹${NumberFormat('#,##0').format(totalFee)}',
                   color: Colors.blue,
                 ),
                 const SizedBox(width: 12),
                 _buildStatCard(
                   icon: Icons.check_circle_outline,
                   label: 'Paid',
-                  value: '₹${NumberFormat('#,##0').format(data.paidAmount)}',
+                  value: '₹${NumberFormat('#,##0').format(paidAmount)}',
                   color: Colors.green,
                 ),
                 const SizedBox(width: 12),
                 _buildStatCard(
                   icon: Icons.pending_outlined,
                   label: 'Remaining',
-                  value:
-                      '₹${NumberFormat('#,##0').format(data.remainingAmount)}',
+                  value: '₹${NumberFormat('#,##0').format(remainingAmount)}',
                   color: Colors.orange,
                 ),
               ],
             ),
           ),
-
-          // Padding(
-          //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          //   child: Container(
-          //     padding: EdgeInsets.all(10),
-          //     decoration: BoxDecoration(
-          //       borderRadius: BorderRadius.circular(10),
-          //       color: Colors.green,
-          //     ),
-          //     child: Column(
-          //       children: [
-          //         Text(
-          //           'Total Discount',
-          //           style: TextStyle(color: Colors.white, fontSize: 12),
-          //         ),
-          //         Text(
-          //           '₹${NumberFormat('#,##0').format(data.)}',
-          //           style: TextStyle(
-          //             color: Colors.white,
-          //             fontSize: 18,
-          //             fontWeight: FontWeight.bold,
-          //           ),
-          //         ),
-          //       ],
-          //     ),
-          //   ),
-          // ),
-          _buildAttractiveNextDueCard(data),
-
-          const SizedBox(height: 16),
+          SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                _buildStatCard(
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: 'Total Discount',
+                  value: '₹${NumberFormat('#,##0').format(discount)}',
+                  color: const Color.fromARGB(255, 40, 17, 124),
+                ),
+                const SizedBox(width: 12),
+                _buildStatCard(
+                  icon: Icons.check_circle_outline,
+                  label: 'Admission Fee',
+                  value: '₹${NumberFormat('#,##0').format(admission)}',
+                  color: const Color.fromARGB(255, 145, 25, 95),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 16),
 
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -1677,7 +1627,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '${data.progress.toStringAsFixed(1)}%',
+                        '${progress.toStringAsFixed(1)}%',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.blue[600],
@@ -1691,25 +1641,23 @@ class _PaymentScreenState extends State<PaymentScreen>
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
-                    value: (data.progress / 100).clamp(0.0, 1.0),
+                    value: (progress / 100).clamp(0.0, 1.0),
                     backgroundColor: Colors.grey[100],
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      data.isOverdue ? Colors.red : Colors.blue,
+                      isOverdue ? Colors.red : Colors.blue,
                     ),
                     minHeight: 8,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '₹${NumberFormat('#,##0').format(data.paidAmount)} of ₹${NumberFormat('#,##0').format(data.totalFee)}',
+                  '₹${NumberFormat('#,##0').format(paidAmount)} of ₹${NumberFormat('#,##0').format(totalFee)}',
                   style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                 ),
               ],
             ),
           ),
-
           const SizedBox(height: 16),
-
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
@@ -1746,7 +1694,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                 ),
                 subtitle: Text(
-                  '${data.transactions.length} transactions',
+                  '${data.paymentTransactions?.length ?? 0} transactions',
                   style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                 ),
                 trailing: Container(
@@ -1764,16 +1712,17 @@ class _PaymentScreenState extends State<PaymentScreen>
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: _buildPaymentHistoryList(context, data.transactions),
+                    child: _buildPaymentHistoryList(
+                      context,
+                      data.paymentTransactions,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-
           const SizedBox(height: 16),
-
-          if (data.paymentType.toLowerCase().contains('emi'))
+          if ((data.paymentType ?? '').toLowerCase().contains('emi'))
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
@@ -1810,7 +1759,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
-                    '${data.emiSchedule.where((e) => e.status != EmiStatus.paid).length} pending',
+                    '${data.emiInstallments?.where((e) => e.status?.toLowerCase() != 'paid').length ?? 0} pending',
                     style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   ),
                   trailing: Container(
@@ -1828,13 +1777,15 @@ class _PaymentScreenState extends State<PaymentScreen>
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: _buildEmiScheduleList(context, data.emiSchedule),
+                      child: _buildEmiScheduleList(
+                        context,
+                        data.emiInstallments,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-
           const SizedBox(height: 20),
         ],
       ),
