@@ -363,7 +363,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                BottomNavScreen(initialIndex: 4),
+                                BottomNavScreen(initialIndex: 3),
                           ),
                           (route) => false,
                         );
@@ -575,7 +575,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                BottomNavScreen(initialIndex: 4),
+                                BottomNavScreen(initialIndex: 3),
                           ),
                           (route) => false,
                         );

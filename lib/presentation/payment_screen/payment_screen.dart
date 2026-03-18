@@ -1,10 +1,10 @@
-// lib/main.dart - Updated to use existing model classes
+// lib/main.dart - Updated to show single enrollment details
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
-import 'package:luminar_std/repository/payment_screen/model.dart'; // This already has all model classes
+import 'package:luminar_std/repository/payment_screen/model.dart';
 import 'package:luminar_std/repository/payment_screen/service.dart';
 import 'package:provider/provider.dart';
 
@@ -14,7 +14,12 @@ enum TransactionStatus { completed, failed, pending }
 enum EmiStatus { paid, pending, overdue }
 
 class PaymentScreen extends StatefulWidget {
-  const PaymentScreen({super.key});
+  final String enrollmentId; // Add this parameter to accept enrollment ID
+
+  const PaymentScreen({
+    super.key,
+    required this.enrollmentId, // Optional parameter
+  });
 
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
@@ -22,12 +27,9 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen>
     with SingleTickerProviderStateMixin {
-  TabController? _tabController;
-  List<EnrollmentDetailResponse> _paymentDataList =
-      []; // Use API model directly
+  EnrollmentDetailResponse? _paymentData; // Single enrollment data
   bool _isLoading = true;
   String? _errorMessage;
-  final Map<String, EnrollmentDetailResponse?> _enrollmentDetailsCache = {};
 
   @override
   void initState() {
@@ -47,24 +49,11 @@ class _PaymentScreenState extends State<PaymentScreen>
       );
       await controller.getDashboardData(context: context);
 
-      await _fetchAllEnrollmentDetails();
+      await _fetchEnrollmentDetails();
 
       if (mounted) {
         setState(() {
-          _paymentDataList = _enrollmentDetailsCache.values
-              .whereType<EnrollmentDetailResponse>()
-              .toList();
           _isLoading = false;
-
-          // Only create TabController if we have multiple enrollments
-          if (_paymentDataList.length > 1) {
-            _tabController = TabController(
-              length: _paymentDataList.length,
-              vsync: this,
-            );
-          } else {
-            _tabController = null;
-          }
         });
       }
     } catch (e) {
@@ -77,7 +66,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     }
   }
 
-  Future<void> _fetchAllEnrollmentDetails() async {
+  Future<void> _fetchEnrollmentDetails() async {
     final controller = Provider.of<DashboardController>(context, listen: false);
     final dashboardData = controller.dashboardModel?.dashboard;
 
@@ -89,23 +78,47 @@ class _PaymentScreenState extends State<PaymentScreen>
     final accessKey = await AppUtils.getAccessKey();
     if (accessKey == null || accessKey.isEmpty) return;
 
-    for (var enrollment in enrollments) {
-      final enrollmentUid = enrollment.basicInfo?.uid;
-      if (enrollmentUid != null && enrollmentUid.isNotEmpty) {
-        try {
-          final details = await PaymentScreenService.fetchEnrollmentDetails(
-            enrollmentUid,
-            accessKey,
-          );
-          if (details != null && mounted) {
-            setState(() {
-              _enrollmentDetailsCache[enrollmentUid] = details;
-            });
-          }
-        } catch (e) {
-          debugPrint('Error fetching details for $enrollmentUid: $e');
-          continue;
+    // If enrollmentId is provided, fetch only that specific enrollment
+    String? targetEnrollmentId = widget.enrollmentId;
+
+    // If no enrollmentId provided, use the first enrollment from dashboard
+    if (targetEnrollmentId == null || targetEnrollmentId.isEmpty) {
+      final firstEnrollment = enrollments.firstOrNull;
+      targetEnrollmentId = firstEnrollment?.basicInfo?.uid;
+
+      if (targetEnrollmentId == null || targetEnrollmentId.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'No enrollment found';
+          });
         }
+        return;
+      }
+    }
+
+    try {
+      final details = await PaymentScreenService.fetchEnrollmentDetails(
+        targetEnrollmentId,
+        accessKey,
+      );
+
+      if (details != null && mounted) {
+        setState(() {
+          _paymentData = details;
+        });
+      } else {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Failed to load enrollment details';
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching details for $targetEnrollmentId: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error loading details: $e';
+        });
       }
     }
   }
@@ -154,7 +167,6 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   @override
   void dispose() {
-    _tabController?.dispose();
     super.dispose();
   }
 
@@ -219,7 +231,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     color: Colors.black87,
                     size: 18,
                   ),
-                  if (!_isLoading)
+                  if (!_isLoading && _paymentData != null)
                     Positioned(
                       top: -2,
                       right: -2,
@@ -238,121 +250,19 @@ class _PaymentScreenState extends State<PaymentScreen>
             onPressed: () {},
           ),
         ],
-        bottom:
-            _paymentDataList.length > 1 && !_isLoading && _tabController != null
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(70),
-                child: _buildTabBar(),
-              )
-            : null,
       ),
       body: _buildBody(),
     );
   }
 
-  Widget _buildTabBar() {
-    final tabController = _tabController!;
-
-    return Container(
-      height: 70,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: TabBar(
-        controller: tabController,
-        indicator: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.purple.withOpacity(0.1),
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: Colors.purple,
-        unselectedLabelColor: Colors.grey[500],
-        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: Colors.grey[500],
-        ),
-        isScrollable: true,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        tabs: _paymentDataList.asMap().entries.map((entry) {
-          final index = entry.key;
-          final data = entry.value;
-          final remainingAmount = _getNumericAmount(data.totalPendingAmount);
-          final isOverdue = data.isPaymentOverdue ?? false;
-
-          return Tab(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: tabController.index == index
-                          ? Colors.purple
-                          : Colors.grey[200],
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: tabController.index == index
-                              ? Colors.white
-                              : Colors.grey[600],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _getShortCourseName(data.batch?.courseName ?? 'Course'),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (remainingAmount > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: isOverdue ? Colors.red : Colors.orange,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   Widget _buildSingleEnrollmentHeader() {
-    if (_paymentDataList.isEmpty) return const SizedBox.shrink();
+    if (_paymentData == null) return const SizedBox.shrink();
 
-    final data = _paymentDataList.first;
+    final data = _paymentData!;
     final remainingAmount = _getNumericAmount(data.totalPendingAmount);
     final isOverdue = data.isPaymentOverdue ?? false;
 
     return Container(
-      height: 70,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -369,14 +279,14 @@ class _PaymentScreenState extends State<PaymentScreen>
       child: Row(
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: Colors.purple[50],
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: Icon(Icons.school, color: Colors.purple, size: 18),
+              child: Icon(Icons.school, color: Colors.purple, size: 20),
             ),
           ),
           const SizedBox(width: 12),
@@ -388,16 +298,16 @@ class _PaymentScreenState extends State<PaymentScreen>
                 Text(
                   data.batch?.courseName ?? 'Unknown Course',
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   data.batch?.batchName ?? 'Unknown Batch',
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -416,49 +326,6 @@ class _PaymentScreenState extends State<PaymentScreen>
         ],
       ),
     );
-  }
-
-  Widget _buildTabCountIndicator() {
-    if (_tabController == null || _paymentDataList.length <= 1) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(right: 16),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.purple.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.grid_view, size: 14, color: Colors.purple[400]),
-                const SizedBox(width: 4),
-                Text(
-                  '${_tabController!.index + 1}/${_paymentDataList.length}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.purple[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _getShortCourseName(String courseName) {
-    if (courseName.length > 12) {
-      return '${courseName.substring(0, 10)}...';
-    }
-    return courseName;
   }
 
   Widget _buildBody() {
@@ -488,7 +355,6 @@ class _PaymentScreenState extends State<PaymentScreen>
                 setState(() {
                   _isLoading = true;
                   _errorMessage = null;
-                  _tabController = null;
                 });
                 _initializeData();
               },
@@ -510,7 +376,7 @@ class _PaymentScreenState extends State<PaymentScreen>
       );
     }
 
-    if (_paymentDataList.isEmpty) {
+    if (_paymentData == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -526,42 +392,11 @@ class _PaymentScreenState extends State<PaymentScreen>
       );
     }
 
-    // For single enrollment - just show the content without tabs
-    if (_paymentDataList.length == 1) {
-      return Column(
-        children: [
-          _buildSingleEnrollmentHeader(),
-          Expanded(child: _buildPaymentContent(_paymentDataList.first)),
-        ],
-      );
-    }
-
-    // For multiple enrollments - show tabs
-    if (_tabController == null) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
-        ),
-      );
-    }
-
+    // Single enrollment - just show the content
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [_buildTabCountIndicator()],
-          ),
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _tabController!,
-            children: _paymentDataList.map((data) {
-              return _buildPaymentContent(data);
-            }).toList(),
-          ),
-        ),
+        _buildSingleEnrollmentHeader(),
+        Expanded(child: _buildPaymentContent(_paymentData!)),
       ],
     );
   }

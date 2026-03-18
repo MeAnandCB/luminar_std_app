@@ -784,7 +784,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                           context,
                           MaterialPageRoute(
                             builder: (context) {
-                              return PaymentScreen();
+                              return PaymentScreen(enrollmentId: enrollmentId);
                             },
                           ),
                         );
