@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
+import 'package:luminar_std/presentation/gallery_screen/views/gallery_screen.dart';
 import 'package:luminar_std/presentation/more_enrollment_screen_bottom/widgets/more_card.dart';
 import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
 import 'package:provider/provider.dart';
@@ -14,8 +15,7 @@ class MoreEnrollmentScreen extends StatefulWidget {
   State<MoreEnrollmentScreen> createState() => _MoreEnrollmentScreenState();
 }
 
-class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
-    with SingleTickerProviderStateMixin {
+class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen> with SingleTickerProviderStateMixin {
   late EnrollmentProvider enrollmentProvider;
   TabController? _tabController;
   int _selectedCourseIndex = 0;
@@ -29,10 +29,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      enrollmentProvider = Provider.of<EnrollmentProvider>(
-        context,
-        listen: false,
-      );
+      enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
       _loadData();
     });
   }
@@ -55,11 +52,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
       final enrollments = enrollmentProvider.enrollmentDataRes!.enrollments;
 
       if (enrollments.isNotEmpty) {
-        _tabController = TabController(
-          length: enrollments.length,
-          vsync: this,
-          initialIndex: 0,
-        );
+        _tabController = TabController(length: enrollments.length, vsync: this, initialIndex: 0);
 
         _tabController!.addListener(() {
           if (!_tabController!.indexIsChanging) {
@@ -84,10 +77,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
 
   void _updateSelectedCourse(int index) {
     final enrollments = enrollmentProvider.enrollmentDataRes?.enrollments;
-    if (enrollments == null ||
-        enrollments.isEmpty ||
-        index >= enrollments.length)
-      return;
+    if (enrollments == null || enrollments.isEmpty || index >= enrollments.length) return;
 
     setState(() {
       _selectedCourse = {
@@ -145,11 +135,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
+                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
                       ],
                     ),
                     child: TabBar(
@@ -166,8 +152,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                       padding: const EdgeInsets.all(4),
                       labelPadding: const EdgeInsets.symmetric(horizontal: 15),
                       tabs: enrollments.map((enrollment) {
-                        final courseName =
-                            enrollment.course?.courseName ?? "Course";
+                        final courseName = enrollment.course?.courseName ?? "Course";
                         // Get first word or shorten long names
                         String displayName = courseName.split(' ').first;
                         if (courseName.length > 15) {
@@ -175,22 +160,13 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                         }
                         return Tab(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.data_usage, size: 16),
                                 const SizedBox(width: 8),
-                                Text(
-                                  displayName,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                                Text(displayName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                               ],
                             ),
                           ),
@@ -223,22 +199,15 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: List.generate(
                         provider.enrollmentDataRes?.enrollments.length != null
-                            ? (provider.enrollmentDataRes!.enrollments.length >
-                                      3
+                            ? (provider.enrollmentDataRes!.enrollments.length > 3
                                   ? 3
-                                  : provider
-                                        .enrollmentDataRes!
-                                        .enrollments
-                                        .length)
+                                  : provider.enrollmentDataRes!.enrollments.length)
                             : 0,
                         (index) => Container(
                           width: 6,
                           height: 6,
                           margin: const EdgeInsets.only(right: 4),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
+                          decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
                         ),
                       ),
                     ),
@@ -252,8 +221,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
       body: SafeArea(
         child: _isInitialLoading
             ? _buildShimmerFullScreen()
-            : enrollmentProvider.enrollmentDataRes == null ||
-                  enrollmentProvider.enrollmentDataRes!.enrollments.isEmpty
+            : enrollmentProvider.enrollmentDataRes == null || enrollmentProvider.enrollmentDataRes!.enrollments.isEmpty
             ? _buildEmptyState()
             : Column(
                 children: [
@@ -281,11 +249,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                               gradient: AppColors.primaryGradient,
                               borderRadius: BorderRadius.zero,
                             ),
-                            child: const Icon(
-                              Icons.school,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                            child: const Icon(Icons.school, color: Colors.white, size: 20),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -303,12 +267,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                                 const SizedBox(height: 2),
                                 Text(
                                   '${_selectedCourse['batch']} • ${_selectedCourse['mode']}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary.withOpacity(
-                                      0.8,
-                                    ),
-                                  ),
+                                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary.withOpacity(0.8)),
                                 ),
                               ],
                             ),
@@ -341,10 +300,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
             return Container(
               margin: const EdgeInsets.only(right: 12),
               width: 100,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30)),
             );
           },
         ),
@@ -371,11 +327,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: double.infinity,
-                          height: 16,
-                          color: Colors.white,
-                        ),
+                        Container(width: double.infinity, height: 16, color: Colors.white),
                         const SizedBox(height: 8),
                         Container(width: 150, height: 12, color: Colors.white),
                       ],
@@ -398,12 +350,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                 Container(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
                   decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.grey.withOpacity(0.1),
-                        width: 1,
-                      ),
-                    ),
+                    border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1)),
                   ),
                   child: Shimmer.fromColors(
                     baseColor: Colors.grey[300]!,
@@ -413,17 +360,9 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                       children: [
                         Row(
                           children: [
-                            Container(
-                              width: 4,
-                              height: 20,
-                              color: Colors.white,
-                            ),
+                            Container(width: 4, height: 20, color: Colors.white),
                             const SizedBox(width: 8),
-                            Container(
-                              width: 100,
-                              height: 16,
-                              color: Colors.white,
-                            ),
+                            Container(width: 100, height: 16, color: Colors.white),
                           ],
                         ),
                         Container(width: 80, height: 24, color: Colors.white),
@@ -448,29 +387,15 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                             color: Colors.white,
                             child: Row(
                               children: [
-                                Container(
-                                  width: 60,
-                                  height: 60,
-                                  margin: const EdgeInsets.all(10),
-                                  color: Colors.white,
-                                ),
+                                Container(width: 60, height: 60, margin: const EdgeInsets.all(10), color: Colors.white),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Container(
-                                        width: 120,
-                                        height: 16,
-                                        color: Colors.white,
-                                      ),
+                                      Container(width: 120, height: 16, color: Colors.white),
                                       const SizedBox(height: 8),
-                                      Container(
-                                        width: 80,
-                                        height: 12,
-                                        color: Colors.white,
-                                      ),
+                                      Container(width: 80, height: 12, color: Colors.white),
                                     ],
                                   ),
                                 ),
@@ -500,12 +425,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.grey.withOpacity(0.1),
-                  width: 1,
-                ),
-              ),
+              border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -534,28 +454,15 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                   color: Colors.white,
                   child: Row(
                     children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        margin: const EdgeInsets.all(10),
-                        color: Colors.white,
-                      ),
+                      Container(width: 60, height: 60, margin: const EdgeInsets.all(10), color: Colors.white),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              width: 120,
-                              height: 16,
-                              color: Colors.white,
-                            ),
+                            Container(width: 120, height: 16, color: Colors.white),
                             const SizedBox(height: 8),
-                            Container(
-                              width: 80,
-                              height: 12,
-                              color: Colors.white,
-                            ),
+                            Container(width: 80, height: 12, color: Colors.white),
                           ],
                         ),
                       ),
@@ -581,20 +488,12 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
               color: AppColors.primary.withOpacity(0.05),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Icon(
-              Icons.school_outlined,
-              size: 80,
-              color: AppColors.primary.withOpacity(0.3),
-            ),
+            child: Icon(Icons.school_outlined, size: 80, color: AppColors.primary.withOpacity(0.3)),
           ),
           const SizedBox(height: 24),
           const Text(
             'No Enrollments Found',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 12),
           Padding(
@@ -602,11 +501,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
             child: Text(
               'You haven\'t enrolled in any courses yet. Browse our courses and start learning today!',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary.withOpacity(0.7),
-                height: 1.5,
-              ),
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary.withOpacity(0.7), height: 1.5),
             ),
           ),
           const SizedBox(height: 30),
@@ -622,10 +517,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                 borderRadius: BorderRadius.zero, // Square corners
               ),
             ),
-            child: const Text(
-              'Browse Courses',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+            child: const Text('Browse Courses', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -640,9 +532,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
         }
 
         final enrollments = provider.enrollmentDataRes?.enrollments;
-        if (enrollments == null ||
-            enrollments.isEmpty ||
-            index >= enrollments.length) {
+        if (enrollments == null || enrollments.isEmpty || index >= enrollments.length) {
           return const SizedBox();
         }
 
@@ -653,22 +543,14 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
         final courseName = currentEnrollment.course.courseName ?? "";
 
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.zero,
-          ),
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.zero),
           child: Column(
             children: [
               // Section Header (square corners)
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
                 decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Colors.grey.withOpacity(0.1),
-                      width: 1,
-                    ),
-                  ),
+                  border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -686,30 +568,19 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                         const SizedBox(width: 8),
                         const Text(
                           'Quick Actions',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                         ),
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.zero,
                       ),
                       child: Text(
                         '6 features',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -730,11 +601,8 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => AttendanceScreen(
-                              batchId: batchId,
-                              courseName: batchName,
-                              batchName: courseName,
-                            ),
+                            builder: (context) =>
+                                AttendanceScreen(batchId: batchId, courseName: batchName, batchName: courseName),
                           ),
                         );
                       },
@@ -746,14 +614,14 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                       color: const Color(0xFF6C5CE7),
 
                       onTap: () {
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) {
-                        //       return VideosScreen();
-                        //     },
-                        //   ),
-                        // );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return GalleryScreen(batchId: batchId);
+                            },
+                          ),
+                        );
                       },
                     ),
                     MoreCard(
