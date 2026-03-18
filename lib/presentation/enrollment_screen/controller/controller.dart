@@ -1,10 +1,16 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
 import 'package:luminar_std/repository/enrollment_screen/service/enrollment_service.dart';
+import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
+import 'package:luminar_std/repository/razorpay/model/razorpay_model.dart';
+import 'package:luminar_std/repository/razorpay/service/razorpay_service.dart';
 
 import 'package:provider/provider.dart';
 
 class EnrollmentProvider extends ChangeNotifier {
+  RazorpayPaymentDetails? paymentDetails;
   final EnrollmentService _enrollmentRepository = EnrollmentService();
 
   // State variables - FIX: Change type to EnrollmentResponse
@@ -58,6 +64,7 @@ class EnrollmentProvider extends ChangeNotifier {
         _isLoading = false;
         notifyListeners();
       }
+      print("callme");
     } catch (e) {
       _errorMessage = e.toString();
       enrollmentDataRes = null;
@@ -95,6 +102,21 @@ class EnrollmentProvider extends ChangeNotifier {
     if (enrollmentDataRes == null) return true;
     // You might want to add timestamp logic here
     return false;
+  }
+
+  Future<void> getPaymentDetails({required String id}) async {
+    try {
+      final response = await RazorpayScreenService().getPaymentDetails(id: id);
+
+      if (response.success) {
+        PaymentResModel resModel = response.data;
+        paymentDetails = resModel.paymentDetails;
+      } else {
+        log(response.message.toString());
+      }
+    } catch (e) {
+      print(e.toString());
+    }
   }
 }
 

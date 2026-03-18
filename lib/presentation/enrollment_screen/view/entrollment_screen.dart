@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -10,6 +11,7 @@ import 'package:luminar_std/repository/enrollment_screen/model/emiplans_model.da
 import 'package:luminar_std/repository/enrollment_screen/service/installment_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class EnrollmentDetailsScreen extends StatefulWidget {
   const EnrollmentDetailsScreen({
@@ -42,6 +44,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      final provider = Provider.of<EnrollmentProvider>(context, listen: false);
       await Provider.of<EnrollmentProvider>(
         context,
         listen: false,
@@ -1734,9 +1737,50 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                           ],
                         ),
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _showSuccessMessage();
+                          onPressed: () async {
+                            log(
+                              'this is key: ${provider.paymentDetails?.key ?? ""}',
+                            );
+                            await Provider.of<EnrollmentProvider>(
+                              context,
+                              listen: false,
+                            ).getPaymentDetails(
+                              id: provider.enrollmentData!.enrollments[0].uid,
+                            );
+
+                            Razorpay razorpay = Razorpay();
+                            var options = {
+                              'key': provider.paymentDetails?.key,
+                              'amount': provider.paymentDetails?.amount,
+                              "order_id": provider.paymentDetails?.orderId,
+                              'name': provider.paymentDetails?.name,
+                              'description':
+                                  provider.paymentDetails?.description,
+                              'retry': {'enabled': true, 'max_count': 1},
+                              'send_sms_hash': true,
+                              'prefill': {
+                                'contact':
+                                    provider.paymentDetails?.prefill?.contact,
+                                'email':
+                                    provider.paymentDetails?.prefill?.email,
+                              },
+                              'external': {
+                                'wallets': ['paytm'],
+                              },
+                            };
+                            razorpay.on(
+                              Razorpay.EVENT_PAYMENT_ERROR,
+                              handlePaymentErrorResponse,
+                            );
+                            razorpay.on(
+                              Razorpay.EVENT_PAYMENT_SUCCESS,
+                              handlePaymentSuccessResponse,
+                            );
+                            razorpay.on(
+                              Razorpay.EVENT_EXTERNAL_WALLET,
+                              handleExternalWalletSelected,
+                            );
+                            razorpay.open(options);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
@@ -1844,6 +1888,59 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
       ),
+    );
+  }
+
+  void handlePaymentErrorResponse(PaymentFailureResponse response) {
+    /*
+    * PaymentFailureResponse contains three values:
+    * 1. Error Code
+    * 2. Error Description
+    * 3. Metadata
+    * */
+    showAlertDialog(
+      context,
+      "Payment Failed",
+      "Code: ${response.code}\nDescription: ${response.message}\nMetadata:${response.error.toString()}",
+    );
+  }
+
+  void handlePaymentSuccessResponse(PaymentSuccessResponse response) {
+    /*
+    * Payment Success Response contains three values:
+    * 1. Order ID
+    * 2. Payment ID
+    * 3. Signature
+    * */
+    showAlertDialog(
+      context,
+      "Payment Successful",
+      "Payment ID: ${response.paymentId}",
+    );
+  }
+
+  void handleExternalWalletSelected(ExternalWalletResponse response) {
+    showAlertDialog(
+      context,
+      "External Wallet Selected",
+      "${response.walletName}",
+    );
+  }
+
+  void showAlertDialog(BuildContext context, String title, String message) {
+    // set up the buttons
+    Widget continueButton = ElevatedButton(
+      child: const Text("Continue"),
+      onPressed: () {},
+    );
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(title: Text(title), content: Text(message));
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
     );
   }
 }
