@@ -1249,7 +1249,7 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   Widget _buildPaymentContent(EnrollmentDetailResponse data) {
-    final totalFee = _getNumericAmount(data.netFees);
+    final totalFee = _getNumericAmount(data.originalCourseFees);
     final paidAmount = _getNumericAmount(data.totalAmountPaid);
     final remainingAmount = _getNumericAmount(data.totalPendingAmount);
     final discount = _getNumericAmount(data.totalDiscountAmount);

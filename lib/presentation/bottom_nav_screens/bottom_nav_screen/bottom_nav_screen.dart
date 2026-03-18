@@ -57,7 +57,20 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
       setState(() {
         _pages = [
           const StudentDashboard(),
-          enrollmentProvider.enrollmentDataRes!.enrollments.length == 1
+          (enrollmentProvider.enrollmentDataRes!.enrollments[0].status.value ==
+                      "not_set" ||
+                  enrollmentProvider
+                          .enrollmentDataRes!
+                          .enrollments[0]
+                          ?.status
+                          .value ==
+                      "demo_expired" ||
+                  enrollmentProvider
+                          .enrollmentDataRes!
+                          .enrollments[0]
+                          ?.status
+                          .value ==
+                      "admission_fee_paid")
               ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false)
               : const EnrollmentScreen(),
           const ContactListScreen(),
