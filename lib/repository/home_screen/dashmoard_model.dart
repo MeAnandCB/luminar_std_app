@@ -9,12 +9,8 @@ class DashBoardModel {
   factory DashBoardModel.fromJson(Map<String, dynamic> json) => DashBoardModel(
     status: json["status"],
     message: json["message"],
-    dashboard: json["dashboard"] == null
-        ? null
-        : Dashboard.fromJson(json["dashboard"]),
-    timestamp: json["timestamp"] == null
-        ? null
-        : DateTime.parse(json["timestamp"]),
+    dashboard: json["dashboard"] == null ? null : Dashboard.fromJson(json["dashboard"]),
+    timestamp: json["timestamp"] == null ? null : DateTime.parse(json["timestamp"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -51,31 +47,21 @@ class Dashboard {
   });
 
   factory Dashboard.fromJson(Map<String, dynamic> json) => Dashboard(
-    studentDetails: json["student_details"] == null
-        ? null
-        : StudentDetails.fromJson(json["student_details"]),
+    studentDetails: json["student_details"] == null ? null : StudentDetails.fromJson(json["student_details"]),
     enrollmentDetails: json["enrollment_details"] == null
         ? null
         : EnrollmentDetails.fromJson(json["enrollment_details"]),
-    batchDetails: json["batch_details"] == null
-        ? null
-        : BatchDetails.fromJson(json["batch_details"]),
+    batchDetails: json["batch_details"] == null ? null : BatchDetails.fromJson(json["batch_details"]),
     courseDetails: json["course_details"],
-    financialSummary: json["financial_summary"] == null
-        ? null
-        : FinancialSummary.fromJson(json["financial_summary"]),
+    financialSummary: json["financial_summary"] == null ? null : FinancialSummary.fromJson(json["financial_summary"]),
     academicProgress: json["academic_progress"] == null
         ? null
         : DashboardAcademicProgress.fromJson(json["academic_progress"]),
     upcomingActivities: json["upcoming_activities"] == null
         ? null
         : UpcomingActivities.fromJson(json["upcoming_activities"]),
-    quickStats: json["quick_stats"] == null
-        ? null
-        : QuickStats.fromJson(json["quick_stats"]),
-    recentActivities: json["recent_activities"] == null
-        ? null
-        : RecentActivities.fromJson(json["recent_activities"]),
+    quickStats: json["quick_stats"] == null ? null : QuickStats.fromJson(json["quick_stats"]),
+    recentActivities: json["recent_activities"] == null ? null : RecentActivities.fromJson(json["recent_activities"]),
     notificationsSummary: json["notifications_summary"] == null
         ? null
         : NotificationsSummary.fromJson(json["notifications_summary"]),
@@ -101,32 +87,16 @@ class DashboardAcademicProgress {
   List<PerformanceByCourse>? performanceByCourse;
   Achievements? achievements;
 
-  DashboardAcademicProgress({
-    this.overallMetrics,
-    this.certificates,
-    this.performanceByCourse,
-    this.achievements,
-  });
+  DashboardAcademicProgress({this.overallMetrics, this.certificates, this.performanceByCourse, this.achievements});
 
-  factory DashboardAcademicProgress.fromJson(Map<String, dynamic> json) =>
-      DashboardAcademicProgress(
-        overallMetrics: json["overall_metrics"] == null
-            ? null
-            : OverallMetrics.fromJson(json["overall_metrics"]),
-        certificates: json["certificates"] == null
-            ? null
-            : Certificates.fromJson(json["certificates"]),
-        performanceByCourse: json["performance_by_course"] == null
-            ? []
-            : List<PerformanceByCourse>.from(
-                json["performance_by_course"]!.map(
-                  (x) => PerformanceByCourse.fromJson(x),
-                ),
-              ),
-        achievements: json["achievements"] == null
-            ? null
-            : Achievements.fromJson(json["achievements"]),
-      );
+  factory DashboardAcademicProgress.fromJson(Map<String, dynamic> json) => DashboardAcademicProgress(
+    overallMetrics: json["overall_metrics"] == null ? null : OverallMetrics.fromJson(json["overall_metrics"]),
+    certificates: json["certificates"] == null ? null : Certificates.fromJson(json["certificates"]),
+    performanceByCourse: json["performance_by_course"] == null
+        ? []
+        : List<PerformanceByCourse>.from(json["performance_by_course"]!.map((x) => PerformanceByCourse.fromJson(x))),
+    achievements: json["achievements"] == null ? null : Achievements.fromJson(json["achievements"]),
+  );
 
   Map<String, dynamic> toJson() => {
     "overall_metrics": overallMetrics?.toJson(),
@@ -143,11 +113,7 @@ class Achievements {
   int? highPerformers;
   int? coursesWithGrades;
 
-  Achievements({
-    this.perfectAttendance,
-    this.highPerformers,
-    this.coursesWithGrades,
-  });
+  Achievements({this.perfectAttendance, this.highPerformers, this.coursesWithGrades});
 
   factory Achievements.fromJson(Map<String, dynamic> json) {
     int? toInt(dynamic value) {
@@ -197,9 +163,7 @@ class Certificates {
 
   Map<String, dynamic> toJson() => {
     "total_certificates": totalCertificates,
-    "certificate_list": certificateList == null
-        ? []
-        : List<dynamic>.from(certificateList!.map((x) => x)),
+    "certificate_list": certificateList == null ? [] : List<dynamic>.from(certificateList!.map((x) => x)),
   };
 }
 
@@ -284,9 +248,7 @@ class PerformanceByCourse {
           ? enrollmentNumberValues.map[json["enrollment_number"]]
           : null,
       courseName: json["course_name"],
-      batchName: json["batch_name"] != null
-          ? batchNameValues.map[json["batch_name"]]
-          : null,
+      batchName: json["batch_name"] != null ? batchNameValues.map[json["batch_name"]] : null,
       attendancePercentage: toInt(json["attendance_percentage"]),
       completionPercentage: toInt(json["completion_percentage"]),
       finalGrade: json["final_grade"],
@@ -296,9 +258,7 @@ class PerformanceByCourse {
   }
 
   Map<String, dynamic> toJson() => {
-    "enrollment_number": enrollmentNumber != null
-        ? enrollmentNumberValues.reverse[enrollmentNumber]
-        : null,
+    "enrollment_number": enrollmentNumber != null ? enrollmentNumberValues.reverse[enrollmentNumber] : null,
     "course_name": courseName,
     "batch_name": batchName != null ? batchNameValues.reverse[batchName] : null,
     "attendance_percentage": attendancePercentage,
@@ -315,9 +275,7 @@ final batchNameValues = EnumValues({"ggf": BatchName.GGF});
 
 enum EnrollmentNumber { ENR2026033570 }
 
-final enrollmentNumberValues = EnumValues({
-  "ENR2026033570": EnrollmentNumber.ENR2026033570,
-});
+final enrollmentNumberValues = EnumValues({"ENR2026033570": EnrollmentNumber.ENR2026033570});
 
 class BatchDetails {
   List<dynamic>? currentBatches;
@@ -344,9 +302,7 @@ class BatchDetails {
     }
 
     return BatchDetails(
-      currentBatches: json["current_batches"] == null
-          ? []
-          : List<dynamic>.from(json["current_batches"]!.map((x) => x)),
+      currentBatches: json["current_batches"] == null ? [] : List<dynamic>.from(json["current_batches"]!.map((x) => x)),
       totalCurrentBatches: toInt(json["total_current_batches"]),
       hasActiveBatches: json["has_active_batches"],
       upcomingBatches: json["upcoming_batches"] == null
@@ -357,14 +313,10 @@ class BatchDetails {
   }
 
   Map<String, dynamic> toJson() => {
-    "current_batches": currentBatches == null
-        ? []
-        : List<dynamic>.from(currentBatches!.map((x) => x)),
+    "current_batches": currentBatches == null ? [] : List<dynamic>.from(currentBatches!.map((x) => x)),
     "total_current_batches": totalCurrentBatches,
     "has_active_batches": hasActiveBatches,
-    "upcoming_batches": upcomingBatches == null
-        ? []
-        : List<dynamic>.from(upcomingBatches!.map((x) => x)),
+    "upcoming_batches": upcomingBatches == null ? [] : List<dynamic>.from(upcomingBatches!.map((x) => x)),
     "completed_batches_count": completedBatchesCount,
   };
 }
@@ -374,29 +326,18 @@ class EnrollmentDetails {
   EnrollmentDetailsSummary? summary;
   dynamic currentActiveEnrollment;
 
-  EnrollmentDetails({
-    this.enrollments,
-    this.summary,
-    this.currentActiveEnrollment,
-  });
+  EnrollmentDetails({this.enrollments, this.summary, this.currentActiveEnrollment});
 
-  factory EnrollmentDetails.fromJson(Map<String, dynamic> json) =>
-      EnrollmentDetails(
-        enrollments: json["enrollments"] == null
-            ? []
-            : List<Enrollment>.from(
-                json["enrollments"]!.map((x) => Enrollment.fromJson(x)),
-              ),
-        summary: json["summary"] == null
-            ? null
-            : EnrollmentDetailsSummary.fromJson(json["summary"]),
-        currentActiveEnrollment: json["current_active_enrollment"],
-      );
+  factory EnrollmentDetails.fromJson(Map<String, dynamic> json) => EnrollmentDetails(
+    enrollments: json["enrollments"] == null
+        ? []
+        : List<Enrollment>.from(json["enrollments"]!.map((x) => Enrollment.fromJson(x))),
+    summary: json["summary"] == null ? null : EnrollmentDetailsSummary.fromJson(json["summary"]),
+    currentActiveEnrollment: json["current_active_enrollment"],
+  );
 
   Map<String, dynamic> toJson() => {
-    "enrollments": enrollments == null
-        ? []
-        : List<dynamic>.from(enrollments!.map((x) => x.toJson())),
+    "enrollments": enrollments == null ? [] : List<dynamic>.from(enrollments!.map((x) => x.toJson())),
     "summary": summary?.toJson(),
     "current_active_enrollment": currentActiveEnrollment,
   };
@@ -428,36 +369,18 @@ class Enrollment {
   });
 
   factory Enrollment.fromJson(Map<String, dynamic> json) => Enrollment(
-    basicInfo: json["basic_info"] == null
-        ? null
-        : EnrollmentBasicInfo.fromJson(json["basic_info"]),
-    status: json["status"] == null
-        ? null
-        : CurrentStatus.fromJson(json["status"]),
-    batchInfo: json["batch_info"] == null
-        ? null
-        : BatchInfo.fromJson(json["batch_info"]),
-    courseInfo: json["course_info"] == null
-        ? null
-        : CourseInfo.fromJson(json["course_info"]),
-    attendanceMode: json["attendance_mode"] == null
-        ? null
-        : CurrentStatus.fromJson(json["attendance_mode"]),
-    paymentDetails: json["payment_details"] == null
-        ? null
-        : PaymentDetails.fromJson(json["payment_details"]),
+    basicInfo: json["basic_info"] == null ? null : EnrollmentBasicInfo.fromJson(json["basic_info"]),
+    status: json["status"] == null ? null : CurrentStatus.fromJson(json["status"]),
+    batchInfo: json["batch_info"] == null ? null : BatchInfo.fromJson(json["batch_info"]),
+    courseInfo: json["course_info"] == null ? null : CourseInfo.fromJson(json["course_info"]),
+    attendanceMode: json["attendance_mode"] == null ? null : CurrentStatus.fromJson(json["attendance_mode"]),
+    paymentDetails: json["payment_details"] == null ? null : PaymentDetails.fromJson(json["payment_details"]),
     academicProgress: json["academic_progress"] == null
         ? null
         : EnrollmentAcademicProgress.fromJson(json["academic_progress"]),
-    demoInfo: json["demo_info"] == null
-        ? null
-        : DemoInfo.fromJson(json["demo_info"]),
-    counselors: json["counselors"] == null
-        ? null
-        : Counselors.fromJson(json["counselors"]),
-    additionalInfo: json["additional_info"] == null
-        ? null
-        : AdditionalInfo.fromJson(json["additional_info"]),
+    demoInfo: json["demo_info"] == null ? null : DemoInfo.fromJson(json["demo_info"]),
+    counselors: json["counselors"] == null ? null : Counselors.fromJson(json["counselors"]),
+    additionalInfo: json["additional_info"] == null ? null : AdditionalInfo.fromJson(json["additional_info"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -522,22 +445,13 @@ class AdditionalInfo {
   bool? isFamilyEnrollment;
   DateTime? lastActivityDate;
 
-  AdditionalInfo({
-    this.specialNotes,
-    this.tags,
-    this.isFamilyEnrollment,
-    this.lastActivityDate,
-  });
+  AdditionalInfo({this.specialNotes, this.tags, this.isFamilyEnrollment, this.lastActivityDate});
 
   factory AdditionalInfo.fromJson(Map<String, dynamic> json) => AdditionalInfo(
     specialNotes: json["special_notes"],
-    tags: json["tags"] == null
-        ? []
-        : List<dynamic>.from(json["tags"]!.map((x) => x)),
+    tags: json["tags"] == null ? [] : List<dynamic>.from(json["tags"]!.map((x) => x)),
     isFamilyEnrollment: json["is_family_enrollment"],
-    lastActivityDate: json["last_activity_date"] == null
-        ? null
-        : DateTime.parse(json["last_activity_date"]),
+    lastActivityDate: json["last_activity_date"] == null ? null : DateTime.parse(json["last_activity_date"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -556,19 +470,10 @@ class CurrentStatus {
 
   CurrentStatus({this.name, this.value, this.description, this.color});
 
-  factory CurrentStatus.fromJson(Map<String, dynamic> json) => CurrentStatus(
-    name: json["name"],
-    value: json["value"],
-    description: json["description"],
-    color: json["color"],
-  );
+  factory CurrentStatus.fromJson(Map<String, dynamic> json) =>
+      CurrentStatus(name: json["name"], value: json["value"], description: json["description"], color: json["color"]);
 
-  Map<String, dynamic> toJson() => {
-    "name": name,
-    "value": value,
-    "description": description,
-    "color": color,
-  };
+  Map<String, dynamic> toJson() => {"name": name, "value": value, "description": description, "color": color};
 }
 
 class EnrollmentBasicInfo {
@@ -602,9 +507,7 @@ class EnrollmentBasicInfo {
       enrollmentNumber: json["enrollment_number"] != null
           ? enrollmentNumberValues.map[json["enrollment_number"]]
           : null,
-      enrollmentDate: json["enrollment_date"] == null
-          ? null
-          : DateTime.parse(json["enrollment_date"]),
+      enrollmentDate: json["enrollment_date"] == null ? null : DateTime.parse(json["enrollment_date"]),
       source: json["source"],
       crmAccess: json["crm_access"],
       daysSinceEnrollment: toInt(json["days_since_enrollment"]),
@@ -613,9 +516,7 @@ class EnrollmentBasicInfo {
 
   Map<String, dynamic> toJson() => {
     "uid": uid,
-    "enrollment_number": enrollmentNumber != null
-        ? enrollmentNumberValues.reverse[enrollmentNumber]
-        : null,
+    "enrollment_number": enrollmentNumber != null ? enrollmentNumberValues.reverse[enrollmentNumber] : null,
     "enrollment_date": enrollmentDate?.toIso8601String(),
     "source": source,
     "crm_access": crmAccess,
@@ -667,15 +568,9 @@ class BatchInfo {
 
     return BatchInfo(
       uid: json["uid"],
-      batchName: json["batch_name"] != null
-          ? batchNameValues.map[json["batch_name"]]
-          : null,
-      startDate: json["start_date"] == null
-          ? null
-          : DateTime.parse(json["start_date"]),
-      endDate: json["end_date"] == null
-          ? null
-          : DateTime.parse(json["end_date"]),
+      batchName: json["batch_name"] != null ? batchNameValues.map[json["batch_name"]] : null,
+      startDate: json["start_date"] == null ? null : DateTime.parse(json["start_date"]),
+      endDate: json["end_date"] == null ? null : DateTime.parse(json["end_date"]),
       time: json["time"],
       status: json["status"],
       batchType: json["batch_type"],
@@ -685,9 +580,7 @@ class BatchInfo {
       isActive: json["is_active"],
       isCompleted: json["is_completed"],
       admissionFees: toInt(json["admission_fees"]),
-      sessions: json["sessions"] == null
-          ? null
-          : Sessions.fromJson(json["sessions"]),
+      sessions: json["sessions"] == null ? null : Sessions.fromJson(json["sessions"]),
     );
   }
 
@@ -730,9 +623,7 @@ class Sessions {
 
     return Sessions(
       count: toInt(json["count"]),
-      topics: json["topics"] == null
-          ? []
-          : List<dynamic>.from(json["topics"]!.map((x) => x)),
+      topics: json["topics"] == null ? [] : List<dynamic>.from(json["topics"]!.map((x) => x)),
     );
   }
 
@@ -747,24 +638,16 @@ class Counselors {
   dynamic academicCounselor;
   String? admissionCounselor;
 
-  Counselors({
-    this.enrollmentCounselor,
-    this.academicCounselor,
-    this.admissionCounselor,
-  });
+  Counselors({this.enrollmentCounselor, this.academicCounselor, this.admissionCounselor});
 
   factory Counselors.fromJson(Map<String, dynamic> json) => Counselors(
-    enrollmentCounselor: json["enrollment_counselor"] != null
-        ? fullNameValues.map[json["enrollment_counselor"]]
-        : null,
+    enrollmentCounselor: json["enrollment_counselor"] != null ? fullNameValues.map[json["enrollment_counselor"]] : null,
     academicCounselor: json["academic_counselor"],
     admissionCounselor: json["admission_counselor"],
   );
 
   Map<String, dynamic> toJson() => {
-    "enrollment_counselor": enrollmentCounselor != null
-        ? fullNameValues.reverse[enrollmentCounselor]
-        : null,
+    "enrollment_counselor": enrollmentCounselor != null ? fullNameValues.reverse[enrollmentCounselor] : null,
     "academic_counselor": academicCounselor,
     "admission_counselor": admissionCounselor,
   };
@@ -784,12 +667,7 @@ class CourseInfo {
   dynamic durationMonths;
   dynamic description;
 
-  CourseInfo({
-    this.courseName,
-    this.courseCode,
-    this.durationMonths,
-    this.description,
-  });
+  CourseInfo({this.courseName, this.courseCode, this.durationMonths, this.description});
 
   factory CourseInfo.fromJson(Map<String, dynamic> json) => CourseInfo(
     courseName: json["course_name"],
@@ -833,15 +711,9 @@ class DemoInfo {
     }
 
     return DemoInfo(
-      demoStartDate: json["demo_start_date"] == null
-          ? null
-          : DateTime.parse(json["demo_start_date"]),
-      demoEndDate: json["demo_end_date"] == null
-          ? null
-          : DateTime.parse(json["demo_end_date"]),
-      demoConversionDate: json["demo_conversion_date"] == null
-          ? null
-          : DateTime.parse(json["demo_conversion_date"]),
+      demoStartDate: json["demo_start_date"] == null ? null : DateTime.parse(json["demo_start_date"]),
+      demoEndDate: json["demo_end_date"] == null ? null : DateTime.parse(json["demo_end_date"]),
+      demoConversionDate: json["demo_conversion_date"] == null ? null : DateTime.parse(json["demo_conversion_date"]),
       demoFollowUpRequired: json["demo_follow_up_required"],
       isDemoPeriod: json["is_demo_period"],
       demoDaysRemaining: toInt(json["demo_days_remaining"]),
@@ -867,9 +739,7 @@ class PaymentDetails {
 
   factory PaymentDetails.fromJson(Map<String, dynamic> json) => PaymentDetails(
     paymentType: json["payment_type"],
-    financialBreakdown: json["financial_breakdown"] == null
-        ? null
-        : Breakdown.fromJson(json["financial_breakdown"]),
+    financialBreakdown: json["financial_breakdown"] == null ? null : Breakdown.fromJson(json["financial_breakdown"]),
     emiPlan: json["emi_plan"],
   );
 
@@ -986,32 +856,18 @@ class FinancialSummary {
   EmiInformation? emiInformation;
   List<EnrollmentWiseBreakdown>? enrollmentWiseBreakdown;
 
-  FinancialSummary({
-    this.overview,
-    this.paymentSummary,
-    this.emiInformation,
-    this.enrollmentWiseBreakdown,
-  });
+  FinancialSummary({this.overview, this.paymentSummary, this.emiInformation, this.enrollmentWiseBreakdown});
 
-  factory FinancialSummary.fromJson(Map<String, dynamic> json) =>
-      FinancialSummary(
-        overview: json["overview"] == null
-            ? null
-            : Overview.fromJson(json["overview"]),
-        paymentSummary: json["payment_summary"] == null
-            ? null
-            : PaymentSummary.fromJson(json["payment_summary"]),
-        emiInformation: json["emi_information"] == null
-            ? null
-            : EmiInformation.fromJson(json["emi_information"]),
-        enrollmentWiseBreakdown: json["enrollment_wise_breakdown"] == null
-            ? []
-            : List<EnrollmentWiseBreakdown>.from(
-                json["enrollment_wise_breakdown"]!.map(
-                  (x) => EnrollmentWiseBreakdown.fromJson(x),
-                ),
-              ),
-      );
+  factory FinancialSummary.fromJson(Map<String, dynamic> json) => FinancialSummary(
+    overview: json["overview"] == null ? null : Overview.fromJson(json["overview"]),
+    paymentSummary: json["payment_summary"] == null ? null : PaymentSummary.fromJson(json["payment_summary"]),
+    emiInformation: json["emi_information"] == null ? null : EmiInformation.fromJson(json["emi_information"]),
+    enrollmentWiseBreakdown: json["enrollment_wise_breakdown"] == null
+        ? []
+        : List<EnrollmentWiseBreakdown>.from(
+            json["enrollment_wise_breakdown"]!.map((x) => EnrollmentWiseBreakdown.fromJson(x)),
+          ),
+  );
 
   Map<String, dynamic> toJson() => {
     "overview": overview?.toJson(),
@@ -1065,31 +921,21 @@ class EmiInformation {
       nextEmiAmount: json["next_emi_amount"],
       totalPendingEmiAmount: toInt(json["total_pending_emi_amount"]),
       totalOverdueAmount: toInt(json["total_overdue_amount"]),
-      upcomingEmis: json["upcoming_emis"] == null
-          ? []
-          : List<dynamic>.from(json["upcoming_emis"]!.map((x) => x)),
-      overdueEmis: json["overdue_emis"] == null
-          ? []
-          : List<dynamic>.from(json["overdue_emis"]!.map((x) => x)),
+      upcomingEmis: json["upcoming_emis"] == null ? [] : List<dynamic>.from(json["upcoming_emis"]!.map((x) => x)),
+      overdueEmis: json["overdue_emis"] == null ? [] : List<dynamic>.from(json["overdue_emis"]!.map((x) => x)),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    "has_emi_enrollments": hasEmiEnrollments == null
-        ? []
-        : List<dynamic>.from(hasEmiEnrollments!.map((x) => x)),
+    "has_emi_enrollments": hasEmiEnrollments == null ? [] : List<dynamic>.from(hasEmiEnrollments!.map((x) => x)),
     "total_pending_emis": totalPendingEmis,
     "total_overdue_emis": totalOverdueEmis,
     "next_emi_due_date": nextEmiDueDate,
     "next_emi_amount": nextEmiAmount,
     "total_pending_emi_amount": totalPendingEmiAmount,
     "total_overdue_amount": totalOverdueAmount,
-    "upcoming_emis": upcomingEmis == null
-        ? []
-        : List<dynamic>.from(upcomingEmis!.map((x) => x)),
-    "overdue_emis": overdueEmis == null
-        ? []
-        : List<dynamic>.from(overdueEmis!.map((x) => x)),
+    "upcoming_emis": upcomingEmis == null ? [] : List<dynamic>.from(upcomingEmis!.map((x) => x)),
+    "overdue_emis": overdueEmis == null ? [] : List<dynamic>.from(overdueEmis!.map((x) => x)),
   };
 }
 
@@ -1099,31 +945,17 @@ class EnrollmentWiseBreakdown {
   Breakdown? paymentBreakdown;
   String? paymentType;
 
-  EnrollmentWiseBreakdown({
-    this.enrollmentNumber,
-    this.batchName,
-    this.paymentBreakdown,
-    this.paymentType,
-  });
+  EnrollmentWiseBreakdown({this.enrollmentNumber, this.batchName, this.paymentBreakdown, this.paymentType});
 
-  factory EnrollmentWiseBreakdown.fromJson(Map<String, dynamic> json) =>
-      EnrollmentWiseBreakdown(
-        enrollmentNumber: json["enrollment_number"] != null
-            ? enrollmentNumberValues.map[json["enrollment_number"]]
-            : null,
-        batchName: json["batch_name"] != null
-            ? batchNameValues.map[json["batch_name"]]
-            : null,
-        paymentBreakdown: json["payment_breakdown"] == null
-            ? null
-            : Breakdown.fromJson(json["payment_breakdown"]),
-        paymentType: json["payment_type"],
-      );
+  factory EnrollmentWiseBreakdown.fromJson(Map<String, dynamic> json) => EnrollmentWiseBreakdown(
+    enrollmentNumber: json["enrollment_number"] != null ? enrollmentNumberValues.map[json["enrollment_number"]] : null,
+    batchName: json["batch_name"] != null ? batchNameValues.map[json["batch_name"]] : null,
+    paymentBreakdown: json["payment_breakdown"] == null ? null : Breakdown.fromJson(json["payment_breakdown"]),
+    paymentType: json["payment_type"],
+  );
 
   Map<String, dynamic> toJson() => {
-    "enrollment_number": enrollmentNumber != null
-        ? enrollmentNumberValues.reverse[enrollmentNumber]
-        : null,
+    "enrollment_number": enrollmentNumber != null ? enrollmentNumberValues.reverse[enrollmentNumber] : null,
     "batch_name": batchName != null ? batchNameValues.reverse[batchName] : null,
     "payment_breakdown": paymentBreakdown?.toJson(),
     "payment_type": paymentType,
@@ -1198,13 +1030,9 @@ class PaymentSummary {
 
     return PaymentSummary(
       totalTransactions: toInt(json["total_transactions"]),
-      totalAmountPaidViaTransactions: toInt(
-        json["total_amount_paid_via_transactions"],
-      ),
+      totalAmountPaidViaTransactions: toInt(json["total_amount_paid_via_transactions"]),
       averagePaymentAmount: toInt(json["average_payment_amount"]),
-      lastPaymentDate: json["last_payment_date"] == null
-          ? null
-          : DateTime.parse(json["last_payment_date"]),
+      lastPaymentDate: json["last_payment_date"] == null ? null : DateTime.parse(json["last_payment_date"]),
       lastPaymentAmount: toInt(json["last_payment_amount"]),
     );
   }
@@ -1223,33 +1051,22 @@ class NotificationsSummary {
   List<dynamic>? recentNotifications;
   List<dynamic>? urgentNotifications;
 
-  NotificationsSummary({
-    this.summary,
-    this.recentNotifications,
-    this.urgentNotifications,
-  });
+  NotificationsSummary({this.summary, this.recentNotifications, this.urgentNotifications});
 
-  factory NotificationsSummary.fromJson(Map<String, dynamic> json) =>
-      NotificationsSummary(
-        summary: json["summary"] == null
-            ? null
-            : NotificationsSummarySummary.fromJson(json["summary"]),
-        recentNotifications: json["recent_notifications"] == null
-            ? []
-            : List<dynamic>.from(json["recent_notifications"]!.map((x) => x)),
-        urgentNotifications: json["urgent_notifications"] == null
-            ? []
-            : List<dynamic>.from(json["urgent_notifications"]!.map((x) => x)),
-      );
+  factory NotificationsSummary.fromJson(Map<String, dynamic> json) => NotificationsSummary(
+    summary: json["summary"] == null ? null : NotificationsSummarySummary.fromJson(json["summary"]),
+    recentNotifications: json["recent_notifications"] == null
+        ? []
+        : List<dynamic>.from(json["recent_notifications"]!.map((x) => x)),
+    urgentNotifications: json["urgent_notifications"] == null
+        ? []
+        : List<dynamic>.from(json["urgent_notifications"]!.map((x) => x)),
+  );
 
   Map<String, dynamic> toJson() => {
     "summary": summary?.toJson(),
-    "recent_notifications": recentNotifications == null
-        ? []
-        : List<dynamic>.from(recentNotifications!.map((x) => x)),
-    "urgent_notifications": urgentNotifications == null
-        ? []
-        : List<dynamic>.from(urgentNotifications!.map((x) => x)),
+    "recent_notifications": recentNotifications == null ? [] : List<dynamic>.from(recentNotifications!.map((x) => x)),
+    "urgent_notifications": urgentNotifications == null ? [] : List<dynamic>.from(urgentNotifications!.map((x) => x)),
   };
 }
 
@@ -1259,12 +1076,7 @@ class NotificationsSummarySummary {
   int? urgentCount;
   int? notificationsToday;
 
-  NotificationsSummarySummary({
-    this.totalNotifications,
-    this.unreadCount,
-    this.urgentCount,
-    this.notificationsToday,
-  });
+  NotificationsSummarySummary({this.totalNotifications, this.unreadCount, this.urgentCount, this.notificationsToday});
 
   factory NotificationsSummarySummary.fromJson(Map<String, dynamic> json) {
     int? toInt(dynamic value) {
@@ -1300,15 +1112,9 @@ class QuickStats {
   QuickStats({this.academic, this.financial, this.engagement, this.alerts});
 
   factory QuickStats.fromJson(Map<String, dynamic> json) => QuickStats(
-    academic: json["academic"] == null
-        ? null
-        : Academic.fromJson(json["academic"]),
-    financial: json["financial"] == null
-        ? null
-        : Financial.fromJson(json["financial"]),
-    engagement: json["engagement"] == null
-        ? null
-        : Engagement.fromJson(json["engagement"]),
+    academic: json["academic"] == null ? null : Academic.fromJson(json["academic"]),
+    financial: json["financial"] == null ? null : Financial.fromJson(json["financial"]),
+    engagement: json["engagement"] == null ? null : Engagement.fromJson(json["engagement"]),
     alerts: json["alerts"] == null ? null : Alerts.fromJson(json["alerts"]),
   );
 
@@ -1368,12 +1174,7 @@ class Alerts {
   bool? demoExpiringSoon;
   bool? paymentGraceExpired;
 
-  Alerts({
-    this.hasPendingPayments,
-    this.hasOverdueEmis,
-    this.demoExpiringSoon,
-    this.paymentGraceExpired,
-  });
+  Alerts({this.hasPendingPayments, this.hasOverdueEmis, this.demoExpiringSoon, this.paymentGraceExpired});
 
   factory Alerts.fromJson(Map<String, dynamic> json) => Alerts(
     hasPendingPayments: json["has_pending_payments"],
@@ -1396,12 +1197,7 @@ class Engagement {
   bool? isAlumni;
   bool? isPlaced;
 
-  Engagement({
-    this.daysSinceAdmission,
-    this.referralsMade,
-    this.isAlumni,
-    this.isPlaced,
-  });
+  Engagement({this.daysSinceAdmission, this.referralsMade, this.isAlumni, this.isPlaced});
 
   factory Engagement.fromJson(Map<String, dynamic> json) {
     int? toInt(dynamic value) {
@@ -1435,13 +1231,7 @@ class Financial {
   int? pendingEmis;
   int? overdueEmis;
 
-  Financial({
-    this.totalPaid,
-    this.totalPending,
-    this.paymentCompletion,
-    this.pendingEmis,
-    this.overdueEmis,
-  });
+  Financial({this.totalPaid, this.totalPending, this.paymentCompletion, this.pendingEmis, this.overdueEmis});
 
   factory Financial.fromJson(Map<String, dynamic> json) {
     int? toInt(dynamic value) {
@@ -1477,25 +1267,16 @@ class RecentActivities {
 
   RecentActivities({this.recentActivities, this.categorized, this.summary});
 
-  factory RecentActivities.fromJson(Map<String, dynamic> json) =>
-      RecentActivities(
-        recentActivities: json["recent_activities"] == null
-            ? []
-            : List<EntActivity>.from(
-                json["recent_activities"]!.map((x) => EntActivity.fromJson(x)),
-              ),
-        categorized: json["categorized"] == null
-            ? null
-            : Categorized.fromJson(json["categorized"]),
-        summary: json["summary"] == null
-            ? null
-            : RecentActivitiesSummary.fromJson(json["summary"]),
-      );
+  factory RecentActivities.fromJson(Map<String, dynamic> json) => RecentActivities(
+    recentActivities: json["recent_activities"] == null
+        ? []
+        : List<EntActivity>.from(json["recent_activities"]!.map((x) => EntActivity.fromJson(x))),
+    categorized: json["categorized"] == null ? null : Categorized.fromJson(json["categorized"]),
+    summary: json["summary"] == null ? null : RecentActivitiesSummary.fromJson(json["summary"]),
+  );
 
   Map<String, dynamic> toJson() => {
-    "recent_activities": recentActivities == null
-        ? []
-        : List<dynamic>.from(recentActivities!.map((x) => x.toJson())),
+    "recent_activities": recentActivities == null ? [] : List<dynamic>.from(recentActivities!.map((x) => x.toJson())),
     "categorized": categorized?.toJson(),
     "summary": summary?.toJson(),
   };
@@ -1506,19 +1287,13 @@ class Categorized {
   List<dynamic>? enrollmentActivities;
   List<dynamic>? academicActivities;
 
-  Categorized({
-    this.paymentActivities,
-    this.enrollmentActivities,
-    this.academicActivities,
-  });
+  Categorized({this.paymentActivities, this.enrollmentActivities, this.academicActivities});
 
   factory Categorized.fromJson(Map<String, dynamic> json) {
     return Categorized(
       paymentActivities: json["payment_activities"] == null
           ? []
-          : List<EntActivity>.from(
-              json["payment_activities"]!.map((x) => EntActivity.fromJson(x)),
-            ),
+          : List<EntActivity>.from(json["payment_activities"]!.map((x) => EntActivity.fromJson(x))),
       enrollmentActivities: json["enrollment_activities"] == null
           ? []
           : List<dynamic>.from(json["enrollment_activities"]!.map((x) => x)),
@@ -1535,9 +1310,7 @@ class Categorized {
     "enrollment_activities": enrollmentActivities == null
         ? []
         : List<dynamic>.from(enrollmentActivities!.map((x) => x)),
-    "academic_activities": academicActivities == null
-        ? []
-        : List<dynamic>.from(academicActivities!.map((x) => x)),
+    "academic_activities": academicActivities == null ? [] : List<dynamic>.from(academicActivities!.map((x) => x)),
   };
 }
 
@@ -1584,19 +1357,11 @@ class EntActivity {
       description: json["description"],
       amount: toInt(json["amount"]),
       date: json["date"] == null ? null : DateTime.parse(json["date"]),
-      performedBy: json["performed_by"] != null
-          ? fullNameValues.map[json["performed_by"]]
-          : null,
-      priority: json["priority"] != null
-          ? priorityValues.map[json["priority"]]
-          : null,
-      enrollmentInfo: json["enrollment_info"] == null
-          ? null
-          : EnrollmentInfo.fromJson(json["enrollment_info"]),
+      performedBy: json["performed_by"] != null ? fullNameValues.map[json["performed_by"]] : null,
+      priority: json["priority"] != null ? priorityValues.map[json["priority"]] : null,
+      enrollmentInfo: json["enrollment_info"] == null ? null : EnrollmentInfo.fromJson(json["enrollment_info"]),
       requiresFollowUp: json["requires_follow_up"],
-      tags: json["tags"] == null
-          ? []
-          : List<dynamic>.from(json["tags"]!.map((x) => x)),
+      tags: json["tags"] == null ? [] : List<dynamic>.from(json["tags"]!.map((x) => x)),
     );
   }
 
@@ -1607,9 +1372,7 @@ class EntActivity {
     "description": description,
     "amount": amount,
     "date": date?.toIso8601String(),
-    "performed_by": performedBy != null
-        ? fullNameValues.reverse[performedBy]
-        : null,
+    "performed_by": performedBy != null ? fullNameValues.reverse[performedBy] : null,
     "priority": priority != null ? priorityValues.reverse[priority] : null,
     "enrollment_info": enrollmentInfo?.toJson(),
     "requires_follow_up": requiresFollowUp,
@@ -1624,18 +1387,12 @@ class EnrollmentInfo {
   EnrollmentInfo({this.enrollmentNumber, this.batchName});
 
   factory EnrollmentInfo.fromJson(Map<String, dynamic> json) => EnrollmentInfo(
-    enrollmentNumber: json["enrollment_number"] != null
-        ? enrollmentNumberValues.map[json["enrollment_number"]]
-        : null,
-    batchName: json["batch_name"] != null
-        ? batchNameValues.map[json["batch_name"]]
-        : null,
+    enrollmentNumber: json["enrollment_number"] != null ? enrollmentNumberValues.map[json["enrollment_number"]] : null,
+    batchName: json["batch_name"] != null ? batchNameValues.map[json["batch_name"]] : null,
   );
 
   Map<String, dynamic> toJson() => {
-    "enrollment_number": enrollmentNumber != null
-        ? enrollmentNumberValues.reverse[enrollmentNumber]
-        : null,
+    "enrollment_number": enrollmentNumber != null ? enrollmentNumberValues.reverse[enrollmentNumber] : null,
     "batch_name": batchName != null ? batchNameValues.reverse[batchName] : null,
   };
 }
@@ -1650,12 +1407,7 @@ class RecentActivitiesSummary {
   int? activitiesThisWeek;
   int? pendingFollowUps;
 
-  RecentActivitiesSummary({
-    this.totalActivities,
-    this.activitiesToday,
-    this.activitiesThisWeek,
-    this.pendingFollowUps,
-  });
+  RecentActivitiesSummary({this.totalActivities, this.activitiesToday, this.activitiesThisWeek, this.pendingFollowUps});
 
   factory RecentActivitiesSummary.fromJson(Map<String, dynamic> json) {
     int? toInt(dynamic value) {
@@ -1708,34 +1460,18 @@ class StudentDetails {
   });
 
   factory StudentDetails.fromJson(Map<String, dynamic> json) => StudentDetails(
-    basicInfo: json["basic_info"] == null
-        ? null
-        : StudentDetailsBasicInfo.fromJson(json["basic_info"]),
-    personalInfo: json["personal_info"] == null
-        ? null
-        : PersonalInfo.fromJson(json["personal_info"]),
+    basicInfo: json["basic_info"] == null ? null : StudentDetailsBasicInfo.fromJson(json["basic_info"]),
+    personalInfo: json["personal_info"] == null ? null : PersonalInfo.fromJson(json["personal_info"]),
     academicBackground: json["academic_background"] == null
         ? null
         : AcademicBackground.fromJson(json["academic_background"]),
-    addressInfo: json["address_info"] == null
-        ? null
-        : AddressInfo.fromJson(json["address_info"]),
-    professionalInfo: json["professional_info"] == null
-        ? null
-        : ProfessionalInfo.fromJson(json["professional_info"]),
-    familyInfo: json["family_info"] == null
-        ? null
-        : FamilyInfo.fromJson(json["family_info"]),
-    statusInfo: json["status_info"] == null
-        ? null
-        : StatusInfo.fromJson(json["status_info"]),
-    counselorInfo: json["counselor_info"] == null
-        ? null
-        : CounselorInfo.fromJson(json["counselor_info"]),
+    addressInfo: json["address_info"] == null ? null : AddressInfo.fromJson(json["address_info"]),
+    professionalInfo: json["professional_info"] == null ? null : ProfessionalInfo.fromJson(json["professional_info"]),
+    familyInfo: json["family_info"] == null ? null : FamilyInfo.fromJson(json["family_info"]),
+    statusInfo: json["status_info"] == null ? null : StatusInfo.fromJson(json["status_info"]),
+    counselorInfo: json["counselor_info"] == null ? null : CounselorInfo.fromJson(json["counselor_info"]),
     placementInfo: json["placement_info"],
-    referralInfo: json["referral_info"] == null
-        ? null
-        : ReferralInfo.fromJson(json["referral_info"]),
+    referralInfo: json["referral_info"] == null ? null : ReferralInfo.fromJson(json["referral_info"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -1781,9 +1517,7 @@ class AcademicBackground {
     }
 
     return AcademicBackground(
-      qualification: json["qualification"] == null
-          ? null
-          : Qualification.fromJson(json["qualification"]),
+      qualification: json["qualification"] == null ? null : Qualification.fromJson(json["qualification"]),
       college: json["college"],
       specialization: json["specialization"],
       passOutYear: toInt(json["pass_out_year"]),
@@ -1823,17 +1557,10 @@ class AddressInfo {
 
   AddressInfo({this.address, this.pincode, this.district});
 
-  factory AddressInfo.fromJson(Map<String, dynamic> json) => AddressInfo(
-    address: json["address"],
-    pincode: json["pincode"],
-    district: json["district"],
-  );
+  factory AddressInfo.fromJson(Map<String, dynamic> json) =>
+      AddressInfo(address: json["address"], pincode: json["pincode"], district: json["district"]);
 
-  Map<String, dynamic> toJson() => {
-    "address": address,
-    "pincode": pincode,
-    "district": district,
-  };
+  Map<String, dynamic> toJson() => {"address": address, "pincode": pincode, "district": district};
 }
 
 class StudentDetailsBasicInfo {
@@ -1845,6 +1572,7 @@ class StudentDetailsBasicInfo {
   String? profilePicture;
   DateTime? admissionDate;
   int? daysSinceAdmission;
+  bool? profileCompleted;
 
   StudentDetailsBasicInfo({
     this.studentId,
@@ -1855,6 +1583,7 @@ class StudentDetailsBasicInfo {
     this.profilePicture,
     this.admissionDate,
     this.daysSinceAdmission,
+    this.profileCompleted,
   });
 
   factory StudentDetailsBasicInfo.fromJson(Map<String, dynamic> json) {
@@ -1868,17 +1597,14 @@ class StudentDetailsBasicInfo {
 
     return StudentDetailsBasicInfo(
       studentId: json["student_id"],
-      fullName: json["full_name"] != null
-          ? fullNameValues.map[json["full_name"]]
-          : null,
+      fullName: json["full_name"] != null ? fullNameValues.map[json["full_name"]] : null,
       email: json["email"],
       phone: json["phone"],
       whatsappNumber: json["whatsapp_number"],
       profilePicture: json["profile_picture"],
-      admissionDate: json["admission_date"] == null
-          ? null
-          : DateTime.parse(json["admission_date"]),
+      admissionDate: json["admission_date"] == null ? null : DateTime.parse(json["admission_date"]),
       daysSinceAdmission: toInt(json["days_since_admission"]),
+      profileCompleted: json['profile_completed'],
     );
   }
 
@@ -1893,6 +1619,7 @@ class StudentDetailsBasicInfo {
         ? "${admissionDate!.year.toString().padLeft(4, '0')}-${admissionDate!.month.toString().padLeft(2, '0')}-${admissionDate!.day.toString().padLeft(2, '0')}"
         : null,
     "days_since_admission": daysSinceAdmission,
+    "profile_completed": profileCompleted,
   };
 }
 
@@ -1904,19 +1631,10 @@ class CounselorInfo {
 
   CounselorInfo({this.name, this.email, this.phone, this.whatsapp});
 
-  factory CounselorInfo.fromJson(Map<String, dynamic> json) => CounselorInfo(
-    name: json["name"],
-    email: json["email"],
-    phone: json["phone"],
-    whatsapp: json["whatsapp"],
-  );
+  factory CounselorInfo.fromJson(Map<String, dynamic> json) =>
+      CounselorInfo(name: json["name"], email: json["email"], phone: json["phone"], whatsapp: json["whatsapp"]);
 
-  Map<String, dynamic> toJson() => {
-    "name": name,
-    "email": email,
-    "phone": phone,
-    "whatsapp": whatsapp,
-  };
+  Map<String, dynamic> toJson() => {"name": name, "email": email, "phone": phone, "whatsapp": whatsapp};
 }
 
 class FamilyInfo {
@@ -1925,15 +1643,10 @@ class FamilyInfo {
 
   FamilyInfo({this.parentName, this.parentPhone});
 
-  factory FamilyInfo.fromJson(Map<String, dynamic> json) => FamilyInfo(
-    parentName: json["parent_name"],
-    parentPhone: json["parent_phone"],
-  );
+  factory FamilyInfo.fromJson(Map<String, dynamic> json) =>
+      FamilyInfo(parentName: json["parent_name"], parentPhone: json["parent_phone"]);
 
-  Map<String, dynamic> toJson() => {
-    "parent_name": parentName,
-    "parent_phone": parentPhone,
-  };
+  Map<String, dynamic> toJson() => {"parent_name": parentName, "parent_phone": parentPhone};
 }
 
 class PersonalInfo {
@@ -1942,12 +1655,7 @@ class PersonalInfo {
   PreferredLocation? preferredLocation;
   String? howDidYouHear;
 
-  PersonalInfo({
-    this.dateOfBirth,
-    this.age,
-    this.preferredLocation,
-    this.howDidYouHear,
-  });
+  PersonalInfo({this.dateOfBirth, this.age, this.preferredLocation, this.howDidYouHear});
 
   factory PersonalInfo.fromJson(Map<String, dynamic> json) {
     int? toInt(dynamic value) {
@@ -1959,9 +1667,7 @@ class PersonalInfo {
     }
 
     return PersonalInfo(
-      dateOfBirth: json["date_of_birth"] == null
-          ? null
-          : DateTime.parse(json["date_of_birth"]),
+      dateOfBirth: json["date_of_birth"] == null ? null : DateTime.parse(json["date_of_birth"]),
       age: toInt(json["age"]),
       preferredLocation: json["preferred_location"] == null
           ? null
@@ -1997,18 +1703,13 @@ class ProfessionalInfo {
   bool? placementAssistance;
   String? preferredJobLocation;
 
-  ProfessionalInfo({
-    this.studentOrWorkingProfessional,
-    this.placementAssistance,
-    this.preferredJobLocation,
-  });
+  ProfessionalInfo({this.studentOrWorkingProfessional, this.placementAssistance, this.preferredJobLocation});
 
-  factory ProfessionalInfo.fromJson(Map<String, dynamic> json) =>
-      ProfessionalInfo(
-        studentOrWorkingProfessional: json["student_or_working_professional"],
-        placementAssistance: json["placement_assistance"],
-        preferredJobLocation: json["preferred_job_location"],
-      );
+  factory ProfessionalInfo.fromJson(Map<String, dynamic> json) => ProfessionalInfo(
+    studentOrWorkingProfessional: json["student_or_working_professional"],
+    placementAssistance: json["placement_assistance"],
+    preferredJobLocation: json["preferred_job_location"],
+  );
 
   Map<String, dynamic> toJson() => {
     "student_or_working_professional": studentOrWorkingProfessional,
@@ -2032,16 +1733,10 @@ class ReferralInfo {
       return null;
     }
 
-    return ReferralInfo(
-      referredBy: json["referred_by"],
-      totalReferralsMade: toInt(json["total_referrals_made"]),
-    );
+    return ReferralInfo(referredBy: json["referred_by"], totalReferralsMade: toInt(json["total_referrals_made"]));
   }
 
-  Map<String, dynamic> toJson() => {
-    "referred_by": referredBy,
-    "total_referrals_made": totalReferralsMade,
-  };
+  Map<String, dynamic> toJson() => {"referred_by": referredBy, "total_referrals_made": totalReferralsMade};
 }
 
 class StatusInfo {
@@ -2050,17 +1745,10 @@ class StatusInfo {
   bool? isPlaced;
   bool? portalAccessEnabled;
 
-  StatusInfo({
-    this.currentStatus,
-    this.isAlumni,
-    this.isPlaced,
-    this.portalAccessEnabled,
-  });
+  StatusInfo({this.currentStatus, this.isAlumni, this.isPlaced, this.portalAccessEnabled});
 
   factory StatusInfo.fromJson(Map<String, dynamic> json) => StatusInfo(
-    currentStatus: json["current_status"] == null
-        ? null
-        : CurrentStatus.fromJson(json["current_status"]),
+    currentStatus: json["current_status"] == null ? null : CurrentStatus.fromJson(json["current_status"]),
     isAlumni: json["is_alumni"],
     isPlaced: json["is_placed"],
     portalAccessEnabled: json["portal_access_enabled"],
@@ -2080,20 +1768,13 @@ class UpcomingActivities {
 
   UpcomingActivities({this.activities, this.summary});
 
-  factory UpcomingActivities.fromJson(Map<String, dynamic> json) =>
-      UpcomingActivities(
-        activities: json["activities"] == null
-            ? []
-            : List<dynamic>.from(json["activities"]!.map((x) => x)),
-        summary: json["summary"] == null
-            ? null
-            : UpcomingActivitiesSummary.fromJson(json["summary"]),
-      );
+  factory UpcomingActivities.fromJson(Map<String, dynamic> json) => UpcomingActivities(
+    activities: json["activities"] == null ? [] : List<dynamic>.from(json["activities"]!.map((x) => x)),
+    summary: json["summary"] == null ? null : UpcomingActivitiesSummary.fromJson(json["summary"]),
+  );
 
   Map<String, dynamic> toJson() => {
-    "activities": activities == null
-        ? []
-        : List<dynamic>.from(activities!.map((x) => x)),
+    "activities": activities == null ? [] : List<dynamic>.from(activities!.map((x) => x)),
     "summary": summary?.toJson(),
   };
 }
