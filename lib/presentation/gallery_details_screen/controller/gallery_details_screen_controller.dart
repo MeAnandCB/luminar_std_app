@@ -72,19 +72,54 @@ class FolderBrowserProvider with ChangeNotifier {
   }
 
   // Load root folder contents (no folder filter)
+  // providers/folder_browser_provider.dart - Update loadRootContents method
+
   Future<void> loadRootContents({bool refresh = false}) async {
-    // Always clear the current folder data when loading root so we don't show stale
-    // videos/folders from a previously visited folder while new data is loading.
-    _clearCurrentFolder();
+    if (refresh) {
+      _clearCurrentFolder();
+    }
 
     _isLoading = true;
     _isRefreshing = refresh;
     notifyListeners();
 
     try {
-      // For root, we only load folders (videos without folder are shown in gallery detail)
-      await _loadSubfolders(parentFolderUid: null);
-      _foldersError = null;
+      // For root, load both folders AND videos without folder
+      final response = await _service.getFolderContents(
+        batchId: _batchId,
+        galleryUid: _galleryUid,
+        folderUid: null, // null means get videos without folder
+        folderName: 'Root',
+        videoPage: 1,
+      );
+
+      if (response.success) {
+        final data = response.data as Map<String, dynamic>;
+
+        // Process folders (subfolders in root)
+        final foldersResponse = data['folders'] as FolderResponseModel;
+        _currentSubfolders = foldersResponse.folders;
+        _currentFolderSummary = foldersResponse.summary;
+
+        // Process videos (videos without folder)
+        final videosResponse = data['videos'] as VideoResponseModel?;
+        if (videosResponse != null) {
+          _currentVideos = videosResponse.videos;
+          _currentVideoSummary = videosResponse.summary;
+          _currentVideoPage = videosResponse.pagination.currentPage;
+          _totalVideoPages = videosResponse.pagination.totalPages;
+          _hasMoreVideos = _currentVideoPage < _totalVideoPages;
+        } else {
+          _currentVideos = [];
+          _currentVideoSummary = null;
+          _hasMoreVideos = false;
+        }
+
+        _foldersError = null;
+        _videosError = null;
+      } else {
+        _foldersError = response.message;
+      }
     } catch (e) {
       _foldersError = e.toString();
     } finally {
