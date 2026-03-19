@@ -3,8 +3,8 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 
 // ---------- Contact List Screen (First Screen) ----------
-class ContactListScreen extends StatelessWidget {
-  const ContactListScreen({super.key});
+class MessageScreen extends StatelessWidget {
+  const MessageScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

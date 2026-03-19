@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -173,6 +174,14 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
 
     return Column(
       children: [
+        Center(
+          child: Text(
+            "Our Success Stories",
+            style: AppTextStyles.activitySubtitle,
+          ),
+        ),
+
+        const SizedBox(height: 10),
         CarouselSlider(
           options: CarouselOptions(
             height: 280,

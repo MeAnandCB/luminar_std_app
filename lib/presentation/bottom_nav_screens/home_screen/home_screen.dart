@@ -174,10 +174,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         const SizedBox(height: 10),
                         const SimpleNactetListTile(),
                         const SizedBox(height: 10),
-                        Center(
-                          child: _buildSectionTitle("Our Success Stories"),
-                        ),
-                        const SizedBox(height: 10),
+
                         const AdvancedInstaCarousel(),
                         const SizedBox(height: 24),
                         // _buildSectionTitle("Recent Activities"),

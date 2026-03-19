@@ -57,6 +57,11 @@ dependencies:
   shimmer: ^3.0.0
   font_awesome_flutter: ^11.0.0
   razorpay_flutter: ^1.4.1
+  country_code_picker: ^3.4.1
+  dropdown_button2: ^3.0.0
+  pinput: ^6.0.2
+  file_picker: ^10.3.10
+  image_picker: ^1.2.1
 
 dev_dependencies:
   flutter_test:

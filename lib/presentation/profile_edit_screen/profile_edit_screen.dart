@@ -38,8 +38,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String _selectedStudentType = 'Student';
   String _selectedArrears = 'Yes';
   String _selectedPlacementAssistance = 'Yes';
-  bool _isActive = true;
-  bool _portalAccess = true;
 
   @override
   Widget build(BuildContext context) {

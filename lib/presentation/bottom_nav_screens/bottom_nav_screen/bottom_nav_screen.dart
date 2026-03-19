@@ -2,7 +2,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/chat_screen/chat_screen.dart';
+import 'package:luminar_std/presentation/auth_screens/loginform/loginform.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/message_screen/message_screen.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/home_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
@@ -27,7 +28,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   List<Widget> _pages = [
     const StudentDashboard(),
     const EnrollmentScreen(),
-    const ContactListScreen(), // Chat
+    const MessageScreen(), // Chat
     const MoreEnrollmentScreen(), // More
   ];
 
@@ -73,7 +74,8 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
                       "admission_fee_paid")
               ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false)
               : const EnrollmentScreen(),
-          const ContactListScreen(),
+          const MessageScreen(),
+
           MoreEnrollmentScreen(),
         ];
       });

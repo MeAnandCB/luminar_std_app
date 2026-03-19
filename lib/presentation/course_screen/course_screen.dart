@@ -761,7 +761,7 @@ class _CourseScreenState extends State<CourseScreen> {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
-                builder: (context) => BottomNavScreen(initialIndex: 4),
+                builder: (context) => BottomNavScreen(initialIndex: 3),
               ),
               (route) => false,
             );
