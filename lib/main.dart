@@ -7,6 +7,7 @@ import 'package:luminar_std/presentation/auth_screens/login_screen/controller.da
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/gallery_details_screen/controller/gallery_details_screen_controller.dart';
 import 'package:luminar_std/presentation/gallery_screen/controller/gallery_screen_controller.dart';
+import 'package:luminar_std/presentation/live_class/controller/live_class_controller.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/splash_screen/splash_screen.dart';
 import 'package:luminar_std/repository/attandance_screen/service.dart';
@@ -45,6 +46,7 @@ void main() async {
         Provider<AttendanceService>(create: (_) => AttendanceService()),
         ChangeNotifierProvider(create: (_) => GalleryProvider()),
         ChangeNotifierProvider(create: (_) => FolderBrowserProvider()),
+        ChangeNotifierProvider(create: (_) => LiveClassController()),
       ],
       child: const MyApp(),
     ),

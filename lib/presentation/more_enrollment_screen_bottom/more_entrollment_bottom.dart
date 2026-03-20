@@ -4,6 +4,7 @@ import 'package:luminar_std/presentation/enrollment_screen/controller/controller
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/gallery_screen/views/gallery_screen.dart';
+import 'package:luminar_std/presentation/live_class/view/live_class.dart';
 import 'package:luminar_std/presentation/more_enrollment_screen_bottom/widgets/more_card.dart';
 import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
 import 'package:provider/provider.dart';
@@ -113,7 +114,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
         title: const Text(
           'My Learning',
           style: TextStyle(
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
             letterSpacing: -0.5,
@@ -200,24 +201,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
                       }).toList(),
                     ),
                   ),
-                  //       return Tab(
-                  //         child: Container(
-                  //           padding: const EdgeInsets.symmetric(
-                  //             horizontal: 16,
-                  //             vertical: 8,
-                  //           ),
-                  //           child: Text(
-                  //             displayName,
-                  //             style: const TextStyle(
-                  //               fontSize: 14,
-                  //               fontWeight: FontWeight.w500,
-                  //             ),
-                  //           ),
-                  //         ),
-                  //       );
-                  //     }).toList(),
-                  //   ),
-                  // ),
+
                   const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -720,111 +704,127 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
 
               // Features List
               Expanded(
-                child: Column(
-                  children: [
-                    MoreCard(
-                      icon: Icons.calendar_month_rounded,
-                      title: "Attandance",
-                      subtitle: "Track your daily class attendance",
-                      color: const Color(0xFF6C5CE7),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Column(
+                      children: [
+                        SizedBox(height: 10),
+                        MoreCard(
+                          icon: Icons.calendar_month_rounded,
+                          title: "Attandance",
+                          subtitle: "Track your daily class attendance",
+                          color: const Color(0xFF6C5CE7),
 
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AttendanceScreen(
-                              batchId: batchId,
-                              courseName: batchName,
-                              batchName: courseName,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    MoreCard(
-                      icon: Icons.video_collection_outlined,
-                      title: "Recoder Class Videos",
-                      subtitle: "Watch your recorded class videos",
-                      color: const Color(0xFF6C5CE7),
-
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) {
-                              return GalleryScreen(batchId: batchId);
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                    MoreCard(
-                      icon: Icons.computer_rounded,
-                      title: "Class Link",
-                      subtitle: "Join your live class instantly",
-                      color: const Color(0xFF6C5CE7),
-
-                      onTap: () {
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) {
-                        //       return VideosScreen();
-                        //     },
-                        //   ),
-                        // );
-                      },
-                    ),
-                    MoreCard(
-                      icon: Icons.add_moderator_outlined,
-                      title: "Payment",
-                      subtitle: "Track your fee payments",
-                      color: const Color(0xFF6C5CE7),
-
-                      onTap:
-                          (provider
-                                      .enrollmentDataRes
-                                      ?.enrollments[index]
-                                      .status
-                                      .value ==
-                                  "admission_fee_paid" ||
-                              provider
-                                      .enrollmentDataRes
-                                      ?.enrollments[index]
-                                      .status
-                                      .value ==
-                                  "not_set" ||
-                              provider
-                                      .enrollmentDataRes
-                                      ?.enrollments[index]
-                                      .status
-                                      .value ==
-                                  "demo_expired")
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EnrollmentDetailsScreen(
-                                    index: index,
-                                    backbuttonValue: true,
-                                  ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AttendanceScreen(
+                                  batchId: batchId,
+                                  courseName: batchName,
+                                  batchName: courseName,
                                 ),
-                              );
-                            }
-                          : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return PaymentScreen(
-                                      enrollmentId: enrollmentId,
-                                    );
-                                  },
-                                ),
-                              );
-                            },
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(height: 10),
+                        MoreCard(
+                          icon: Icons.video_collection_outlined,
+                          title: "Recoder Class Videos",
+                          subtitle: "Watch your recorded class videos",
+                          color: const Color(0xFF6C5CE7),
+
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return GalleryScreen(batchId: batchId);
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(height: 10),
+                        MoreCard(
+                          icon: Icons.computer_rounded,
+                          title: "Class Link",
+                          subtitle: "Join your live class instantly",
+                          color: const Color(0xFF6C5CE7),
+
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return LiveClassScreen();
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(height: 10),
+                        MoreCard(
+                          icon: Icons.add_moderator_outlined,
+                          title: "Payment",
+                          subtitle: "Track your fee payments",
+                          color: const Color(0xFF6C5CE7),
+
+                          onTap:
+                              (provider
+                                          .enrollmentDataRes
+                                          ?.enrollments[index]
+                                          .status
+                                          .value ==
+                                      "admission_fee_paid" ||
+                                  provider
+                                          .enrollmentDataRes
+                                          ?.enrollments[index]
+                                          .status
+                                          .value ==
+                                      "not_set" ||
+                                  provider
+                                          .enrollmentDataRes
+                                          ?.enrollments[index]
+                                          .status
+                                          .value ==
+                                      "demo_expired")
+                              ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          EnrollmentDetailsScreen(
+                                            index: index,
+                                            backbuttonValue: true,
+                                          ),
+                                    ),
+                                  );
+                                }
+                              : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) {
+                                        return PaymentScreen(
+                                          enrollmentId: enrollmentId,
+                                          uid:
+                                              provider
+                                                  .enrollmentDataRes
+                                                  ?.enrollments[index]
+                                                  .uid ??
+                                              "",
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],

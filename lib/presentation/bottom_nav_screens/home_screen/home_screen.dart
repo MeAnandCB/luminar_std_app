@@ -145,6 +145,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       HeaderWidget(
+                        enrolldata: provider,
                         studentName: studentName,
                         provider: dashboardProvider,
                       ),

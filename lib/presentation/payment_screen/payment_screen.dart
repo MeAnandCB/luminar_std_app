@@ -1,9 +1,12 @@
 // lib/main.dart - Updated to show single enrollment details
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
+import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/repository/payment_screen/model.dart';
 import 'package:luminar_std/repository/payment_screen/service.dart';
 import 'package:provider/provider.dart';
@@ -15,10 +18,11 @@ enum EmiStatus { paid, pending, overdue }
 
 class PaymentScreen extends StatefulWidget {
   final String enrollmentId; // Add this parameter to accept enrollment ID
-
+  final String uid;
   const PaymentScreen({
     super.key,
-    required this.enrollmentId, // Optional parameter
+    required this.enrollmentId,
+    required this.uid, // Optional parameter
   });
 
   @override
@@ -34,6 +38,12 @@ class _PaymentScreenState extends State<PaymentScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      await Provider.of<EnrollmentProvider>(
+        context,
+        listen: false,
+      ).getEmiPaymentDetails(id: widget.uid);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeData();
     });
@@ -47,6 +57,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         context,
         listen: false,
       );
+
       await controller.getDashboardData(context: context);
 
       await _fetchEnrollmentDetails();
@@ -172,6 +183,7 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   @override
   Widget build(BuildContext context) {
+    log('Thia is ${widget.uid}');
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -398,175 +410,6 @@ class _PaymentScreenState extends State<PaymentScreen>
         _buildSingleEnrollmentHeader(),
         Expanded(child: _buildPaymentContent(_paymentData!)),
       ],
-    );
-  }
-
-  void _showEmiDetails(BuildContext context, EmiInstallment emi) {
-    final dateFormat = DateFormat('d/M/yyyy');
-    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: emi.status == EmiStatus.paid
-                        ? Colors.green[50]
-                        : emi.status == EmiStatus.overdue
-                        ? Colors.red[50]
-                        : Colors.blue[50],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${emi.installmentNumber}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: emi.status == EmiStatus.paid
-                            ? Colors.green[700]
-                            : emi.status == EmiStatus.overdue
-                            ? Colors.red[700]
-                            : Colors.blue[700],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Installment ${emi.installmentNumber}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: emi.status == EmiStatus.paid
-                              ? Colors.green[50]
-                              : emi.status == EmiStatus.overdue
-                              ? Colors.red[50]
-                              : Colors.blue[50],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          emi.status == EmiStatus.paid
-                              ? 'Paid'
-                              : emi.status == EmiStatus.overdue
-                              ? 'Overdue'
-                              : 'Pending',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: emi.status == EmiStatus.paid
-                                ? Colors.green[700]
-                                : emi.status == EmiStatus.overdue
-                                ? Colors.red[700]
-                                : Colors.blue[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _buildDetailItem(
-              'Amount',
-              currencyFormat.format(emi.totalAmount ?? 0),
-            ),
-            _buildDetailItem('Due Date', dateFormat.format(emi.dueDate!)),
-            const SizedBox(height: 24),
-            if (emi.status != EmiStatus.paid)
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        side: BorderSide(color: Colors.grey[300]!),
-                      ),
-                      child: const Text('Later'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _handlePayment(emi);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: emi.status == EmiStatus.overdue
-                            ? Colors.red[600]
-                            : Colors.blue[600],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text('Pay Now'),
-                    ),
-                  ),
-                ],
-              )
-            else
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('Close'),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -820,58 +663,69 @@ class _PaymentScreenState extends State<PaymentScreen>
                         ),
                       ],
                     ),
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            if (nextDueEmi != null) {
-                              _handlePayment(nextDueEmi);
-                            }
-                          },
+                    // Pay Now Button with Razorpay Integration
+                    if (nextDueEmi != null)
+                      Container(
+                        decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.white.withOpacity(0.3),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  isOverdue ? 'Pay Now' : 'Pay Now',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () async {
+                              final provider = Provider.of<EnrollmentProvider>(
+                                context,
+                                listen: false,
+                              );
+                              log(
+                                'this is key: ${provider.emiResData?.key ?? ""}',
+                              );
+                              await Provider.of<EnrollmentProvider>(
+                                context,
+                                listen: false,
+                              ).getEmiPaymentDetails(id: widget.uid);
+                              ;
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    isOverdue ? 'Pay Overdue' : 'Pay Now',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF4158D0),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(
+                                    Icons.arrow_forward,
+                                    size: 16,
                                     color: Color(0xFF4158D0),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                const Icon(
-                                  Icons.arrow_forward,
-                                  size: 16,
-                                  color: Color(0xFF4158D0),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ],
@@ -1095,7 +949,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         final emiStatus = _mapEmiStatus(emi.status, emi.isOverdue ?? false);
 
         return InkWell(
-          onTap: () => _showEmiDetails(context, emi),
+          onTap: () {},
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.all(12),
@@ -1493,70 +1347,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             ),
           ),
           const SizedBox(height: 16),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.05),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Theme(
-              data: Theme.of(
-                context,
-              ).copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                tilePadding: const EdgeInsets.all(16),
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.purple[50],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.history,
-                    color: Colors.purple,
-                    size: 18,
-                  ),
-                ),
-                title: const Text(
-                  'Payment History',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-                subtitle: Text(
-                  '${data.paymentTransactions?.length ?? 0} transactions',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                ),
-                trailing: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: _buildPaymentHistoryList(
-                      context,
-                      data.paymentTransactions,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+
           if ((data.paymentType ?? '').toLowerCase().contains('emi'))
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -1621,6 +1412,71 @@ class _PaymentScreenState extends State<PaymentScreen>
                 ),
               ),
             ),
+          const SizedBox(height: 16),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.05),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Theme(
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: const EdgeInsets.all(16),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.purple[50],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.history,
+                    color: Colors.purple,
+                    size: 18,
+                  ),
+                ),
+                title: const Text(
+                  'Payment History',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${data.paymentTransactions?.length ?? 0} transactions',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.keyboard_arrow_down,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: _buildPaymentHistoryList(
+                      context,
+                      data.paymentTransactions,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           const SizedBox(height: 20),
         ],
       ),

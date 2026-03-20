@@ -1,23 +1,17 @@
-import 'dart:developer';
-
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
-import 'package:luminar_std/repository/razorpay/model/emi_res_model.dart';
-import 'package:luminar_std/repository/razorpay/model/razorpay_model.dart';
+import 'package:luminar_std/repository/live_class/model/live_class_model.dart';
 
-class RazorpayScreenService {
-  Future<ApiResponse> getPaymentDetails({required String id}) async {
-    final response = await ApiService().post(
-      endpoint: '/api/student-payments/full/$id/',
+class LiveClassService {
+  Future<ApiResponse> getLiveClassDetails() async {
+    final response = await ApiService().get(
+      endpoint: '/api/student_portal/enrollments/for-class/',
       token: await AppUtils.getAccessKey(),
-      body: {},
     );
-    log(response.data.toString());
-    log(response.statusCode.toString());
+
     if (response.success) {
-      log(response.data.toString());
-      PaymentResModel resModel = PaymentResModel.fromJson(response.data);
+      LiveClassResModel resModel = LiveClassResModel.fromJson(response.data);
       return ApiResponse(
         success: true,
         data: resModel,
@@ -34,18 +28,14 @@ class RazorpayScreenService {
     }
   }
 
-  Future<ApiResponse> getEmiPaymentDetails({required String id}) async {
-    final response = await ApiService().post(
-      endpoint: '/api/payments/emi/$id/',
+  Future<ApiResponse> getLivelink({required String id}) async {
+    final response = await ApiService().get(
+      endpoint: '/api/student_portal/enrollments/for-class/url/$id/',
       token: await AppUtils.getAccessKey(),
-      body: {},
     );
-    log(response.data.toString());
-    log(response.data.toString());
-    log(response.statusCode.toString());
+
     if (response.success) {
-      log(response.data.toString());
-      EmiPaymentResModel resModel = EmiPaymentResModel.fromJson(response.data);
+      ClasslinkResModel resModel = ClasslinkResModel.fromJson(response.data);
       return ApiResponse(
         success: true,
         data: resModel,

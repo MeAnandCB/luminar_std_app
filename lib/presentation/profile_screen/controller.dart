@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
-import 'package:luminar_std/repository/home_screen/service.dart';
+
 import 'package:luminar_std/repository/profile_screen/model/profile_model.dart';
 import 'package:luminar_std/repository/profile_screen/service/profile_screen_service.dart';
 

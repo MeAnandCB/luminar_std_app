@@ -3,17 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
+import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/notification_screen/notification_screen.dart';
 import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
 
 class HeaderWidget extends StatelessWidget {
   final String studentName;
   final DashboardController provider;
+  final EnrollmentProvider enrolldata;
 
   const HeaderWidget({
     super.key,
     required this.studentName,
     required this.provider,
+    required this.enrolldata,
   });
 
   String _getFirstLetter() {
@@ -38,11 +41,17 @@ class HeaderWidget extends StatelessWidget {
 
     return Row(
       children: [
-        _buildProfileAvatar(context),
-        const SizedBox(width: 12),
-        _buildUserInfo(context),
-        const Spacer(),
-        _buildNotificationIcon(context),
+        Expanded(
+          child: Row(
+            children: [
+              _buildProfileAvatar(context),
+              const SizedBox(width: 12),
+              _buildUserInfo(context),
+            ],
+          ),
+        ),
+
+        Row(children: [_buildNotificationIcon(context)]),
       ],
     );
   }
@@ -52,7 +61,17 @@ class HeaderWidget extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          MaterialPageRoute(
+            builder: (context) => ProfileScreen(
+              course:
+                  enrolldata
+                      .enrollmentDataRes
+                      ?.enrollments[0]
+                      .course
+                      .courseName ??
+                  "",
+            ),
+          ),
         );
       },
       child: Stack(
@@ -106,7 +125,7 @@ class HeaderWidget extends StatelessWidget {
           style: AppTextStyles.headerName,
         ),
         SizedBox(
-          width: MediaQuery.sizeOf(context).width * .60,
+          width: MediaQuery.sizeOf(context).width * .50,
           child: Text(
             studentName.toUpperCase(),
             maxLines: 1,
@@ -115,7 +134,7 @@ class HeaderWidget extends StatelessWidget {
           ),
         ),
         SizedBox(
-          width: MediaQuery.sizeOf(context).width * .60,
+          width: MediaQuery.sizeOf(context).width * .50,
           child: Text(
             provider.dashboard?.studentDetails?.basicInfo?.studentId ?? "",
             maxLines: 1,
