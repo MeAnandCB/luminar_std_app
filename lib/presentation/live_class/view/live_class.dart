@@ -227,31 +227,12 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                         Text(
                           'Live Classes',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
                           ),
                         ),
                         const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.cardBackground,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.shadowLight,
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.notifications_none_rounded,
-                            color: const Color(0xFFFF7675),
-                            size: 22,
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -270,10 +251,6 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                             AppColors.statsBlue,
                           ),
                           const SizedBox(width: 8),
-                          _buildStatChip(
-                            'Live: ${liveProvider.liveClassResModel?.where((c) => c.enrollmentStatus?.toLowerCase() == 'active').length ?? 0}',
-                            AppColors.statsGreen,
-                          ),
                         ],
                       ),
                     ),
@@ -338,8 +315,6 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
     int index,
     LiveClassController liveProvider,
   ) {
-    final bool isLive = liveClass?.enrollmentStatus?.toLowerCase() == 'active';
-
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -361,7 +336,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
         leading: AvatarGlow(
           glowColor: AppColors.white,
           duration: const Duration(milliseconds: 1500),
-          repeat: isLive,
+
           child: Container(
             width: 40,
             height: 40,
@@ -370,7 +345,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isLive ? Icons.play_circle_fill_rounded : Icons.videocam_rounded,
+              Icons.video_call_outlined,
               color: AppColors.white,
               size: 24,
             ),
@@ -386,19 +361,14 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: isLive ? AppColors.statsGreen : AppColors.white,
+                    color: AppColors.statsGreen,
                     shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  isLive ? 'LIVE NOW' : 'RECORDED',
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
+                  'Current Enrollment',
+                  style: const TextStyle(color: AppColors.white, fontSize: 10),
                 ),
               ],
             ),
@@ -416,14 +386,8 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
             const SizedBox(height: 2),
             Row(
               children: [
-                Icon(
-                  Icons.access_time_rounded,
-                  size: 12,
-                  color: AppColors.white.withOpacity(0.8),
-                ),
-                const SizedBox(width: 4),
                 Text(
-                  '10:30 AM',
+                  'Join for Live Class',
                   style: TextStyle(
                     color: AppColors.white.withOpacity(0.8),
                     fontSize: 11,

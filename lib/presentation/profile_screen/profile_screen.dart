@@ -226,7 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildStudentIdCard(ProfileController provider) {
     final fullName = provider.profile?.personalInfo?.fullName ?? '';
     final studentId = provider.profile?.personalInfo?.studentId ?? '';
-    final course = widget.course ?? '';
+    final course = widget.course;
     final email = provider.profile?.personalInfo?.email ?? '';
     final phone = provider.profile?.personalInfo?.phone ?? '';
     final profilePic = provider.profile?.personalInfo?.profilePicture;
