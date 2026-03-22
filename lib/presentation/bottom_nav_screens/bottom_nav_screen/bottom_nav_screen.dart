@@ -28,7 +28,8 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   List<Widget> _pages = [
     const StudentDashboard(),
     const EnrollmentScreen(),
-    const MessageScreen(), // Chat
+    // const MessageScreen(), // Chat
+    ChatListScreen(),
     const MoreEnrollmentScreen(), // More
   ];
 
@@ -74,7 +75,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
                       "admission_fee_paid")
               ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false)
               : const EnrollmentScreen(),
-          const MessageScreen(),
+          ChatListScreen(),
 
           MoreEnrollmentScreen(),
         ];
