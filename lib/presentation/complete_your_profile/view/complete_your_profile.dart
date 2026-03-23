@@ -117,26 +117,49 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
           else if (_currentPage == _totalPages - 1)
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_validateCurrentPage()) {
-                    // Submit profile
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Profile completed successfully!'),
-                        backgroundColor: AppColors.statusActive,
-                      ),
-                    );
-                  }
+              child: Consumer2<ProfileController, CompleteProfileController>(
+                builder: (context, profileController, completeController, child) {
+                  return ElevatedButton(
+                    onPressed: completeController.isSubmitting
+                        ? null
+                        : () async {
+                            if (_validateCurrentPage()) {
+                              try {
+                                await completeController.submitProfile(profileController.profileData);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Profile completed successfully!'),
+                                      backgroundColor: AppColors.statusActive,
+                                    ),
+                                  );
+                                  // Optionally navigate away or refresh
+                                  await profileController.refreshProfile(context: context);
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error: ${e.toString()}'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.statusActive,
+                      foregroundColor: AppColors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    child: completeController.isSubmitting
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Submit'),
+                  );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.statusActive,
-                  foregroundColor: AppColors.white,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                child: const Text('Submit'),
               ),
             ),
         ],
@@ -454,6 +477,9 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                         controller: _addressController,
                         enabled: !_hasAddress,
                         prefixIcon: Icons.location_on_outlined,
+                        onChanged: (value) {
+                          context.read<CompleteProfileController>().address = value;
+                        },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your address';
@@ -474,11 +500,14 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                               keyboardType: TextInputType.number,
                               maxLength: 6,
                               onChanged: (value) async {
+                                final completeController = context.read<CompleteProfileController>();
+                                completeController.pincode = value;
+
                                 // Clear district and pincode if backspace is pressed (length < 6)
                                 if (_districtController.text.isNotEmpty && value.length < 6) {
                                   setState(() {
                                     _districtController.clear();
-                                    _pincodeController.clear();
+                                    completeController.district = null;
                                   });
                                   return;
                                 }
@@ -486,6 +515,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                                 if (value.isEmpty) {
                                   setState(() {
                                     _districtController.clear();
+                                    completeController.district = null;
                                   });
                                   return;
                                 }
@@ -501,10 +531,12 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                                   if (district != null) {
                                     setState(() {
                                       _districtController.text = district;
+                                      completeController.district = district;
                                     });
                                   } else {
                                     setState(() {
                                       _districtController.text = 'District not found';
+                                      completeController.district = null;
                                     });
                                   }
                                 }
@@ -529,6 +561,9 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                                     controller: _districtController,
                                     prefixIcon: Icons.map_outlined,
                                     enabled: false,
+                                    onChanged: (value) {
+                                      context.read<CompleteProfileController>().district = value;
+                                    },
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
                                         return 'District will auto-fill';
@@ -811,7 +846,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
   String? _selectedPassOutYear;
   final TextEditingController _collegeNameController = TextEditingController();
   final TextEditingController _cgpaController = TextEditingController();
-  String? _arrears;
+  bool? _anyArrears;
 
   @override
   void dispose() {
@@ -857,7 +892,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
       if (_hasCgpa) _cgpaController.text = aInfo.cgpa.toString();
 
       _hasArrears = aInfo.anyArrears != null;
-      if (_hasArrears) _arrears = aInfo.anyArrears! ? 'yes' : 'no';
+      if (_hasArrears) _anyArrears = aInfo.anyArrears!;
     }
     _initialized = true;
   }
@@ -866,7 +901,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
     final isFormValid = _formKey.currentState?.validate() ?? false;
     final isDropdownsValid =
         _selectedQualification != null && _selectedSpecialization != null && _selectedPassOutYear != null;
-    final isRadioValid = _arrears != null;
+    final isRadioValid = _anyArrears != null;
 
     if (!isDropdownsValid || !isRadioValid) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please complete all academic fields')));
@@ -943,6 +978,11 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         onChanged: (value) {
                           setState(() {
                             _selectedQualification = value;
+                            final completeController = context.read<CompleteProfileController>();
+                            completeController.qualificationName = value;
+                            // Find ID
+                            final q = completeController.qualifications.firstWhere((element) => element.name == value);
+                            completeController.qualificationId = q.id.toString();
                           });
                         },
                       ),
@@ -955,6 +995,9 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         controller: _collegeNameController,
                         enabled: !_hasCollege,
                         prefixIcon: Icons.school_outlined,
+                        onChanged: (value) {
+                          context.read<CompleteProfileController>().college = value;
+                        },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter college name';
@@ -972,6 +1015,9 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         enabled: !_hasCgpa,
                         prefixIcon: Icons.grade_outlined,
                         keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          context.read<CompleteProfileController>().cgpa = value;
+                        },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter CGPA';
@@ -992,6 +1038,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         onChanged: (value) {
                           setState(() {
                             _selectedSpecialization = value;
+                            context.read<CompleteProfileController>().specialization = value;
                           });
                         },
                       ),
@@ -1007,6 +1054,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         onChanged: (value) {
                           setState(() {
                             _selectedPassOutYear = value;
+                            context.read<CompleteProfileController>().passOutYear = value;
                           });
                         },
                       ),
@@ -1088,20 +1136,22 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
     );
   }
 
-  Widget _buildRadioButton(String label, String value, bool isEditable) {
-    return RadioListTile<String>(
-      title: Text(label),
-      value: value,
-      groupValue: _arrears,
-      onChanged: isEditable
-          ? (val) {
-              setState(() {
-                _arrears = val;
-              });
-            }
-          : null,
-      activeColor: AppColors.primary,
-      contentPadding: EdgeInsets.zero,
+  Widget _buildRadioButton(String title, String value, bool isEnabled) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: RadioListTile<String>(
+        title: Text(title, style: const TextStyle(fontSize: 14)),
+        value: value,
+        groupValue: _anyArrears == true ? 'yes' : (_anyArrears == false ? 'no' : null),
+        onChanged: isEnabled
+            ? (val) {
+                setState(() {
+                  _anyArrears = val == 'yes';
+                  context.read<CompleteProfileController>().anyArrears = _anyArrears;
+                });
+              }
+            : null,
+      ),
     );
   }
 }
@@ -1116,12 +1166,12 @@ class CareerInfoSection extends StatefulWidget {
 class CareerInfoSectionState extends State<CareerInfoSection> {
   final _formKey = GlobalKey<FormState>();
   String? _currentStatus = 'Student';
-  final TextEditingController _preferredLocationController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
   bool _interestedInPlacement = true;
 
   @override
   void dispose() {
-    _preferredLocationController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
@@ -1145,7 +1195,7 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
 
     if (plInfo != null) {
       _hasPreferredLocation = _hasValue(plInfo.preferredJobLocation);
-      if (_hasPreferredLocation) _preferredLocationController.text = plInfo.preferredJobLocation!;
+      if (_hasPreferredLocation) _locationController.text = plInfo.preferredJobLocation!;
 
       _hasPlacementAssistance = plInfo.placementAssistance != null;
       if (_hasPlacementAssistance) _interestedInPlacement = plInfo.placementAssistance!;
@@ -1227,6 +1277,7 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                               ? (value) {
                                   setState(() {
                                     _currentStatus = value;
+                                    context.read<CompleteProfileController>().studentStatus = value;
                                   });
                                 }
                               : null,
@@ -1238,9 +1289,12 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                       // Preferred Job Location
                       CustomTextField(
                         label: 'Preferred Job Location *',
-                        controller: _preferredLocationController,
+                        controller: _locationController,
                         enabled: !_hasPreferredLocation,
                         prefixIcon: Icons.location_city_outlined,
+                        onChanged: (value) {
+                          context.read<CompleteProfileController>().preferredJobLocation = value;
+                        },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter preferred job location';
@@ -1263,6 +1317,8 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                                   ? (value) {
                                       setState(() {
                                         _interestedInPlacement = value ?? false;
+                                        context.read<CompleteProfileController>().placementAssistance =
+                                            _interestedInPlacement;
                                       });
                                     }
                                   : null,
@@ -1298,8 +1354,8 @@ class ParentInfoSection extends StatefulWidget {
 
 class ParentInfoSectionState extends State<ParentInfoSection> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _parentNameController = TextEditingController();
-  final TextEditingController _parentPhoneController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   String? _countryCode = '+91';
 
   bool _initialized = false;
@@ -1315,18 +1371,18 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
 
     if (cInfo != null) {
       _hasParentName = _hasValue(cInfo.parentName);
-      if (_hasParentName) _parentNameController.text = cInfo.parentName!;
+      if (_hasParentName) _nameController.text = cInfo.parentName!;
 
       _hasParentPhone = _hasValue(cInfo.parentPhone);
-      if (_hasParentPhone) _parentPhoneController.text = cInfo.parentPhone!;
+      if (_hasParentPhone) _phoneController.text = cInfo.parentPhone!;
     }
     _initialized = true;
   }
 
   @override
   void dispose() {
-    _parentNameController.dispose();
-    _parentPhoneController.dispose();
+    _nameController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -1376,9 +1432,12 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                       // Parent Name
                       CustomTextField(
                         label: 'Name *',
-                        controller: _parentNameController,
+                        controller: _nameController,
                         enabled: !_hasParentName,
                         prefixIcon: Icons.person_outline,
+                        onChanged: (value) {
+                          context.read<CompleteProfileController>().parentName = value;
+                        },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter parent/guardian name';
@@ -1416,9 +1475,12 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                             ),
                             Expanded(
                               child: TextFormField(
-                                controller: _parentPhoneController,
+                                controller: _phoneController,
                                 enabled: !_hasParentPhone,
                                 keyboardType: TextInputType.phone,
+                                onChanged: (value) {
+                                  context.read<CompleteProfileController>().parentPhone = value;
+                                },
                                 decoration: const InputDecoration(
                                   hintText: 'Phone number',
                                   border: InputBorder.none,
