@@ -1241,3 +1241,118 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
+
+class FullScreenImageViewer extends StatelessWidget {
+  final String imageUrl;
+  const FullScreenImageViewer({super.key, required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          panEnabled: true,
+          minScale: 0.5,
+          maxScale: 4,
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.broken_image_rounded,
+                    color: Colors.white54,
+                    size: 60,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Failed to load image',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Compact detail row for better space management
+Widget _buildCompactDetailRow(IconData icon, String label, String value) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(icon, size: 14, color: const Color(0xFF6C5CE7)),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF2D3748),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+// Updated CustomPainter
+class IdCardBackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF6C5CE7).withOpacity(0.03)
+      ..style = PaintingStyle.fill;
+
+    // Draw subtle circles pattern
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 2; j++) {
+        canvas.drawCircle(Offset(40.0 + i * 100, 60.0 + j * 150), 20, paint);
+      }
+    }
+
+    // Draw corner accents
+    final cornerPaint = Paint()
+      ..color = const Color(0xFF6C5CE7).withOpacity(0.1);
+
+    // Top right corner
+    canvas.drawCircle(Offset(size.width - 20, 20), 30, cornerPaint);
+
+    // Bottom left corner
+    canvas.drawCircle(Offset(20, size.height - 20), 40, cornerPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}

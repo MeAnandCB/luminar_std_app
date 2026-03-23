@@ -10,6 +10,7 @@ import 'package:luminar_std/presentation/gallery_details_screen/controller/galle
 import 'package:luminar_std/presentation/gallery_screen/controller/gallery_screen_controller.dart';
 import 'package:luminar_std/presentation/live_class/controller/live_class_controller.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
+import 'package:luminar_std/presentation/complete_your_profile/controller/complete_profile_controller.dart';
 import 'package:luminar_std/presentation/splash_screen/splash_screen.dart';
 import 'package:luminar_std/repository/attandance_screen/service.dart';
 import 'package:luminar_std/repository/message_screen/service/message_service.dart';
@@ -55,6 +56,7 @@ void main() async {
 
         // Feature Providers
         ChangeNotifierProvider(create: (_) => ProfileController()),
+        ChangeNotifierProvider(create: (_) => CompleteProfileController()),
         ChangeNotifierProvider(create: (_) => EnrollmentProvider()),
 
         // Attendance Service (Provider but not ChangeNotifier)

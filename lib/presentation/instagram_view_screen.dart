@@ -35,8 +35,10 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
   }
 
   Future<void> loadInitialImages() async {
+    if (!mounted) return;
     setState(() => isLoading = true);
     await fetchInstagramImages(reset: true);
+    if (!mounted) return;
     setState(() => isLoading = false);
 
     // Start preloading next batch immediately
@@ -66,6 +68,7 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
             .map<String>((item) => item["media_url"])
             .toList();
 
+        if (!mounted) return;
         setState(() {
           if (reset) {
             images = newImages;
@@ -134,10 +137,12 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
   Future<void> loadMoreImages() async {
     if (isLoadingMore || nextUrl == null) return;
 
+    if (!mounted) return;
     setState(() => isLoadingMore = true);
 
     // Use preloaded images if available
     if (preloadedImages.isNotEmpty) {
+      if (!mounted) return;
       setState(() {
         images.addAll(preloadedImages);
         preloadedImages.clear();
@@ -151,6 +156,7 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
       await fetchInstagramImages();
     }
 
+    if (!mounted) return;
     setState(() => isLoadingMore = false);
   }
 

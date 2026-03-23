@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:luminar_std/repository/profile_screen/model/profile_model.dart';
 import 'package:luminar_std/repository/profile_screen/service/profile_screen_service.dart';
+import 'package:luminar_std/repository/pincode/service.dart';
 
 class ProfileController extends ChangeNotifier {
   bool _isLoading = false;
@@ -14,6 +15,8 @@ class ProfileController extends ChangeNotifier {
   String? get error => _error;
   Profile? get profileData => profile;
   ProfileModel? get profileModelData => profileModel;
+  bool _isPincodeLoading = false;
+  bool get isPincodeLoading => _isPincodeLoading;
 
   Future<Profile?> getProfileData({required BuildContext context}) async {
     _isLoading = true;
@@ -56,6 +59,28 @@ class ProfileController extends ChangeNotifier {
     }
 
     return profile;
+  }
+
+  Future<String?> getDistrictFromPincode(String pincode) async {
+    _isPincodeLoading = true;
+    notifyListeners();
+
+    try {
+      final response =
+          await PincodeService().getPincodeData(pincode);
+      if (response.success && response.data != null) {
+        final postOffices = response.data!.data.postOffices;
+        if (postOffices.isNotEmpty) {
+          return postOffices.first.district;
+        }
+      }
+    } catch (e) {
+      print('❌ Error fetching district: $e');
+    } finally {
+      _isPincodeLoading = false;
+      notifyListeners();
+    }
+    return null;
   }
 
   // Convenience method to refresh profile data
