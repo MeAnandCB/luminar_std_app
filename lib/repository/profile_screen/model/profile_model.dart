@@ -4,15 +4,10 @@ class ProfileModel {
 
   ProfileModel({this.status, this.profile});
 
-  factory ProfileModel.fromJson(Map<String, dynamic> json) => ProfileModel(
-    status: json["status"],
-    profile: json["profile"] == null ? null : Profile.fromJson(json["profile"]),
-  );
+  factory ProfileModel.fromJson(Map<String, dynamic> json) =>
+      ProfileModel(status: json["status"], profile: json["profile"] == null ? null : Profile.fromJson(json["profile"]));
 
-  Map<String, dynamic> toJson() => {
-    "status": status,
-    "profile": profile?.toJson(),
-  };
+  Map<String, dynamic> toJson() => {"status": status, "profile": profile?.toJson()};
 }
 
 class Profile {
@@ -33,24 +28,12 @@ class Profile {
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
-    personalInfo: json["personal_info"] == null
-        ? null
-        : PersonalInfo.fromJson(json["personal_info"]),
-    academicInfo: json["academic_info"] == null
-        ? null
-        : AcademicInfo.fromJson(json["academic_info"]),
-    contactInfo: json["contact_info"] == null
-        ? null
-        : ContactInfo.fromJson(json["contact_info"]),
-    statusInfo: json["status_info"] == null
-        ? null
-        : StatusInfo.fromJson(json["status_info"]),
-    placementInfo: json["placement_info"] == null
-        ? null
-        : PlacementInfo.fromJson(json["placement_info"]),
-    counselor: json["counselor"] == null
-        ? null
-        : Counselor.fromJson(json["counselor"]),
+    personalInfo: json["personal_info"] == null ? null : PersonalInfo.fromJson(json["personal_info"]),
+    academicInfo: json["academic_info"] == null ? null : AcademicInfo.fromJson(json["academic_info"]),
+    contactInfo: json["contact_info"] == null ? null : ContactInfo.fromJson(json["contact_info"]),
+    statusInfo: json["status_info"] == null ? null : StatusInfo.fromJson(json["status_info"]),
+    placementInfo: json["placement_info"] == null ? null : PlacementInfo.fromJson(json["placement_info"]),
+    counselor: json["counselor"] == null ? null : Counselor.fromJson(json["counselor"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -85,15 +68,11 @@ class AcademicInfo {
   });
 
   factory AcademicInfo.fromJson(Map<String, dynamic> json) => AcademicInfo(
-    qualification: json["qualification"] == null
-        ? null
-        : Qualification.fromJson(json["qualification"]),
+    qualification: json["qualification"] == null ? null : Qualification.fromJson(json["qualification"]),
     college: json["college"],
     passOutYear: json["pass_out_year"],
     specialization: json["specialization"],
-    admissionDate: json["admission_date"] == null
-        ? null
-        : DateTime.parse(json["admission_date"]),
+    admissionDate: json["admission_date"] == null ? null : DateTime.parse(json["admission_date"]),
     cgpa: json["cgpa"],
     anyArrears: json["any_arrears"],
     studentOrWorkingProfessional: json["student_or_working_professional"],
@@ -118,8 +97,7 @@ class Qualification {
 
   Qualification({this.name, this.id});
 
-  factory Qualification.fromJson(Map<String, dynamic> json) =>
-      Qualification(name: json["name"], id: json["id"]);
+  factory Qualification.fromJson(Map<String, dynamic> json) => Qualification(name: json["name"], id: json["id"]);
 
   Map<String, dynamic> toJson() => {"name": name, "id": id};
 }
@@ -171,8 +149,7 @@ class PreferredLocation {
 
   PreferredLocation({this.name});
 
-  factory PreferredLocation.fromJson(Map<String, dynamic> json) =>
-      PreferredLocation(name: json["name"]);
+  factory PreferredLocation.fromJson(Map<String, dynamic> json) => PreferredLocation(name: json["name"]);
 
   Map<String, dynamic> toJson() => {"name": name};
 }
@@ -187,11 +164,7 @@ class Counselor {
   factory Counselor.fromJson(Map<String, dynamic> json) =>
       Counselor(name: json["name"], email: json["email"], phone: json["phone"]);
 
-  Map<String, dynamic> toJson() => {
-    "name": name,
-    "email": email,
-    "phone": phone,
-  };
+  Map<String, dynamic> toJson() => {"name": name, "email": email, "phone": phone};
 }
 
 class PersonalInfo {
@@ -227,9 +200,7 @@ class PersonalInfo {
     email: json["email"],
     phone: json["phone"],
     whatsappNumber: json["whatsapp_number"],
-    dateOfBirth: json["date_of_birth"] == null
-        ? null
-        : DateTime.parse(json["date_of_birth"]),
+    dateOfBirth: json["date_of_birth"] == null ? null : DateTime.parse(json["date_of_birth"]),
     age: json["age"],
     idProof: json["id_proof"],
     idProof2: json["id_proof_2"],
@@ -276,12 +247,7 @@ class StatusInfo {
   bool? isPlaced;
   bool? portalAccessEnabled;
 
-  StatusInfo({
-    this.status,
-    this.isAlumni,
-    this.isPlaced,
-    this.portalAccessEnabled,
-  });
+  StatusInfo({this.status, this.isAlumni, this.isPlaced, this.portalAccessEnabled});
 
   factory StatusInfo.fromJson(Map<String, dynamic> json) => StatusInfo(
     status: json["status"] == null ? null : Status.fromJson(json["status"]),
@@ -308,9 +274,5 @@ class Status {
   factory Status.fromJson(Map<String, dynamic> json) =>
       Status(name: json["name"], value: json["value"], color: json["color"]);
 
-  Map<String, dynamic> toJson() => {
-    "name": name,
-    "value": value,
-    "color": color,
-  };
+  Map<String, dynamic> toJson() => {"name": name, "value": value, "color": color};
 }

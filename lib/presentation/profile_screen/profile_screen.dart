@@ -6,7 +6,7 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.dart';
-import 'package:luminar_std/presentation/profile_edit_screen/profile_edit_screen.dart';
+import 'package:luminar_std/presentation/profile_edit_screen/views/profile_edit_screen.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/test_screen.dart';
 import 'package:provider/provider.dart';
@@ -23,10 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      await Provider.of<ProfileController>(
-        context,
-        listen: false,
-      ).getProfileData(context: context);
+      await Provider.of<ProfileController>(context, listen: false).getProfileData(context: context);
     });
   }
 
@@ -37,19 +34,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('Logout'),
         content: const Text('Are you sure you want to logout?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context); // Close confirmation dialog
               _handleLogout(context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             child: const Text('Logout'),
           ),
         ],
@@ -71,10 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (context.mounted) {
       Navigator.pop(context); // Close loading dialog
       // Navigate to login screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
     }
   }
 
@@ -114,11 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 child: IconButton(
                                   onPressed: () => Navigator.pop(context),
-                                  icon: Icon(
-                                    Icons.arrow_back_ios_new_rounded,
-                                    color: AppColors.primary,
-                                    size: 20,
-                                  ),
+                                  icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primary, size: 20),
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -150,11 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 // Logout Button
                                 _showLogoutConfirmation(context);
                               },
-                              icon: Icon(
-                                Icons.logout,
-                                color: AppColors.primary,
-                                size: 20,
-                              ),
+                              icon: Icon(Icons.logout, color: AppColors.primary, size: 20),
                             ),
                           ),
                         ],
@@ -184,15 +164,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColors.whiteWithOpacity20,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.person_rounded,
-                              color: AppColors.white,
-                              size: 40,
-                            ),
+                            decoration: BoxDecoration(color: AppColors.whiteWithOpacity20, shape: BoxShape.circle),
+                            child: const Icon(Icons.person_rounded, color: AppColors.white, size: 40),
                           ),
                           const SizedBox(width: 20),
                           Expanded(
@@ -200,24 +173,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  profileProvider
-                                          .profile
-                                          ?.personalInfo
-                                          ?.fullName ??
-                                      "",
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.white,
-                                  ),
+                                  profileProvider.profile?.personalInfo?.fullName ?? "",
+                                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.white),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  profileProvider
-                                          .profile
-                                          ?.personalInfo
-                                          ?.studentId ??
-                                      "",
+                                  profileProvider.profile?.personalInfo?.studentId ?? "",
                                   style: AppTextStyles.caption.copyWith(
                                     color: AppColors.whiteWithOpacity90,
                                     fontSize: 14,
@@ -235,21 +196,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                     const SizedBox(width: 8),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: AppColors.statsGreen,
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
-                                        profileProvider
-                                                .profile
-                                                ?.statusInfo
-                                                ?.status
-                                                ?.value ??
-                                            "",
+                                        profileProvider.profile?.statusInfo?.status?.value ?? "",
                                         style: TextStyle(
                                           color: AppColors.white,
                                           fontSize: 10,
@@ -274,52 +227,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.person_outline_rounded,
                       color: AppColors.primary,
                       children: [
-                        _buildInfoRow(
-                          'Full Name',
-                          profileProvider.profile?.personalInfo?.fullName ?? "",
-                        ),
-                        _buildInfoRow(
-                          'Email Address',
-                          profileProvider.profile?.personalInfo?.email ?? "",
-                        ),
-                        _buildInfoRow(
-                          'Phone Number',
-                          profileProvider.profile?.personalInfo?.phone ?? "",
-                        ),
-                        _buildInfoRow(
-                          'WhatsApp Number',
-                          profileProvider
-                                  .profile
-                                  ?.personalInfo
-                                  ?.whatsappNumber ??
-                              "",
-                        ),
+                        _buildInfoRow('Full Name', profileProvider.profile?.personalInfo?.fullName ?? ""),
+                        _buildInfoRow('Email Address', profileProvider.profile?.personalInfo?.email ?? ""),
+                        _buildInfoRow('Phone Number', profileProvider.profile?.personalInfo?.phone ?? ""),
+                        _buildInfoRow('WhatsApp Number', profileProvider.profile?.personalInfo?.whatsappNumber ?? ""),
                         _buildInfoRow(
                           'Date of Birth',
 
-                          profileProvider.profile?.personalInfo?.dateOfBirth !=
-                                  null
-                              ? DateFormat('dd MM yyyy').format(
-                                  profileProvider
-                                      .profile!
-                                      .personalInfo!
-                                      .dateOfBirth!,
-                                )
+                          profileProvider.profile?.personalInfo?.dateOfBirth != null
+                              ? DateFormat('dd MM yyyy').format(profileProvider.profile!.personalInfo!.dateOfBirth!)
                               : "",
                         ),
-                        _buildInfoRow(
-                          'Age',
-                          profileProvider.profile?.personalInfo?.age
-                                  .toString() ??
-                              "",
-                        ),
+                        _buildInfoRow('Age', profileProvider.profile?.personalInfo?.age.toString() ?? ""),
                         _buildInfoRow(
                           'Student/Working Professional',
-                          profileProvider
-                                  .profile
-                                  ?.academicInfo
-                                  ?.studentOrWorkingProfessional ??
-                              "",
+                          profileProvider.profile?.academicInfo?.studentOrWorkingProfessional ?? "",
                         ),
                       ],
                     ),
@@ -334,47 +256,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         _buildStatusRow(
                           'Current Status',
-                          profileProvider.profile?.statusInfo?.status?.name ??
-                              "",
+                          profileProvider.profile?.statusInfo?.status?.name ?? "",
                           isSuccess: true,
                         ),
                         _buildStatusRow(
                           'Placement Status',
-                          profileProvider.profile?.statusInfo?.isPlaced == true
-                              ? "Placed"
-                              : "Not Placed",
-                          isSuccess:
-                              profileProvider.profile?.statusInfo?.isPlaced ??
-                              false,
+                          profileProvider.profile?.statusInfo?.isPlaced == true ? "Placed" : "Not Placed",
+                          isSuccess: profileProvider.profile?.statusInfo?.isPlaced ?? false,
                         ),
                         _buildStatusRow(
                           'Portal Access',
-                          profileProvider
-                                      .profile
-                                      ?.statusInfo
-                                      ?.portalAccessEnabled ==
-                                  true
-                              ? 'Enabled'
-                              : 'Disabled',
-                          isSuccess:
-                              profileProvider
-                                  .profile
-                                  ?.statusInfo
-                                  ?.portalAccessEnabled ??
-                              false,
+                          profileProvider.profile?.statusInfo?.portalAccessEnabled == true ? 'Enabled' : 'Disabled',
+                          isSuccess: profileProvider.profile?.statusInfo?.portalAccessEnabled ?? false,
                         ),
                         _buildStatusRow(
                           'Arrears Status',
-                          profileProvider.profile?.academicInfo?.anyArrears ==
-                                  true
+                          profileProvider.profile?.academicInfo?.anyArrears == true
                               ? 'No Arrears (Papers Cleared)'
                               : 'Has Arrears',
-                          isSuccess:
-                              profileProvider
-                                  .profile
-                                  ?.academicInfo
-                                  ?.anyArrears ??
-                              false,
+                          isSuccess: profileProvider.profile?.academicInfo?.anyArrears ?? false,
                         ),
                       ],
                     ),
@@ -387,18 +287,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.support_agent_rounded,
                       color: AppColors.statsOrange,
                       children: [
-                        _buildInfoRow(
-                          'Name',
-                          profileProvider.profile?.counselor?.name ?? "",
-                        ),
-                        _buildInfoRow(
-                          'Email',
-                          profileProvider.profile?.counselor?.email ?? "",
-                        ),
-                        _buildInfoRow(
-                          'Phone',
-                          profileProvider.profile?.counselor?.phone ?? "",
-                        ),
+                        _buildInfoRow('Name', profileProvider.profile?.counselor?.name ?? ""),
+                        _buildInfoRow('Email', profileProvider.profile?.counselor?.email ?? ""),
+                        _buildInfoRow('Phone', profileProvider.profile?.counselor?.phone ?? ""),
                       ],
                     ),
 
@@ -412,60 +303,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         _buildInfoRow(
                           'Qualification',
-                          profileProvider
-                                  .profile
-                                  ?.academicInfo
-                                  ?.qualification
-                                  ?.name ??
-                              "",
+                          profileProvider.profile?.academicInfo?.qualification?.name ?? "",
                         ),
-                        _buildInfoRow(
-                          'College',
-                          profileProvider.profile?.academicInfo?.college ?? "",
-                        ),
+                        _buildInfoRow('College', profileProvider.profile?.academicInfo?.college ?? ""),
                         _buildInfoRow(
                           'Pass Out Year',
-                          profileProvider.profile?.academicInfo?.passOutYear
-                                  .toString() ??
-                              "",
+                          profileProvider.profile?.academicInfo?.passOutYear.toString() ?? "",
                         ),
-                        _buildInfoRow(
-                          'Specialization',
-                          profileProvider
-                                  .profile
-                                  ?.academicInfo
-                                  ?.specialization ??
-                              "",
-                        ),
+                        _buildInfoRow('Specialization', profileProvider.profile?.academicInfo?.specialization ?? ""),
                         _buildInfoRow('CGPA', '1'),
                         _buildStatusRow(
                           'Any Arrears',
-                          profileProvider.profile?.academicInfo?.anyArrears ==
-                                  true
-                              ? 'Yes'
-                              : "NO",
-                          isSuccess:
-                              profileProvider
-                                      .profile
-                                      ?.academicInfo
-                                      ?.anyArrears ==
-                                  true
-                              ? false
-                              : true,
+                          profileProvider.profile?.academicInfo?.anyArrears == true ? 'Yes' : "NO",
+                          isSuccess: profileProvider.profile?.academicInfo?.anyArrears == true ? false : true,
                         ),
                         _buildInfoRow(
                           'Admission Date',
-                          profileProvider
-                                      .profile
-                                      ?.academicInfo
-                                      ?.admissionDate !=
-                                  null
-                              ? DateFormat('dd MM yyyy').format(
-                                  profileProvider
-                                      .profile!
-                                      .academicInfo!
-                                      .admissionDate!,
-                                )
+                          profileProvider.profile?.academicInfo?.admissionDate != null
+                              ? DateFormat('dd MM yyyy').format(profileProvider.profile!.academicInfo!.admissionDate!)
                               : "",
                         ),
                       ],
@@ -479,41 +334,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.contact_phone_rounded,
                       color: AppColors.primary,
                       children: [
-                        _buildInfoRow(
-                          'Address',
-                          profileProvider.profile?.contactInfo?.address ?? "",
-                        ),
-                        _buildInfoRow(
-                          'District',
-                          profileProvider.profile?.contactInfo?.district ?? "",
-                        ),
-                        _buildInfoRow(
-                          'Pincode',
-                          profileProvider.profile?.contactInfo?.pincode ?? "",
-                        ),
+                        _buildInfoRow('Address', profileProvider.profile?.contactInfo?.address ?? ""),
+                        _buildInfoRow('District', profileProvider.profile?.contactInfo?.district ?? ""),
+                        _buildInfoRow('Pincode', profileProvider.profile?.contactInfo?.pincode ?? ""),
                         _buildInfoRow(
                           'Preferred Location',
-                          profileProvider
-                                  .profile
-                                  ?.contactInfo
-                                  ?.preferredLocation
-                                  ?.name ??
-                              "",
+                          profileProvider.profile?.contactInfo?.preferredLocation?.name ?? "",
                         ),
-                        _buildInfoRow(
-                          'Parent/Guardian Name',
-                          profileProvider.profile?.contactInfo?.parentName ??
-                              "",
-                        ),
-                        _buildInfoRow(
-                          'Parent/Guardian Phone',
-                          profileProvider.profile?.contactInfo?.parentPhone ??
-                              "",
-                        ),
+                        _buildInfoRow('Parent/Guardian Name', profileProvider.profile?.contactInfo?.parentName ?? ""),
+                        _buildInfoRow('Parent/Guardian Phone', profileProvider.profile?.contactInfo?.parentPhone ?? ""),
                         _buildInfoRow(
                           'How did you hear about us?  ',
-                          profileProvider.profile?.contactInfo?.howDidYouHear ??
-                              "",
+                          profileProvider.profile?.contactInfo?.howDidYouHear ?? "",
                         ),
                       ],
                     ),
@@ -528,27 +360,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         _buildStatusRow(
                           'Placement Assistance',
-                          profileProvider
-                                      .profile
-                                      ?.placementInfo
-                                      ?.placementAssistance ==
-                                  true
-                              ? "YES"
-                              : "NO",
-                          isSuccess:
-                              profileProvider
-                                  .profile
-                                  ?.placementInfo
-                                  ?.placementAssistance ??
-                              true,
+                          profileProvider.profile?.placementInfo?.placementAssistance == true ? "YES" : "NO",
+                          isSuccess: profileProvider.profile?.placementInfo?.placementAssistance ?? true,
                         ),
                         _buildInfoRow(
                           'Preferred Job Location',
-                          profileProvider
-                                  .profile
-                                  ?.placementInfo
-                                  ?.preferredJobLocation ??
-                              "",
+                          profileProvider.profile?.placementInfo?.preferredJobLocation ?? "",
                         ),
                       ],
                     ),
@@ -592,27 +409,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const EditProfileScreen(),
-                              ),
-                            );
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen()));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             foregroundColor: AppColors.white,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           ),
                           child: const Text(
                             'Update Profile',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
@@ -638,13 +445,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 5))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -653,10 +454,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: color, size: 20),
               ),
               const SizedBox(width: 12),
@@ -678,23 +476,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Expanded(flex: 2, child: Text(label, style: AppTextStyles.statLabel)),
           SizedBox(width: 10),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value,
-              style: AppTextStyles.statValue.copyWith(fontSize: 13),
-            ),
-          ),
+          Expanded(flex: 3, child: Text(value, style: AppTextStyles.statValue.copyWith(fontSize: 13))),
         ],
       ),
     );
   }
 
-  Widget _buildStatusRow(
-    String label,
-    String value, {
-    required bool isSuccess,
-  }) {
+  Widget _buildStatusRow(String label, String value, {required bool isSuccess}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -706,18 +494,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: isSuccess
-                    ? AppColors.statsGreen.withOpacity(0.1)
-                    : const Color(0xFFFF7675).withOpacity(0.1),
+                color: isSuccess ? AppColors.statsGreen.withOpacity(0.1) : const Color(0xFFFF7675).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 value,
                 style: TextStyle(
                   fontSize: 12,
-                  color: isSuccess
-                      ? AppColors.statsGreen
-                      : const Color(0xFFFF7675),
+                  color: isSuccess ? AppColors.statsGreen : const Color(0xFFFF7675),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -747,19 +531,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.remove_red_eye_rounded,
-                    size: 14,
-                    color: AppColors.primary,
-                  ),
+                  Icon(Icons.remove_red_eye_rounded, size: 14, color: AppColors.primary),
                   const SizedBox(width: 4),
                   Text(
                     action,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -771,11 +547,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showFullScreenImage(BuildContext context, String imageUrl) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FullScreenImageViewer(imageUrl: imageUrl),
-      ),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => FullScreenImageViewer(imageUrl: imageUrl)));
   }
 }

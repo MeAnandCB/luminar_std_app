@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/presentation/profile_edit_screen/views/profile_edit_screen.dart';
 import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 import 'package:luminar_std/repository/home_screen/service.dart';
 
@@ -20,9 +21,7 @@ class DashboardController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final fetchedData = await DashboardService().GetDashboardData(
-        context: context,
-      );
+      final fetchedData = await DashboardService().GetDashboardData(context: context);
 
       // Check if fetchedData is a DashBoardModel and has dashboard data
       if (fetchedData is DashBoardModel) {
@@ -31,6 +30,14 @@ class DashboardController extends ChangeNotifier {
 
         if (_dashboard != null) {
           print('✅ Dashboard data loaded successfully');
+          if (_dashboard?.studentDetails?.basicInfo?.profileCompleted != true) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => EditProfileScreen()),
+              (route) => false,
+            );
+          }
+
           _error = null;
         } else {
           print('⚠️ Dashboard data is null in response');
@@ -74,8 +81,7 @@ class DashboardController extends ChangeNotifier {
   String getStudentName() {
     try {
       return _dashboard?.studentDetails?.basicInfo?.fullName?.toString() ??
-          _dashboardModel?.dashboard?.studentDetails?.basicInfo?.fullName
-              ?.toString() ??
+          _dashboardModel?.dashboard?.studentDetails?.basicInfo?.fullName?.toString() ??
           'Guest';
     } catch (e) {
       return 'Guest';
@@ -84,15 +90,13 @@ class DashboardController extends ChangeNotifier {
 
   // Get financial overview
   Overview? getFinancialOverview() {
-    return _dashboard?.financialSummary?.overview ??
-        _dashboardModel?.dashboard?.financialSummary?.overview;
+    return _dashboard?.financialSummary?.overview ?? _dashboardModel?.dashboard?.financialSummary?.overview;
   }
 
   // Get current enrollment
   Enrollment? getCurrentEnrollment() {
     final enrollments =
-        _dashboard?.enrollmentDetails?.enrollments ??
-        _dashboardModel?.dashboard?.enrollmentDetails?.enrollments;
+        _dashboard?.enrollmentDetails?.enrollments ?? _dashboardModel?.dashboard?.enrollmentDetails?.enrollments;
 
     if (enrollments != null && enrollments.isNotEmpty) {
       return enrollments.first;
@@ -108,8 +112,7 @@ class DashboardController extends ChangeNotifier {
 
   // Get notification summary
   NotificationsSummarySummary? getNotificationSummary() {
-    return _dashboard?.notificationsSummary?.summary ??
-        _dashboardModel?.dashboard?.notificationsSummary?.summary;
+    return _dashboard?.notificationsSummary?.summary ?? _dashboardModel?.dashboard?.notificationsSummary?.summary;
   }
 
   // Get quick stats
@@ -120,40 +123,31 @@ class DashboardController extends ChangeNotifier {
   // Check if has active enrollments
   bool get hasActiveEnrollments {
     final enrollments =
-        _dashboard?.enrollmentDetails?.enrollments ??
-        _dashboardModel?.dashboard?.enrollmentDetails?.enrollments;
+        _dashboard?.enrollmentDetails?.enrollments ?? _dashboardModel?.dashboard?.enrollmentDetails?.enrollments;
     return enrollments != null && enrollments.isNotEmpty;
   }
 
   // Get completion rate
   int getCompletionRate() {
-    final academic =
-        _dashboard?.quickStats?.academic ??
-        _dashboardModel?.dashboard?.quickStats?.academic;
+    final academic = _dashboard?.quickStats?.academic ?? _dashboardModel?.dashboard?.quickStats?.academic;
     return academic?.completionRate ?? 0;
   }
 
   // Get pending fees amount
   int getPendingFees() {
-    final overview =
-        _dashboard?.financialSummary?.overview ??
-        _dashboardModel?.dashboard?.financialSummary?.overview;
+    final overview = _dashboard?.financialSummary?.overview ?? _dashboardModel?.dashboard?.financialSummary?.overview;
     return overview?.totalFeesPending ?? 0;
   }
 
   // Get paid fees amount
   int getPaidFees() {
-    final overview =
-        _dashboard?.financialSummary?.overview ??
-        _dashboardModel?.dashboard?.financialSummary?.overview;
+    final overview = _dashboard?.financialSummary?.overview ?? _dashboardModel?.dashboard?.financialSummary?.overview;
     return overview?.totalFeesPaid ?? 0;
   }
 
   // Get total fees amount
   int getTotalFees() {
-    final overview =
-        _dashboard?.financialSummary?.overview ??
-        _dashboardModel?.dashboard?.financialSummary?.overview;
+    final overview = _dashboard?.financialSummary?.overview ?? _dashboardModel?.dashboard?.financialSummary?.overview;
     return overview?.totalFeesAmount ?? 0;
   }
 }
