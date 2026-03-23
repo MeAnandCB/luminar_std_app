@@ -745,8 +745,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         crossAxisCount: 3,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
         childAspectRatio: 1.1,
         children: [
           _buildStatCard(
@@ -839,7 +839,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               height: 54,
               decoration: BoxDecoration(
                 gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primary.withOpacity(0.3),
@@ -1108,35 +1108,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(record.studentName, style: AppTextStyles.activityTitle),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(record.status),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      record.statusDisplay,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _getStatusColor(record.status),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        '${record.date.day}/${record.date.month}/${record.date.year}',
-                        style: AppTextStyles.caption,
-                      ),
-                    ),
-                  ],
+                Text(
+                  record.status,
+                  style: AppTextStyles.activityTitle.copyWith(
+                    color: _getStatusColor(record.status),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -1154,6 +1130,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '${record.date.day}/${record.date.month}/${record.date.year}',
+                        style: AppTextStyles.caption,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(record.status),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Reason: ${record.reason}',

@@ -1,6 +1,5 @@
 // screens/gallery_screen.dart
 import 'package:flutter/material.dart';
-import 'package:luminar_std/presentation/gallery_details_screen/controller/gallery_details_screen_controller.dart';
 import 'package:luminar_std/presentation/gallery_details_screen/views/gallery_detail_screen.dart';
 import 'package:luminar_std/presentation/gallery_screen/controller/gallery_screen_controller.dart';
 import 'package:luminar_std/presentation/gallery_screen/views/widgets/gallery_card.dart';
@@ -17,6 +16,7 @@ class GalleryScreen extends StatefulWidget {
 
 class _GalleryScreenState extends State<GalleryScreen> {
   final ScrollController _scrollController = ScrollController();
+  bool _isInitialDataLoaded = false;
 
   @override
   void initState() {
@@ -27,13 +27,17 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   void _setupScrollListener() {
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
         _loadMore();
       }
     });
   }
 
   Future<void> _loadInitialData() async {
+    if (_isInitialDataLoaded) return;
+    _isInitialDataLoaded = true;
+
     final provider = Provider.of<GalleryProvider>(context, listen: false);
     await provider.loadGalleries(widget.batchId, refresh: true);
   }
@@ -56,19 +60,22 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<GalleryProvider>(context, listen: false);
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Videos'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // Implement search functionality
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.search),
+          //   onPressed: () {
+          //     // Implement search functionality
+          //   },
+          // ),
         ],
       ),
       body: Consumer<GalleryProvider>(
@@ -80,9 +87,15 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
-                  Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red)),
+                  Text(
+                    'Error: ${provider.error}',
+                    style: const TextStyle(color: Colors.red),
+                  ),
                   const SizedBox(height: 16),
-                  ElevatedButton(onPressed: _refresh, child: const Text('Retry')),
+                  ElevatedButton(
+                    onPressed: _refresh,
+                    child: const Text('Retry'),
+                  ),
                 ],
               ),
             );
@@ -95,24 +108,31 @@ class _GalleryScreenState extends State<GalleryScreen> {
               slivers: [
                 // Galleries List
                 SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    if (index == provider.galleries.length) {
-                      if (provider.isLoadingMore) {
-                        return const Center(
-                          child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
-                        );
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      if (index == provider.galleries.length) {
+                        if (provider.isLoadingMore) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
                       }
-                      return const SizedBox.shrink();
-                    }
 
-                    final gallery = provider.galleries[index];
-                    return GalleryCard(
-                      gallery: gallery,
-                      onTap: () {
-                        _openGallery(gallery);
-                      },
-                    );
-                  }, childCount: provider.galleries.length + (provider.hasMore ? 1 : 0)),
+                      final gallery = provider.galleries[index];
+                      return GalleryCard(
+                        gallery: gallery,
+                        onTap: () {
+                          _openGallery(gallery);
+                        },
+                      );
+                    },
+                    childCount:
+                        provider.galleries.length + (provider.hasMore ? 1 : 0),
+                  ),
                 ),
               ],
             ),

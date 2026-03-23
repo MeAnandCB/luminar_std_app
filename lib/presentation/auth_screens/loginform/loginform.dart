@@ -55,339 +55,349 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         key: _formKey,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Fields remaining indicator
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.statsOrange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.statsOrange.withOpacity(0.3),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Fields remaining indicator
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.statsOrange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.statsOrange.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: AppColors.statsOrange,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '12 fields remaining',
+                        style: TextStyle(
+                          color: AppColors.statsOrange,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
+
+                const SizedBox(height: 20),
+
+                // Profile Picture Section
+                _buildSectionTitle('Profile Picture'),
+                const SizedBox(height: 12),
+                _buildUploadArea(
+                  'Upload',
+                  'JPG, PNG, PDF • Max 5MB each',
+                  icon: Icons.cloud_upload_outlined,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Personal Information Section
+                _buildSectionTitle('Personal Information'),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  'Full Name',
+                  controller: _fullNameController,
+                  isRequired: true, // Required field
+                ),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  'Email',
+                  controller: _emailController,
+                  isRequired: true, // Required field
+                ),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  'Phone',
+                  controller: _phoneController,
+                  isRequired: true, // Required field
+                ),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  'WhatsApp',
+                  controller: _whatsappController,
+                  isRequired: true, // Required field
+                ),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  'Date of Birth',
+                  controller: _dobController,
+                  hintText: 'dd/mm/yyyy',
+                  suffixIcon: Icons.calendar_today,
+                  isRequired: true, // Required field
+                ),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  'Address',
+                  controller: _addressController,
+                  hintText: 'Enter your complete address',
+                  maxLines: 3,
+                  isRequired: true, // Required field
+                ),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  'Pincode',
+                  controller: _pincodeController,
+                  hintText: '6-digit pincode',
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  isRequired: true, // Required field
+                ),
+                const SizedBox(height: 8),
+
+                _buildDistrictAutoFill(),
+
+                const SizedBox(height: 24),
+
+                // ID Proof Section
+                _buildSectionTitle('ID Proof (Both sides required)'),
+                const SizedBox(height: 16),
+
+                _buildUploadCard(
+                  'Front Side',
+                  'Upload the front side of your ID proof (Aadhar, PAN, etc.) as JPG, PNG, or PDF',
+                  isRequired: true, // Required field
+                ),
+                const SizedBox(height: 12),
+                _buildUploadCard(
+                  'Back Side',
+                  'Upload the back side of your ID proof (Aadhar, PAN, etc.) as JPG, PNG, or PDF',
+                  isRequired: true, // Required field
+                ),
+
+                const SizedBox(height: 24),
+
+                // Academic Information Section
+                _buildSectionTitle('Academic Information'),
+                const SizedBox(height: 16),
+
+                // Qualification and Specialization in one row
+                Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: AppColors.statsOrange,
-                      size: 20,
+                    Expanded(
+                      child: _buildDropdownField(
+                        'Qualification',
+                        value: _selectedQualification,
+                        items: [
+                          'B.Tech',
+                          'M.Tech',
+                          'BCA',
+                          'MCA',
+                          'B.Sc',
+                          'M.Sc',
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _selectedQualification = value),
+                        hintText: 'Select qualification',
+                        isRequired: true, // Required field
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '12 fields remaining',
-                      style: TextStyle(
-                        color: AppColors.statsOrange,
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDropdownField(
+                        'Specialization',
+                        value: _selectedSpecialization,
+                        items: [
+                          'Computer Science',
+                          'Electronics',
+                          'Mechanical',
+                          'Civil',
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _selectedSpecialization = value),
+                        hintText: 'Select specialization',
+                        isRequired: true, // Required field
                       ),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 16),
 
-              const SizedBox(height: 20),
-
-              // Profile Picture Section
-              _buildSectionTitle('Profile Picture'),
-              const SizedBox(height: 12),
-              _buildUploadArea(
-                'Upload',
-                'JPG, PNG, PDF • Max 5MB each',
-                icon: Icons.cloud_upload_outlined,
-              ),
-
-              const SizedBox(height: 24),
-
-              // Personal Information Section
-              _buildSectionTitle('Personal Information'),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                'Full Name',
-                controller: _fullNameController,
-                isRequired: true, // Required field
-              ),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                'Email',
-                controller: _emailController,
-                isRequired: true, // Required field
-              ),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                'Phone',
-                controller: _phoneController,
-                isRequired: true, // Required field
-              ),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                'WhatsApp',
-                controller: _whatsappController,
-                isRequired: true, // Required field
-              ),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                'Date of Birth',
-                controller: _dobController,
-                hintText: 'dd/mm/yyyy',
-                suffixIcon: Icons.calendar_today,
-                isRequired: true, // Required field
-              ),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                'Address',
-                controller: _addressController,
-                hintText: 'Enter your complete address',
-                maxLines: 3,
-                isRequired: true, // Required field
-              ),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                'Pincode',
-                controller: _pincodeController,
-                hintText: '6-digit pincode',
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-                isRequired: true, // Required field
-              ),
-              const SizedBox(height: 8),
-
-              _buildDistrictAutoFill(),
-
-              const SizedBox(height: 24),
-
-              // ID Proof Section
-              _buildSectionTitle('ID Proof (Both sides required)'),
-              const SizedBox(height: 16),
-
-              _buildUploadCard(
-                'Front Side',
-                'Upload the front side of your ID proof (Aadhar, PAN, etc.) as JPG, PNG, or PDF',
-                isRequired: true, // Required field
-              ),
-              const SizedBox(height: 12),
-              _buildUploadCard(
-                'Back Side',
-                'Upload the back side of your ID proof (Aadhar, PAN, etc.) as JPG, PNG, or PDF',
-                isRequired: true, // Required field
-              ),
-
-              const SizedBox(height: 24),
-
-              // Academic Information Section
-              _buildSectionTitle('Academic Information'),
-              const SizedBox(height: 16),
-
-              // Qualification and Specialization in one row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDropdownField(
-                      'Qualification',
-                      value: _selectedQualification,
-                      items: ['B.Tech', 'M.Tech', 'BCA', 'MCA', 'B.Sc', 'M.Sc'],
-                      onChanged: (value) =>
-                          setState(() => _selectedQualification = value),
-                      hintText: 'Select qualification',
-                      isRequired: true, // Required field
+                // College/University and Pass Out Year in one row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        'College/University',
+                        controller: _collegeNameController,
+                        hintText: 'College name',
+                        isRequired: true, // Required field
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildDropdownField(
-                      'Specialization',
-                      value: _selectedSpecialization,
-                      items: [
-                        'Computer Science',
-                        'Electronics',
-                        'Mechanical',
-                        'Civil',
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _selectedSpecialization = value),
-                      hintText: 'Select specialization',
-                      isRequired: true, // Required field
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDropdownField(
+                        'Pass Out Year',
+                        value: _selectedPassOutYear,
+                        items: ['2020', '2021', '2022', '2023', '2024', '2025'],
+                        onChanged: (value) =>
+                            setState(() => _selectedPassOutYear = value),
+                        hintText: 'Select year',
+                        isRequired: true, // Required field
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-              // College/University and Pass Out Year in one row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField(
-                      'College/University',
-                      controller: _collegeNameController,
-                      hintText: 'College name',
-                      isRequired: true, // Required field
+                // CGPA and Any Arrears in one row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        'CGPA',
+                        controller: _cgpaController,
+                        hintText: 'e.g., 8.5',
+                        keyboardType: TextInputType.number,
+                        isRequired: true, // Required field
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildDropdownField(
-                      'Pass Out Year',
-                      value: _selectedPassOutYear,
-                      items: ['2020', '2021', '2022', '2023', '2024', '2025'],
-                      onChanged: (value) =>
-                          setState(() => _selectedPassOutYear = value),
-                      hintText: 'Select year',
-                      isRequired: true, // Required field
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // CGPA and Any Arrears in one row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField(
-                      'CGPA',
-                      controller: _cgpaController,
-                      hintText: 'e.g., 8.5',
-                      keyboardType: TextInputType.number,
-                      isRequired: true, // Required field
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Any Arrears?',
-                              style: AppTextStyles.bodyText1,
-                            ),
-                            Text(
-                              ' *',
-                              style: TextStyle(color: AppColors.error),
-                            ), // Required field
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.borderColor),
-                            borderRadius: BorderRadius.circular(8),
-                            color: AppColors.cardBackground,
-                          ),
-                          child: Row(
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Expanded(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Radio(
-                                      value: false,
-                                      groupValue: _hasArrears,
-                                      activeColor: AppColors.primary,
-                                      onChanged: (value) =>
-                                          setState(() => _hasArrears = false),
-                                    ),
-                                    const Text('No'),
-                                  ],
-                                ),
+                              Text(
+                                'Any Arrears?',
+                                style: AppTextStyles.bodyText1,
                               ),
-                              Expanded(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Radio(
-                                      value: true,
-                                      groupValue: _hasArrears,
-                                      activeColor: AppColors.primary,
-                                      onChanged: (value) =>
-                                          setState(() => _hasArrears = true),
-                                    ),
-                                    const Text('Yes'),
-                                  ],
-                                ),
-                              ),
+                              Text(
+                                ' *',
+                                style: TextStyle(color: AppColors.error),
+                              ), // Required field
                             ],
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 50,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.borderColor),
+                              borderRadius: BorderRadius.circular(8),
+                              color: AppColors.cardBackground,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Radio(
+                                        value: false,
+                                        groupValue: _hasArrears,
+                                        activeColor: AppColors.primary,
+                                        onChanged: (value) =>
+                                            setState(() => _hasArrears = false),
+                                      ),
+                                      const Text('No'),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Radio(
+                                        value: true,
+                                        groupValue: _hasArrears,
+                                        activeColor: AppColors.primary,
+                                        onChanged: (value) =>
+                                            setState(() => _hasArrears = true),
+                                      ),
+                                      const Text('Yes'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Career Information Section
+                _buildSectionTitle('Career Information'),
+                const SizedBox(height: 16),
+
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text('Current Status', style: AppTextStyles.bodyText1),
+                        Text(
+                          ' *',
+                          style: TextStyle(color: AppColors.error),
+                        ), // Required field
                       ],
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(height: 8),
+                    _buildStatusSelector(),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-              const SizedBox(height: 24),
+                _buildTextField(
+                  'Preferred Job Location',
+                  controller: _preferredLocationController,
+                  hintText: 'e.g., Cochin, Trivandrum, Thrissur, Calicut',
+                  isRequired: true, // Required field
+                ),
+                const SizedBox(height: 16),
 
-              // Career Information Section
-              _buildSectionTitle('Career Information'),
-              const SizedBox(height: 16),
+                _buildCheckboxTile(),
 
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text('Current Status', style: AppTextStyles.bodyText1),
-                      Text(
-                        ' *',
-                        style: TextStyle(color: AppColors.error),
-                      ), // Required field
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  _buildStatusSelector(),
-                ],
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
-              _buildTextField(
-                'Preferred Job Location',
-                controller: _preferredLocationController,
-                hintText: 'e.g., Cochin, Trivandrum, Thrissur, Calicut',
-                isRequired: true, // Required field
-              ),
-              const SizedBox(height: 16),
+                // Parent/Guardian Section
+                _buildSectionTitle('Parent/Guardian'),
+                const SizedBox(height: 16),
 
-              _buildCheckboxTile(),
+                _buildTextField(
+                  'Name',
+                  controller: _parentNameController,
+                  isRequired: true, // Required field
+                ),
+                const SizedBox(height: 16),
 
-              const SizedBox(height: 24),
+                _buildTextField(
+                  'Phone',
+                  controller: _parentPhoneController,
+                  isRequired: true, // Required field
+                  suffixText: 'WEREW',
+                ),
 
-              // Parent/Guardian Section
-              _buildSectionTitle('Parent/Guardian'),
-              const SizedBox(height: 16),
+                const SizedBox(height: 32),
 
-              _buildTextField(
-                'Name',
-                controller: _parentNameController,
-                isRequired: true, // Required field
-              ),
-              const SizedBox(height: 16),
-
-              _buildTextField(
-                'Phone',
-                controller: _parentPhoneController,
-                isRequired: true, // Required field
-                suffixText: 'WEREW',
-              ),
-
-              const SizedBox(height: 32),
-
-              // Submit Button
-              _buildSubmitButton(),
-            ],
+                // Submit Button
+                _buildSubmitButton(),
+              ],
+            ),
           ),
         ),
       ),

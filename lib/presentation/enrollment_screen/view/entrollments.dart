@@ -1,4 +1,6 @@
 // enrollment_screen.dart
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -237,6 +239,10 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => CourseScreen(
+                                    discount: enrollments[index]
+                                        .paymentInfo
+                                        .totalDiscount
+                                        .toInt(),
                                     institute: "Luminar Technolab",
                                     courseName:
                                         enrollments[index].course.courseName,
@@ -313,7 +319,7 @@ class EnrollmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
     final dateFormat = DateFormat('dd MMM yyyy');
-
+    log(enrollment.progress.completionPercentage.toString());
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -724,11 +730,10 @@ class EnrollmentCard extends StatelessWidget {
                                   width: 50,
                                   height: 50,
                                   child: CircularProgressIndicator(
-                                    value:
-                                        enrollment
-                                            .progress
-                                            .completionPercentage /
-                                        100,
+                                    value: enrollment
+                                        .progress
+                                        .completionPercentage,
+
                                     backgroundColor: Colors.grey.shade200,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                       getProgressColor(

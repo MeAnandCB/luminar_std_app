@@ -123,7 +123,7 @@ class ApiHelper {
       );
     } catch (e) {
       if (showErrorSnackbar) {
-        _showErrorSnackbar(context, _getUserFriendlyErrorMessage(e));
+        // _showErrorSnackbar(context, _getUserFriendlyErrorMessage(e));
       }
 
       if (e is ApiException) {
@@ -317,30 +317,30 @@ class ApiHelper {
     return 'An error occurred. Please try again.';
   }
 
-  // Show error snackbar
-  void _showErrorSnackbar(BuildContext context, String message) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              Expanded(child: Text(message)),
-            ],
-          ),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
-          action: SnackBarAction(
-            label: 'Dismiss',
-            textColor: Colors.white,
-            onPressed: () {},
-          ),
-        ),
-      );
-    }
-  }
+  // // Show error snackbar
+  // void _showErrorSnackbar(BuildContext context, String message) {
+  //   if (context.mounted) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Row(
+  //           children: [
+  //             const Icon(Icons.error_outline, color: Colors.white, size: 20),
+  //             const SizedBox(width: 10),
+  //             Expanded(child: Text(message)),
+  //           ],
+  //         ),
+  //         backgroundColor: Colors.red.shade700,
+  //         behavior: SnackBarBehavior.floating,
+  //         duration: const Duration(seconds: 4),
+  //         action: SnackBarAction(
+  //           label: 'Dismiss',
+  //           textColor: Colors.white,
+  //           onPressed: () {},
+  //         ),
+  //       ),
+  //     );
+  //   }
+  // }
 }
 
 enum HttpMethod { get, post, put, patch, delete }

@@ -18,10 +18,11 @@ class AuthProvider extends ChangeNotifier {
 
   // Get full name directly with better fallback
   String get fullName {
-    // First try from login response
-    if (_loginResponse?.student.profile.fullName != null &&
-        _loginResponse!.student.profile.fullName.isNotEmpty) {
-      return _loginResponse!.student.profile.fullName;
+    // Safe navigation with null checks
+    final studentProfile = _loginResponse?.student?.profile;
+    if (studentProfile?.fullName != null &&
+        studentProfile!.fullName.isNotEmpty) {
+      return studentProfile.fullName;
     }
     return 'Student';
   }

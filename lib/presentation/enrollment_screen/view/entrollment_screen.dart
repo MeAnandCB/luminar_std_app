@@ -1745,7 +1745,10 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                               context,
                               listen: false,
                             ).getPaymentDetails(
-                              id: provider.enrollmentData!.enrollments[0].uid,
+                              id: provider
+                                  .enrollmentData!
+                                  .enrollments[widget.index]
+                                  .uid,
                             );
 
                             Razorpay razorpay = Razorpay();
