@@ -166,14 +166,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       if (dashboard != null) ...[
                         _buildCourseCard(dashboard, provider),
                         const SizedBox(height: 24),
-
-                        _buildQuickStatsGrid(dashboard),
-                        const SizedBox(height: 20),
                         Center(
                           child: _buildSectionTitle("NACTET Registration"),
                         ),
-                        const SizedBox(height: 10),
-                        const SimpleNactetListTile(),
+                        const SizedBox(height: 20),
+                        const NactetBanner(),
+                        const SizedBox(height: 20),
+
+                        _buildQuickStatsGrid(dashboard),
+
                         const SizedBox(height: 10),
 
                         const AdvancedInstaCarousel(),

@@ -77,7 +77,7 @@ class AppTextStyles {
 
   // Section Title
   static const TextStyle sectionTitle = TextStyle(
-    fontSize: 18,
+    fontSize: 13,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
   );
