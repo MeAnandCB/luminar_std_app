@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/widget/natet_certificate.dart';
+import 'package:luminar_std/presentation/home_screen/widget/natet_certificate.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/widget/header_card.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/widget/top_status_card.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
+import 'package:luminar_std/presentation/home_screen/widget/header_card.dart';
+import 'package:luminar_std/presentation/home_screen/widget/top_status_card.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';

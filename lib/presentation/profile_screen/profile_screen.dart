@@ -9,6 +9,7 @@ import 'package:luminar_std/presentation/auth_screens/login_screen/controller.da
 import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.dart';
 import 'package:luminar_std/presentation/profile_edit_screen/views/profile_edit_screen.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
+import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -73,6 +74,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.logout();
+
+    if (context.mounted) {
+      Provider.of<ChatProvider>(context, listen: false).reset();
+    }
 
     if (context.mounted) {
       Navigator.pop(context); // Close loading dialog

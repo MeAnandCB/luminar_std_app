@@ -7,4 +7,5 @@ class AppEndpoints {
 
 class GlobalLinks {
   static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
+  static const String websocketUrl = 'wss://api.crm.dev.luminartechnohub.com/ws/';
 }

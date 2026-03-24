@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/auth_screens/forgot_password/controller/forgot_password.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/controller/bottom_nav_controller.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/message_screen/controller/controller/controller.dart';
+import 'package:luminar_std/presentation/chat_list_screen/controller/controller/chat_list_screen_controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/gallery_details_screen/controller/gallery_details_screen_controller.dart';
 import 'package:luminar_std/presentation/gallery_screen/controller/gallery_screen_controller.dart';
@@ -13,8 +13,8 @@ import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/complete_your_profile/controller/complete_profile_controller.dart';
 import 'package:luminar_std/presentation/splash_screen/splash_screen.dart';
 import 'package:luminar_std/repository/attandance_screen/service.dart';
-import 'package:luminar_std/repository/message_screen/service/message_service.dart';
-import 'package:luminar_std/repository/message_screen/websocket/web_socket_data.dart';
+
+import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -66,12 +66,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => LiveClassController()),
 
         // Existing ChatProvider from your codebase
-        ChangeNotifierProvider(
-          create: (_) => ChatProvider(
-            apiService: MessageApiService(),
-            webSocketService: WebSocketService(),
-          ),
-        ),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: const MyApp(),
     ),

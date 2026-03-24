@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/auth_screens/loginform/loginform.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/message_screen/message_screen.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/home_screen.dart';
+import 'package:luminar_std/presentation/chat_list_screen/chat_list_screen.dart';
+import 'package:luminar_std/presentation/home_screen/home_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollments.dart';
@@ -39,10 +39,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
     _currentIndex = widget.initialIndex;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      enrollmentProvider = Provider.of<EnrollmentProvider>(
-        context,
-        listen: false,
-      );
+      enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
       _loadData();
     });
   }
@@ -59,20 +56,9 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
       setState(() {
         _pages = [
           const StudentDashboard(),
-          (enrollmentProvider.enrollmentDataRes!.enrollments[0].status.value ==
-                      "not_set" ||
-                  enrollmentProvider
-                          .enrollmentDataRes!
-                          .enrollments[0]
-                          ?.status
-                          .value ==
-                      "demo_expired" ||
-                  enrollmentProvider
-                          .enrollmentDataRes!
-                          .enrollments[0]
-                          ?.status
-                          .value ==
-                      "admission_fee_paid")
+          (enrollmentProvider.enrollmentDataRes!.enrollments[0].status.value == "not_set" ||
+                  enrollmentProvider.enrollmentDataRes!.enrollments[0]?.status.value == "demo_expired" ||
+                  enrollmentProvider.enrollmentDataRes!.enrollments[0]?.status.value == "admission_fee_paid")
               ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false)
               : const EnrollmentScreen(),
           ChatListScreen(),
@@ -84,10 +70,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   }
 
   void _navigateToScanner() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ScannerApp()),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const ScannerApp()));
   }
 
   Widget _buildNavItem(int index, IconData icon, String label) {
@@ -106,11 +89,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : AppColors.textHint,
-              size: 24,
-            ),
+            Icon(icon, color: isSelected ? AppColors.primary : AppColors.textHint, size: 24),
             const SizedBox(height: 4),
             Text(
               label,
