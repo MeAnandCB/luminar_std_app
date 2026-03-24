@@ -72,11 +72,14 @@ class HeaderWidget extends StatelessWidget {
             child: ClipOval(
               child: _shouldShowAvatarImage()
                   ? CachedNetworkImage(
-                      imageUrl: 'https://pbs.twimg.com/media/FO4RRcaWQAELKS7.jpg',
+                      imageUrl: provider.dashboard?.studentDetails?.basicInfo
+                              ?.profilePicture ??
+                          "",
                       width: 46,
                       height: 46,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => const CircularProgressIndicator(strokeWidth: 2),
+                      placeholder: (context, url) =>
+                          const CircularProgressIndicator(strokeWidth: 2),
                       errorWidget: (context, url, error) => Container(
                         color: AppColors.primary,
                         child: Center(

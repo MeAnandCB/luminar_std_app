@@ -648,16 +648,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(16),
+                            width: 72,
+                            height: 72,
                             decoration: BoxDecoration(
                               color: AppColors.whiteWithOpacity20,
                               shape: BoxShape.circle,
+                              image: profileProvider.profile?.personalInfo
+                                              ?.profilePicture !=
+                                          null &&
+                                      profileProvider.profile!.personalInfo!
+                                          .profilePicture!.isNotEmpty
+                                  ? DecorationImage(
+                                      image: NetworkImage(profileProvider
+                                          .profile!
+                                          .personalInfo!
+                                          .profilePicture!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
                             ),
-                            child: const Icon(
-                              Icons.person_rounded,
-                              color: AppColors.white,
-                              size: 40,
-                            ),
+                            child: profileProvider.profile?.personalInfo
+                                            ?.profilePicture ==
+                                        null ||
+                                    profileProvider.profile!.personalInfo!
+                                        .profilePicture!.isEmpty
+                                ? const Icon(
+                                    Icons.person_rounded,
+                                    color: AppColors.white,
+                                    size: 40,
+                                  )
+                                : null,
                           ),
                           const SizedBox(width: 20),
                           Expanded(
@@ -782,11 +802,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         _buildInfoRow(
                           'Student/Working Professional',
-                          profileProvider
-                                  .profile
-                                  ?.academicInfo
-                                  ?.studentOrWorkingProfessional ??
-                              "",
+                          (() {
+                            final status = profileProvider.profile?.academicInfo
+                                ?.studentOrWorkingProfessional
+                                ?.toLowerCase();
+                            if (status == 'student') return 'Student';
+                            if (status != null && status.isNotEmpty) {
+                              return 'Working Professional';
+                            }
+                            return "";
+                          })(),
                         ),
                       ],
                     ),
@@ -904,7 +929,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ?.specialization ??
                               "",
                         ),
-                        _buildInfoRow('CGPA', '1'),
+                        _buildInfoRow(
+                          'CGPA',
+                          profileProvider.profile?.academicInfo?.cgpa
+                                  ?.toString() ??
+                              "",
+                        ),
                         _buildStatusRow(
                           'Any Arrears',
                           profileProvider.profile?.academicInfo?.anyArrears ==
