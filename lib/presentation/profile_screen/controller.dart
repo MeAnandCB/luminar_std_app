@@ -88,6 +88,47 @@ class ProfileController extends ChangeNotifier {
     await getProfileData(context: context);
   }
 
+  // Metrics calculation
+  int get totalFields => 21;
+
+  int get filledFieldsCount {
+    if (profile == null) return 0;
+    int count = 0;
+    final p = profile!;
+
+    // Personal / Contact
+    if (p.personalInfo?.fullName?.isNotEmpty ?? false) count++;
+    if (p.personalInfo?.email?.isNotEmpty ?? false) count++;
+    if (p.personalInfo?.phone?.isNotEmpty ?? false) count++;
+    if (p.personalInfo?.dateOfBirth != null) count++;
+    if (p.personalInfo?.age != null) count++;
+    if (p.personalInfo?.profilePicture?.isNotEmpty ?? false) count++;
+    if (p.personalInfo?.idProof?.isNotEmpty ?? false) count++;
+    if (p.personalInfo?.idProof2?.isNotEmpty ?? false) count++;
+    if (p.personalInfo?.resume != null) count++;
+    if (p.contactInfo?.address?.isNotEmpty ?? false) count++;
+    if (p.contactInfo?.pincode?.isNotEmpty ?? false) count++;
+    if (p.contactInfo?.district?.isNotEmpty ?? false) count++;
+
+    // Academic
+    if (p.academicInfo?.qualification?.name?.isNotEmpty ?? false) count++;
+    if (p.academicInfo?.college?.isNotEmpty ?? false) count++;
+    if (p.academicInfo?.passOutYear != null) count++;
+    if (p.academicInfo?.specialization?.isNotEmpty ?? false) count++;
+    if (p.academicInfo?.cgpa != null) count++;
+    if (p.academicInfo?.admissionDate != null) count++;
+    if (p.academicInfo?.studentOrWorkingProfessional?.isNotEmpty ?? false) count++;
+
+    // Parent
+    if (p.contactInfo?.parentName?.isNotEmpty ?? false) count++;
+    if (p.contactInfo?.parentPhone?.isNotEmpty ?? false) count++;
+
+    return count > totalFields ? totalFields : count;
+  }
+
+  int get remainingFieldsCount => totalFields - filledFieldsCount;
+  double get completionPercentage => filledFieldsCount / totalFields;
+
   // Clear profile data (useful for logout)
   void clearProfileData() {
     profile = null;

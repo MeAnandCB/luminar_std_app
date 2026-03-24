@@ -1,4 +1,5 @@
 import 'package:avatar_glow/avatar_glow.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
@@ -29,11 +30,6 @@ class HeaderWidget extends StatelessWidget {
         studentName.isNotEmpty;
   }
 
-  bool _shouldShowAvatarText() {
-    return studentName == 'Guest' ||
-        studentName == 'Loading...' ||
-        studentName.isEmpty;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,13 +59,7 @@ class HeaderWidget extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) => ProfileScreen(
-              course:
-                  enrolldata
-                      .enrollmentDataRes
-                      ?.enrollments[0]
-                      .course
-                      .courseName ??
-                  "",
+              course: enrolldata.enrollmentDataRes?.enrollments[0].course.courseName ?? "",
             ),
           ),
         );
@@ -79,24 +69,43 @@ class HeaderWidget extends StatelessWidget {
           CircleAvatar(
             radius: 25,
             backgroundColor: AppColors.avatarBackground,
-            child: CircleAvatar(
-              backgroundColor: AppColors.white,
-              radius: 23,
-              backgroundImage: _shouldShowAvatarImage()
-                  ? const NetworkImage(
-                      'https://pbs.twimg.com/media/FO4RRcaWQAELKS7.jpg',
-                    )
-                  : null,
-              child: _shouldShowAvatarText()
-                  ? Text(
-                      _getFirstLetter(),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+            child: ClipOval(
+              child: _shouldShowAvatarImage()
+                  ? CachedNetworkImage(
+                      imageUrl: 'https://pbs.twimg.com/media/FO4RRcaWQAELKS7.jpg',
+                      width: 46,
+                      height: 46,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const CircularProgressIndicator(strokeWidth: 2),
+                      errorWidget: (context, url, error) => Container(
+                        color: AppColors.primary,
+                        child: Center(
+                          child: Text(
+                            _getFirstLetter(),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                       ),
                     )
-                  : null,
+                  : Container(
+                      width: 46,
+                      height: 46,
+                      color: AppColors.primary,
+                      child: Center(
+                        child: Text(
+                          _getFirstLetter(),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
             ),
           ),
           Positioned(

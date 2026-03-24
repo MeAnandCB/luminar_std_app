@@ -11,13 +11,15 @@ class CompleteProfileController extends ChangeNotifier {
   final AcademicInfoService _academicService = AcademicInfoService();
   final CompleteProfileService _submissionService = CompleteProfileService();
 
-  Uint8List? _idFrontImage;
-  Uint8List? _idBackImage;
-  Uint8List? _profilePic;
+  String? _idFrontPath;
+  String? _idBackPath;
+  String? _profilePicPath;
+  String? _resumePath;
 
-  Uint8List? get idFrontImage => _idFrontImage;
-  Uint8List? get idBackImage => _idBackImage;
-  Uint8List? get profilePic => _profilePic;
+  String? get idFrontPath => _idFrontPath;
+  String? get idBackPath => _idBackPath;
+  String? get profilePicPath => _profilePicPath;
+  String? get resumePath => _resumePath;
 
   List<Qualification> _qualifications = [];
   List<Specialization> _specializations = [];
@@ -30,12 +32,15 @@ class CompleteProfileController extends ChangeNotifier {
   bool get isSubmitting => _isSubmitting;
 
   // Form Fields
+  String? fullName;
+  String? email;
+  String? phone;
   String? whatsappNumber;
   String? dateOfBirth;
   String? address;
   String? pincode;
   String? district;
-  
+
   String? qualificationId; // id from model
   String? qualificationName;
   String? college;
@@ -50,6 +55,30 @@ class CompleteProfileController extends ChangeNotifier {
 
   String? parentName;
   String? parentPhone;
+
+  // Additional fields from user's request
+  bool? isActive;
+  String? profilePicBase64;
+  int? statusId;
+  int? preferredLocationId;
+  String? referrerId;
+  String? studentId;
+  int? convertedFromLead;
+  String? placementCompany;
+  String? placementPackage;
+  String? placementDate;
+  String? admissionDate;
+  int? age;
+  String? notes;
+  String? howDidYouHear;
+  bool? portalAccessEnabled;
+  bool? isAlumni;
+  bool? isPlaced;
+
+  void setResume(String? path) {
+    _resumePath = path;
+    notifyListeners();
+  }
 
   Future<void> fetchAcademicDropdowns() async {
     _isLoadingAcademic = true;
@@ -77,11 +106,10 @@ class CompleteProfileController extends ChangeNotifier {
     try {
       final XFile? image = await _picker.pickImage(source: source, imageQuality: 70);
       if (image != null) {
-        final Uint8List bytes = await image.readAsBytes();
         if (isFront) {
-          _idFrontImage = bytes;
+          _idFrontPath = image.path;
         } else {
-          _idBackImage = bytes;
+          _idBackPath = image.path;
         }
         notifyListeners();
       }
@@ -94,7 +122,7 @@ class CompleteProfileController extends ChangeNotifier {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
       if (image != null) {
-        _profilePic = await image.readAsBytes();
+        _profilePicPath = image.path;
         notifyListeners();
       }
     } catch (e) {
@@ -107,53 +135,87 @@ class CompleteProfileController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final Map<String, String> deltaFields = {};
+      final Map<String, dynamic> deltaFields = {};
 
-      // Helper to add if changed
+      // Helper to add if changed or if initial is null
       void addIfChanged(String key, dynamic currentValue, dynamic initialValue) {
         if (currentValue != null && currentValue.toString() != initialValue?.toString()) {
-          deltaFields[key] = currentValue.toString();
+          deltaFields[key] = currentValue;
         }
       }
 
       // Personal / Contact
+      addIfChanged('full_name', fullName, initialProfile?.personalInfo?.fullName);
+      addIfChanged('email', email, initialProfile?.personalInfo?.email);
+      addIfChanged('phone', phone, initialProfile?.personalInfo?.phone);
       addIfChanged('whatsapp_number', whatsappNumber, initialProfile?.personalInfo?.whatsappNumber);
-      addIfChanged('date_of_birth', dateOfBirth, initialProfile?.personalInfo?.dateOfBirth);
+      addIfChanged('date_of_birth', dateOfBirth, initialProfile?.personalInfo?.dateOfBirth?.toString().split(' ').first);
+      addIfChanged('age', age, initialProfile?.personalInfo?.age);
       addIfChanged('address', address, initialProfile?.contactInfo?.address);
       addIfChanged('pincode', pincode, initialProfile?.contactInfo?.pincode);
       addIfChanged('district', district, initialProfile?.contactInfo?.district);
 
       // Academic
-      addIfChanged('qualification', qualificationId, initialProfile?.academicInfo?.qualification?.id);
+      addIfChanged('qualification_id', qualificationId, initialProfile?.academicInfo?.qualification?.id);
       addIfChanged('college', college, initialProfile?.academicInfo?.college);
       addIfChanged('pass_out_year', passOutYear, initialProfile?.academicInfo?.passOutYear);
       addIfChanged('specialization', specialization, initialProfile?.academicInfo?.specialization);
       addIfChanged('cgpa', cgpa, initialProfile?.academicInfo?.cgpa);
+      addIfChanged('admission_date', admissionDate, initialProfile?.academicInfo?.admissionDate);
       if (anyArrears != null && anyArrears != initialProfile?.academicInfo?.anyArrears) {
-        deltaFields['any_arrears'] = anyArrears!.toString();
+        deltaFields['any_arrears'] = anyArrears;
       }
 
       // Career
-      addIfChanged('student_or_working_professional', studentStatus, initialProfile?.academicInfo?.studentOrWorkingProfessional);
+      addIfChanged(
+        'student_or_working_professional',
+        studentStatus,
+        initialProfile?.academicInfo?.studentOrWorkingProfessional,
+      );
       if (placementAssistance != null && placementAssistance != initialProfile?.placementInfo?.placementAssistance) {
-        deltaFields['placement_assistance'] = placementAssistance!.toString();
+        deltaFields['placement_assistance'] = placementAssistance;
       }
       addIfChanged('preferred_job_location', preferredJobLocation, initialProfile?.placementInfo?.preferredJobLocation);
 
       // Parent
       addIfChanged('parent_name', parentName, initialProfile?.contactInfo?.parentName);
-      addIfChanged('parent_phone', parentPhone, initialProfile?.contactInfo?.parentPhone);
+      addIfChanged('parent_phone_number', parentPhone, initialProfile?.contactInfo?.parentPhone);
 
-      if (deltaFields.isEmpty && _idFrontImage == null && _idBackImage == null && _profilePic == null) {
+      // Status / Others
+      if (isActive != null) deltaFields['is_active'] = isActive;
+      if (profilePicBase64 != null) deltaFields['profile_pic_base64'] = profilePicBase64;
+      if (statusId != null) deltaFields['status_id'] = statusId;
+      if (preferredLocationId != null) deltaFields['preferred_location_id'] = preferredLocationId;
+      if (referrerId != null) deltaFields['referrer_id'] = referrerId;
+      if (studentId != null) deltaFields['student_id'] = studentId;
+      if (convertedFromLead != null) deltaFields['converted_from_lead'] = convertedFromLead;
+      if (placementCompany != null) deltaFields['placement_company'] = placementCompany;
+      if (placementPackage != null) deltaFields['placement_package'] = placementPackage;
+      if (placementDate != null) deltaFields['placement_date'] = placementDate;
+      if (notes != null) deltaFields['notes'] = notes;
+      if (howDidYouHear != null) deltaFields['how_did_you_hear'] = howDidYouHear;
+      if (portalAccessEnabled != null) deltaFields['portal_access_enabled'] = portalAccessEnabled;
+      if (isAlumni != null) deltaFields['is_alumni'] = isAlumni;
+      if (isPlaced != null) deltaFields['is_placed'] = isPlaced;
+
+      if (deltaFields.isEmpty &&
+          _idFrontPath == null &&
+          _idBackPath == null &&
+          _profilePicPath == null &&
+          _resumePath == null) {
         // Nothing to update
+        _isSubmitting = false;
+        notifyListeners();
         return;
       }
 
       await _submissionService.submitProfile(
+        student_id: initialProfile?.personalInfo?.studentId.toString(),
         fields: deltaFields,
-        idFront: _idFrontImage,
-        idBack: _idBackImage,
-        profilePic: _profilePic,
+        idFrontPath: _idFrontPath,
+        idBackPath: _idBackPath,
+        profilePicPath: _profilePicPath,
+        resumePath: _resumePath,
       );
     } catch (e) {
       rethrow;
@@ -163,10 +225,11 @@ class CompleteProfileController extends ChangeNotifier {
     }
   }
 
-  void clearImages() {
-    _idFrontImage = null;
-    _idBackImage = null;
-    _profilePic = null;
+  void clearFiles() {
+    _idFrontPath = null;
+    _idBackPath = null;
+    _profilePicPath = null;
+    _resumePath = null;
     notifyListeners();
   }
 }

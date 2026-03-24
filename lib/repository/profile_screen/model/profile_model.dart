@@ -214,8 +214,9 @@ class PersonalInfo {
     "email": email,
     "phone": phone,
     "whatsapp_number": whatsappNumber,
-    "date_of_birth":
-        "${dateOfBirth!.year.toString().padLeft(4, '0')}-${dateOfBirth!.month.toString().padLeft(2, '0')}-${dateOfBirth!.day.toString().padLeft(2, '0')}",
+    "date_of_birth": dateOfBirth == null
+        ? null
+        : "${dateOfBirth!.year.toString().padLeft(4, '0')}-${dateOfBirth!.month.toString().padLeft(2, '0')}-${dateOfBirth!.day.toString().padLeft(2, '0')}",
     "age": age,
     "id_proof": idProof,
     "id_proof_2": idProof2,
