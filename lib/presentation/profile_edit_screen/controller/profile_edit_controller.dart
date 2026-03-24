@@ -60,7 +60,7 @@ class ProfileEditController extends ChangeNotifier {
   DateTime? _selectedDob;
   DateTime? _selectedAdmissionDate;
 
-  void init(Profile? profile) {
+  void init(Profile? profile, {bool notify = true}) {
     if (profile == null) return;
 
     final p = profile.personalInfo;
@@ -101,7 +101,7 @@ class ProfileEditController extends ChangeNotifier {
     _placementAssistance = pl?.placementAssistance ?? true;
     preferredJobLocationController.text = pl?.preferredJobLocation ?? '';
 
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
   void updateDob(DateTime date) {
@@ -148,6 +148,7 @@ class ProfileEditController extends ChangeNotifier {
       addIfChanged('date_of_birth', dobController.text, p?.dateOfBirth != null ? DateFormat('yyyy-MM-dd').format(p!.dateOfBirth!) : null);
       addIfChanged('age', int.tryParse(ageController.text), p?.age);
 
+      addIfChanged('qualification', qualificationController.text, a?.qualification?.name);
       addIfChanged('college', collegeController.text, a?.college);
       addIfChanged('pass_out_year', int.tryParse(passoutYearController.text), a?.passOutYear);
       addIfChanged('specialization', specializationController.text, a?.specialization);
@@ -159,6 +160,7 @@ class ProfileEditController extends ChangeNotifier {
       addIfChanged('address', addressController.text, c?.address);
       addIfChanged('district', districtController.text, c?.district);
       addIfChanged('pincode', pincodeController.text, c?.pincode);
+      addIfChanged('preferred_location', preferredLocationController.text, c?.preferredLocation?.name);
       addIfChanged('parent_name', parentNameController.text, c?.parentName);
       addIfChanged('parent_phone', parentPhoneController.text, c?.parentPhone);
       addIfChanged('how_did_you_hear', hearAboutController.text, c?.howDidYouHear);
