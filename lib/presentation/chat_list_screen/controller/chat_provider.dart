@@ -38,18 +38,26 @@ class ChatProvider extends ChangeNotifier {
   WebSocketService? get webSocketService => _webSocketService;
 
   Future<void> init() async {
-    if (_apiService != null) return; // Already initialized
+    final token = await AppUtils.getAccessKey();
+    if (token == null || token.isEmpty) {
+      _error = 'No access token found';
+      notifyListeners();
+      return;
+    }
+
+    // If we are already initialized with the SAME token, skip
+    if (_apiService != null && _apiService!.token == token) {
+      return;
+    }
+
+    // Otherwise, re-initialize (switching users)
+    _resetInternal();
 
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final token = await AppUtils.getAccessKey();
-      if (token == null || token.isEmpty) {
-        throw Exception('No access token found');
-      }
-
       _apiService = ChatApiService(token: token);
 
       // Load current user profile
@@ -231,12 +239,31 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  @override
-  void dispose() {
+  void reset() {
+    _resetInternal();
+    notifyListeners();
+  }
+
+  void _resetInternal() {
     _statusSubscription?.cancel();
     _messageSubscription?.cancel();
     _localMessageSubscription?.cancel();
     _webSocketService?.disconnect();
+
+    _chats = [];
+    _isLoading = false;
+    _error = null;
+    _currentUser = null;
+    _apiService = null;
+    _webSocketService = null;
+    userOnlineStatus = {};
+    _locallyReadChats.clear();
+    _markingReadInProgress.clear();
+  }
+
+  @override
+  void dispose() {
+    _resetInternal();
     super.dispose();
   }
 }
