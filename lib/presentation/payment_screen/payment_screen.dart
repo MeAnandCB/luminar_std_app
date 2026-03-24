@@ -5,7 +5,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/repository/payment_screen/model.dart';
 import 'package:luminar_std/repository/payment_screen/service.dart';
@@ -29,8 +29,7 @@ class PaymentScreen extends StatefulWidget {
   State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
-class _PaymentScreenState extends State<PaymentScreen>
-    with SingleTickerProviderStateMixin {
+class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProviderStateMixin {
   EnrollmentDetailResponse? _paymentData; // Single enrollment data
   bool _isLoading = true;
   String? _errorMessage;
@@ -39,10 +38,7 @@ class _PaymentScreenState extends State<PaymentScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      await Provider.of<EnrollmentProvider>(
-        context,
-        listen: false,
-      ).getEmiPaymentDetails(id: widget.uid);
+      await Provider.of<EnrollmentProvider>(context, listen: false).getEmiPaymentDetails(id: widget.uid);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeData();
@@ -53,10 +49,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     if (!mounted) return;
 
     try {
-      final controller = Provider.of<DashboardController>(
-        context,
-        listen: false,
-      );
+      final controller = Provider.of<DashboardController>(context, listen: false);
 
       await controller.getDashboardData(context: context);
 
@@ -108,10 +101,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     }
 
     try {
-      final details = await PaymentScreenService.fetchEnrollmentDetails(
-        targetEnrollmentId,
-        accessKey,
-      );
+      final details = await PaymentScreenService.fetchEnrollmentDetails(targetEnrollmentId, accessKey);
 
       if (details != null && mounted) {
         setState(() {
@@ -195,29 +185,15 @@ class _PaymentScreenState extends State<PaymentScreen>
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))],
             ),
-            child: const Icon(
-              Icons.arrow_back,
-              color: Colors.black87,
-              size: 18,
-            ),
+            child: const Icon(Icons.arrow_back, color: Colors.black87, size: 18),
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Payments',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.black87, fontSize: 20, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
         actions: [
@@ -227,22 +203,12 @@ class _PaymentScreenState extends State<PaymentScreen>
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))],
               ),
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  const Icon(
-                    Icons.notifications_none,
-                    color: Colors.black87,
-                    size: 18,
-                  ),
+                  const Icon(Icons.notifications_none, color: Colors.black87, size: 18),
                   if (!_isLoading && _paymentData != null)
                     Positioned(
                       top: -2,
@@ -250,10 +216,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                       child: Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
+                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                       ),
                     ),
                 ],
@@ -280,26 +243,15 @@ class _PaymentScreenState extends State<PaymentScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
-              color: Colors.purple[50],
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Icon(Icons.school, color: Colors.purple, size: 20),
-            ),
+            decoration: BoxDecoration(color: Colors.purple[50], shape: BoxShape.circle),
+            child: const Center(child: Icon(Icons.school, color: Colors.purple, size: 20)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -309,10 +261,7 @@ class _PaymentScreenState extends State<PaymentScreen>
               children: [
                 Text(
                   data.batch?.courseName ?? 'Unknown Course',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -330,10 +279,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             Container(
               width: 10,
               height: 10,
-              decoration: BoxDecoration(
-                color: isOverdue ? Colors.red : Colors.orange,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: isOverdue ? Colors.red : Colors.orange, shape: BoxShape.circle),
             ),
         ],
       ),
@@ -342,11 +288,7 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
-        ),
-      );
+      return const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.purple)));
     }
 
     if (_errorMessage != null) {
@@ -373,13 +315,8 @@ class _PaymentScreenState extends State<PaymentScreen>
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.purple,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Retry'),
             ),
@@ -395,10 +332,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           children: [
             Icon(Icons.payment, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            Text(
-              'No payment data available',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
+            Text('No payment data available', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
           ],
         ),
       );
@@ -416,9 +350,7 @@ class _PaymentScreenState extends State<PaymentScreen>
   void _handlePayment(EmiInstallment emi) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          'Processing payment of ₹${(emi.totalAmount ?? 0).toStringAsFixed(0)}',
-        ),
+        content: Text('Processing payment of ₹${(emi.totalAmount ?? 0).toStringAsFixed(0)}'),
         backgroundColor: Colors.blue,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -435,11 +367,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: statusColor ?? Colors.black87,
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: statusColor ?? Colors.black87),
           ),
         ],
       ),
@@ -461,31 +389,18 @@ class _PaymentScreenState extends State<PaymentScreen>
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: color.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(icon, size: 20, color: color),
               const SizedBox(height: 12),
-              Text(
-                label,
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-              ),
+              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color),
               ),
             ],
           ),
@@ -503,9 +418,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     DateTime nextDueDate = DateTime.now();
 
     if (data.emiInstallments != null && data.emiInstallments!.isNotEmpty) {
-      final pendingEmis = data.emiInstallments!
-          .where((e) => e.status?.toLowerCase() != 'paid')
-          .toList();
+      final pendingEmis = data.emiInstallments!.where((e) => e.status?.toLowerCase() != 'paid').toList();
       if (pendingEmis.isNotEmpty) {
         pendingEmis.sort((a, b) {
           if (a.dueDate == null) return 1;
@@ -529,23 +442,13 @@ class _PaymentScreenState extends State<PaymentScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: isOverdue
-                    ? [
-                        Colors.red[400]!,
-                        Colors.orange[400]!,
-                        Colors.yellow[400]!,
-                      ]
-                    : const [
-                        Color(0xFF4158D0),
-                        Color(0xFFC850C0),
-                        Color(0xFFFFCC70),
-                      ],
+                    ? [Colors.red[400]!, Colors.orange[400]!, Colors.yellow[400]!]
+                    : const [Color(0xFF4158D0), Color(0xFFC850C0), Color(0xFFFFCC70)],
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: (isOverdue ? Colors.red : Colors.purple).withOpacity(
-                    0.3,
-                  ),
+                  color: (isOverdue ? Colors.red : Colors.purple).withOpacity(0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -571,9 +474,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
-                            isOverdue
-                                ? Icons.warning_amber
-                                : Icons.calendar_today,
+                            isOverdue ? Icons.warning_amber : Icons.calendar_today,
                             color: Colors.white,
                             size: 14,
                           ),
@@ -590,16 +491,11 @@ class _PaymentScreenState extends State<PaymentScreen>
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                        ),
+                        border: Border.all(color: Colors.white.withOpacity(0.3)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -608,11 +504,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                           const SizedBox(width: 4),
                           Text(
                             data.paymentType?.toUpperCase() ?? 'N/A',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -628,10 +520,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                       children: [
                         Text(
                           isOverdue ? 'Overdue Amount' : 'Due Amount',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white70,
-                          ),
+                          style: const TextStyle(fontSize: 12, color: Colors.white70),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -646,18 +535,11 @@ class _PaymentScreenState extends State<PaymentScreen>
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(
-                              Icons.event,
-                              size: 12,
-                              color: Colors.white.withOpacity(0.7),
-                            ),
+                            Icon(Icons.event, size: 12, color: Colors.white.withOpacity(0.7)),
                             const SizedBox(width: 4),
                             Text(
                               DateFormat('dd MMMM, yyyy').format(nextDueDate),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white.withOpacity(0.9),
-                              ),
+                              style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.9)),
                             ),
                           ],
                         ),
@@ -669,24 +551,15 @@ class _PaymentScreenState extends State<PaymentScreen>
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
-                            BoxShadow(
-                              color: Colors.white.withOpacity(0.3),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
-                            ),
+                            BoxShadow(color: Colors.white.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5)),
                           ],
                         ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () async {
-                              final provider = Provider.of<EnrollmentProvider>(
-                                context,
-                                listen: false,
-                              );
-                              log(
-                                'this is key: ${provider.emiResData?.key ?? ""}',
-                              );
+                              final provider = Provider.of<EnrollmentProvider>(context, listen: false);
+                              log('this is key: ${provider.emiResData?.key ?? ""}');
                               await Provider.of<EnrollmentProvider>(
                                 context,
                                 listen: false,
@@ -695,14 +568,8 @@ class _PaymentScreenState extends State<PaymentScreen>
                             },
                             borderRadius: BorderRadius.circular(16),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -715,11 +582,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const Icon(
-                                    Icons.arrow_forward,
-                                    size: 16,
-                                    color: Color(0xFF4158D0),
-                                  ),
+                                  const Icon(Icons.arrow_forward, size: 16, color: Color(0xFF4158D0)),
                                 ],
                               ),
                             ),
@@ -737,10 +600,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             child: Container(
               width: 100,
               height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.1),
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.1)),
             ),
           ),
           Positioned(
@@ -749,10 +609,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             child: Container(
               width: 150,
               height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.05)),
             ),
           ),
         ],
@@ -760,10 +617,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 
-  Widget _buildPaymentHistoryList(
-    BuildContext context,
-    List<PaymentTransaction>? transactions,
-  ) {
+  Widget _buildPaymentHistoryList(BuildContext context, List<PaymentTransaction>? transactions) {
     if (transactions == null || transactions.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16),
@@ -772,10 +626,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             children: [
               Icon(Icons.history, size: 32, color: Colors.grey[400]),
               const SizedBox(height: 8),
-              Text(
-                'No transactions found',
-                style: TextStyle(color: Colors.grey[500]),
-              ),
+              Text('No transactions found', style: TextStyle(color: Colors.grey[500])),
             ],
           ),
         ),
@@ -836,13 +687,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Payment',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      Text('Payment', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                       const SizedBox(height: 2),
                       Text(
                         '${dateFormat.format(txn.paymentDate ?? DateTime.now())} • ${txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'Unknown'}',
@@ -868,10 +713,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     ),
                     const SizedBox(height: 2),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: status == TransactionStatus.completed
                             ? Colors.green[50]
@@ -907,10 +749,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 
-  Widget _buildEmiScheduleList(
-    BuildContext context,
-    List<EmiInstallment>? schedule,
-  ) {
+  Widget _buildEmiScheduleList(BuildContext context, List<EmiInstallment>? schedule) {
     if (schedule == null || schedule.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16),
@@ -919,10 +758,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             children: [
               Icon(Icons.schedule, size: 32, color: Colors.grey[400]),
               const SizedBox(height: 8),
-              Text(
-                'No EMI schedule available',
-                style: TextStyle(color: Colors.grey[500]),
-              ),
+              Text('No EMI schedule available', style: TextStyle(color: Colors.grey[500])),
             ],
           ),
         ),
@@ -934,10 +770,7 @@ class _PaymentScreenState extends State<PaymentScreen>
 
     // Sort by installment number
     final sortedSchedule = List<EmiInstallment>.from(schedule)
-      ..sort(
-        (a, b) =>
-            (a.installmentNumber ?? 0).compareTo(b.installmentNumber ?? 0),
-      );
+      ..sort((a, b) => (a.installmentNumber ?? 0).compareTo(b.installmentNumber ?? 0));
 
     return ListView.separated(
       shrinkWrap: true,
@@ -1000,10 +833,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     children: [
                       Text(
                         'Installment ${emi.installmentNumber ?? index + 1}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -1035,59 +865,32 @@ class _PaymentScreenState extends State<PaymentScreen>
                         children: [
                           if (emiStatus == EmiStatus.overdue)
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red[50],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(4)),
                               child: Text(
                                 'Overdue',
-                                style: TextStyle(
-                                  fontSize: 8,
-                                  color: Colors.red[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: TextStyle(fontSize: 8, color: Colors.red[600], fontWeight: FontWeight.w500),
                               ),
                             ),
                           if (emiStatus == EmiStatus.pending)
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Colors.orange[50],
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 'Pending',
-                                style: TextStyle(
-                                  fontSize: 8,
-                                  color: Colors.orange[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: TextStyle(fontSize: 8, color: Colors.orange[600], fontWeight: FontWeight.w500),
                               ),
                             ),
                           const SizedBox(width: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[50],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(8)),
                             child: Text(
                               'Pay',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue[700],
-                              ),
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.blue[700]),
                             ),
                           ),
                         ],
@@ -1121,13 +924,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.05),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
-              ],
+              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1136,15 +933,8 @@ class _PaymentScreenState extends State<PaymentScreen>
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.school,
-                        color: Colors.blue,
-                        size: 24,
-                      ),
+                      decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.school, color: Colors.blue, size: 24),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -1153,27 +943,18 @@ class _PaymentScreenState extends State<PaymentScreen>
                         children: [
                           Text(
                             data.batch?.courseName ?? 'Unknown Course',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             data.batch?.batchName ?? 'Unknown Batch',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                           ),
                         ],
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: isOverdue ? Colors.red[50] : Colors.green[50],
                         borderRadius: BorderRadius.circular(20),
@@ -1182,9 +963,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                         isOverdue ? 'Overdue' : 'Active',
                         style: TextStyle(
                           fontSize: 11,
-                          color: isOverdue
-                              ? Colors.red[700]
-                              : Colors.green[700],
+                          color: isOverdue ? Colors.red[700] : Colors.green[700],
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1197,27 +976,13 @@ class _PaymentScreenState extends State<PaymentScreen>
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(
-                        Icons.person_outline,
-                        size: 14,
-                        color: Colors.grey[500],
-                      ),
+                      Icon(Icons.person_outline, size: 14, color: Colors.grey[500]),
                       const SizedBox(width: 4),
-                      Text(
-                        data.studentName ?? '',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                      ),
+                      Text(data.studentName ?? '', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
                       const SizedBox(width: 16),
-                      Icon(
-                        Icons.badge_outlined,
-                        size: 14,
-                        color: Colors.grey[500],
-                      ),
+                      Icon(Icons.badge_outlined, size: 14, color: Colors.grey[500]),
                       const SizedBox(width: 4),
-                      Text(
-                        data.studentId ?? '',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                      ),
+                      Text(data.studentId ?? '', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
                     ],
                   ),
                 ],
@@ -1225,9 +990,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             ),
           ),
           const SizedBox(height: 16),
-          data.paymentTypeDisplay == "Full Amount"
-              ? SizedBox()
-              : _buildAttractiveNextDueCard(data),
+          data.paymentTypeDisplay == "Full Amount" ? SizedBox() : _buildAttractiveNextDueCard(data),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1285,13 +1048,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.05),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
-              ],
+              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1299,29 +1056,13 @@ class _PaymentScreenState extends State<PaymentScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Progress',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    const Text('Progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(20)),
                       child: Text(
                         '${progress.toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue[600],
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.blue[600], fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -1332,9 +1073,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   child: LinearProgressIndicator(
                     value: (progress / 100).clamp(0.0, 1.0),
                     backgroundColor: Colors.grey[100],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isOverdue ? Colors.red : Colors.blue,
-                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(isOverdue ? Colors.red : Colors.blue),
                     minHeight: 8,
                   ),
                 ),
@@ -1355,58 +1094,32 @@ class _PaymentScreenState extends State<PaymentScreen>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.05),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
+                  BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5)),
                 ],
               ),
               child: Theme(
-                data: Theme.of(
-                  context,
-                ).copyWith(dividerColor: Colors.transparent),
+                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   tilePadding: const EdgeInsets.all(16),
                   leading: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange[50],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.schedule,
-                      color: Colors.orange,
-                      size: 18,
-                    ),
+                    decoration: BoxDecoration(color: Colors.orange[50], borderRadius: BorderRadius.circular(10)),
+                    child: const Icon(Icons.schedule, color: Colors.orange, size: 18),
                   ),
-                  title: const Text(
-                    'EMI Schedule',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
+                  title: const Text('EMI Schedule', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                   subtitle: Text(
                     '${data.emiInstallments?.where((e) => e.status?.toLowerCase() != 'paid').length ?? 0} pending',
                     style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   ),
                   trailing: Container(
                     padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.keyboard_arrow_down,
-                      size: 16,
-                      color: Colors.grey,
-                    ),
+                    decoration: BoxDecoration(color: Colors.grey[100], shape: BoxShape.circle),
+                    child: const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
                   ),
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: _buildEmiScheduleList(
-                        context,
-                        data.emiInstallments,
-                      ),
+                      child: _buildEmiScheduleList(context, data.emiInstallments),
                     ),
                   ],
                 ),
@@ -1418,59 +1131,31 @@ class _PaymentScreenState extends State<PaymentScreen>
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.05),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
-              ],
+              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
             ),
             child: Theme(
-              data: Theme.of(
-                context,
-              ).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 tilePadding: const EdgeInsets.all(16),
                 leading: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.purple[50],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.history,
-                    color: Colors.purple,
-                    size: 18,
-                  ),
+                  decoration: BoxDecoration(color: Colors.purple[50], borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.history, color: Colors.purple, size: 18),
                 ),
-                title: const Text(
-                  'Payment History',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
+                title: const Text('Payment History', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                 subtitle: Text(
                   '${data.paymentTransactions?.length ?? 0} transactions',
                   style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                 ),
                 trailing: Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 16,
-                    color: Colors.grey,
-                  ),
+                  decoration: BoxDecoration(color: Colors.grey[100], shape: BoxShape.circle),
+                  child: const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
                 ),
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: _buildPaymentHistoryList(
-                      context,
-                      data.paymentTransactions,
-                    ),
+                    child: _buildPaymentHistoryList(context, data.paymentTransactions),
                   ),
                 ],
               ),

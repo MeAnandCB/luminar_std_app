@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
-import 'package:luminar_std/presentation/bottom_nav_screens/home_screen/controller.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/complete_your_profile/controller/complete_profile_controller.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:provider/provider.dart';
