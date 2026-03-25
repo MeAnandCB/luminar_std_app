@@ -18,23 +18,14 @@ class RazorpayScreenService {
     if (response.success) {
       log(response.data.toString());
       PaymentResModel resModel = PaymentResModel.fromJson(response.data);
-      return ApiResponse(
-        success: true,
-        data: resModel,
-        message: response.message,
-        statusCode: response.statusCode,
-      );
+      return ApiResponse(success: true, data: resModel, message: response.message, statusCode: response.statusCode);
     } else {
-      return ApiResponse(
-        success: false,
-        data: '',
-        message: response.message,
-        statusCode: response.statusCode,
-      );
+      return ApiResponse(success: false, data: '', message: response.message, statusCode: response.statusCode);
     }
   }
 
   Future<ApiResponse> getEmiPaymentDetails({required String id}) async {
+    log("/api/payments/emi/$id/");
     final response = await ApiService().post(
       endpoint: '/api/payments/emi/$id/',
       token: await AppUtils.getAccessKey(),
@@ -46,19 +37,9 @@ class RazorpayScreenService {
     if (response.success) {
       log(response.data.toString());
       EmiPaymentResModel resModel = EmiPaymentResModel.fromJson(response.data);
-      return ApiResponse(
-        success: true,
-        data: resModel,
-        message: response.message,
-        statusCode: response.statusCode,
-      );
+      return ApiResponse(success: true, data: resModel, message: response.message, statusCode: response.statusCode);
     } else {
-      return ApiResponse(
-        success: false,
-        data: '',
-        message: response.message,
-        statusCode: response.statusCode,
-      );
+      return ApiResponse(success: false, data: '', message: response.message, statusCode: response.statusCode);
     }
   }
 }

@@ -3,7 +3,6 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
 import 'package:luminar_std/repository/enrollment_screen/service/enrollment_service.dart';
-import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 import 'package:luminar_std/repository/razorpay/model/emi_res_model.dart';
 import 'package:luminar_std/repository/razorpay/model/razorpay_model.dart';
 import 'package:luminar_std/repository/razorpay/service/razorpay_service.dart';
@@ -123,19 +122,30 @@ class EnrollmentProvider extends ChangeNotifier {
 
   //get emi data
   Future<void> getEmiPaymentDetails({required String id}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
     try {
+      log("Fetching EMI payment details for ID: $id");
       final response = await RazorpayScreenService().getEmiPaymentDetails(
         id: id,
       );
 
       if (response.success) {
+        log("EMI payment details fetched successfully");
         EmiPaymentResModel resModel = response.data;
         emiResData = resModel.emiResData;
+        _errorMessage = null;
       } else {
-        log(emiResData.toString());
+        _errorMessage = response.message ?? "Failed to get EMI payment details";
+        log("Error fetching EMI payment details: $_errorMessage");
       }
     } catch (e) {
-      print(e.toString());
+      _errorMessage = e.toString();
+      log("Exception in getEmiPaymentDetails: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 }
