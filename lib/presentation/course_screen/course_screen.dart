@@ -1,4 +1,6 @@
 // screens/course_screen.dart
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
@@ -75,6 +77,7 @@ class _CourseScreenState extends State<CourseScreen>
 
   @override
   Widget build(BuildContext context) {
+    log({widget.paymentCompleted}.toString());
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
@@ -105,10 +108,6 @@ class _CourseScreenState extends State<CourseScreen>
 
                         // Premium Payment Card
                         _buildEnhancedPaymentCard(),
-                        const SizedBox(height: 20),
-
-                        // Progress Timeline
-                        _buildProgressTimeline(),
                         const SizedBox(height: 20),
 
                         // Action Buttons
@@ -647,78 +646,6 @@ class _CourseScreenState extends State<CourseScreen>
           style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.8)),
         ),
       ],
-    );
-  }
-
-  Widget _buildProgressTimeline() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 5),
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.timeline_rounded, color: Color(0xFF667EEA), size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Learning Progress',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D3748),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildTimelineStep('Started', true),
-              Expanded(
-                child: Container(
-                  height: 2,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Colors.green, Colors.orange],
-                    ),
-                  ),
-                ),
-              ),
-              _buildTimelineStep('In Progress', widget.progress > 0),
-              Expanded(
-                child: Container(
-                  height: 2,
-                  color: widget.progress > 50
-                      ? Colors.orange
-                      : Colors.grey.shade300,
-                ),
-              ),
-              _buildTimelineStep('Almost Done', widget.progress > 75),
-              Expanded(
-                child: Container(
-                  height: 2,
-                  color: widget.progress == 100
-                      ? Colors.green
-                      : Colors.grey.shade300,
-                ),
-              ),
-              _buildTimelineStep('Complete', widget.progress == 100),
-            ],
-          ),
-        ],
-      ),
     );
   }
 

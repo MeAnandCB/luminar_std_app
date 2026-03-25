@@ -12,12 +12,18 @@ class ChatApiService {
 
   ChatApiService({required this.token});
 
-  Map<String, String> get _headers => {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'};
+  Map<String, String> get _headers => {
+    'Authorization': 'Bearer $token',
+    'Content-Type': 'application/json',
+  };
 
   // ── Chats ──────────────────────────────────────────────────────────────────
   Future<List<Chat>> fetchChats() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/chats/?page=1&page_size=100'), headers: _headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/chats/?page=1&page_size=100'),
+        headers: _headers,
+      );
       debugPrint('[API] fetchChats status : ${response.statusCode}');
       debugPrint('[API] fetchChats body   : ${response.body}');
 
@@ -31,7 +37,9 @@ class ChatApiService {
         } else {
           results = [];
         }
-        return results.map((c) => Chat.fromJson(c as Map<String, dynamic>)).toList();
+        return results
+            .map((c) => Chat.fromJson(c as Map<String, dynamic>))
+            .toList();
       }
       throw Exception('Failed to load chats: ${response.statusCode}');
     } catch (e) {
@@ -40,10 +48,16 @@ class ChatApiService {
   }
 
   // ── Messages ───────────────────────────────────────────────────────────────
-  Future<List<Message>> fetchMessages(String chatUid, {int page = 1, int pageSize = 50}) async {
+  Future<List<Message>> fetchMessages(
+    String chatUid, {
+    int page = 1,
+    int pageSize = 50,
+  }) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/chats/$chatUid/messages/?page=$page&page_size=$pageSize'),
+        Uri.parse(
+          '$baseUrl/api/chats/$chatUid/messages/?page=$page&page_size=$pageSize',
+        ),
         headers: _headers,
       );
 
@@ -57,7 +71,9 @@ class ChatApiService {
         } else {
           results = [];
         }
-        return results.map((m) => Message.fromJson(m as Map<String, dynamic>)).toList();
+        return results
+            .map((m) => Message.fromJson(m as Map<String, dynamic>))
+            .toList();
       }
       throw Exception('Failed to load messages: ${response.statusCode}');
     } catch (e) {
@@ -73,7 +89,10 @@ class ChatApiService {
     String? replyTo,
   }) async {
     try {
-      final body = <String, dynamic>{'content': content, 'message_type': messageType};
+      final body = <String, dynamic>{
+        'content': content,
+        'message_type': messageType,
+      };
       if (replyTo != null) body['reply_to'] = replyTo;
 
       final response = await http.post(
@@ -84,38 +103,112 @@ class ChatApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
-        final messageJson = (data is Map && data.containsKey('message')) ? data['message'] : data;
+        final messageJson = (data is Map && data.containsKey('message'))
+            ? data['message']
+            : data;
         if (messageJson is Map && !messageJson.containsKey('chat')) {
           messageJson['chat'] = chatUid;
         }
         return Message.fromJson(messageJson as Map<String, dynamic>);
       }
-      throw Exception('Failed to send message: ${response.statusCode} — ${response.body}');
+      throw Exception(
+        'Failed to send message: ${response.statusCode} — ${response.body}',
+      );
     } catch (e) {
       throw Exception('Error sending message: $e');
     }
   }
 
+  // ── Edit message ───────────────────────────────────────────────────────────
+  // PATCH /api/chats/{chat_uid}/messages/{message_uid}/edit/
+  // Body : { "content": "new text" }
+  Future<Message?> editMessage({
+    required String chatUid,
+    required String messageUid,
+    required String content,
+  }) async {
+    final url = '$baseUrl/api/chats/$chatUid/messages/$messageUid/edit/';
+    final payload = json.encode({'content': content});
+
+    debugPrint('[API] PATCH $url');
+    debugPrint('[API] body: $payload');
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: _headers,
+        body: payload,
+      );
+
+      debugPrint('[API] editMessage status: ${response.statusCode}');
+      debugPrint('[API] editMessage body  : ${response.body}');
+
+      if (response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          response.statusCode == 204) {
+        // Try to parse a full message object from the response.
+        // The backend may return:
+        //   (a) { "message": { ...message fields... } }  ← full object
+        //   (b) { "message": "Message updated successfully" } ← success string
+        //   (c) the message object directly at the root
+        //   (d) 204 No Content
+        if (response.body.isEmpty) return null; // 204 — use optimistic value
+
+        try {
+          final data = json.decode(response.body);
+
+          // Unwrap nested "message" key only when its value is a Map
+          Map<String, dynamic>? messageJson;
+          if (data is Map<String, dynamic>) {
+            final inner = data['message'];
+            if (inner is Map<String, dynamic>) {
+              // Case (a): full message object nested under "message"
+              messageJson = inner;
+            } else if (inner is String) {
+              // Case (b): "message" is a success string — no object to parse
+              messageJson = null;
+            } else {
+              // Case (c): root IS the message object
+              messageJson = data;
+            }
+          }
+
+          if (messageJson == null) {
+            // Backend didn't return a parseable message — caller uses optimistic
+            return null;
+          }
+
+          if (!messageJson.containsKey('chat')) {
+            messageJson['chat'] = chatUid;
+          }
+          return Message.fromJson(messageJson);
+        } catch (_) {
+          // JSON parse error — treat as success with no returned object
+          return null;
+        }
+      }
+
+      throw Exception(
+        'Failed to edit message: ${response.statusCode} — ${response.body}',
+      );
+    } catch (e) {
+      throw Exception('Error editing message: $e');
+    }
+  }
+
   // ── Send file / image / audio message (after S3 upload) ───────────────────
-  //
-  // Exact payload the backend expects (confirmed from API docs):
-  // {
-  //   "message_type": "image",
-  //   "content": "RAKESH.jpg",               ← original filename as content
-  //   "attachment_url": "<cloudfront_url>",
-  //   "file": "<cloudfront_url>",
-  //   "file_url": "<cloudfront_url>",
-  //   "file_name": "RAKESH.jpg",
-  //   "content_type": "image/jpeg",
-  //   "original_filename": "RAKESH.jpg",
-  //   "s3_key": "chat/uuid.jpg",
-  //   "reply_to": "uid"                       ← optional
-  // }
-  Future<Message> sendFileMessage({required String chatUid, required UploadResult upload, String? replyTo}) async {
+  Future<Message> sendFileMessage({
+    required String chatUid,
+    required UploadResult upload,
+    String? replyTo,
+    String? caption,
+  }) async {
     try {
       final body = <String, dynamic>{
         'message_type': upload.messageType,
-        'content': upload.originalFilename,
+        'content': (caption != null && caption.isNotEmpty)
+            ? caption
+            : upload.originalFilename,
         'attachment_url': upload.finalUrl,
         'file': upload.finalUrl,
         'file_url': upload.finalUrl,
@@ -126,7 +219,9 @@ class ChatApiService {
       };
       if (replyTo != null) body['reply_to'] = replyTo;
 
-      debugPrint('[API] sendFileMessage → $baseUrl/api/chats/$chatUid/messages/send/');
+      debugPrint(
+        '[API] sendFileMessage → $baseUrl/api/chats/$chatUid/messages/send/',
+      );
       debugPrint('[API] body: ${json.encode(body)}');
 
       final response = await http.post(
@@ -140,13 +235,17 @@ class ChatApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
-        final messageJson = (data is Map && data.containsKey('message')) ? data['message'] : data;
+        final messageJson = (data is Map && data.containsKey('message'))
+            ? data['message']
+            : data;
         if (messageJson is Map && !messageJson.containsKey('chat')) {
           messageJson['chat'] = chatUid;
         }
         return Message.fromJson(messageJson as Map<String, dynamic>);
       }
-      throw Exception('Failed to send file message: ${response.statusCode} — ${response.body}');
+      throw Exception(
+        'Failed to send file message: ${response.statusCode} — ${response.body}',
+      );
     } catch (e) {
       throw Exception('Error sending file message: $e');
     }
@@ -174,10 +273,16 @@ class ChatApiService {
   }
 
   // ── Reactions ──────────────────────────────────────────────────────────────
-  Future<void> sendReaction(String chatUid, String messageUid, String emoji) async {
+  Future<void> sendReaction(
+    String chatUid,
+    String messageUid,
+    String emoji,
+  ) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/api/chats/$chatUid/messages/$messageUid/reactions/'),
+        Uri.parse(
+          '$baseUrl/api/chats/$chatUid/messages/$messageUid/reactions/',
+        ),
         headers: _headers,
         body: json.encode({'emoji': emoji}),
       );
@@ -189,10 +294,16 @@ class ChatApiService {
     }
   }
 
-  Future<void> removeReaction(String chatUid, String messageUid, String emoji) async {
+  Future<void> removeReaction(
+    String chatUid,
+    String messageUid,
+    String emoji,
+  ) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/chats/$chatUid/messages/$messageUid/reactions/'),
+        Uri.parse(
+          '$baseUrl/api/chats/$chatUid/messages/$messageUid/reactions/',
+        ),
         headers: _headers,
         body: json.encode({'emoji': emoji}),
       );
@@ -205,14 +316,23 @@ class ChatApiService {
   }
 
   // ── Mark messages read ─────────────────────────────────────────────────────
-  Future<void> markMessagesAsRead(String chatUid, List<String> messageUids) async {
+  Future<void> markMessagesAsRead(
+    String chatUid,
+    List<String> messageUids,
+  ) async {
     if (messageUids.isEmpty) return;
     final url = '$baseUrl/api/chats/$chatUid/messages/mark-read/';
     final payload = json.encode({'message_uids': messageUids});
     try {
-      final response = await http.post(Uri.parse(url), headers: _headers, body: payload);
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _headers,
+        body: payload,
+      );
       if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception('Failed to mark read: ${response.statusCode} — ${response.body}');
+        throw Exception(
+          'Failed to mark read: ${response.statusCode} — ${response.body}',
+        );
       }
     } catch (e) {
       throw Exception('Error marking messages as read: $e');
