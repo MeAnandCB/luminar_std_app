@@ -44,49 +44,45 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   void _extractVideoId() {
     // Extract YouTube video ID from various sources
-    String? videoSource = widget.video.videoSource;
-    String? videoUrl = widget.video.videoUrl;
-    String? videoLink = widget.video.videoLink;
-    String? embedCode = widget.video.embedCode;
+    String? vSource = widget.video.videoSource;
+    String? vUrl = widget.video.videoUrl;
+    String? vLink = widget.video.videoLink;
+    String? eCode = widget.video.embedCode;
 
-    // Priority: videoSource (if it's an ID) > videoUrl > videoLink > embedCode
-    if (videoSource != null && videoSource.isNotEmpty) {
-      _videoId = _extractYoutubeId(videoSource);
-      if (_videoId.isEmpty) {
-        _videoId = videoSource;
-      }
-    } else if (videoUrl != null && videoUrl.isNotEmpty) {
-      _videoId = _extractYoutubeId(videoUrl);
-    } else if (videoLink != null && videoLink.isNotEmpty) {
-      _videoId = _extractYoutubeId(videoLink);
-    } else if (embedCode != null && embedCode.isNotEmpty) {
-      _videoId = _extractYoutubeId(embedCode);
-    }
+    debugPrint('[Video] Sources — Source: $vSource | Url: $vUrl | Link: $vLink | Embed: $eCode');
 
-    debugPrint('Final video ID: $_videoId');
+    // Priority: videoSource > videoUrl > videoLink > embedCode
+    _videoId = _tryExtractIdFrom(vSource) ??
+               _tryExtractIdFrom(vUrl) ??
+               _tryExtractIdFrom(vLink) ??
+               _tryExtractIdFrom(eCode) ??
+               '';
+
+    debugPrint('[Video] Final extracted ID: "$_videoId"');
   }
 
-  String _extractYoutubeId(String url) {
-    // Handle different YouTube URL formats using regex
-    final RegExp regExp = RegExp(
-      r'^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*',
-      caseSensitive: false,
-    );
+  String? _tryExtractIdFrom(String? source) {
+    if (source == null || source.isEmpty) return null;
 
-    final match = regExp.firstMatch(url);
-    if (match != null && match.groupCount >= 2) {
-      String? id = match.group(2);
-      if (id != null && id.length == 11) {
-        return id;
-      }
+    // 1. Try built-in converter
+    String? id = YoutubePlayer.convertUrlToId(source);
+    if (id != null && id.length == 11) return id;
+
+    // 2. If it's already an 11-char ID
+    if (source.length == 11 && RegExp(r'^[a-zA-Z0-9_-]{11}$').hasMatch(source)) {
+      return source;
     }
 
-    // If it's just the ID (11 characters)
-    if (url.length == 11 && RegExp(r'^[a-zA-Z0-9_-]{11}$').hasMatch(url)) {
-      return url;
+    // 3. Fallback for Shorts if convertUrlToId missed it
+    if (source.contains('/shorts/')) {
+        final regExp = RegExp(r'shorts\/([a-zA-Z0-9_-]{11})');
+        final match = regExp.firstMatch(source);
+        if (match != null && match.groupCount >= 1) {
+            return match.group(1);
+        }
     }
 
-    return '';
+    return null;
   }
 
   void _initYoutubePlayer() {
@@ -391,11 +387,24 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Invalid video source: ${widget.video.videoSource ?? 'Unknown'}',
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
-              textAlign: TextAlign.center,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                'Invalid video source: ${widget.video.videoSource.isNotEmpty ? widget.video.videoSource : widget.video.videoLink ?? widget.video.videoUrl ?? "Unknown"}',
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
+            if (_videoId.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Could not extract a valid YouTube ID.',
+                  style: TextStyle(color: Colors.red.shade300, fontSize: 11),
+                ),
+              ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
