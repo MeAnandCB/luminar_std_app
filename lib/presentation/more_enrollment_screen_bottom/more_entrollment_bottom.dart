@@ -89,10 +89,11 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _provider = Provider.of<EnrollmentProvider>(context, listen: false);
-      _fetchData();
-    });
+    // Initialize synchronously — context is available in initState via
+    // the element tree; only widget-level APIs (like MediaQuery) need
+    // a post-frame callback.
+    _provider = Provider.of<EnrollmentProvider>(context, listen: false);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchData());
   }
 
   @override

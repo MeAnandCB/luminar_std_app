@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+
 import 'package:luminar_std/presentation/chat_screen/widgets/audio_player.dart';
 import 'package:luminar_std/presentation/chat_screen/widgets/forward_message.dart';
-
 import 'package:record/record.dart';
 import 'dart:math' as _math;
 
@@ -209,17 +209,24 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     if (widget.chat.chatType == ChatType.individual &&
         widget.chat.otherParticipant != null) {
+      // Listen to ALL status updates and rebuild whenever any user's status changes
       _statusSubscription = _webSocketService.statusStream.listen((s) {
-        if (s['user_id'] == widget.chat.otherParticipant!.id && mounted) {
-          setState(() {});
-        }
+        if (mounted) setState(() {});
       });
     }
 
     if (widget.webSocketService == null) _webSocketService.connect();
+
+    // Re-announce our own presence immediately when entering the chat.
+    // If the WS was already connected (shared from ChatProvider),
+    // onConnected won't fire again — so we broadcast manually here.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _webSocketService.updateUserStatus(true);
+    });
+
     _loadMessages();
     _startPolling();
-    _loadAllChats(); // ← NEW
+    _loadAllChats();
   }
 
   @override
@@ -1975,11 +1982,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       );
                     },
                   ),
-                _messageOption(
-                  icon: Icons.info_outline_rounded,
-                  label: 'Info',
-                  onTap: () => Navigator.pop(context),
-                ),
                 if (isMe) ...[
                   if (message.isText)
                     _messageOption(
@@ -4315,12 +4317,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Color(0xFF1A1A2E)),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: Column(
         children: [

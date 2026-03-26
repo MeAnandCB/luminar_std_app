@@ -13,25 +13,35 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, TickerProviderStateMixin {
   late YoutubePlayerController _controller;
   bool _isPlayerReady = false;
   bool _isFullScreen = false;
   String _videoId = '';
 
-  // Like functionality
-  bool _isLiked = false;
-  int _likeCount = 0;
-  bool _isLiking = false;
-
-  // Repository for API calls
+  // Animation controllers for end dialog
+  late AnimationController _dialogAnimController;
+  late Animation<double> _dialogScaleAnim;
+  late Animation<double> _dialogFadeAnim;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Lock to portrait initially
+    _dialogAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _dialogScaleAnim = CurvedAnimation(
+      parent: _dialogAnimController,
+      curve: Curves.elasticOut,
+    );
+    _dialogFadeAnim = CurvedAnimation(
+      parent: _dialogAnimController,
+      curve: Curves.easeIn,
+    );
+
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -39,57 +49,46 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     _extractVideoId();
     _initYoutubePlayer();
-    // Fetch initial like status from API
   }
 
   void _extractVideoId() {
-    // Extract YouTube video ID from various sources
     String? vSource = widget.video.videoSource;
     String? vUrl = widget.video.videoUrl;
     String? vLink = widget.video.videoLink;
     String? eCode = widget.video.embedCode;
 
-    debugPrint('[Video] Sources — Source: $vSource | Url: $vUrl | Link: $vLink | Embed: $eCode');
-
-    // Priority: videoSource > videoUrl > videoLink > embedCode
-    _videoId = _tryExtractIdFrom(vSource) ??
-               _tryExtractIdFrom(vUrl) ??
-               _tryExtractIdFrom(vLink) ??
-               _tryExtractIdFrom(eCode) ??
-               '';
-
-    debugPrint('[Video] Final extracted ID: "$_videoId"');
+    _videoId =
+        _tryExtractIdFrom(vSource) ??
+        _tryExtractIdFrom(vUrl) ??
+        _tryExtractIdFrom(vLink) ??
+        _tryExtractIdFrom(eCode) ??
+        '';
   }
 
   String? _tryExtractIdFrom(String? source) {
     if (source == null || source.isEmpty) return null;
 
-    // 1. Try built-in converter
     String? id = YoutubePlayer.convertUrlToId(source);
     if (id != null && id.length == 11) return id;
 
-    // 2. If it's already an 11-char ID
-    if (source.length == 11 && RegExp(r'^[a-zA-Z0-9_-]{11}$').hasMatch(source)) {
+    if (source.length == 11 &&
+        RegExp(r'^[a-zA-Z0-9_-]{11}$').hasMatch(source)) {
       return source;
     }
 
-    // 3. Fallback for Shorts if convertUrlToId missed it
     if (source.contains('/shorts/')) {
-        final regExp = RegExp(r'shorts\/([a-zA-Z0-9_-]{11})');
-        final match = regExp.firstMatch(source);
-        if (match != null && match.groupCount >= 1) {
-            return match.group(1);
-        }
+      final regExp = RegExp(r'shorts\/([a-zA-Z0-9_-]{11})');
+      final match = regExp.firstMatch(source);
+      if (match != null && match.groupCount >= 1) {
+        return match.group(1);
+      }
     }
 
     return null;
   }
 
   void _initYoutubePlayer() {
-    if (_videoId.isEmpty) {
-      debugPrint('Invalid video ID');
-      return;
-    }
+    if (_videoId.isEmpty) return;
 
     _controller = YoutubePlayerController(
       initialVideoId: _videoId,
@@ -113,26 +112,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   void _listener() {
     if (_controller.value.isReady && !_isPlayerReady) {
       if (mounted) {
-        setState(() {
-          _isPlayerReady = true;
-        });
+        setState(() => _isPlayerReady = true);
       }
     }
 
-    // Detect fullscreen changes
     if (_controller.value.isFullScreen != _isFullScreen) {
-      setState(() {
-        _isFullScreen = _controller.value.isFullScreen;
-      });
+      setState(() => _isFullScreen = _controller.value.isFullScreen);
 
       if (_controller.value.isFullScreen) {
-        // Enter fullscreen
         SystemChrome.setPreferredOrientations([
           DeviceOrientation.landscapeLeft,
           DeviceOrientation.landscapeRight,
         ]);
       } else {
-        // Exit fullscreen
         SystemChrome.setPreferredOrientations([
           DeviceOrientation.portraitUp,
           DeviceOrientation.portraitDown,
@@ -141,88 +133,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
-  // Dynamic like functionality with API integration
-  Future<void> _handleLike() async {
-    if (_isLiking) return;
-
-    setState(() {
-      _isLiking = true;
-    });
-
-    try {
-      // Optimistic update - update UI immediately
-      final bool newLikeState = !_isLiked;
-      final int newLikeCount = newLikeState ? _likeCount + 1 : _likeCount - 1;
-
-      setState(() {
-        _isLiked = newLikeState;
-        _likeCount = newLikeCount;
-      });
-
-      // API Call - Replace with your actual endpoint
-      final Map<String, dynamic> requestData = {
-        'video_id': widget.video.videoLink,
-        'action': newLikeState ? 'like' : 'unlike',
-        'user_id': 'current_user_id', // Get from auth service
-      };
-
-      // Example API call structure:
-      // final response = await _repository.toggleLikeVideo(widget.video.id, !_isLiked);
-      //
-      // If you have a dedicated like endpoint:
-      // final Map<String, dynamic> response = await _repository.likeVideo(
-      //   videoId: widget.video.id,
-      //   isLiked: newLikeState,
-      // );
-
-      // Simulate API call (remove in production)
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      // If API call fails, revert the optimistic update
-      // Uncomment this section when you implement actual API
-      /*
-      if (!response['success']) {
-        // Revert optimistic update
-        setState(() {
-          _isLiked = !newLikeState;
-          _likeCount = newLikeState ? newLikeCount - 1 : newLikeCount + 1;
-        });
-        throw Exception(response['message'] ?? 'Failed to update like');
-      }
-      */
-
-      // Show feedback
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_isLiked ? 'Liked!' : 'Removed like'),
-            duration: const Duration(seconds: 1),
-            backgroundColor: Colors.grey[800],
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('Error liking video: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to ${_isLiked ? 'unlike' : 'like'} video'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLiking = false;
-        });
-      }
-    }
-  }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Pause video when app is minimized
     if (state == AppLifecycleState.paused && _controller.value.isReady) {
       _controller.pause();
     }
@@ -231,17 +143,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _dialogAnimController.dispose();
     if (_controller.value.isReady) {
       _controller.removeListener(_listener);
       _controller.dispose();
     }
-
-    // Reset to portrait when leaving
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
-
     super.dispose();
   }
 
@@ -249,7 +159,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        // If in fullscreen, exit fullscreen first
         if (_isFullScreen) {
           _controller.toggleFullScreenMode();
           return false;
@@ -258,109 +167,122 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       },
       child: Scaffold(
         backgroundColor: Colors.black,
+        extendBodyBehindAppBar: true,
         appBar: _isFullScreen
             ? null
             : AppBar(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leading: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.15),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
                 title: Text(
                   widget.video.title,
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                elevation: 0,
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.info_outline_rounded),
-                    onPressed: _showVideoInfo,
-                  ),
-                ],
               ),
-        body: SafeArea(
-          top: !_isFullScreen,
-          bottom: !_isFullScreen,
-          child: Column(
-            children: [
-              // Video Player
-              Expanded(
-                flex: _isFullScreen ? 1 : 2,
-                child: _videoId.isEmpty
-                    ? _buildErrorView()
-                    : YoutubePlayerBuilder(
-                        onExitFullScreen: () {
-                          SystemChrome.setPreferredOrientations([
-                            DeviceOrientation.portraitUp,
-                            DeviceOrientation.portraitDown,
-                          ]);
-                        },
-                        onEnterFullScreen: () {
-                          SystemChrome.setPreferredOrientations([
-                            DeviceOrientation.landscapeLeft,
-                            DeviceOrientation.landscapeRight,
-                          ]);
-                        },
-                        player: YoutubePlayer(
-                          controller: _controller,
-                          aspectRatio: 16 / 9,
-                          onReady: () {
-                            debugPrint('Player is ready');
-                          },
-                          onEnded: (metaData) {
-                            debugPrint('Video ended');
-                            _showVideoEndedDialog();
-                          },
-                          actionsPadding: const EdgeInsets.all(8),
-                          bottomActions: [
-                            CurrentPosition(),
-                            const SizedBox(width: 10),
-                            ProgressBar(
-                              isExpanded: true,
-                              colors: const ProgressBarColors(
-                                playedColor: Color(0xFF6C5CE7),
-                                handleColor: Color(0xFF6C5CE7),
-                                backgroundColor: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            RemainingDuration(),
-                            const PlaybackSpeedButton(),
-                            FullScreenButton(),
-                          ],
-                        ),
-                        builder: (context, player) {
-                          return Container(
+        body: _videoId.isEmpty
+            ? _buildErrorView()
+            : YoutubePlayerBuilder(
+                onExitFullScreen: () {
+                  SystemChrome.setPreferredOrientations([
+                    DeviceOrientation.portraitUp,
+                    DeviceOrientation.portraitDown,
+                  ]);
+                },
+                onEnterFullScreen: () {
+                  SystemChrome.setPreferredOrientations([
+                    DeviceOrientation.landscapeLeft,
+                    DeviceOrientation.landscapeRight,
+                  ]);
+                },
+                player: YoutubePlayer(
+                  controller: _controller,
+                  aspectRatio: 16 / 9,
+                  onReady: () => debugPrint('Player ready'),
+                  onEnded: (_) => _showVideoEndedDialog(),
+                  actionsPadding: const EdgeInsets.all(8),
+                  bottomActions: [
+                    CurrentPosition(),
+                    const SizedBox(width: 10),
+                    ProgressBar(
+                      isExpanded: true,
+                      colors: const ProgressBarColors(
+                        playedColor: Color(0xFFE8C547),
+                        handleColor: Color(0xFFE8C547),
+                        backgroundColor: Colors.white24,
+                        bufferedColor: Colors.white38,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    RemainingDuration(),
+                    const PlaybackSpeedButton(),
+                    FullScreenButton(),
+                  ],
+                ),
+                builder: (context, player) {
+                  return Container(
+                    color: Colors.black,
+                    child: Stack(
+                      children: [
+                        Center(child: player),
+                        if (!_isPlayerReady)
+                          Container(
                             color: Colors.black,
-                            child: Stack(
-                              children: [
-                                Center(child: player),
-                                if (!_isPlayerReady)
-                                  Container(
-                                    color: Colors.black,
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        color: Color(0xFF6C5CE7),
-                                      ),
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(
+                                    width: 40,
+                                    height: 40,
+                                    child: CircularProgressIndicator(
+                                      color: Color(0xFFE8C547),
+                                      strokeWidth: 2.5,
                                     ),
                                   ),
-                              ],
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Loading...',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.45),
+                                      fontSize: 13,
+                                      letterSpacing: 1.5,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
               ),
-              // Video Details Section (shown only when not in fullscreen)
-              if (!_isFullScreen && _videoId.isNotEmpty) _buildVideoDetails(),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -372,404 +294,227 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              color: Colors.white70,
-              size: 64,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.06),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white12, width: 1),
+              ),
+              child: const Icon(
+                Icons.play_disabled_rounded,
+                color: Colors.white38,
+                size: 36,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             const Text(
               'Unable to load video',
               style: TextStyle(
                 color: Colors.white70,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                'Invalid video source: ${widget.video.videoSource.isNotEmpty ? widget.video.videoSource : widget.video.videoLink ?? widget.video.videoUrl ?? "Unknown"}',
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (_videoId.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  'Could not extract a valid YouTube ID.',
-                  style: TextStyle(color: Colors.red.shade300, fontSize: 11),
-                ),
-              ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6C5CE7),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Go Back'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVideoDetails() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Title
-          Text(
-            widget.video.title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Like Button and Meta info row
-          Row(
-            children: [
-              // Like Button
-              _buildLikeButton(),
-              const SizedBox(width: 12),
-              // Meta chips
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildMetaChip(
-                        Icons.person_outline_rounded,
-                        widget.video.uploadedByName,
-                      ),
-                      const SizedBox(width: 8),
-                      if (widget.video.duration != null)
-                        _buildMetaChip(
-                          Icons.access_time_rounded,
-                          _formatDuration(widget.video.duration!),
-                        ),
-                      const SizedBox(width: 8),
-                      if (widget.video.fileSize != null)
-                        _buildMetaChip(
-                          Icons.storage_rounded,
-                          _formatFileSize(widget.video.fileSize!),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Description
-          if (widget.video.description.isNotEmpty) ...[
-            const Text(
-              'Description',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
+                fontSize: 17,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              widget.video.description,
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 13,
-                height: 1.4,
-              ),
+            const SizedBox(height: 8),
+            const Text(
+              'The video source could not be found.',
+              style: TextStyle(color: Colors.white38, fontSize: 13),
             ),
-            const SizedBox(height: 12),
-          ],
-
-          // Additional info
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.info_outline_rounded,
-                      color: Colors.white70,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Video Information',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 13,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Gallery: ${widget.video.gallery}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8C547),
+                  borderRadius: BorderRadius.circular(30),
                 ),
-                if (widget.video.folder != null &&
-                    widget.video.folder!.isNotEmpty)
-                  Text(
-                    'Folder: ${widget.video.folder}',
-                    style: const TextStyle(color: Colors.white54, fontSize: 11),
+                child: const Text(
+                  'Go Back',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    letterSpacing: 0.4,
                   ),
-                Text(
-                  'Uploaded: ${_formatDate(widget.video.createdAt)}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Video ID: $_videoId',
-                  style: const TextStyle(color: Colors.white54, fontSize: 10),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLikeButton() {
-    return GestureDetector(
-      onTap: _handleLike,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: _isLiked
-              ? const Color(0xFF6C5CE7).withOpacity(0.2)
-              : Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: _isLiked
-                ? const Color(0xFF6C5CE7)
-                : Colors.white.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _isLiking
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Color(0xFF6C5CE7),
-                    ),
-                  )
-                : Icon(
-                    _isLiked
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    color: _isLiked ? const Color(0xFF6C5CE7) : Colors.white70,
-                    size: 18,
-                  ),
-            const SizedBox(width: 6),
-            Text(
-              _likeCount.toString(),
-              style: TextStyle(
-                color: _isLiked ? const Color(0xFF6C5CE7) : Colors.white70,
-                fontSize: 13,
-                fontWeight: _isLiked ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildMetaChip(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white70, size: 12),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white70, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDuration(int seconds) {
-    final duration = Duration(seconds: seconds);
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final hours = twoDigits(duration.inHours);
-
-    if (duration.inHours > 0) {
-      return '$hours:$minutes:${twoDigits(duration.inSeconds.remainder(60))}';
-    }
-    return '$minutes:${twoDigits(duration.inSeconds.remainder(60))}';
-  }
-
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays > 365) {
-      return '${(difference.inDays / 365).floor()} year${(difference.inDays / 365).floor() > 1 ? 's' : ''} ago';
-    } else if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()} month${(difference.inDays / 30).floor() > 1 ? 's' : ''} ago';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
-    } else {
-      return 'Just now';
-    }
-  }
-
-  void _showVideoInfo() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text(
-          'Video Information',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Title: ${widget.video.title}',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Uploaded by: ${widget.video.uploadedByName}',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            if (widget.video.duration != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Duration: ${_formatDuration(widget.video.duration!)}',
-                style: const TextStyle(color: Colors.white70),
-              ),
-            ],
-            if (widget.video.fileSize != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'File Size: ${_formatFileSize(widget.video.fileSize!)}',
-                style: const TextStyle(color: Colors.white70),
-              ),
-            ],
-            const SizedBox(height: 8),
-            Text(
-              'Uploaded: ${_formatDate(widget.video.createdAt)}',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Video ID: $_videoId',
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Likes: $_likeCount',
-              style: const TextStyle(color: Colors.white70),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Close',
-              style: TextStyle(color: Color(0xFF6C5CE7)),
-            ),
-          ),
-        ],
       ),
     );
   }
 
   void _showVideoEndedDialog() {
+    _dialogAnimController.forward(from: 0);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text('Video Ended', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'The video has finished playing. Would you like to replay it?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close', style: TextStyle(color: Colors.white70)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _controller.seekTo(Duration.zero);
-              _controller.play();
-            },
-            child: const Text(
-              'Replay',
-              style: TextStyle(color: Color(0xFF6C5CE7)),
+      barrierColor: Colors.black.withOpacity(0.75),
+      barrierDismissible: false,
+      builder: (context) => FadeTransition(
+        opacity: _dialogFadeAnim,
+        child: ScaleTransition(
+          scale: _dialogScaleAnim,
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: const Color(0xFF141414),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.08),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE8C547).withOpacity(0.08),
+                    blurRadius: 60,
+                    spreadRadius: 10,
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.6),
+                    blurRadius: 30,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Glowing icon badge
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFE8C547).withOpacity(0.1),
+                      border: Border.all(
+                        color: const Color(0xFFE8C547).withOpacity(0.3),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFE8C547).withOpacity(0.15),
+                          blurRadius: 24,
+                          spreadRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: Color(0xFFE8C547),
+                      size: 34,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    "That's a wrap!",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.video.title,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.4),
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Watch Again
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      _controller.seekTo(Duration.zero);
+                      _controller.play();
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8C547),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFE8C547).withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.replay_rounded,
+                            color: Colors.black,
+                            size: 18,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Watch Again',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Close
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.08),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Text(
+                        'Close',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
