@@ -1,13 +1,32 @@
+// lib/screens/attendance/attendance_screen.dart
+
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/app_text_styles.dart';
+import 'package:luminar_std/repository/attandance_screen/model.dart';
+import 'package:luminar_std/repository/attandance_screen/service.dart';
 
 class AttendanceScreen extends StatefulWidget {
-  const AttendanceScreen({super.key});
+  final String batchId;
+  final String? batchName;
+  final String? courseName;
+
+  const AttendanceScreen({
+    super.key,
+    required this.batchId,
+    this.batchName,
+    this.courseName,
+  });
 
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
 }
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
+  final AttendanceService _attendanceService = AttendanceService();
+
   // Filter states
   DateTime? _startDate;
   DateTime? _endDate;
@@ -27,167 +46,166 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     'Absent',
   ];
 
-  // Dummy attendance data
-  List<AttendanceRecord> _allRecords = [];
-  List<AttendanceRecord> _filteredRecords = [];
+  // API Data
+  List<AttendanceRecord> _attendanceRecords = [];
+  Summary _summary = Summary(
+    totalDays: 0,
+    online: 0,
+    offline: 0,
+    recording: 0,
+    absent: 0,
+    onlinePercentage: 0,
+    offlinePercentage: 0,
+    recordingPercentage: 0,
+    absentPercentage: 0,
+  );
 
-  // Dummy recording videos
-  final List<RecordingVideo> _recordingVideos = [
-    RecordingVideo(
-      title: 'ASP.NET MVC Introduction',
-      thumbnail: 'https://img.youtube.com/vi/kzpS-A3QJqE/0.jpg',
-      uploadedBy: 'John Smith',
-      uploadedDate: DateTime(2026, 3, 4),
-      duration: '45:30',
-      views: 234,
-    ),
-    RecordingVideo(
-      title: 'Angular Components Deep Dive',
-      thumbnail: 'https://img.youtube.com/vi/3qBXWUpoPHo/0.jpg',
-      uploadedBy: 'Sarah Wilson',
-      uploadedDate: DateTime(2026, 3, 3),
-      duration: '52:15',
-      views: 156,
-    ),
-    RecordingVideo(
-      title: 'Database Connectivity with Entity Framework',
-      thumbnail: 'https://img.youtube.com/vi/8jcL7Hn2KPI/0.jpg',
-      uploadedBy: 'Mike Johnson',
-      uploadedDate: DateTime(2026, 3, 2),
-      duration: '1:08:22',
-      views: 89,
-    ),
-    RecordingVideo(
-      title: 'REST API Development',
-      thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg',
-      uploadedBy: 'Emma Davis',
-      uploadedDate: DateTime(2026, 3, 1),
-      duration: '38:45',
-      views: 412,
-    ),
-    RecordingVideo(
-      title: 'Authentication in ASP.NET Core',
-      thumbnail: 'https://img.youtube.com/vi/1ukSR1GRtMU/0.jpg',
-      uploadedBy: 'John Smith',
-      uploadedDate: DateTime(2026, 2, 28),
-      duration: '55:10',
-      views: 178,
-    ),
-  ];
+  String _studentId = '';
+  String _batchId = '';
+  String _message = '';
 
-  // Summary stats
-  Map<String, int> _stats = {
-    'total': 1,
-    'online': 0,
-    'offline': 0,
-    'recording': 0,
-    'absent': 0,
-    'present': 0,
-  };
+  // Pagination
+  int _currentPage = 1;
+  int _totalPages = 1;
+  int _totalRecords = 0;
+  bool _isLoading = true;
+  bool _isLoadingMore = false;
+  String? _errorMessage;
+
+  // Scroll controller for pagination
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _loadAttendanceData();
+    _scrollController.addListener(_onScroll);
   }
 
-  String _getWeightedRandomStatus() {
-    // Make stats look realistic: more Online/Offline, fewer Absent/Recording
-    final random = DateTime.now().millisecondsSinceEpoch % 100;
-    if (random < 35) return 'Online'; // 35% Online
-    if (random < 65) return 'Offline'; // 30% Offline
-    if (random < 85) return 'Recording'; // 20% Recording
-    return 'Absent'; // 15% Absent
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadNextPage();
+    }
+  }
+
+  Future<void> _loadAttendanceData({int page = 1}) async {
+    if (page == 1) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    } else {
+      setState(() {
+        _isLoadingMore = true;
+      });
+    }
+
+    try {
+      final response = await _attendanceService.getBatchAttendance(
+        context: context,
+        batchId: widget.batchId,
+        startDate: _startDate?.toIso8601String().split('T')[0],
+        endDate: _endDate?.toIso8601String().split('T')[0],
+        page: page,
+        pageSize: 10,
+      );
+
+      setState(() {
+        if (page == 1) {
+          _attendanceRecords = response.results;
+        } else {
+          _attendanceRecords.addAll(response.results);
+        }
+
+        _summary = response.summary;
+        _studentId = response.studentId;
+        _batchId = response.batchId;
+
+        _currentPage = response.currentPage;
+        _totalPages = response.totalPages > 0 ? response.totalPages : 1;
+        _totalRecords = response.count;
+
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
+    }
+  }
+
+  void _loadNextPage() {
+    if (_currentPage < _totalPages && !_isLoadingMore) {
+      _loadAttendanceData(page: _currentPage + 1);
+    }
   }
 
   void _applyFilters() {
     setState(() {
-      _filteredRecords = _allRecords.where((record) {
-        // Apply start date filter
-        if (_startDate != null) {
-          if (record.date.isBefore(_startDate!)) {
-            return false;
-          }
-        }
-
-        // Apply end date filter
-        if (_endDate != null) {
-          if (record.date.isAfter(_endDate!)) {
-            return false;
-          }
-        }
-
-        // Apply status filter
-        if (_selectedStatus != 'All Status') {
-          if (record.status != _selectedStatus) {
-            return false;
-          }
-        }
-
-        return true;
-      }).toList();
-
-      // Update stats based on filtered records
-      _updateStats();
+      _attendanceRecords.clear();
+      _currentPage = 1;
     });
+    _loadAttendanceData(page: 1);
   }
 
-  void _updateStats() {
-    int total = _filteredRecords.length;
-    int online = _filteredRecords.where((r) => r.status == 'Online').length;
-    int offline = _filteredRecords.where((r) => r.status == 'Offline').length;
-    int recording = _filteredRecords
-        .where((r) => r.status == 'Recording')
-        .length;
-    int absent = _filteredRecords.where((r) => r.status == 'Absent').length;
-    int present = total - absent;
-
+  void _clearFilters() {
     setState(() {
-      _stats = {
-        'total': total,
-        'online': online,
-        'offline': offline,
-        'recording': recording,
-        'absent': absent,
-        'present': present,
-      };
+      _startDate = null;
+      _endDate = null;
+      _selectedStatus = 'All Status';
+      _attendanceRecords.clear();
+      _currentPage = 1;
     });
+    _loadAttendanceData(page: 1);
   }
 
-  Future<void> _selectDate(BuildContext context, bool isStart) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2026, 1, 1),
-      lastDate: DateTime(2026, 12, 31),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Color(0xFF6C5CE7),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Color(0xFF2D3436),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'dd/mm/yyyy';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
 
-    if (picked != null) {
-      setState(() {
-        if (isStart) {
-          _startDate = picked;
-        } else {
-          _endDate = picked;
-        }
-      });
-      _applyFilters();
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'online':
+        return AppColors.statsGreen;
+      case 'offline':
+        return Colors.grey;
+      case 'recording':
+        return AppColors.statsOrange;
+      case 'absent':
+        return const Color(0xFFFF7675);
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  String _getStatusDisplay(String status) {
+    switch (status.toLowerCase()) {
+      case 'online':
+        return 'Online';
+      case 'offline':
+        return 'Offline';
+      case 'recording':
+        return 'Recording';
+      case 'absent':
+        return 'Absent';
+      default:
+        return status;
     }
   }
 
   void _showFilterDialog() {
-    // Initialize temp values with current filter values
     _tempStartDate = _startDate;
     _tempEndDate = _endDate;
     _tempSelectedStatus = _selectedStatus;
@@ -201,15 +219,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               backgroundColor: Colors.transparent,
               child: Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: AppColors.shadowLight,
                       blurRadius: 30,
-                      offset: Offset(0, 10),
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
@@ -223,35 +241,24 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       children: [
                         Text(
                           'Filter Attendance',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF2D3436),
-                          ),
+                          style: AppTextStyles.heading2,
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
                           icon: Icon(
                             Icons.close_rounded,
-                            color: Colors.grey[600],
+                            color: AppColors.textSecondary,
                           ),
                           padding: EdgeInsets.zero,
-                          constraints: BoxConstraints(),
+                          constraints: const BoxConstraints(),
                         ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // Date Range Section
-                    Text(
-                      'Date Range',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2D3436),
-                      ),
-                    ),
-                    SizedBox(height: 12),
+                    Text('Date Range', style: AppTextStyles.statLabel),
+                    const SizedBox(height: 12),
 
                     // Start Date
                     InkWell(
@@ -264,11 +271,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           builder: (context, child) {
                             return Theme(
                               data: Theme.of(context).copyWith(
-                                colorScheme: ColorScheme.light(
-                                  primary: Color(0xFF6C5CE7),
-                                  onPrimary: Colors.white,
-                                  surface: Colors.white,
-                                  onSurface: Color(0xFF2D3436),
+                                colorScheme: const ColorScheme.light(
+                                  primary: AppColors.primary,
+                                  onPrimary: AppColors.white,
+                                  surface: AppColors.white,
+                                  onSurface: AppColors.textPrimary,
                                 ),
                               ),
                               child: child!,
@@ -283,33 +290,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       },
                       child: Container(
                         width: double.infinity,
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 14,
                         ),
                         decoration: BoxDecoration(
-                          color: Color(0xFFF1F3FA),
+                          color: const Color(0xFFF1F3FA),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.grey.withOpacity(0.1),
-                          ),
+                          border: Border.all(color: AppColors.borderLight),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.calendar_today_rounded,
-                              color: Color(0xFF6C5CE7),
+                              color: AppColors.primary,
                               size: 18,
                             ),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
                             Text(
                               _tempStartDate == null
                                   ? 'Start Date'
                                   : 'From: ${_formatDate(_tempStartDate)}',
                               style: TextStyle(
                                 color: _tempStartDate == null
-                                    ? Colors.grey[500]
-                                    : Color(0xFF2D3436),
+                                    ? AppColors.textHint
+                                    : AppColors.textPrimary,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -317,7 +322,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
                     // End Date
                     InkWell(
@@ -330,11 +335,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           builder: (context, child) {
                             return Theme(
                               data: Theme.of(context).copyWith(
-                                colorScheme: ColorScheme.light(
-                                  primary: Color(0xFF6C5CE7),
-                                  onPrimary: Colors.white,
-                                  surface: Colors.white,
-                                  onSurface: Color(0xFF2D3436),
+                                colorScheme: const ColorScheme.light(
+                                  primary: AppColors.primary,
+                                  onPrimary: AppColors.white,
+                                  surface: AppColors.white,
+                                  onSurface: AppColors.textPrimary,
                                 ),
                               ),
                               child: child!,
@@ -349,33 +354,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       },
                       child: Container(
                         width: double.infinity,
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 14,
                         ),
                         decoration: BoxDecoration(
-                          color: Color(0xFFF1F3FA),
+                          color: const Color(0xFFF1F3FA),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.grey.withOpacity(0.1),
-                          ),
+                          border: Border.all(color: AppColors.borderLight),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.calendar_today_rounded,
-                              color: Color(0xFF6C5CE7),
+                              color: AppColors.primary,
                               size: 18,
                             ),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
                             Text(
                               _tempEndDate == null
                                   ? 'End Date'
                                   : 'To: ${_formatDate(_tempEndDate)}',
                               style: TextStyle(
                                 color: _tempEndDate == null
-                                    ? Colors.grey[500]
-                                    : Color(0xFF2D3436),
+                                    ? AppColors.textHint
+                                    : AppColors.textPrimary,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -383,24 +386,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // Status Dropdown
-                    Text(
-                      'Status',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2D3436),
-                      ),
-                    ),
-                    SizedBox(height: 12),
+                    Text('Status', style: AppTextStyles.statLabel),
+                    const SizedBox(height: 12),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: Color(0xFFF1F3FA),
+                        color: const Color(0xFFF1F3FA),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                        border: Border.all(color: AppColors.borderLight),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -408,7 +404,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           isExpanded: true,
                           icon: Icon(
                             Icons.arrow_drop_down_rounded,
-                            color: Color(0xFF6C5CE7),
+                            color: AppColors.primary,
                           ),
                           items: _statusOptions.map((status) {
                             return DropdownMenuItem(
@@ -425,12 +421,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                       ),
                                     ),
                                   if (status != 'All Status')
-                                    SizedBox(width: 8),
+                                    const SizedBox(width: 8),
                                   Text(
                                     status,
                                     style: TextStyle(
                                       color: status == 'All Status'
-                                          ? Colors.grey[600]
+                                          ? AppColors.textSecondary
                                           : _getStatusColor(status),
                                       fontWeight: FontWeight.w500,
                                       fontSize: 14,
@@ -448,7 +444,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
                     // Action Buttons
                     Row(
@@ -456,7 +452,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () {
-                              // Clear temp filters
                               setState(() {
                                 _tempStartDate = null;
                                 _tempEndDate = null;
@@ -464,34 +459,35 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               });
                             },
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Color(0xFF6C5CE7),
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              foregroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               side: BorderSide(
-                                color: Color(0xFF6C5CE7).withOpacity(0.3),
+                                color: AppColors.primary.withOpacity(0.3),
                               ),
                             ),
-                            child: Text('Clear'),
+                            child: const Text('Clear'),
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              // Apply filters
                               setState(() {
                                 _startDate = _tempStartDate;
                                 _endDate = _tempEndDate;
                                 _selectedStatus = _tempSelectedStatus;
                               });
-                              _applyFilters();
                               Navigator.pop(context);
+                              _applyFilters();
 
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Filters applied successfully'),
+                                  content: const Text(
+                                    'Filters applied successfully',
+                                  ),
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
@@ -500,14 +496,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF6C5CE7),
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            child: Text('Apply'),
+                            child: const Text('Apply'),
                           ),
                         ),
                       ],
@@ -522,891 +518,199 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  void _clearFilters() {
-    setState(() {
-      _startDate = null;
-      _endDate = null;
-      _selectedStatus = 'All Status';
-    });
-    _applyFilters();
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Online':
-        return Color(0xFF00B894);
-      case 'Offline':
-        return Colors.grey;
-      case 'Recording':
-        return Color(0xFFFDCB6E);
-      case 'Absent':
-        return Color(0xFFFF7675);
-      default:
-        return Color(0xFF6C5CE7);
-    }
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'dd/mm/yyyy';
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  }
-
-  String _formatUploadDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date).inDays;
-
-    if (difference == 0) return 'Today';
-    if (difference == 1) return 'Yesterday';
-    if (difference < 7) return '$difference days ago';
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
   @override
   Widget build(BuildContext context) {
+    log("${widget.batchId}");
     return Scaffold(
+      backgroundColor: AppColors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Header with back button and title
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFF6C5CE7),
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    Text(
-                      'Attendance & Recordings',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF2D3436),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Course Info Card
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 20),
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0xFF6C5CE7).withOpacity(0.08),
-                      blurRadius: 15,
-                      offset: Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF6C5CE7).withOpacity(0.2),
-                            Color(0xFF8B7BF2).withOpacity(0.1),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        Icons.code_rounded,
-                        color: Color(0xFF6C5CE7),
-                        size: 28,
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Asp.net MVC with Angular',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF2D3436),
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Full Stack • ggf',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Legend Section
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildLegendItem('Online', Color(0xFF00B894)),
-                        _buildLegendItem('Offline', Colors.grey),
-                        _buildLegendItem('Recording', Color(0xFFFDCB6E)),
-                        _buildLegendItem('Absent', Color(0xFFFF7675)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Stats Grid
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: GridView.count(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 1.1,
-                  children: [
-                    _buildStatCard(
-                      'Total',
-                      _stats['total'].toString(),
-                      Color(0xFF6C5CE7),
-                      Icons.people_rounded,
-                    ),
-                    _buildStatCard(
-                      'Online',
-                      _stats['online'].toString(),
-                      Color(0xFF00B894),
-                      Icons.wifi_rounded,
-                    ),
-                    _buildStatCard(
-                      'Offline',
-                      _stats['offline'].toString(),
-                      Colors.grey,
-                      Icons.wifi_off_rounded,
-                    ),
-                    _buildStatCard(
-                      'Recording',
-                      _stats['recording'].toString(),
-                      Color(0xFFFDCB6E),
-                      Icons.videocam_rounded,
-                    ),
-                    _buildStatCard(
-                      'Absent',
-                      _stats['absent'].toString(),
-                      Color(0xFFFF7675),
-                      Icons.person_off_rounded,
-                    ),
-                    _buildStatCard(
-                      'Present',
-                      _stats['present'].toString(),
-                      Color(0xFF6C5CE7),
-                      Icons.check_circle_rounded,
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 20),
-
-              // Filter Button
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 54,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF6C5CE7), Color(0xFF8B7BF2)],
-                          ),
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color(0xFF6C5CE7).withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: _showFilterDialog,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.filter_list_rounded),
-                              SizedBox(width: 8),
-                              Text(
-                                'Filter Attendance',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (_startDate != null ||
-                        _endDate != null ||
-                        _selectedStatus != 'All Status')
-                      Padding(
-                        padding: EdgeInsets.only(left: 12),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0xFF6C5CE7).withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            onPressed: _clearFilters,
-                            icon: Icon(
-                              Icons.close_rounded,
-                              color: Color(0xFFFF7675),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-              // Active Filters Display
-              if (_startDate != null ||
-                  _endDate != null ||
-                  _selectedStatus != 'All Status')
-                Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Color(0xFF6C5CE7).withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Color(0xFF6C5CE7).withOpacity(0.1),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Active Filters:',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF6C5CE7),
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            if (_startDate != null)
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  'From: ${_formatDate(_startDate)}',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                              ),
-                            if (_endDate != null)
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  'To: ${_formatDate(_endDate)}',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                              ),
-                            if (_selectedStatus != 'All Status')
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getStatusColor(
-                                    _selectedStatus,
-                                  ).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: _getStatusColor(_selectedStatus),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      _selectedStatus,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: _getStatusColor(_selectedStatus),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-              SizedBox(height: 8),
-
-              // Results count
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Text(
-                      '${_filteredRecords.length} Attendance Records',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF6C5CE7),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 8),
-
-              // Attendance Records List
-              _filteredRecords.isEmpty
-                  ? Container(
-                      margin: EdgeInsets.symmetric(horizontal: 20),
-                      padding: EdgeInsets.all(30),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(32),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.05),
-                            blurRadius: 20,
-                            offset: Offset(0, 5),
-                          ),
-                        ],
-                      ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _errorMessage != null
+            ? _buildErrorWidget()
+            : RefreshIndicator(
+                onRefresh: () => _loadAttendanceData(page: 1),
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    // Header Section
+                    SliverToBoxAdapter(
                       child: Column(
                         children: [
-                          Container(
-                            padding: EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF6C5CE7).withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.search_off_rounded,
-                              color: Color(0xFF6C5CE7),
-                              size: 64,
-                            ),
-                          ),
-                          SizedBox(height: 24),
-                          Text(
-                            'No Records Found',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF2D3436),
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            'No attendance records match your current filters.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+                          _buildHeader(),
+                          _buildCourseInfoCard(),
+                          _buildLegendSection(),
+                          _buildStatsGrid(),
+                          const SizedBox(height: 20),
+                          _buildFilterButton(),
+                          if (_startDate != null ||
+                              _endDate != null ||
+                              _selectedStatus != 'All Status')
+                            _buildActiveFilters(),
+                          const SizedBox(height: 8),
+                          _buildResultsCount(),
+                          const SizedBox(height: 8),
+                          if (_message.isNotEmpty && _attendanceRecords.isEmpty)
+                            _buildNoRecordsMessage(),
                         ],
                       ),
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: _filteredRecords.length,
-                      itemBuilder: (context, index) {
-                        final record = _filteredRecords[index];
-                        return Container(
-                          margin: EdgeInsets.only(bottom: 12),
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _getStatusColor(
-                                  record.status,
-                                ).withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: _getStatusColor(
-                                    record.status,
-                                  ).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${record.date.day}',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                      color: _getStatusColor(record.status),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      record.studentName,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF2D3436),
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 8,
-                                          height: 8,
-                                          decoration: BoxDecoration(
-                                            color: _getStatusColor(
-                                              record.status,
-                                            ),
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        SizedBox(width: 6),
-                                        Text(
-                                          record.status,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: _getStatusColor(
-                                              record.status,
-                                            ),
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        SizedBox(width: 12),
-                                        Text(
-                                          '${record.date.day}/${record.date.month}/${record.date.year}',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Check-in: ${record.checkInTime} • ${record.duration}',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
                     ),
 
-              SizedBox(height: 24),
+                    // Attendance Records List
+                    if (_attendanceRecords.isNotEmpty)
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index < _attendanceRecords.length) {
+                              return _buildAttendanceItem(
+                                _attendanceRecords[index],
+                              );
+                            } else if (index == _attendanceRecords.length) {
+                              return _buildLoadingMoreIndicator();
+                            }
+                            return null;
+                          },
+                          childCount:
+                              _attendanceRecords.length +
+                              (_isLoadingMore ? 1 : 0),
+                        ),
+                      )
+                    else if (_attendanceRecords.isEmpty && !_isLoading)
+                      SliverToBoxAdapter(child: _buildEmptyState()),
 
-              // Recordings Section Header
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.video_library_rounded,
-                      color: Color(0xFFFDCB6E),
-                      size: 24,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Class Recordings',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF2D3436),
-                      ),
-                    ),
+                    // Bottom padding
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   ],
                 ),
               ),
-
-              SizedBox(height: 16),
-
-              // Recording Videos Grid
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.8,
-                  ),
-                  itemCount: _recordingVideos.length,
-                  itemBuilder: (context, index) {
-                    final video = _recordingVideos[index];
-                    return _buildRecordingCard(video);
-                  },
-                ),
-              ),
-
-              SizedBox(height: 20),
-            ],
-          ),
-        ),
       ),
     );
   }
 
-  Widget _buildRecordingCard(RecordingVideo video) {
-    return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Playing: ${video.title}'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0xFFFDCB6E).withOpacity(0.1),
-              blurRadius: 15,
-              offset: Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Thumbnail with play button
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  child: Container(
-                    height: 100,
-                    width: double.infinity,
-                    color: Colors.grey[300],
-                    child: Image.network(
-                      video.thumbnail,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Color(0xFFFDCB6E).withOpacity(0.1),
-                          child: Center(
-                            child: Icon(
-                              Icons.video_library_rounded,
-                              size: 30,
-                              color: Color(0xFFFDCB6E).withOpacity(0.3),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.3),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      video.duration,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFDCB6E),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.play_arrow_rounded,
-                      color: Colors.white,
-                      size: 12,
-                    ),
-                  ),
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-            Padding(
-              padding: EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    video.title,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF2D3436),
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.person_rounded,
-                        size: 10,
-                        color: Colors.grey[500],
-                      ),
-                      SizedBox(width: 2),
-                      Expanded(
-                        child: Text(
-                          video.uploadedBy,
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.visibility_rounded,
-                            size: 8,
-                            color: Colors.grey[400],
-                          ),
-                          SizedBox(width: 2),
-                          Text(
-                            '${video.views} views',
-                            style: TextStyle(
-                              fontSize: 8,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time_rounded,
-                            size: 8,
-                            color: Colors.grey[400],
-                          ),
-                          SizedBox(width: 2),
-                          Text(
-                            _formatUploadDate(video.uploadedDate),
-                            style: TextStyle(
-                              fontSize: 8,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+            child: IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: AppColors.primary,
+                size: 20,
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              'Attendance & Recordings',
+              style: AppTextStyles.heading2.copyWith(fontSize: 22),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildStatCard(
-    String label,
-    String value,
-    Color color,
-    IconData icon,
-  ) {
+  Widget _buildCourseInfoCard() {
     return Container(
-      padding: EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
-          Icon(icon, color: color, size: 24),
-          SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: color,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withOpacity(0.2),
+                  AppColors.primaryLight.withOpacity(0.1),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(Icons.code_rounded, color: AppColors.primary, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.batchName ?? 'Course Name',
+                  style: AppTextStyles.activityTitle,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Student ID: $_studentId',
+                  style: AppTextStyles.activitySubtitle,
+                ),
+                if (_batchId.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Batch: ${_batchId.substring(0, 8)}...',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildLegendItem('Online', AppColors.statsGreen),
+          _buildLegendItem('Offline', Colors.grey),
+          _buildLegendItem('Recording', AppColors.statsOrange),
+          _buildLegendItem('Absent', const Color(0xFFFF7675)),
         ],
       ),
     );
@@ -1420,50 +724,546 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           height: 12,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        SizedBox(width: 4),
+        const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Color(0xFF2D3436),
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
           ),
         ),
       ],
     );
   }
-}
 
-class AttendanceRecord {
-  final DateTime date;
-  final String status;
-  final String studentName;
-  final String checkInTime;
-  final String duration;
+  Widget _buildStatsGrid() {
+    int present = _summary.totalDays - _summary.absent;
 
-  AttendanceRecord({
-    required this.date,
-    required this.status,
-    required this.studentName,
-    required this.checkInTime,
-    required this.duration,
-  });
-}
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 3,
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
+        childAspectRatio: 1.1,
+        children: [
+          _buildStatCard(
+            'Total',
+            _summary.totalDays.toString(),
+            AppColors.primary,
+            Icons.people_rounded,
+          ),
+          _buildStatCard(
+            'Online',
+            _summary.online.toString(),
+            AppColors.statsGreen,
+            Icons.wifi_rounded,
+          ),
+          _buildStatCard(
+            'Offline',
+            _summary.offline.toString(),
+            Colors.grey,
+            Icons.wifi_off_rounded,
+          ),
+          _buildStatCard(
+            'Recording',
+            _summary.recording.toString(),
+            AppColors.statsOrange,
+            Icons.videocam_rounded,
+          ),
+          _buildStatCard(
+            'Absent',
+            _summary.absent.toString(),
+            const Color(0xFFFF7675),
+            Icons.person_off_rounded,
+          ),
+          _buildStatCard(
+            'Present',
+            present.toString(),
+            AppColors.primary,
+            Icons.check_circle_rounded,
+          ),
+        ],
+      ),
+    );
+  }
 
-class RecordingVideo {
-  final String title;
-  final String thumbnail;
-  final String uploadedBy;
-  final DateTime uploadedDate;
-  final String duration;
-  final int views;
+  Widget _buildStatCard(
+    String label,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(label, style: AppTextStyles.caption),
+        ],
+      ),
+    );
+  }
 
-  RecordingVideo({
-    required this.title,
-    required this.thumbnail,
-    required this.uploadedBy,
-    required this.uploadedDate,
-    required this.duration,
-    required this.views,
-  });
+  Widget _buildFilterButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 54,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: _showFilterDialog,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: AppColors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.filter_list_rounded),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Filter Attendance',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (_startDate != null ||
+              _endDate != null ||
+              _selectedStatus != 'All Status')
+            Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  onPressed: _clearFilters,
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Color(0xFFFF7675),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveFilters() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Active Filters:',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (_startDate != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'From: ${_formatDate(_startDate)}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                if (_endDate != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'To: ${_formatDate(_endDate)}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                if (_selectedStatus != 'All Status')
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(_selectedStatus).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(_selectedStatus),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _selectedStatus,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _getStatusColor(_selectedStatus),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultsCount() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '$_totalRecords Attendance Records',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
+          if (_totalPages > 1)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Page $_currentPage of $_totalPages',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoRecordsMessage() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.orange),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _message,
+                style: TextStyle(
+                  color: Colors.orange[800],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttendanceItem(AttendanceRecord record) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _getStatusColor(record.status).withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: _getStatusColor(record.status).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                '${record.date.day}',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: _getStatusColor(record.status),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  record.status,
+                  style: AppTextStyles.activityTitle.copyWith(
+                    color: _getStatusColor(record.status),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time_rounded,
+                      size: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${record.timestamp.hour.toString().padLeft(2, '0')}:${record.timestamp.minute.toString().padLeft(2, '0')}',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '${record.date.day}/${record.date.month}/${record.date.year}',
+                        style: AppTextStyles.caption,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(record.status),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Reason: ${record.reason}',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.calendar_today_rounded,
+              color: AppColors.primary,
+              size: 48,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No Attendance Records',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _message.isNotEmpty
+                ? _message
+                : 'No attendance records found for this batch.',
+            style: AppTextStyles.bodyText,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingMoreIndicator() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load attendance',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage ?? 'Unknown error occurred',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _loadAttendanceData(page: 1),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try Again'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

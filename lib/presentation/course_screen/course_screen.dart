@@ -1,628 +1,494 @@
-import 'package:flutter/material.dart';
+// screens/course_screen.dart
+import 'dart:developer';
 
-class CourseDetailsScreen extends StatelessWidget {
-  const CourseDetailsScreen({super.key});
+import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
+
+class CourseScreen extends StatefulWidget {
+  const CourseScreen({
+    Key? key,
+    required this.institute,
+    required this.courseName,
+    required this.batchName,
+    required this.enrollmentId,
+    required this.startDate,
+    required this.schedule,
+    required this.attendanceMode,
+    required this.progress,
+    required this.attendance,
+    required this.paymentCompleted,
+    required this.amountPaid,
+    required this.pendingAmount,
+    required this.totalFee,
+    required this.discount,
+  }) : super(key: key);
+
+  final String institute;
+  final String courseName;
+  final String batchName;
+  final String enrollmentId;
+  final String startDate;
+  final String schedule;
+  final String attendanceMode;
+  final int progress;
+  final String attendance;
+  final int paymentCompleted;
+  final int amountPaid;
+  final int pendingAmount;
+  final int totalFee;
+  final int discount;
+
+  @override
+  State<CourseScreen> createState() => _CourseScreenState();
+}
+
+class _CourseScreenState extends State<CourseScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isSmall = size.width < 360;
-
+    log({widget.paymentCompleted}.toString());
     return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
-        bottom: false,
         child: Column(
           children: [
-            // App bar with creative gradient & profile
-            Container(
-              padding: EdgeInsets.fromLTRB(24, 16, 24, 28),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF6C5CE7),
-                    Color(0xFF8B7BF2),
-                    Color(0xFFA29BFE),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(36),
-                  bottomRight: Radius.circular(36),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0xFF6C5CE7).withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: BoxConstraints(),
-                      ),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.notifications_none_rounded,
-                            color: Colors.white,
-                            size: 26,
-                          ),
-                          SizedBox(width: 16),
-                          Container(
-                            padding: EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: CircleAvatar(
-                              radius: 16,
-                              backgroundImage: NetworkImage(
-                                'https://i.pravatar.cc/150?img=7',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'My Courses',
-                    style: TextStyle(
-                      fontSize: isSmall ? 28 : 34,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      letterSpacing: -0.5,
-                      height: 1.1,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(40),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.check_circle_rounded,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        SizedBox(width: 6),
-                        Text(
-                          'Full Payment Completed',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Scrollable content
+            _buildEnhancedHeader(),
             Expanded(
               child: SingleChildScrollView(
-                physics: BouncingScrollPhysics(),
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    // Course card with creative glassmorphism
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(32),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.08),
-                            blurRadius: 25,
-                            offset: Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Color(0xFF6C5CE7).withOpacity(0.1),
-                                      Color(0xFFA29BFE).withOpacity(0.2),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Icon(
-                                  Icons.code_rounded,
-                                  color: Color(0xFF6C5CE7),
-                                  size: 30,
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Asp.net MVC with Angular',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF2D3436),
-                                      ),
-                                    ),
-                                    Text(
-                                      'Full Stack • ggf',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 16),
-                          // Enrollment chip
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Color(0xFFF1F3FA),
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: Text(
-                              'Enrollment #ENR2026033570',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF4A4E69),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-
-                    // Stats cards in a row (progress, attendance, payment)
-                    Row(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Column(
                       children: [
-                        _buildStatCard(
-                          icon: Icons.trending_up_rounded,
-                          label: 'Progress',
-                          value: '0%',
-                          color: Color(0xFF6C5CE7),
-                          bgColor: Color(0xFF6C5CE7).withOpacity(0.1),
-                        ),
-                        SizedBox(width: 12),
-                        _buildStatCard(
-                          icon: Icons.event_available_rounded,
-                          label: 'Attendance',
-                          value: '0%',
-                          color: Color(0xFF00B894),
-                          bgColor: Color(0xFF00B894).withOpacity(0.1),
-                        ),
-                        SizedBox(width: 12),
-                        _buildStatCard(
-                          icon: Icons.payment_rounded,
-                          label: 'Payment',
-                          value: '100%',
-                          color: Color(0xFFFDCB6E),
-                          bgColor: Color(0xFFFDCB6E).withOpacity(0.1),
-                          suffix: 'Completed',
-                        ),
+                        // Hero Institute Card
+                        _buildEnhancedInstituteCard(),
+                        const SizedBox(height: 20),
+
+                        // Modern Stats Grid
+                        _buildEnhancedStatsGrid(),
+                        const SizedBox(height: 20),
+
+                        // Course Info Card with Timeline
+                        _buildEnhancedCourseInfoCard(),
+                        const SizedBox(height: 20),
+
+                        // Premium Payment Card
+                        _buildEnhancedPaymentCard(),
+                        const SizedBox(height: 20),
+
+                        // Action Buttons
+                        _buildActionButtons(),
+                        const SizedBox(height: 16),
                       ],
                     ),
-                    SizedBox(height: 24),
-
-                    // Overall progress with modern indicator
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(32),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.05),
-                            blurRadius: 20,
-                            offset: Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Overall Course Progress',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2D3436),
-                                ),
-                              ),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Color(0xFF6C5CE7).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(40),
-                                ),
-                                child: Text(
-                                  '0%',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF6C5CE7),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 12),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: LinearProgressIndicator(
-                              value: 0.0,
-                              minHeight: 12,
-                              backgroundColor: Color(0xFFE9ECF5),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF6C5CE7),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            'Keep going! You\'re 0% through this course.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-
-                    // Course information grid
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(32),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0xFF6C5CE7).withOpacity(0.05),
-                            blurRadius: 20,
-                            offset: Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Course Information',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF2D3436),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          GridView.count(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 20,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: 1.6,
-                            children: [
-                              _infoTile(
-                                icon: Icons.calendar_month_rounded,
-                                label: 'Start Date',
-                                value: 'Mar 12, 2026',
-                                color: Color(0xFF6C5CE7),
-                              ),
-                              _infoTile(
-                                icon: Icons.schedule_rounded,
-                                label: 'Schedule',
-                                value: '05:00:00',
-                                color: Color(0xFF00B894),
-                              ),
-                              _infoTile(
-                                icon: Icons.devices_rounded,
-                                label: 'Mode',
-                                value: 'Hybrid',
-                                color: Color(0xFFFDCB6E),
-                              ),
-                              _infoTile(
-                                icon: Icons.group_rounded,
-                                label: 'Batch',
-                                value: 'ggf',
-                                color: Color(0xFFFF7675),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-
-                    // Payment details card
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFF6F9FC), Colors.white],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(32),
-                        border: Border.all(
-                          color: Color(0xFF6C5CE7).withOpacity(0.1),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF6C5CE7).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: Icon(
-                              Icons.receipt_rounded,
-                              color: Color(0xFF6C5CE7),
-                              size: 26,
-                            ),
-                          ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Payment Details',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                    color: Color(0xFF2D3436),
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Amount Paid',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                    ),
-                                    Text(
-                                      '₹27,000',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF2D3436),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 4),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Total Course Fee',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                    ),
-                                    Text(
-                                      '₹27,000',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF00B894),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 30),
-                  ],
+                  ),
                 ),
               ),
             ),
-            // Bottom continue button
-            Container(
-              padding: EdgeInsets.all(20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEnhancedHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF667EEA), Color(0xFF764BA2), Color(0xFF6B8DD6)],
+          stops: [0.0, 0.5, 1.0],
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purple.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
                 color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(36),
-                  topRight: Radius.circular(36),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                top: false,
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF6C5CE7),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    child: Text(
-                      'Continue Learning',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
+                size: 18,
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Text(
+              'Course Dashboard',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildStatCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-    required Color bgColor,
-    String? suffix,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 12,
-              offset: Offset(0, 4),
+  Widget _buildEnhancedInstituteCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
+            spreadRadius: 2,
+          ),
+        ],
+        border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+              ),
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.purple.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-              child: Icon(icon, color: color, size: 22),
+            child: const Icon(
+              Icons.school_rounded,
+              color: Colors.white,
+              size: 24,
             ),
-            SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.institute,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF2D3748),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.courseName,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple.shade50, Colors.blue.shade50],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.purple.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              'ID: ${widget.enrollmentId.substring(0, 6)}',
+              style: const TextStyle(
                 fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
+                color: Color(0xFF667EEA),
+                fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(height: 2),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: color,
-              ),
-            ),
-            if (suffix != null)
-              Text(
-                suffix,
-                style: TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[500],
-                ),
-              ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _infoTile({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+  Widget _buildEnhancedStatsGrid() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildEnhancedStatItem(
+              'Progress',
+              '${widget.progress}%',
+              Icons.trending_up_rounded,
+              Colors.blue,
+              widget.progress / 100,
+            ),
+          ),
+          Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.2)),
+          Expanded(
+            child: _buildEnhancedStatItem(
+              'Attendance',
+              '${widget.attendance}%',
+              Icons.calendar_month_rounded,
+              Colors.green,
+              double.parse(widget.attendance) / 100,
+            ),
+          ),
+          Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.2)),
+          Expanded(
+            child: _buildEnhancedStatItem(
+              'Payment',
+              '${widget.paymentCompleted}%',
+              Icons.payments_rounded,
+              Colors.purple,
+              widget.paymentCompleted / 100,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnhancedStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+    double progress,
+  ) {
+    return Column(
       children: [
         Container(
-          padding: EdgeInsets.all(8),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(14),
+            shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: color, size: 18),
+          child: Icon(icon, color: color, size: 20),
         ),
-        SizedBox(width: 8),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF2D3748),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: color.withOpacity(0.1),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 4,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEnhancedCourseInfoCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                color: Color(0xFF667EEA),
+                size: 20,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Course Information',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2D3748),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                _buildInfoRow(
+                  Icons.calendar_month_rounded,
+                  'Start Date',
+                  _formatDate(widget.startDate),
+                  Colors.blue,
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(height: 1),
+                ),
+                _buildInfoRow(
+                  Icons.access_time_rounded,
+                  'Schedule',
+                  _formatTimeDetailed(widget.schedule),
+                  Colors.orange,
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(height: 1),
+                ),
+                _buildInfoRow(
+                  _getModeIcon(widget.attendanceMode),
+                  'Mode',
+                  widget.attendanceMode,
+                  _getModeColor(widget.attendanceMode),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(height: 1),
+                ),
+                _buildInfoRow(
+                  Icons.group_rounded,
+                  'Batch',
+                  widget.batchName,
+                  Colors.purple,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value, Color color) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 16, color: color),
+        ),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
+              const SizedBox(height: 2),
               Text(
                 value,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D3436),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2D3748),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -632,5 +498,339 @@ class CourseDetailsScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Widget _buildEnhancedPaymentCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF667EEA), Color(0xFF6B8DD6), Color(0xFF8E6BEA)],
+        ),
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purple.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Payment Overview',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  '${widget.discount}% Discount',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildPaymentDetail(
+                  'Total Fee',
+                  '₹${_formatNumber(widget.totalFee)}',
+                  Icons.currency_rupee_rounded,
+                ),
+              ),
+              Container(
+                height: 30,
+                width: 1,
+                color: Colors.white.withOpacity(0.3),
+              ),
+              Expanded(
+                child: _buildPaymentDetail(
+                  'Paid',
+                  '₹${_formatNumber(widget.amountPaid)}',
+                  Icons.check_circle_rounded,
+                ),
+              ),
+              Container(
+                height: 30,
+                width: 1,
+                color: Colors.white.withOpacity(0.3),
+              ),
+              Expanded(
+                child: _buildPaymentDetail(
+                  'Pending',
+                  '₹${_formatNumber(widget.pendingAmount)}',
+                  Icons.pending_actions_rounded,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: widget.paymentCompleted / 100,
+              backgroundColor: Colors.white.withOpacity(0.2),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              minHeight: 8,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Payment Progress',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+              Text(
+                '${widget.paymentCompleted}% Completed',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentDetail(String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: Colors.white.withOpacity(0.9), size: 20),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.8)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimelineStep(String label, bool isActive) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isActive ? Colors.green : Colors.grey.shade300,
+        border: Border.all(
+          color: isActive ? Colors.green.shade200 : Colors.grey.shade400,
+          width: 2,
+        ),
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: Colors.green.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ]
+            : null,
+      ),
+      child: Center(
+        child: Icon(
+          isActive ? Icons.check_rounded : Icons.circle_rounded,
+          color: isActive ? Colors.white : Colors.grey.shade600,
+          size: isActive ? 16 : 8,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            label: 'Continue',
+            icon: Icons.play_circle_fill_rounded,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+            ),
+            onTap: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BottomNavScreen(initialIndex: 3),
+                ),
+                (route) => false,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required IconData icon,
+    required Gradient gradient,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.colors.first.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(15),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Helper Methods
+  String _formatNumber(int number) {
+    return number.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+  }
+
+  String _formatTimeDetailed(String time) {
+    try {
+      final parts = time.replaceAll('.', ':').split(':');
+      if (parts.length >= 2) {
+        final hour = int.parse(parts[0]);
+        final minute = parts[1];
+        final period = hour >= 12 ? 'PM' : 'AM';
+        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+        return '$displayHour:$minute $period';
+      }
+      return time;
+    } catch (e) {
+      return time;
+    }
+  }
+
+  IconData _getModeIcon(String mode) {
+    switch (mode.toLowerCase()) {
+      case 'online':
+        return Icons.computer_rounded;
+      case 'offline':
+        return Icons.location_on_rounded;
+      case 'hybrid':
+        return Icons.sync_alt_rounded;
+      case 'recording':
+        return Icons.video_library_rounded;
+      default:
+        return Icons.help_outline_rounded;
+    }
+  }
+
+  Color _getModeColor(String mode) {
+    switch (mode.toLowerCase()) {
+      case 'online':
+        return Colors.blue;
+      case 'offline':
+        return Colors.green;
+      case 'hybrid':
+        return Colors.orange;
+      case 'recording':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _formatDate(String date) {
+    try {
+      // Try to parse the date
+      if (date.contains(RegExp(r'[A-Za-z]{3}\s\d{1,2},\s\d{4}'))) {
+        // Handle format like "Mar 15, 2024"
+        return date;
+      }
+
+      // Try parsing as DateTime
+      final DateTime parsedDate = DateTime.parse(date);
+      final List<String> months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return '${months[parsedDate.month - 1]} ${parsedDate.day}, ${parsedDate.year}';
+    } catch (e) {
+      // If parsing fails, return the original date string
+      return date;
+    }
   }
 }

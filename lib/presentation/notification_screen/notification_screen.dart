@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/app_text_styles.dart';
 
 void main() {
   runApp(const NotificationApp());
@@ -14,11 +16,11 @@ class NotificationApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: 'Poppins',
-        primaryColor: const Color(0xFF6C5CE7),
+        primaryColor: AppColors.primary,
         colorScheme: const ColorScheme.light(
-          primary: Color(0xFF6C5CE7),
-          secondary: Color(0xFF00B894),
-          surface: Colors.white,
+          primary: AppColors.primary,
+          secondary: AppColors.statsGreen,
+          surface: AppColors.white,
         ),
         scaffoldBackgroundColor: const Color(0xFFF8F9FF),
         useMaterial3: true,
@@ -47,7 +49,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       type: NotificationType.classes,
       isRead: false,
       icon: Icons.video_library_rounded,
-      color: Color(0xFF6C5CE7),
+      color: AppColors.primary,
       actionUrl: '/videos',
     ),
     NotificationItem(
@@ -59,7 +61,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       type: NotificationType.payments,
       isRead: false,
       icon: Icons.payment_rounded,
-      color: Color(0xFF00B894),
+      color: AppColors.statsGreen,
       actionUrl: '/payments',
     ),
     NotificationItem(
@@ -70,7 +72,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       type: NotificationType.classes,
       isRead: true,
       icon: Icons.video_camera_front_rounded,
-      color: Color(0xFFFF7675),
+      color: const Color(0xFFFF7675),
       actionUrl: '/live-class',
     ),
     NotificationItem(
@@ -82,7 +84,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       type: NotificationType.classes,
       isRead: true,
       icon: Icons.calendar_month_outlined,
-      color: Color(0xFF6C5CE7),
+      color: AppColors.primary,
       actionUrl: '/attendance',
     ),
     NotificationItem(
@@ -93,7 +95,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       type: NotificationType.announcements,
       isRead: false,
       icon: Icons.campaign_rounded,
-      color: Color(0xFFFDCB6E),
+      color: AppColors.statsOrange,
       actionUrl: '/announcements',
     ),
     NotificationItem(
@@ -104,7 +106,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       type: NotificationType.classes,
       isRead: true,
       icon: Icons.menu_book_rounded,
-      color: Color(0xFF6C5CE7),
+      color: AppColors.primary,
       actionUrl: '/videos',
     ),
     NotificationItem(
@@ -115,7 +117,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       type: NotificationType.payments,
       isRead: false,
       icon: Icons.currency_rupee_rounded,
-      color: Color(0xFF00B894),
+      color: AppColors.statsGreen,
       actionUrl: '/payments',
     ),
     NotificationItem(
@@ -126,7 +128,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       type: NotificationType.announcements,
       isRead: true,
       icon: Icons.work_rounded,
-      color: Color(0xFFFDCB6E),
+      color: AppColors.statsOrange,
       actionUrl: '/placement',
     ),
     NotificationItem(
@@ -137,7 +139,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       type: NotificationType.classes,
       isRead: true,
       icon: Icons.assignment_rounded,
-      color: Color(0xFFFF7675),
+      color: const Color(0xFFFF7675),
       actionUrl: '/assignments',
     ),
     NotificationItem(
@@ -148,7 +150,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       type: NotificationType.announcements,
       isRead: true,
       icon: Icons.person_rounded,
-      color: Color(0xFF6C5CE7),
+      color: AppColors.primary,
       actionUrl: '/profile',
     ),
   ];
@@ -190,9 +192,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C5CE7),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: const Text('Clear'),
           ),
         ],
@@ -210,12 +210,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
             Container(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: const [
-                    Color(0xFF6C5CE7),
-                    Color(0xFF8B7BF2),
-                    Color(0xFFA29BFE),
-                  ],
+                gradient: const LinearGradient(
+                  colors: AppColors.splashGradient,
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -225,7 +221,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                    color: AppColors.primary.withOpacity(0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -238,17 +234,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: AppColors.whiteWithOpacity20,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                          ),
+                          border: Border.all(color: AppColors.borderLight),
                         ),
                         child: IconButton(
                           onPressed: () => Navigator.pop(context),
                           icon: const Icon(
                             Icons.arrow_back_ios_new_rounded,
-                            color: Colors.white,
+                            color: AppColors.white,
                             size: 20,
                           ),
                         ),
@@ -259,7 +253,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: AppColors.white,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -272,11 +266,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: AppColors.whiteWithOpacity20,
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                        ),
+                        border: Border.all(color: AppColors.borderLight),
                       ),
                       child: Row(
                         children: [
@@ -289,7 +281,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           Text(
                             '$_unreadCount New',
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -313,13 +305,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                              color: AppColors.primary.withOpacity(0.1),
                               shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.notifications_off_rounded,
-                              size: 64,
-                              color: Color(0xFF6C5CE7),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -328,13 +315,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2D3436),
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
+                          Text(
                             'You\'re all caught up!',
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                            style: AppTextStyles.bodyText,
                           ),
                         ],
                       ),
@@ -368,7 +355,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ),
         child: const Icon(
           Icons.delete_outline_rounded,
-          color: Colors.white,
+          color: AppColors.white,
           size: 30,
         ),
       ),
@@ -382,7 +369,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             behavior: SnackBarBehavior.floating,
             action: SnackBarAction(
               label: 'Undo',
-              textColor: const Color(0xFF6C5CE7),
+              textColor: AppColors.primary,
               onPressed: () {
                 setState(() {
                   _allNotifications.insert(0, notification);
@@ -403,7 +390,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
@@ -458,7 +445,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               fontWeight: notification.isRead
                                   ? FontWeight.w600
                                   : FontWeight.w700,
-                              color: const Color(0xFF2D3436),
+                              color: AppColors.textPrimary,
                             ),
                           ),
                         ),
@@ -476,7 +463,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     const SizedBox(height: 4),
                     Text(
                       notification.message,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      style: AppTextStyles.activitySubtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -486,16 +473,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         Icon(
                           Icons.access_time_rounded,
                           size: 12,
-                          color: Colors.grey[400],
+                          color: AppColors.textHint,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          notification.time,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[500],
-                          ),
-                        ),
+                        Text(notification.time, style: AppTextStyles.caption),
                         const Spacer(),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -535,7 +516,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.6,
         decoration: const BoxDecoration(
-          color: Colors.white,
+          color: AppColors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
@@ -562,7 +543,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.5),
+                        color: AppColors.whiteWithOpacity50,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -571,12 +552,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.whiteWithOpacity20,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       notification.icon,
-                      color: Colors.white,
+                      color: AppColors.white,
                       size: 40,
                     ),
                   ),
@@ -586,15 +567,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     notification.time,
-                    style: TextStyle(
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.whiteWithOpacity80,
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.8),
                     ),
                   ),
                 ],
@@ -611,7 +592,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF2D3436),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -619,7 +600,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       notification.message,
                       style: TextStyle(
                         fontSize: 15,
-                        color: Colors.grey[700],
+                        color: AppColors.textSecondary,
                         height: 1.5,
                       ),
                     ),
@@ -627,7 +608,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.grey[50],
+                        color: AppColors.scaffoldBackground,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
@@ -641,9 +622,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           Expanded(
                             child: Text(
                               'Tap to view related content',
-                              style: TextStyle(
+                              style: AppTextStyles.caption.copyWith(
                                 fontSize: 13,
-                                color: Colors.grey[600],
                               ),
                             ),
                           ),
@@ -689,7 +669,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: notification.color,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),

@@ -1,464 +1,648 @@
-// import 'package:avatar_glow/avatar_glow.dart';
-// import 'package:flutter/material.dart';
-// import 'package:intl/intl.dart';
-// import 'package:luminar_std/core/theme/app_text_styles.dart';
-
-// class HomeScreen extends StatefulWidget {
-//   const HomeScreen({super.key});
-
-//   @override
-//   State<HomeScreen> createState() => _HomeScreenState();
-// }
-
-// class _HomeScreenState extends State<HomeScreen> {
-//   List<Map<String, dynamic>> activityList = [
-//     {
-//       "title": "Profile and User Information Updated",
-//       "description": "Updated fields: user.whatsapp_number",
-//       "time": "2026-03-02T08:00:15.726945Z",
-//       "performed_by": "MBtest",
-//     },
-//     {
-//       "title": "New Course Enrollment",
-//       "description": "User enrolled in Flutter Advanced Course",
-//       "time": "2026-03-01T10:22:30.123456Z",
-//       "performed_by": "AdminUser",
-//     },
-//     {
-//       "title": "Payment Successful",
-//       "description": "Course fee payment of ₹15,000 completed",
-//       "time": "2026-02-28T14:45:50.654321Z",
-//       "performed_by": "System",
-//     },
-//   ];
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: SafeArea(
-//         child: SingleChildScrollView(
-//           child: Padding(
-//             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 buildHeader(),
-//                 const SizedBox(height: 20),
-//                 buildInsuranceCard(),
-//                 const SizedBox(height: 20),
-//                 Text(
-//                   "Welcome Back",
-//                   style: AppTextStyles.bodyLarge.copyWith(
-//                     fontSize: 17,
-//                     fontWeight: FontWeight.bold,
-//                   ),
-//                 ),
-//                 // buildQuickActionExpansionTile(
-//                 //         // icon: Icons.history,
-//                 //         title: activityList[index]["title"] ?? "",
-//                 //         sub: activityList[index]["description"] ?? "",
-//                 //         price: activityList[index]["description"] ?? "",
-//                 //         bgColor: Colors.orange.withOpacity(0.1),
-//                 //         context: context, // Pass context for theming
-//                 //       ),
-//                 ListView.builder(
-//                   shrinkWrap: true,
-//                   physics: NeverScrollableScrollPhysics(),
-//                   itemCount: activityList.length,
-//                   itemBuilder: (context, index) =>
-//                       buildQuickActionExpansionTile(
-//                         icon: Icons.assignment_outlined,
-//                         title: activityList[index]["title"] ?? "",
-//                         sub: activityList[index]["description"] ?? "",
-//                         time: activityList[index]["time"] ?? "",
-//                         icon1: Icons.keyboard_arrow_down_rounded,
-//                         bgColor: Colors.orange.withOpacity(0.1),
-//                         context: context, // Pass context for theming
-//                       ),
-//                 ),
-
-//                 Column(
-//                   children: [
-//                     /// HEADER
-//                     const SizedBox(height: 20),
-
-//                     /// GRID CARDS
-//                     GridView.count(
-//                       shrinkWrap: true,
-//                       physics: const NeverScrollableScrollPhysics(),
-//                       crossAxisCount: 2,
-//                       mainAxisSpacing: 16,
-//                       crossAxisSpacing: 16,
-//                       childAspectRatio:
-//                           MediaQuery.of(context).size.width / 2 / 100,
-//                       children: [
-//                         statCard(
-//                           "Health Score",
-//                           "87",
-
-//                           const Color(0xffE6DDF4),
-//                           icon: Icons.lock,
-//                         ),
-
-//                         statCard(
-//                           "Sleep",
-//                           "8:00 h",
-
-//                           const Color(0xffDFF4F4),
-//                           icon: Icons.nightlight,
-//                         ),
-
-//                         statCard(
-//                           "Lungs Capacity",
-//                           "4.76 L",
-
-//                           const Color(0xffE1F4DF),
-//                           icon: Icons.air,
-//                         ),
-
-//                         statCard(
-//                           "Heart Rate",
-//                           "87 bpm",
-
-//                           const Color(0xffF6E0EA),
-//                           icon: Icons.favorite,
-//                         ),
-//                       ],
-//                     ),
-//                   ],
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget buildHeader() {
-//     return Row(
-//       children: [
-//         const CircleAvatar(
-//           radius: 25,
-//           backgroundColor: Color(0xFF7B51FF),
-//           child: CircleAvatar(
-//             radius: 23,
-//             backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a'),
-//           ),
-//         ),
-//         const SizedBox(width: 12),
-//         const Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text(
-//               "Hello 👋 ANAND!",
-//               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//             ),
-//             Text(
-//               "Welcome Back",
-//               style: TextStyle(color: Colors.grey, fontSize: 14),
-//             ),
-//           ],
-//         ),
-//         const Spacer(),
-//         Container(
-//           padding: const EdgeInsets.all(8),
-//           decoration: BoxDecoration(shape: BoxShape.circle),
-//           child: AvatarGlow(
-//             glowColor: Colors.purple,
-//             child: CircleAvatar(
-//               backgroundColor: Colors.transparent,
-//               child: Icon(
-//                 Icons.notifications_active_outlined,
-//                 color: Colors.purple,
-//                 size: 20,
-//               ),
-//             ),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget buildInsuranceCard() {
-//     return Container(
-//       width: double.infinity,
-//       padding: const EdgeInsets.all(20),
-//       decoration: BoxDecoration(
-//         gradient: const LinearGradient(
-//           colors: [Color(0xFF8E66FF), Color(0xFF6B38FB)],
-//           begin: Alignment.topLeft,
-//           end: Alignment.bottomRight,
-//         ),
-//         borderRadius: BorderRadius.circular(24),
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               const Row(
-//                 children: [
-//                   Icon(Icons.verified_user, color: Colors.white, size: 30),
-//                   SizedBox(width: 10),
-//                   Column(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Text(
-//                         "Course",
-//                         style: TextStyle(
-//                           color: Colors.white,
-//                           fontSize: 18,
-//                           fontWeight: FontWeight.bold,
-//                         ),
-//                       ),
-//                       Text(
-//                         "Flutter Mobile Apllication Development",
-//                         style: TextStyle(color: Colors.white70),
-//                       ),
-//                     ],
-//                   ),
-//                 ],
-//               ),
-//               Container(
-//                 padding: const EdgeInsets.all(4),
-//                 decoration: BoxDecoration(
-//                   color: Colors.white.withOpacity(0.2),
-//                   shape: BoxShape.circle,
-//                 ),
-//                 child: const Icon(
-//                   Icons.north_east,
-//                   color: Colors.white,
-//                   size: 16,
-//                 ),
-//               ),
-//             ],
-//           ),
-//           const SizedBox(height: 10),
-//           const Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Text(
-//                     "Courses",
-//                     style: TextStyle(color: Colors.white70, fontSize: 12),
-//                   ),
-//                   Text(
-//                     "1",
-//                     style: TextStyle(
-//                       color: Colors.white,
-//                       fontWeight: FontWeight.bold,
-//                       fontSize: 25,
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//               Column(
-//                 crossAxisAlignment: CrossAxisAlignment.end,
-//                 children: [
-//                   Text(
-//                     "Pending Fees",
-//                     style: TextStyle(color: Colors.white70, fontSize: 12),
-//                   ),
-//                   Text(
-//                     "₹59000",
-//                     style: TextStyle(
-//                       color: Colors.white,
-//                       fontWeight: FontWeight.bold,
-//                       fontSize: 25,
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ],
-//           ),
-
-//           Text(
-//             "Progress",
-//             style: TextStyle(color: Colors.white70, fontSize: 12),
-//           ),
-//           SizedBox(height: 10),
-//           Column(
-//             crossAxisAlignment: CrossAxisAlignment.end,
-//             children: [
-//               SizedBox(
-//                 width: double.infinity,
-//                 child: LinearProgressIndicator(
-//                   minHeight: 6,
-//                   value: 0.7,
-//                   backgroundColor: Colors.white24,
-//                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-//                 ),
-//               ),
-//               SizedBox(height: 10),
-//               ElevatedButton(
-//                 onPressed: () {},
-//                 style: ElevatedButton.styleFrom(
-//                   backgroundColor: const Color.fromARGB(255, 248, 118, 31),
-//                   foregroundColor: Colors.white,
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(4),
-//                   ),
-//                 ),
-//                 child: const Text("Continue Learning"),
-//               ),
-//             ],
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget buildQuickActionExpansionTile({
-//     required IconData icon,
-//     required IconData icon1,
-//     required String title,
-//     required String sub,
-//     required String time,
-//     required Color bgColor,
-//     required BuildContext context, // Passed in from the build method
-//   }) {
-//     return Container(
-//       decoration: BoxDecoration(
-//         color: Colors.grey[50],
-//         borderRadius: BorderRadius.circular(20),
-//       ),
-//       child: Theme(
-//         // This removes the default divider lines that ExpansionTile adds
-//         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-//         child: ExpansionTile(
-//           tilePadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-//           childrenPadding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-//           leading: Container(
-//             padding: const EdgeInsets.all(10),
-//             decoration: BoxDecoration(
-//               color: bgColor,
-//               borderRadius: BorderRadius.circular(12),
-//             ),
-//             child: Icon(icon, color: Colors.orange[800]),
-//           ),
-//           title: Text(
-//             title,
-//             maxLines: 2,
-//             overflow: TextOverflow.ellipsis,
-//             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-//           ),
-//           subtitle: Row(
-//             children: [
-//               const Text(
-//                 "Date : ",
-//                 style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-//               ),
-//               Text(
-//                 DateFormat(
-//                   'dd MMM yyyy',
-//                 ).format(DateTime.parse(time).toLocal()),
-//                 style: const TextStyle(color: Colors.grey, fontSize: 12),
-//               ),
-//             ],
-//           ),
-//           trailing: Icon(icon1, color: Colors.orange[800]),
-//           children: [
-//             // Add your expanded content here
-//             const Divider(height: 1),
-//             const SizedBox(height: 10),
-//             Text(sub, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   /// STAT CARD WIDGET
-//   Widget statCard(
-//     String title,
-//     String subtitle,
-//     Color color, {
-//     required IconData icon,
-//   }) {
-//     return Container(
-//       padding: const EdgeInsets.all(16),
-//       decoration: BoxDecoration(
-//         color: color,
-//         borderRadius: BorderRadius.circular(20),
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//         children: [
-//           Text(
-//             title,
-//             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-//           ),
-//           Text(
-//             subtitle,
-//             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
-import 'package:luminar_std/presentation/notification_screen/notification_screen.dart';
-import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
+import 'package:luminar_std/presentation/home_screen/widget/natet_certificate.dart';
+import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
+import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
+import 'package:luminar_std/presentation/global_widget/shimmer.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
+import 'package:luminar_std/presentation/home_screen/widget/header_card.dart';
+import 'package:luminar_std/presentation/home_screen/widget/top_status_card.dart';
+import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/app_text_styles.dart';
+import 'package:luminar_std/presentation/instagram_view_screen.dart';
+import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
-class StudentDashboard extends StatelessWidget {
+class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            buildHeader(context),
-            _buildWelcomeHeader(),
-            const SizedBox(height: 24),
-            _buildCourseCard(),
-            const SizedBox(height: 24),
-            _buildQuickStatsGrid(),
+  State<StudentDashboard> createState() => _StudentDashboardState();
+}
 
-            const SizedBox(height: 24),
-            _buildSectionTitle("Recent Activities"),
-            const SizedBox(height: 12),
-            _buildActivityList(),
-          ],
-        ),
-      ),
+class _StudentDashboardState extends State<StudentDashboard> {
+  String _displayName = 'Loading...';
+  late EnrollmentProvider _enrollmentProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      await Provider.of<DashboardController>(
+        context,
+        listen: false,
+      ).getDashboardData(context: context);
+      _loadUserName();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _enrollmentProvider = Provider.of<EnrollmentProvider>(
+        context,
+        listen: false,
+      );
+      _loadData();
+    });
+  }
+
+  Future<void> _loadUserName() async {
+    // Add a small delay to ensure provider is ready
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (mounted) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final name = authProvider.studentData?.profile.fullName ?? 'Guest';
+      setState(() {
+        _displayName = name;
+      });
+      print('📝 Name loaded: $_displayName');
+    }
+  }
+
+  String _formatCurrency(int? amount) {
+    if (amount == null) return '₹0';
+    return '₹${NumberFormat('#,##,###').format(amount)}';
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return DateFormat('MMM d, yyyy').format(date);
+  }
+
+  Future<void> _loadData() async {
+    await _enrollmentProvider.fetchEnrollData(context: context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dashboardProvider = Provider.of<DashboardController>(context);
+    final dashboard = dashboardProvider.dashboard;
+    final provider = Provider.of<EnrollmentProvider>(context);
+
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Get student name from provider
+        final studentName = authProvider.studentData?.profile.fullName ?? '';
+
+        // Update display name if different
+        if (studentName.isNotEmpty && studentName != _displayName) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              _displayName = studentName;
+            });
+          });
+        }
+
+        return Scaffold(
+          backgroundColor: AppColors.scaffoldBackground,
+          body: dashboardProvider.isLoading
+              ? const DashboardShimmer()
+              : dashboardProvider.error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 60,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error loading dashboard',
+                          style: AppTextStyles.headerName.copyWith(
+                            color: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          dashboardProvider.error!,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.activitySubtitle,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () {
+                            dashboardProvider.refreshDashboard(
+                              context: context,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(200, 45),
+                          ),
+                          child: const Text('Try Again'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      HeaderWidget(
+                        enrolldata: provider,
+                        studentName: studentName,
+                        provider: dashboardProvider,
+                      ),
+                      StatusCard(
+                        status:
+                            dashboard
+                                ?.studentDetails
+                                ?.statusInfo
+                                ?.currentStatus
+                                ?.name ??
+                            'Active',
+                      ),
+
+                      const SizedBox(height: 20),
+                      Center(child: _buildSectionTitle("Course Details")),
+
+                      const SizedBox(height: 10),
+                      if (dashboard != null) ...[
+                        _buildCourseCard(dashboard, provider),
+                        const SizedBox(height: 24),
+                        Center(
+                          child: _buildSectionTitle("NACTET Registration"),
+                        ),
+                        const SizedBox(height: 20),
+                        const NactetBanner(),
+                        const SizedBox(height: 20),
+
+                        _buildQuickStatsGrid(dashboard),
+
+                        const SizedBox(height: 10),
+
+                        const AdvancedInstaCarousel(),
+                        const SizedBox(height: 24),
+                        // _buildSectionTitle("Recent Activities"),
+                        // const SizedBox(height: 12),
+                        // _buildActivityList(dashboard),
+                      ],
+                    ],
+                  ),
+                ),
+        );
+      },
     );
   }
 
-  Widget _buildWelcomeHeader() {
+  // ============== COURSE CARD SECTION WITH MULTIPLE ENROLLMENTS ==============
+
+  Widget _buildCourseCard(Dashboard dashboard, EnrollmentProvider enrollments) {
+    final enrollmentsList = dashboard.enrollmentDetails?.enrollments ?? [];
+
+    if (enrollmentsList.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("CURRENT ENROLLMENT", style: AppTextStyles.courseCardLabel),
+            SizedBox(height: 8),
+            Text('No Course Enrolled', style: AppTextStyles.courseCardTitle),
+          ],
+        ),
+      );
+    }
+
+    // If only one enrollment, show single card (original design)
+    if (enrollmentsList.length == 1) {
+      final enrollment = enrollmentsList.first;
+      return _buildSingleEnrollmentCard(enrollment, enrollments, 0);
+    }
+
+    // Multiple enrollments - show horizontal scrollable list
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "YOUR ENROLLMENTS (${enrollmentsList.length})",
+                style: AppTextStyles.sectionTitle.copyWith(fontSize: 16),
+              ),
+              // Scroll indicator dots
+              Row(
+                children: List.generate(
+                  enrollmentsList.length > 3 ? 3 : enrollmentsList.length,
+                  (index) => Container(
+                    width: 6,
+                    height: 6,
+                    margin: const EdgeInsets.only(right: 4),
+                    decoration: BoxDecoration(
+                      color: index == 0
+                          ? AppColors.primary
+                          : AppColors.primary.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          child: const Text(
-            "Status: Active",
-            style: TextStyle(
-              color: Colors.green,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+        ),
+
+        // Horizontal scrollable list of enrollment cards
+        SizedBox(
+          height: 280, // Fixed height for horizontal list
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: enrollmentsList.length,
+            itemBuilder: (context, index) {
+              final enrollment = enrollmentsList[index];
+              return _buildEnrollmentCard(enrollment, index, enrollments);
+            },
           ),
         ),
       ],
     );
   }
 
-  Widget _buildQuickStatsGrid() {
+  // Original single enrollment card design (exactly as you had it)
+  Widget _buildSingleEnrollmentCard(
+    enrollment,
+    EnrollmentProvider provider,
+    int index,
+  ) {
+    final enrollments = provider.enrollmentData!.enrollments;
+    final courseName =
+        enrollment?.courseInfo?.courseName ??
+        enrollment?.courseDetails?.toString() ??
+        'No Course Enrolled';
+
+    final batchName =
+        enrollment?.batchInfo?.batchName?.toString().replaceAll(
+          'BatchName.',
+          '',
+        ) ??
+        'N/A';
+
+    final startDate = enrollment?.batchInfo?.startDate;
+    final attendanceMode = enrollment?.attendanceMode?.name ?? 'Hybrid';
+    final progress = enrollment?.academicProgress?.completionPercentage ?? 0;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "CURRENT ENROLLMENT",
+            style: AppTextStyles.courseCardLabel,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            courseName,
+            style: AppTextStyles.courseCardTitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildCourseInfoItem("Batch", batchName),
+              _buildCourseInfoItem("Starts", _formatDate(startDate)),
+              _buildCourseInfoItem("Mode", attendanceMode),
+            ],
+          ),
+          const SizedBox(height: 20),
+          LinearProgressIndicator(
+            minHeight: 8,
+            value: progress / 100,
+            backgroundColor: AppColors.whiteWithOpacity20,
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              AppColors.textWhite,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Progress: ${progress}%',
+            style: AppTextStyles.courseCardProgress,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              InkWell(
+                onTap:
+                    (enrollments[index].status.value == "admission_fee_paid" ||
+                        enrollments[index].status.value == "not_set" ||
+                        enrollments[index].status.value == "demo_expired")
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EnrollmentDetailsScreen(
+                              index: index,
+                              backbuttonValue: true,
+                            ),
+                          ),
+                        );
+                      }
+                    : () {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                BottomNavScreen(initialIndex: 3),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.successGradient,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.shadowSuccess,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 12,
+                        color: AppColors.textWhite,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Continue Learning',
+                        style: AppTextStyles.courseCardButton,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Multiple enrollment card design (keeping your original styling)
+  Widget _buildEnrollmentCard(
+    dynamic enrollment,
+    int index,
+    EnrollmentProvider enrollments,
+  ) {
+    // Show enrollments
+
+    final courseName =
+        enrollment?.courseInfo?.courseName ??
+        enrollment?.courseDetails?.toString() ??
+        'No Course Enrolled';
+
+    final batchName =
+        enrollment?.batchInfo?.batchName?.toString().replaceAll(
+          'BatchName.',
+          '',
+        ) ??
+        'N/A';
+
+    final startDate = enrollment?.batchInfo?.startDate;
+    final attendanceMode = enrollment?.attendanceMode?.name ?? 'Hybrid';
+    final progress = enrollment?.academicProgress?.completionPercentage ?? 0;
+
+    // Get enrollment status if available
+    final status =
+        enrollments.enrollmentDataRes?.enrollments[index].status.value ?? "";
+
+    return Container(
+      width: 300, // Fixed width for horizontal scrolling
+      margin: const EdgeInsets.only(right: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Enrollment number indicator (subtle, not changing your design much)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.whiteWithOpacity20,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '#${index + 1}',
+                  style: const TextStyle(
+                    color: AppColors.textWhite,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              // Optional status badge if available
+              if (status.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(status).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    status.replaceAll('_', ' ').toUpperCase(),
+                    style: TextStyle(
+                      color: _getStatusColor(status),
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Keep your original course title styling
+          Text(
+            courseName,
+            style: AppTextStyles.courseCardTitle.copyWith(
+              fontSize: 16, // Slightly smaller for multiple cards
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+
+          const SizedBox(height: 12),
+
+          // Course details in row (keeping your layout)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildCourseInfoItem("Batch", batchName),
+              _buildCourseInfoItem("Starts", _formatDate(startDate)),
+              _buildCourseInfoItem("Mode", attendanceMode),
+            ],
+          ),
+
+          const Spacer(),
+
+          // Progress section (keeping your styling)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              LinearProgressIndicator(
+                minHeight: 6,
+                value: progress / 100,
+                backgroundColor: AppColors.whiteWithOpacity20,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.textWhite,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Progress: ${progress}%',
+                style: AppTextStyles.courseCardProgress.copyWith(fontSize: 12),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              InkWell(
+                onTap:
+                    (enrollments
+                                .enrollmentDataRes
+                                ?.enrollments[index]
+                                .status
+                                .value ==
+                            "admission_fee_paid" ||
+                        enrollments
+                                .enrollmentDataRes
+                                ?.enrollments[index]
+                                .status
+                                .value ==
+                            "not_set" ||
+                        enrollments
+                                .enrollmentDataRes
+                                ?.enrollments[index]
+                                .status
+                                .value ==
+                            "demo_expired")
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EnrollmentDetailsScreen(
+                              index: index,
+                              backbuttonValue: true,
+                            ),
+                          ),
+                        );
+                      }
+                    : () {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                BottomNavScreen(initialIndex: 3),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.successGradient,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.shadowSuccess,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 12,
+                        color: AppColors.textWhite,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Continue Learning',
+                        style: AppTextStyles.courseCardButton,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method for status colors
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'active':
+      case 'admission_fee_paid':
+        return Colors.green;
+      case 'pending':
+      case 'not_set':
+        return Colors.orange;
+      case 'completed':
+        return Colors.blue;
+      case 'expired':
+      case 'demo_expired':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // ============== EXISTING METHODS (KEPT EXACTLY AS THEY WERE) ==============
+
+  Widget _buildQuickStatsGrid(Dashboard dashboard) {
+    final financial = dashboard.financialSummary?.overview;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         int crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
@@ -472,127 +656,31 @@ class StudentDashboard extends StatelessWidget {
           children: [
             _buildStatCard(
               "Total Fees",
-              "₹29,000",
+              _formatCurrency(financial?.totalFeesAmount),
               Icons.account_balance_wallet,
-              Colors.blue,
+              AppColors.statsBlue,
             ),
-            _buildStatCard("Paid", "₹1,000", Icons.check_circle, Colors.green),
+            _buildStatCard(
+              "Paid",
+              _formatCurrency(financial?.totalFeesPaid),
+              Icons.check_circle,
+              AppColors.statsGreen,
+            ),
             _buildStatCard(
               "Pending",
-              "₹28,000",
+              _formatCurrency(financial?.totalFeesPending),
               Icons.pending_actions,
-              Colors.orange,
+              AppColors.statsOrange,
             ),
-            _buildStatCard("Progress", "3.45%", Icons.speed, Colors.purple),
+            _buildStatCard(
+              "Progress",
+              "${financial?.paymentCompletionPercentage ?? 0}%",
+              Icons.speed,
+              AppColors.statsPurple,
+            ),
           ],
         );
       },
-    );
-  }
-
-  Widget _buildCourseCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "CURRENT ENROLLMENT",
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            "Asp.net MVC with Angular - Full Stack",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildCourseInfoItem("Batch", "ggf"),
-              _buildCourseInfoItem("Starts", "Mar 12, 2026"),
-              _buildCourseInfoItem("Mode", "Hybrid"),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Container(
-            child: LinearProgressIndicator(
-              minHeight: 8,
-              value: 0.345,
-              backgroundColor: Colors.white24,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Progress: 34.5%',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF00B894),
-                      Color(0xFF00B894).withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0xFF00B894).withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.check_circle_rounded,
-                      size: 12,
-                      color: Colors.white,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Continue Learning',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -605,11 +693,11 @@ class StudentDashboard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.shadowLight,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -623,17 +711,8 @@ class StudentDashboard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text(title, style: AppTextStyles.statLabel),
+              Text(value, style: AppTextStyles.statValue),
             ],
           ),
         ],
@@ -645,80 +724,113 @@ class StudentDashboard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white60, fontSize: 12),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        Text(label, style: AppTextStyles.courseCardLabel),
+        Text(value, style: AppTextStyles.courseCardValue),
       ],
     );
   }
 
   Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-    );
+    return Text(title, style: AppTextStyles.sectionTitle);
   }
 
-  Widget _buildActivityList() {
-    // Mimicking the JSON's 'recent_activities'
-    final activities = [
-      {
-        "title": "Profile Updated",
-        "desc": "WhatsApp number changed",
-        "time": "1 day ago",
-        "icon": Icons.person_outline,
-      },
-      {
-        "title": "Receipt Generated",
-        "desc": "ADM2026030001 - ₹1000",
-        "time": "1 day ago",
-        "icon": Icons.receipt_long,
-      },
-      {
-        "title": "Payment Received",
-        "desc": "Manual payment of ₹1000",
-        "time": "1 day ago",
-        "icon": Icons.payment,
-      },
-    ];
+  Widget _buildActivityList(Dashboard dashboard) {
+    final activities = dashboard.recentActivities?.recentActivities ?? [];
+
+    if (activities.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            'No recent activities',
+            style: AppTextStyles.activitySubtitle,
+          ),
+        ),
+      );
+    }
 
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: activities.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemCount: activities.length > 4 ? 4 : activities.length,
+      separatorBuilder: (context, index) =>
+          const Divider(color: Color.fromARGB(255, 239, 239, 239)),
       itemBuilder: (context, index) {
         final item = activities[index];
+
+        IconData getIconForType(String? type) {
+          switch (type) {
+            case 'payment':
+              return Icons.payment;
+            case 'enrollment':
+              return Icons.app_registration;
+            case 'academic':
+              return Icons.school;
+            default:
+              return Icons.notifications_none;
+          }
+        }
+
+        Color getColorForPriority(String? priority) {
+          switch (priority?.toLowerCase()) {
+            case 'high':
+              return Colors.red;
+            case 'medium':
+              return Colors.orange;
+            case 'low':
+              return Colors.green;
+            default:
+              return AppColors.info;
+          }
+        }
+
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(12),
           ),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: Colors.blue.withOpacity(0.1),
+              backgroundColor: getColorForPriority(
+                item.priority?.toString(),
+              ).withOpacity(0.1),
               child: Icon(
-                item['icon'] as IconData,
-                color: Colors.blue,
+                getIconForType(item.type),
+                color: getColorForPriority(item.priority?.toString()),
                 size: 20,
               ),
             ),
             title: Text(
-              item['title'] as String,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              item.title ?? 'Activity',
+              style: AppTextStyles.activityTitle.copyWith(fontSize: 14),
             ),
-            subtitle: Text(item['desc'] as String),
-            trailing: Text(
-              item['time'] as String,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            subtitle: Text(
+              item.description ?? '',
+              style: AppTextStyles.activitySubtitle.copyWith(fontSize: 12),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (item.amount != null)
+                  Text(
+                    _formatCurrency(item.amount),
+                    style: AppTextStyles.statValue.copyWith(
+                      fontSize: 12,
+                      color: AppColors.statsGreen,
+                    ),
+                  ),
+                Text(
+                  _formatDateForActivity(item.date),
+                  style: AppTextStyles.activityTime,
+                ),
+              ],
             ),
           ),
         );
@@ -726,65 +838,20 @@ class StudentDashboard extends StatelessWidget {
     );
   }
 
-  Widget buildHeader(BuildContext context) {
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ProfileScreen()),
-            );
-          },
+  String _formatDateForActivity(DateTime? date) {
+    if (date == null) return '';
 
-          child: const CircleAvatar(
-            radius: 25,
-            backgroundColor: Color(0xFF7B51FF),
-            child: CircleAvatar(
-              radius: 23,
-              backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a'),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Hello 👋 ANAND!",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              "Welcome Back",
-              style: TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-          ],
-        ),
-        const Spacer(),
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => NotificationScreen()),
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(shape: BoxShape.circle),
-            child: AvatarGlow(
-              glowColor: Colors.purple,
-              child: CircleAvatar(
-                backgroundColor: Colors.transparent,
-                child: Icon(
-                  Icons.notifications_active_outlined,
-                  color: Colors.purple,
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      return 'Today';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else {
+      return DateFormat('MMM d').format(date);
+    }
   }
 }
