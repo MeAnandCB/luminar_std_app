@@ -9,7 +9,7 @@ import 'package:luminar_std/repository/chat_list_screen/service/api_service.dart
 import 'package:luminar_std/repository/chat_list_screen/service/websocket_service.dart';
 import 'package:luminar_std/repository/shared_pref.dart';
 
-class ChatProvider extends ChangeNotifier {
+class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   List<Chat> _chats = [];
   bool _isLoading = false;
   String? _error;
@@ -48,6 +48,32 @@ class ChatProvider extends ChangeNotifier {
   ChatApiService? get apiService => _apiService;
   WebSocketService? get webSocketService => _webSocketService;
 
+  ChatProvider() {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('[ChatProvider] App resumed — ensuring WebSocket connectivity');
+      _ensureConnectivity();
+    } else if (state == AppLifecycleState.paused) {
+      debugPrint('[ChatProvider] App paused — user going offline');
+      _webSocketService?.updateUserStatus(false);
+    }
+  }
+
+  void _ensureConnectivity() {
+    if (_webSocketService == null) return;
+    if (!_webSocketService!.isConnected) {
+      debugPrint('[ChatProvider] WebSocket disconnected — reconnecting...');
+      _webSocketService!.connect();
+    } else {
+      // Already connected — just refresh our status
+      _webSocketService!.updateUserStatus(true);
+    }
+  }
+
   /// Call when entering a chat screen so unread is not incremented
   /// for the chat the user is currently reading.
   void setActiveChat(String? chatUid) {
@@ -62,8 +88,9 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
 
-    // If we are already initialized with the SAME token, skip
+    // If we are already initialized with the SAME token, skip full reset
     if (_apiService != null && _apiService!.token == token) {
+      _ensureConnectivity();
       return;
     }
 
@@ -80,14 +107,25 @@ class ChatProvider extends ChangeNotifier {
       // Load current user profile
       final userData = await SharedPrefService.getUserData();
       if (userData != null) {
-        final profile = userData['student']?['profile'];
-        if (profile != null) {
-          _currentUser = User(
-            id: 0, // Placeholder — resolved below from chat participants
-            fullName: profile['full_name'] ?? 'Student',
-            profilePic: profile['profile_picture'],
-            email: profile['email'],
-          );
+        // Robust ID resolution from login response
+        int studentId = 0;
+        final student = userData['student'];
+        if (student is Map) {
+          final profile = student['profile'];
+          if (profile is Map) {
+            // Check for numeric 'id' first, then 'student_id' if numeric
+            studentId =
+                int.tryParse(profile['id']?.toString() ?? '') ??
+                int.tryParse(profile['student_id']?.toString() ?? '') ??
+                0;
+
+            _currentUser = User(
+              id: studentId,
+              fullName: profile['full_name'] ?? 'Student',
+              profilePic: profile['profile_picture'],
+              email: profile['email'],
+            );
+          }
         }
       }
 
@@ -98,7 +136,7 @@ class ChatProvider extends ChangeNotifier {
       // Initial chat load
       await loadChats(showLoading: false);
 
-      // Resolve real user ID from chat participants
+      // Fallback: Resolve real user ID from chat participants if still 0
       if (_currentUser?.id == 0 && _chats.isNotEmpty) {
         for (var chat in _chats) {
           if (chat.otherParticipant != null) {
@@ -119,7 +157,7 @@ class ChatProvider extends ChangeNotifier {
       }
 
       // Initialize WebSocket
-      final websocketUrl = "${GlobalLinks.websocketUrl}chat//?token=$token";
+      final websocketUrl = "${GlobalLinks.websocketUrl}chat/?token=$token";
       _webSocketService = WebSocketService(
         url: websocketUrl,
         currentUser: _currentUser!,
@@ -312,6 +350,11 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
+  Future<void> refresh() async {
+    await loadChats(showLoading: true);
+    _ensureConnectivity();
+  }
+
   Future<void> loadChats({bool showLoading = true}) async {
     if (_apiService == null) return;
 
@@ -420,6 +463,7 @@ class ChatProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _resetInternal();
     super.dispose();
   }

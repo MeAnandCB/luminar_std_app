@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import '../models/message.dart';
@@ -49,7 +50,10 @@ class WebSocketService {
     required this.apiService,
   });
 
+  bool _isDisposed = false;
+
   void connect() {
+    if (_isDisposed) return;
     try {
       _channel = WebSocketChannel.connect(Uri.parse(url));
 
@@ -58,18 +62,24 @@ class WebSocketService {
           _handleMessage(message);
         },
         onDone: () {
-          onDisconnected?.call();
+          if (!_isDisposed) {
+            onDisconnected?.call();
+          }
         },
         onError: (error) {
-          _errorController.add(error.toString());
-          onError?.call(error.toString());
+          if (!_isDisposed) {
+            _errorController.add(error.toString());
+            onError?.call(error.toString());
+          }
         },
       );
 
       onConnected?.call();
     } catch (e) {
-      _errorController.add(e.toString());
-      onError?.call(e.toString());
+      if (!_isDisposed) {
+        _errorController.add(e.toString());
+        onError?.call(e.toString());
+      }
     }
   }
 
@@ -79,6 +89,7 @@ class WebSocketService {
   }
 
   void dispose() {
+    _isDisposed = true;
     disconnect();
     _messageController.close();
     _localMessageController.close();
@@ -168,6 +179,7 @@ class WebSocketService {
 
   void _handleMessage(String message) {
     try {
+      debugPrint('[WS] Raw message: $message');
       final data = jsonDecode(message);
 
       if (data is Map<String, dynamic> && data['type'] == 'message_deleted') {
@@ -233,35 +245,50 @@ class WebSocketService {
 
           case 'presence':
           case 'user_status':
-            final statusData = (data.containsKey('data') && data['data'] is Map)
-                ? data['data']
-                : data;
+          case 'online_status':
+            final dynamic rawData = data['data'] ?? data;
 
-            dynamic userIdRaw = statusData['user_id'];
-            if (userIdRaw == null &&
-                statusData.containsKey('user') &&
-                statusData['user'] is Map) {
-              userIdRaw = statusData['user']['id'];
+            void processItem(Map<String, dynamic> statusData) {
+              dynamic userIdRaw = statusData['user_id'] ?? statusData['id'];
+              if (userIdRaw == null &&
+                  statusData.containsKey('user') &&
+                  statusData['user'] is Map) {
+                userIdRaw = statusData['user']['id'];
+              }
+
+              final isOnlineRaw = statusData['online'] ??
+                  statusData['is_online'] ??
+                  statusData['status'];
+
+              int? userId;
+              if (userIdRaw is int)
+                userId = userIdRaw;
+              else if (userIdRaw is String)
+                userId = int.tryParse(userIdRaw);
+
+              bool? isOnline;
+              if (isOnlineRaw is bool)
+                isOnline = isOnlineRaw;
+              else if (isOnlineRaw is String) {
+                final lower = isOnlineRaw.toLowerCase();
+                isOnline = lower == 'true' || lower == 'online';
+              } else if (isOnlineRaw is num) {
+                isOnline = isOnlineRaw != 0;
+              }
+
+              if (userId != null && isOnline != null) {
+                userOnlineStatus[userId] = isOnline;
+                _statusController.add({'user_id': userId, 'online': isOnline});
+                onUserStatusUpdate?.call(userId, isOnline);
+              }
             }
 
-            final isOnlineRaw = statusData['online'];
-
-            int? userId;
-            if (userIdRaw is int)
-              userId = userIdRaw;
-            else if (userIdRaw is String)
-              userId = int.tryParse(userIdRaw);
-
-            bool? isOnline;
-            if (isOnlineRaw is bool)
-              isOnline = isOnlineRaw;
-            else if (isOnlineRaw is String)
-              isOnline = isOnlineRaw.toLowerCase() == 'true';
-
-            if (userId != null && isOnline != null) {
-              userOnlineStatus[userId] = isOnline;
-              _statusController.add({'user_id': userId, 'online': isOnline});
-              onUserStatusUpdate?.call(userId, isOnline);
+            if (rawData is List) {
+              for (var item in rawData) {
+                if (item is Map<String, dynamic>) processItem(item);
+              }
+            } else if (rawData is Map<String, dynamic>) {
+              processItem(rawData);
             }
             break;
         }
@@ -273,7 +300,7 @@ class WebSocketService {
   }
 
   void updateUserStatus(bool isOnline) {
-    if (_channel != null) {
+    if (_channel != null && currentUser.id != 0) {
       final statusMessage = jsonEncode({
         'action': 'presence',
         'user_id': currentUser.id,

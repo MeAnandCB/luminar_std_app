@@ -278,7 +278,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: () => provider.loadChats(),
+            onPressed: () => provider.refresh(),
             icon: const Icon(Icons.refresh, color: Color(0xFF1A1A2E)),
           ),
           const SizedBox(width: 4),
