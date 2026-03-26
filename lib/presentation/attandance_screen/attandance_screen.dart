@@ -745,9 +745,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         crossAxisCount: 3,
-        mainAxisSpacing: 4,
-        crossAxisSpacing: 4,
-        childAspectRatio: 1.1,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 0.95, // ← was 1.1, now gives more height
         children: [
           _buildStatCard(
             'Total',
@@ -797,7 +797,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     IconData icon,
   ) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
@@ -810,9 +810,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // ← shrink to content
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 24),
+          Icon(icon, color: color, size: 22),
           const SizedBox(height: 6),
           Text(
             value,
@@ -823,7 +824,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
           ),
           const SizedBox(height: 2),
-          Text(label, style: AppTextStyles.caption),
+          Text(
+            label,
+            style: AppTextStyles.caption,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis, // ← never wraps
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );

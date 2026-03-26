@@ -39,7 +39,10 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
     _currentIndex = widget.initialIndex;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
+      enrollmentProvider = Provider.of<EnrollmentProvider>(
+        context,
+        listen: false,
+      );
       _loadData();
     });
   }
@@ -56,9 +59,20 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
       setState(() {
         _pages = [
           const StudentDashboard(),
-          (enrollmentProvider.enrollmentDataRes!.enrollments[0].status.value == "not_set" ||
-                  enrollmentProvider.enrollmentDataRes!.enrollments[0]?.status.value == "demo_expired" ||
-                  enrollmentProvider.enrollmentDataRes!.enrollments[0]?.status.value == "admission_fee_paid")
+          (enrollmentProvider.enrollmentDataRes!.enrollments[0].status.value ==
+                      "not_set" ||
+                  enrollmentProvider
+                          .enrollmentDataRes!
+                          .enrollments[0]
+                          ?.status
+                          .value ==
+                      "demo_expired" ||
+                  enrollmentProvider
+                          .enrollmentDataRes!
+                          .enrollments[0]
+                          ?.status
+                          .value ==
+                      "admission_fee_paid")
               ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false)
               : const EnrollmentScreen(),
           ChatListScreen(),
@@ -70,7 +84,10 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   }
 
   void _navigateToScanner() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const ScannerApp()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const QRScannerScreen()),
+    );
   }
 
   Widget _buildNavItem(int index, IconData icon, String label) {
@@ -89,7 +106,11 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isSelected ? AppColors.primary : AppColors.textHint, size: 24),
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : AppColors.textHint,
+              size: 24,
+            ),
             const SizedBox(height: 4),
             Text(
               label,
