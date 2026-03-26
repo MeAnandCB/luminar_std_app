@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-
 import 'package:luminar_std/presentation/chat_screen/widgets/audio_player.dart';
 import 'package:luminar_std/presentation/chat_screen/widgets/forward_message.dart';
+
 import 'package:record/record.dart';
 import 'dart:math' as _math;
 
@@ -18,6 +18,7 @@ import 'package:luminar_std/repository/chat_list_screen/models/user.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/api_service.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/websocket_service.dart';
 import 'package:mime/mime.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as pathLib;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
@@ -384,90 +385,290 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
-  // ── Attach button — file picker ────────────────────────────────────────────
+  // ── Attach button ─────────────────────────────────────────────────────────
   void _onAttachPressed() {
     if (_isPicking || _isUploading) return;
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (_) => _buildAttachSheet(),
     );
   }
 
+  // ── Attach sheet — full grid of all supported types ────────────────────────
   Widget _buildAttachSheet() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+    final items = [
+      _AttachItem(
+        icon: Icons.image_rounded,
+        label: 'Photo',
+        sublabel: 'jpg · png · webp · heic',
+        color: const Color(0xFF7B9FD4),
+        onTap: () {
+          Navigator.pop(context);
+          _pickImages();
+        },
       ),
+      _AttachItem(
+        icon: Icons.camera_alt_rounded,
+        label: 'Camera',
+        sublabel: 'take a photo',
+        color: Colors.green.shade600,
+        onTap: () {
+          Navigator.pop(context);
+          _onCameraPressed();
+        },
+      ),
+      _AttachItem(
+        icon: Icons.videocam_rounded,
+        label: 'Video',
+        sublabel: 'mp4 · mov',
+        color: Colors.pink.shade500,
+        onTap: () {
+          Navigator.pop(context);
+          _pickVideo();
+        },
+      ),
+      _AttachItem(
+        icon: Icons.mic_rounded,
+        label: 'Audio',
+        sublabel: 'mp3 · recorded',
+        color: Colors.purple.shade400,
+        onTap: () {
+          Navigator.pop(context);
+          _pickAudio();
+        },
+      ),
+      _AttachItem(
+        icon: Icons.picture_as_pdf_rounded,
+        label: 'PDF',
+        sublabel: '.pdf',
+        color: Colors.red.shade600,
+        onTap: () {
+          Navigator.pop(context);
+          _pickByExtensions(['pdf']);
+        },
+      ),
+      _AttachItem(
+        icon: Icons.description_rounded,
+        label: 'Word',
+        sublabel: 'doc · docx',
+        color: const Color(0xFF1565C0),
+        onTap: () {
+          Navigator.pop(context);
+          _pickByExtensions(['doc', 'docx']);
+        },
+      ),
+      _AttachItem(
+        icon: Icons.table_chart_rounded,
+        label: 'Excel',
+        sublabel: 'xls · xlsx',
+        color: const Color(0xFF2E7D32),
+        onTap: () {
+          Navigator.pop(context);
+          _pickByExtensions(['xls', 'xlsx']);
+        },
+      ),
+      _AttachItem(
+        icon: Icons.slideshow_rounded,
+        label: 'PowerPoint',
+        sublabel: 'ppt · pptx',
+        color: const Color(0xFFE65100),
+        onTap: () {
+          Navigator.pop(context);
+          _pickByExtensions(['ppt', 'pptx']);
+        },
+      ),
+      _AttachItem(
+        icon: Icons.text_snippet_rounded,
+        label: 'Text',
+        sublabel: '.txt',
+        color: const Color(0xFF546E7A),
+        onTap: () {
+          Navigator.pop(context);
+          _pickByExtensions(['txt']);
+        },
+      ),
+      _AttachItem(
+        icon: Icons.folder_zip_rounded,
+        label: 'Archive',
+        sublabel: '.zip',
+        color: const Color(0xFF6A1B9A),
+        onTap: () {
+          Navigator.pop(context);
+          _pickByExtensions(['zip']);
+        },
+      ),
+      _AttachItem(
+        icon: Icons.attach_file_rounded,
+        label: 'Any File',
+        sublabel: 'all types',
+        color: Colors.grey.shade600,
+        onTap: () {
+          Navigator.pop(context);
+          _pickAnyFile();
+        },
+      ),
+    ];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       child: SafeArea(
         top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Drag handle
             Container(
-              width: 32,
+              width: 36,
               height: 3,
-              margin: const EdgeInsets.only(top: 10, bottom: 16),
+              margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
                 color: Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _attachOption(
-                    icon: Icons.image_rounded,
-                    label: 'Gallery',
-                    color: const Color(0xFF7B9FD4),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickImage(ImageSource.gallery);
-                    },
-                  ),
-                  _attachOption(
-                    icon: Icons.camera_alt_rounded,
-                    label: 'Camera',
-                    color: Colors.green.shade600,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickImage(ImageSource.camera);
-                    },
-                  ),
-                  _attachOption(
-                    icon: Icons.insert_drive_file_rounded,
-                    label: 'Document',
-                    color: Colors.orange.shade600,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickDocument();
-                    },
-                  ),
-                  _attachOption(
-                    icon: Icons.audio_file_rounded,
-                    label: 'Audio',
-                    color: Colors.purple.shade400,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickAudio();
-                    },
-                  ),
-                ],
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Share',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A2E),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+            // 4-column grid
+            GridView.count(
+              crossAxisCount: 4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.85,
+              children: items
+                  .map((item) => _buildAttachGridItem(item))
+                  .toList(),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _attachOption({
+  Widget _buildAttachGridItem(_AttachItem item) {
+    return GestureDetector(
+      onTap: item.onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: item.color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(item.icon, color: item.color, size: 26),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            item.label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
+          Text(
+            item.sublabel,
+            style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onCameraPressed() {
+    if (_isPicking || _isUploading) return;
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 3,
+                margin: const EdgeInsets.only(top: 10, bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Camera',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // ── Photo ──────────────────────────────────────────
+                    _buildCameraOption(
+                      icon: Icons.photo_camera_rounded,
+                      label: 'Photo',
+                      color: Colors.green.shade600,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _pickImage(ImageSource.camera);
+                      },
+                    ),
+                    // ── Video ──────────────────────────────────────────
+                    _buildCameraOption(
+                      icon: Icons.videocam_rounded,
+                      label: 'Video',
+                      color: Colors.pink.shade500,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _recordVideo();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCameraOption({
     required IconData icon,
     required String label,
     required Color color,
@@ -479,20 +680,20 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 68,
+            height: 68,
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 26),
+            child: Icon(icon, color: color, size: 32),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
               color: Colors.grey.shade700,
             ),
           ),
@@ -501,7 +702,99 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _onCameraPressed() => _pickImage(ImageSource.camera);
+  // ── Record video from camera ───────────────────────────────────────────────
+  Future<void> _recordVideo() async {
+    if (_isPicking) return;
+    setState(() => _isPicking = true);
+    try {
+      final picker = ImagePicker();
+      final XFile? picked = await picker.pickVideo(
+        source: ImageSource.camera,
+        maxDuration: const Duration(minutes: 10),
+      );
+      if (picked == null) return;
+      final file = await _resolvePickedFile(
+        PlatformFile(
+          path: picked.path,
+          name: pathLib.basename(picked.path),
+          size: 0,
+        ),
+      );
+      if (file == null) {
+        _showErrorSnackbar('Could not read video file.');
+        return;
+      }
+      await _uploadAndSendFile(file, 'file');
+    } on PlatformException catch (e) {
+      debugPrint('[Camera] video PlatformException: $e');
+      _showErrorSnackbar('Could not record video');
+    } catch (e) {
+      debugPrint('[Camera] video error: $e');
+    } finally {
+      if (mounted) setState(() => _isPicking = false);
+    }
+  }
+
+  // ── Gallery image picker ────────────────────────────────────────────────────
+  // Uses image_picker for JPEG/PNG/WEBP (with quality compression)
+  // Falls back to FilePicker for HEIC and other raw formats
+  Future<void> _pickImages() async {
+    if (_isPicking) return;
+    setState(() => _isPicking = true);
+    try {
+      final picker = ImagePicker();
+      // Pick single image — goes to caption sheet before sending
+      final XFile? picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 90,
+        maxWidth: 2048,
+        maxHeight: 2048,
+      );
+      if (picked == null) return;
+      if (mounted) _showImageCaptionSheet(File(picked.path));
+    } on PlatformException catch (e) {
+      debugPrint('[Picker] image gallery PlatformException: $e');
+      // Fallback: use FilePicker which supports HEIC/WEBP/RAW
+      await _pickImageByFilePicker();
+    } catch (e) {
+      debugPrint('[Picker] image gallery error: $e');
+      await _pickImageByFilePicker();
+    } finally {
+      if (mounted) setState(() => _isPicking = false);
+    }
+  }
+
+  // FilePicker fallback for HEIC / WEBP / unsupported formats
+  Future<void> _pickImageByFilePicker() async {
+    try {
+      await FilePicker.platform.clearTemporaryFiles();
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: [
+          'jpg',
+          'jpeg',
+          'png',
+          'webp',
+          'heic',
+          'heif',
+          'gif',
+          'bmp',
+        ],
+        withData: false,
+        allowMultiple: false,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = await _resolvePickedFile(result.files.single);
+      if (file == null) {
+        if (mounted) _showErrorSnackbar('Could not read image file.');
+        return;
+      }
+      if (mounted) _showImageCaptionSheet(file);
+    } catch (e) {
+      debugPrint('[Picker] FilePicker image fallback error: $e');
+      if (mounted) _showErrorSnackbar('Could not open gallery');
+    }
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     if (_isPicking) return;
@@ -515,9 +808,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         maxHeight: 1920,
       );
       if (picked == null) return;
-      _showImageCaptionSheet(File(picked.path));
+      if (mounted) _showImageCaptionSheet(File(picked.path));
     } on PlatformException catch (e) {
       debugPrint('[Picker] PlatformException (_pickImage): $e');
+      if (mounted) _showErrorSnackbar('Could not open camera');
     } catch (e) {
       debugPrint('[Picker] Unexpected error (_pickImage): $e');
     } finally {
@@ -543,7 +837,62 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _pickDocument() async {
+  // ── Video picker (mp4 / mov) ───────────────────────────────────────────────
+  Future<void> _pickVideo() async {
+    if (_isPicking) return;
+    setState(() => _isPicking = true);
+    try {
+      final picker = ImagePicker();
+      final XFile? picked = await picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 10),
+      );
+      if (picked == null) return;
+      await _uploadAndSendFile(File(picked.path), 'file');
+    } on PlatformException catch (e) {
+      debugPrint('[Picker] video: $e');
+      _showErrorSnackbar('Could not open video picker');
+    } finally {
+      if (mounted) setState(() => _isPicking = false);
+    }
+  }
+
+  // ── Document picker — by allowed extensions ────────────────────────────────
+  Future<void> _pickByExtensions(List<String> extensions) async {
+    if (_isPicking) return;
+    setState(() => _isPicking = true);
+    try {
+      await FilePicker.platform.clearTemporaryFiles();
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: extensions,
+        withData: false,
+        allowMultiple: false,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final pf = result.files.single;
+      final file = await _resolvePickedFile(pf);
+      if (file == null) {
+        _showErrorSnackbar('Could not read file. Try again.');
+        return;
+      }
+
+      debugPrint('[Picker] resolved path: ${file.path}');
+      await _uploadAndSendFile(file, 'file');
+    } on PlatformException catch (e) {
+      debugPrint('[Picker] custom ext $extensions: $e');
+      _showErrorSnackbar('Could not open file picker');
+    } catch (e) {
+      debugPrint('[Picker] _pickByExtensions error: $e');
+      _showErrorSnackbar('Failed to pick file: $e');
+    } finally {
+      if (mounted) setState(() => _isPicking = false);
+    }
+  }
+
+  // ── Any file picker (fallback) ─────────────────────────────────────────────
+  Future<void> _pickAnyFile() async {
     if (_isPicking) return;
     setState(() => _isPicking = true);
     try {
@@ -554,15 +903,105 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         allowMultiple: false,
       );
       if (result == null || result.files.isEmpty) return;
-      final filePath = result.files.single.path;
-      if (filePath == null) return;
-      await _uploadAndSendFile(File(filePath), 'file');
+
+      final pf = result.files.single;
+      final file = await _resolvePickedFile(pf);
+      if (file == null) {
+        _showErrorSnackbar('Could not read file. Try again.');
+        return;
+      }
+
+      debugPrint('[Picker] any file resolved: ${file.path}');
+      final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
+
+      if (mimeType.startsWith('image/')) {
+        if (mounted) _showImageCaptionSheet(file);
+      } else {
+        await _uploadAndSendFile(file, 'file');
+      }
     } on PlatformException catch (e) {
-      debugPrint('[Picker] PlatformException (_pickDocument): $e');
+      debugPrint('[Picker] any file: $e');
+      _showErrorSnackbar('Could not open file picker');
     } catch (e) {
-      debugPrint('[Picker] Unexpected error (_pickDocument): $e');
+      debugPrint('[Picker] _pickAnyFile error: $e');
+      _showErrorSnackbar('Failed to pick file: $e');
     } finally {
       if (mounted) setState(() => _isPicking = false);
+    }
+  }
+
+  // ── Audio file picker ──────────────────────────────────────────────────────
+  Future<void> _pickAudio() async {
+    if (_isPicking) return;
+    setState(() => _isPicking = true);
+    try {
+      await FilePicker.platform.clearTemporaryFiles();
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.audio,
+        withData: false,
+        allowMultiple: false,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final pf = result.files.single;
+      final file = await _resolvePickedFile(pf);
+      if (file == null) {
+        _showErrorSnackbar('Could not read audio file.');
+        return;
+      }
+
+      debugPrint('[Picker] audio resolved: ${file.path}');
+      await _uploadAndSendFile(file, 'audio');
+    } on PlatformException catch (e) {
+      debugPrint('[Picker] PlatformException (_pickAudio): $e');
+    } catch (e) {
+      debugPrint('[Picker] Unexpected error (_pickAudio): $e');
+    } finally {
+      if (mounted) setState(() => _isPicking = false);
+    }
+  }
+
+  // ── Legacy document picker ─────────────────────────────────────────────────
+  Future<void> _pickDocument() async => _pickAnyFile();
+
+  // ── Resolve PlatformFile → real File (handles Android content URIs) ────────
+  //
+  // On Android, FilePicker may return a content:// URI in `path`.
+  // We copy the bytes (via pf.bytes if available, or read the path directly)
+  // to a temp file with the correct name so File() works everywhere.
+  Future<File?> _resolvePickedFile(PlatformFile pf) async {
+    try {
+      final name = pf.name;
+      final dir = await getTemporaryDirectory();
+      final dest = File('${dir.path}/$name');
+
+      // If FilePicker already gave us bytes (withData: true case or small file)
+      if (pf.bytes != null && pf.bytes!.isNotEmpty) {
+        await dest.writeAsBytes(pf.bytes!, flush: true);
+        debugPrint('[Picker] wrote from bytes: ${dest.path}');
+        return dest;
+      }
+
+      // Otherwise use the path directly
+      final srcPath = pf.path;
+      if (srcPath == null) {
+        debugPrint('[Picker] pf.path is null and no bytes');
+        return null;
+      }
+
+      final src = File(srcPath);
+      if (!await src.exists()) {
+        debugPrint('[Picker] source file does not exist: $srcPath');
+        return null;
+      }
+
+      // Copy to temp so we always have a real filesystem path
+      await src.copy(dest.path);
+      debugPrint('[Picker] copied to temp: ${dest.path}');
+      return dest;
+    } catch (e) {
+      debugPrint('[Picker] _resolvePickedFile error: $e');
+      return null;
     }
   }
 
@@ -738,30 +1177,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _voiceRecordStop(send: true);
   }
 
-  // ── Audio file picker (for attach sheet) ──────────────────────────────────
-  Future<void> _pickAudio() async {
-    if (_isPicking) return;
-    setState(() => _isPicking = true);
-    try {
-      await FilePicker.platform.clearTemporaryFiles();
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.audio,
-        withData: false,
-        allowMultiple: false,
-      );
-      if (result == null || result.files.isEmpty) return;
-      final filePath = result.files.single.path;
-      if (filePath == null) return;
-      await _uploadAndSendFile(File(filePath), 'audio');
-    } on PlatformException catch (e) {
-      debugPrint('[Picker] PlatformException (_pickAudio): $e');
-    } catch (e) {
-      debugPrint('[Picker] Unexpected error (_pickAudio): $e');
-    } finally {
-      if (mounted) setState(() => _isPicking = false);
-    }
-  }
-
   Future<void> _uploadAndSendFile(
     File file,
     String hintType, {
@@ -773,7 +1188,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
     final resolvedType = _resolveMessageTypeLocal(mimeType);
 
-    const supported = {'image', 'file', 'audio'};
+    const supported = {
+      'image',
+      'file',
+      'audio',
+    }; // backend only supports these 3
     if (!supported.contains(resolvedType)) {
       debugPrint(
         '[Upload] Unsupported file type blocked — '
@@ -856,7 +1275,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   String _resolveMessageTypeLocal(String mimeType) {
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('audio/')) return 'audio';
-    if (mimeType.startsWith('video/')) return 'video';
+    // video/* → 'file' (backend rejects 'video' as message_type)
     return 'file';
   }
 
@@ -2276,63 +2695,110 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
 
     try {
-      // ── 1. Fetch the bytes ───────────────────────────────────────────────
-      debugPrint('[Download] GET $url');
-      final response = await http.get(Uri.parse(url));
+      debugPrint('[Download] ▶ GET $url');
+      debugPrint('[Download] fileName: $fileName');
+
+      // ── 1. Download bytes ────────────────────────────────────────────────
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 120));
+
+      debugPrint('[Download] status: ${response.statusCode}');
+      debugPrint('[Download] bytes : ${response.bodyBytes.length}');
+
       if (response.statusCode != 200) {
-        throw Exception('HTTP ${response.statusCode}');
+        throw Exception(
+          'HTTP ${response.statusCode}: ${response.reasonPhrase}',
+        );
       }
       final bytes = response.bodyBytes;
-      debugPrint('[Download] received ${bytes.length} bytes');
+      if (bytes.isEmpty) throw Exception('Empty response body');
 
-      // ── 2. Determine save path ───────────────────────────────────────────
-      //   Android 10+  → getExternalStorageDirectory() returns scoped storage
-      //                  e.g. /storage/emulated/0/Android/data/<pkg>/files
-      //   iOS           → getApplicationDocumentsDirectory()
-      //   Fallback      → getTemporaryDirectory()
-      Directory? dir;
+      // ── 2. Resolve save directory ────────────────────────────────────────
+      // Android → scoped external storage (no WRITE_EXTERNAL permission needed)
+      // iOS     → application documents directory (accessible via Files app)
+      Directory? saveDir;
       if (Platform.isAndroid) {
-        dir =
-            await getExternalStorageDirectory(); // scoped, no permission needed
+        saveDir = await getExternalStorageDirectory();
       }
-      dir ??= await getApplicationDocumentsDirectory();
+      saveDir ??= await getApplicationDocumentsDirectory();
+      if (!await saveDir.exists()) await saveDir.create(recursive: true);
 
-      if (!await dir.exists()) await dir.create(recursive: true);
+      // Sanitise filename
+      final safeName = fileName.replaceAll(RegExp(r'[/\\:*?"<>|]'), '_').trim();
+      final finalName = safeName.isNotEmpty ? safeName : 'download';
+      final savePath = '${saveDir.path}/$finalName';
 
-      // Sanitise fileName — strip any path separators
-      final safeName = fileName.replaceAll(RegExp(r'[/\\]'), '_');
-      final savePath = '${dir.path}/$safeName';
+      debugPrint('[Download] savePath: $savePath');
 
-      // ── 3. Write file ────────────────────────────────────────────────────
-      final file = File(savePath);
-      await file.writeAsBytes(bytes, flush: true);
-      debugPrint('[Download] saved → $savePath');
+      // ── 3. Write to disk ─────────────────────────────────────────────────
+      await File(savePath).writeAsBytes(bytes, flush: true);
+      debugPrint('[Download] ✓ saved');
 
-      // ── 4. Success snackbar ──────────────────────────────────────────────
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(
-                  Icons.check_circle_outline,
-                  color: Colors.white,
-                  size: 18,
+      if (!mounted) return;
+
+      // ── 4. Auto-open with native app via open_filex ──────────────────────
+      //   PDF    → system PDF viewer
+      //   mp4/mov→ native video player
+      //   mp3/m4a→ music player
+      //   docx   → Word / Docs / WPS
+      //   xlsx   → Excel / Sheets
+      //   jpg/png→ Photos / Gallery
+      //   zip    → Files / ZArchiver
+      final openResult = await OpenFilex.open(savePath);
+      debugPrint(
+        '[Download] OpenFilex result: ${openResult.type} — ${openResult.message}',
+      );
+
+      // ── 5. Snackbar — show path + Open button as fallback ────────────────
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                openResult.type == ResultType.done
+                    ? Icons.check_circle_outline
+                    : Icons.download_done_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      finalName,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      openResult.type == ResultType.done
+                          ? 'Opened successfully'
+                          : savePath,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    'Image saved successfully',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                  ),
-                ),
+              ),
+              // Show Open button as fallback if auto-open failed
+              if (openResult.type != ResultType.done)
                 TextButton(
                   onPressed: () async {
-                    final uri = Uri.file(savePath);
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(
-                        uri,
-                        mode: LaunchMode.externalApplication,
+                    final result = await OpenFilex.open(savePath);
+                    if (result.type != ResultType.done) {
+                      debugPrint(
+                        '[Download] retry open failed: ${result.message}',
                       );
                     }
                   },
@@ -2344,24 +2810,21 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-              ],
-            ),
-            backgroundColor: const Color(0xFF1A1A2E),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 4),
+            ],
           ),
-        );
-      }
+          backgroundColor: const Color(0xFF1A1A2E),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 5),
+        ),
+      );
     } catch (e, stack) {
-      debugPrint('[Download] Error: $e');
+      debugPrint('[Download] ✗ Error: $e');
       debugPrint('[Download] Stack: $stack');
-      if (mounted) {
-        _showErrorSnackbar('Download failed: ${e.toString()}');
-      }
+      if (mounted) _showErrorSnackbar('Download failed: ${e.toString()}');
     } finally {
       if (mounted) {
         setState(() {
@@ -2429,15 +2892,83 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       icon: Icons.folder_zip_outlined,
       label: 'RAR',
     ),
+    // Audio formats
     'mp3': _FileTypeStyle(
       color: Color(0xFF7B9FD4),
       icon: Icons.audio_file_outlined,
       label: 'MP3',
     ),
-    'mp4': _FileTypeStyle(
+    'wav': _FileTypeStyle(
       color: Color(0xFF7B9FD4),
+      icon: Icons.audio_file_outlined,
+      label: 'WAV',
+    ),
+    'm4a': _FileTypeStyle(
+      color: Color(0xFF7B9FD4),
+      icon: Icons.audio_file_outlined,
+      label: 'M4A',
+    ),
+    'aac': _FileTypeStyle(
+      color: Color(0xFF7B9FD4),
+      icon: Icons.audio_file_outlined,
+      label: 'AAC',
+    ),
+    'ogg': _FileTypeStyle(
+      color: Color(0xFF7B9FD4),
+      icon: Icons.audio_file_outlined,
+      label: 'OGG',
+    ),
+    // Video formats
+    'mp4': _FileTypeStyle(
+      color: Color(0xFFE91E63),
       icon: Icons.video_file_outlined,
       label: 'MP4',
+    ),
+    'mov': _FileTypeStyle(
+      color: Color(0xFFE91E63),
+      icon: Icons.video_file_outlined,
+      label: 'MOV',
+    ),
+    'webm': _FileTypeStyle(
+      color: Color(0xFFE91E63),
+      icon: Icons.video_file_outlined,
+      label: 'WEBM',
+    ),
+    'mkv': _FileTypeStyle(
+      color: Color(0xFFE91E63),
+      icon: Icons.video_file_outlined,
+      label: 'MKV',
+    ),
+    'avi': _FileTypeStyle(
+      color: Color(0xFFE91E63),
+      icon: Icons.video_file_outlined,
+      label: 'AVI',
+    ),
+    // Image formats (shown in file bubble if not rendered inline)
+    'jpg': _FileTypeStyle(
+      color: Color(0xFF7B9FD4),
+      icon: Icons.image_outlined,
+      label: 'JPG',
+    ),
+    'jpeg': _FileTypeStyle(
+      color: Color(0xFF7B9FD4),
+      icon: Icons.image_outlined,
+      label: 'JPEG',
+    ),
+    'png': _FileTypeStyle(
+      color: Color(0xFF7B9FD4),
+      icon: Icons.image_outlined,
+      label: 'PNG',
+    ),
+    'webp': _FileTypeStyle(
+      color: Color(0xFF7B9FD4),
+      icon: Icons.image_outlined,
+      label: 'WEBP',
+    ),
+    'heic': _FileTypeStyle(
+      color: Color(0xFF7B9FD4),
+      icon: Icons.image_outlined,
+      label: 'HEIC',
     ),
   };
 
@@ -2465,132 +2996,153 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final style = _styleForFile(message.fileName);
     final fileUrl = message.mediaUrl;
 
-    return GestureDetector(
-      onTap: isUploading || fileUrl == null
-          ? null
-          : () async {
-              final uri = Uri.parse(fileUrl);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              } else {
-                _showErrorSnackbar('Could not open file');
-              }
-            },
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 200, maxWidth: 280),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: isMe
-              ? const Color(0xFFC5D8EF).withOpacity(0.5)
-              : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: style.color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: isUploading
-                  ? Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: CircularProgressIndicator(
-                        value: _uploadProgress > 0 ? _uploadProgress : null,
-                        strokeWidth: 2.5,
-                        color: style.color,
-                      ),
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(style.icon, color: style.color, size: 18),
-                        const SizedBox(height: 1),
-                        Text(
-                          style.label,
-                          style: TextStyle(
-                            fontSize: 7,
-                            fontWeight: FontWeight.w800,
-                            color: style.color,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ],
-                    ),
+    return Container(
+      constraints: const BoxConstraints(minWidth: 200, maxWidth: 280),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isMe
+            ? const Color(0xFFC5D8EF).withOpacity(0.5)
+            : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── File type icon ───────────────────────────────────────────────
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: style.color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    message.fileName ?? 'File',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A1A2E),
-                      height: 1.3,
+            child: isUploading
+                ? Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: CircularProgressIndicator(
+                      value: _uploadProgress > 0 ? _uploadProgress : null,
+                      strokeWidth: 2.5,
+                      color: style.color,
                     ),
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(style.icon, color: style.color, size: 18),
+                      const SizedBox(height: 1),
+                      Text(
+                        style.label,
+                        style: TextStyle(
+                          fontSize: 7,
+                          fontWeight: FontWeight.w800,
+                          color: style.color,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 3),
-                  if (isUploading)
-                    Row(
-                      children: [
+          ),
+          const SizedBox(width: 10),
+          // ── File info ────────────────────────────────────────────────────
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  message.fileName ?? 'File',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A2E),
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (isUploading)
+                  Text(
+                    'Uploading ${(_uploadProgress * 100).toInt()}%',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: style.color,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                else
+                  Row(
+                    children: [
+                      if (message.fileSizeLabel != null) ...[
                         Text(
-                          'Uploading ${(_uploadProgress * 100).toInt()}%',
+                          message.fileSizeLabel!,
                           style: TextStyle(
                             fontSize: 11,
-                            color: style.color,
-                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade500,
                           ),
                         ),
-                      ],
-                    )
-                  else
-                    Row(
-                      children: [
-                        if (message.fileSizeLabel != null) ...[
-                          Text(
-                            message.fileSizeLabel!,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                          Text(
-                            ' · ',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade400,
-                            ),
-                          ),
-                        ],
-                        Icon(
-                          Icons.download_outlined,
-                          size: 12,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(width: 2),
                         Text(
-                          'Tap to open',
+                          ' · ',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey.shade400,
                           ),
                         ),
                       ],
-                    ),
-                ],
-              ),
+                      // ── Download button ──────────────────────────────────
+                      if (fileUrl != null)
+                        GestureDetector(
+                          onTap: (_isDownloading && _downloadingUrl == fileUrl)
+                              ? null
+                              : () => _downloadFile(
+                                  fileUrl,
+                                  message.fileName ?? 'file',
+                                ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              (_isDownloading && _downloadingUrl == fileUrl)
+                                  ? SizedBox(
+                                      width: 11,
+                                      height: 11,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 1.5,
+                                        color: style.color,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.download_outlined,
+                                      size: 13,
+                                      color: style.color,
+                                    ),
+                              const SizedBox(width: 3),
+                              Text(
+                                (_isDownloading && _downloadingUrl == fileUrl)
+                                    ? 'Saving…'
+                                    : 'Download',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: style.color,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Text(
+                          'Unavailable',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
+                    ],
+                  ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -2646,10 +3198,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   Widget _buildMessageContent(Message message, bool isMe) {
     if (message.isImage) {
       return _buildImageContent(message);
-    } else if (message.isFile) {
-      return _buildFileContent(message, isMe);
     } else if (message.isAudio) {
       return _buildAudioContent(message, isMe);
+    } else if (message.messageType == 'video') {
+      return _buildVideoContent(message, isMe);
+    } else if (message.isFile) {
+      return _buildFileContent(message, isMe);
     } else {
       return Text(
         message.content,
@@ -2660,6 +3214,92 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ),
       );
     }
+  }
+
+  // ── Video bubble — play icon + tap to open ─────────────────────────────────
+  Widget _buildVideoContent(Message message, bool isMe) {
+    final isUploading =
+        message.uid.startsWith('upload_') && message.mediaUrl == null;
+    final url = message.mediaUrl;
+
+    return GestureDetector(
+      onTap: url != null
+          ? () async {
+              final uri = Uri.parse(url);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            }
+          : null,
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 160, maxWidth: 240),
+        height: 140,
+        decoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                color: Colors.black54,
+                child: Center(
+                  child: Icon(
+                    Icons.movie_outlined,
+                    color: Colors.white.withOpacity(0.3),
+                    size: 48,
+                  ),
+                ),
+              ),
+            ),
+            if (isUploading)
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: CircularProgressIndicator(
+                  value: _uploadProgress > 0 ? _uploadProgress : null,
+                  strokeWidth: 3,
+                  color: Colors.white,
+                ),
+              )
+            else
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.85),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.play_arrow_rounded,
+                  color: isMe
+                      ? const Color(0xFF4A7FA5)
+                      : const Color(0xFF7B9FD4),
+                  size: 32,
+                ),
+              ),
+            // File name at bottom
+            Positioned(
+              bottom: 8,
+              left: 10,
+              right: 10,
+              child: Text(
+                message.fileName ?? 'Video',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // ── Swipe to reply ─────────────────────────────────────────────────────────
@@ -3745,128 +4385,171 @@ class _ImageCaptionSheetState extends State<_ImageCaptionSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.only(bottom: bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 36,
-            height: 3,
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey),
-                  onPressed: widget.onCancel,
-                ),
-                const Expanded(
-                  child: Text(
-                    'Send Image',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 48),
-              ],
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.45,
-            ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: Colors.black,
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.file(
-                widget.imageFile,
-                fit: BoxFit.contain,
-                width: double.infinity,
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Image shrinks as keyboard rises so text field stays visible
+    final imageMaxHeight = keyboardHeight > 0
+        ? (screenHeight * 0.25).clamp(80.0, 200.0)
+        : screenHeight * 0.42;
+
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: keyboardHeight),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Drag handle ──────────────────────────────────────────────
+            Container(
+              width: 36,
+              height: 3,
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(6.0),
+
+            // ── Header ───────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: Colors.grey.shade600,
+                      size: 22,
+                    ),
+                    onPressed: widget.onCancel,
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'Send Image',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF1A1A2E),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+            ),
+
+            // ── Image preview — shrinks when keyboard opens ───────────────
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              constraints: BoxConstraints(maxHeight: imageMaxHeight),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                color: Colors.black,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Image.file(
+                  widget.imageFile,
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                ),
+              ),
+            ),
+
+            // ── Caption input + send ──────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white10,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.black),
+                        color: const Color(0xFFF4F6FB),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Colors.grey.shade200,
+                          width: 1,
+                        ),
                       ),
                       child: TextField(
                         controller: widget.captionController,
-                        autofocus: true,
+                        autofocus: false,
                         minLines: 1,
                         maxLines: 4,
-                        style: const TextStyle(color: Colors.red, fontSize: 15),
-                        decoration: const InputDecoration(
+                        style: const TextStyle(
+                          color: Color(0xFF1A1A2E),
+                          fontSize: 15,
+                        ),
+                        decoration: InputDecoration(
                           hintText: 'Add a caption…',
                           hintStyle: TextStyle(
-                            color: Colors.grey,
+                            color: Colors.grey.shade400,
                             fontSize: 15,
                           ),
                           border: InputBorder.none,
                           isDense: true,
-                          contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 10,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: () => widget.onSend(widget.captionController.text),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF7B9FD4),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.send_rounded,
-                      color: Colors.white,
-                      size: 22,
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () => widget.onSend(widget.captionController.text),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF7B9FD4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.send_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
+
+// ── Attach sheet item data ────────────────────────────────────────────────────
+class _AttachItem {
+  final IconData icon;
+  final String label;
+  final String sublabel;
+  final Color color;
+  final VoidCallback onTap;
+  const _AttachItem({
+    required this.icon,
+    required this.label,
+    required this.sublabel,
+    required this.color,
+    required this.onTap,
+  });
 }
 
 // ── File type style data ───────────────────────────────────────────────────────

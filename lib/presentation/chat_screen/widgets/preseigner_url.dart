@@ -1,20 +1,19 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import 'package:path/path.dart' as path;
 import 'package:mime/mime.dart';
+import 'package:path/path.dart' as path;
 
 // ── Presigned URL response ────────────────────────────────────────────────────
 class PresignedUrlResponse {
-  final String uploadUrl; // https://luminar-crm-storage.s3.amazonaws.com/
-  final Map<String, String>
-  fields; // All S3 policy fields for the multipart POST
-  final String s3Key; // chat/uuid.jpg
-  final String finalUrl; // CloudFront URL — stored in the message
-  final String filename; // UUID-renamed filename
-  final String originalFilename; // RAKESH.jpg
+  final String uploadUrl;
+  final Map<String, String> fields;
+  final String s3Key;
+  final String finalUrl;
+  final String filename;
+  final String originalFilename;
   final String folder;
   final String contentType;
 
@@ -32,7 +31,6 @@ class PresignedUrlResponse {
   factory PresignedUrlResponse.fromJson(Map<String, dynamic> json) {
     final rawFields = json['fields'] as Map<String, dynamic>? ?? {};
     final fields = rawFields.map((k, v) => MapEntry(k, v.toString()));
-
     return PresignedUrlResponse(
       uploadUrl: json['url'] as String,
       fields: fields,
@@ -46,13 +44,13 @@ class PresignedUrlResponse {
   }
 }
 
-// ── Result returned to the caller ─────────────────────────────────────────────
+// ── Upload result returned to caller ─────────────────────────────────────────
 class UploadResult {
-  final String finalUrl; // CloudFront CDN URL
-  final String originalFilename; // RAKESH.jpg
-  final String s3Key; // chat/uuid.jpg
-  final String contentType; // image/jpeg
-  final String messageType; // 'image' | 'file' | 'audio' | 'video'
+  final String finalUrl;
+  final String originalFilename;
+  final String s3Key;
+  final String contentType;
+  final String messageType; // 'image' | 'audio' | 'video' | 'file'
 
   const UploadResult({
     required this.finalUrl,
@@ -75,9 +73,7 @@ class FileUploadService {
     'Content-Type': 'application/json',
   };
 
-  // ── Step 1: Ask backend for presigned fields ──────────────────────────────
-  // POST /api/generate-presigned-url/
-  // Body: { "file_name": "RAKESH.jpg", "folder": "chat" }
+  // ── Step 1: Get presigned URL from backend ────────────────────────────────
   Future<PresignedUrlResponse> getPresignedUrl({
     required String fileName,
     String folder = 'chat',
@@ -105,33 +101,45 @@ class FileUploadService {
       return PresignedUrlResponse.fromJson(data);
     }
     throw Exception(
-      'Failed to get presigned URL: ${response.statusCode} — ${response.body}',
+      'Presigned URL failed: ${response.statusCode} — ${response.body}',
     );
   }
 
-  // ── Step 2: Multipart POST directly to S3 ────────────────────────────────
-  // S3 presigned POST requires ALL fields as form fields, with "file" last.
-  // Returns 204 No Content on success.
+  // ── Step 2: Upload file directly to S3 via multipart POST ─────────────────
   Future<void> _postToS3({
     required PresignedUrlResponse presigned,
     required File file,
-    void Function(double progress)? onProgress,
+    void Function(double)? onProgress,
   }) async {
-    debugPrint('[Upload] S3 multipart POST → ${presigned.uploadUrl}');
+    debugPrint('[Upload] S3 POST → ${presigned.uploadUrl}');
+    debugPrint('[Upload] Content-Type: ${presigned.contentType}');
+    debugPrint('[Upload] File: ${file.path}');
+
+    // Determine safe MediaType — fall back to application/octet-stream
+    MediaType mediaType;
+    try {
+      final parts = presigned.contentType.split('/');
+      if (parts.length == 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+        mediaType = MediaType(parts[0], parts[1]);
+      } else {
+        mediaType = MediaType('application', 'octet-stream');
+      }
+    } catch (_) {
+      mediaType = MediaType('application', 'octet-stream');
+    }
+
+    debugPrint('[Upload] MediaType: $mediaType');
 
     final request = http.MultipartRequest(
       'POST',
       Uri.parse(presigned.uploadUrl),
     );
 
-    // All policy fields must come before the file field
-    presigned.fields.forEach((k, v) => request.fields[k] = v);
-
-    // Determine media type
-    final parts = presigned.contentType.split('/');
-    final mediaType = parts.length == 2
-        ? MediaType(parts[0], parts[1])
-        : MediaType('application', 'octet-stream');
+    // All policy fields must come BEFORE the file field
+    presigned.fields.forEach((k, v) {
+      request.fields[k] = v;
+      debugPrint('[Upload] S3 field: $k = $v');
+    });
 
     request.files.add(
       await http.MultipartFile.fromPath(
@@ -143,35 +151,50 @@ class FileUploadService {
     );
 
     final streamed = await request.send();
-    debugPrint('[Upload] S3 response: ${streamed.statusCode}');
+    final responseBody = await streamed.stream.bytesToString();
 
-    // S3 presigned POST → 204 No Content on success
+    debugPrint('[Upload] S3 response status: ${streamed.statusCode}');
+    debugPrint('[Upload] S3 response body  : $responseBody');
+
     if (streamed.statusCode != 204 &&
         streamed.statusCode != 200 &&
         streamed.statusCode != 201) {
-      final body = await streamed.stream.bytesToString();
-      throw Exception('S3 upload failed: ${streamed.statusCode} — $body');
+      throw Exception(
+        'S3 upload failed: ${streamed.statusCode} — $responseBody',
+      );
     }
 
     onProgress?.call(1.0);
-    debugPrint(
-      '[Upload] ✓ S3 upload complete. CloudFront URL: ${presigned.finalUrl}',
-    );
+    debugPrint('[Upload] ✓ S3 upload complete: ${presigned.finalUrl}');
   }
 
   // ── Public entry point ────────────────────────────────────────────────────
   Future<UploadResult> uploadFile(
     File file, {
     String folder = 'chat',
-    void Function(double progress)? onProgress,
+    void Function(double)? onProgress,
   }) async {
     final fileName = path.basename(file.path);
-    final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
+    final fileSize = await file.length();
+
+    // Resolve MIME type — try by extension first, then by content
+    String mimeType = lookupMimeType(file.path) ?? '';
+    if (mimeType.isEmpty) {
+      mimeType = _mimeFromExtension(fileName);
+    }
+    if (mimeType.isEmpty) {
+      mimeType = 'application/octet-stream';
+    }
+
+    debugPrint('[Upload] File: $fileName');
+    debugPrint('[Upload] Size: ${_fmtSize(fileSize)}');
+    debugPrint('[Upload] MIME: $mimeType');
 
     onProgress?.call(0.05);
-    final presigned = await getPresignedUrl(fileName: fileName, folder: folder);
 
+    final presigned = await getPresignedUrl(fileName: fileName, folder: folder);
     onProgress?.call(0.15);
+
     await _postToS3(
       presigned: presigned,
       file: file,
@@ -188,10 +211,78 @@ class FileUploadService {
     );
   }
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  /// Maps MIME type to message_type accepted by the backend.
+  /// Backend only accepts: 'image' | 'audio' | 'file'
+  /// Video files are sent as 'file' since backend rejects 'video'.
   String _resolveMessageType(String mimeType) {
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('audio/')) return 'audio';
-    if (mimeType.startsWith('video/')) return 'video';
+    // video/* → 'file' (backend does not support 'video' message_type)
     return 'file';
+  }
+
+  /// Fallback MIME lookup by file extension when mime package can't detect
+  String _mimeFromExtension(String fileName) {
+    final ext = fileName.contains('.')
+        ? fileName.split('.').last.toLowerCase()
+        : '';
+    const map = <String, String>{
+      // Images
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'heic': 'image/heic',
+      'heif': 'image/heif',
+      'bmp': 'image/bmp',
+      'svg': 'image/svg+xml',
+      // Video
+      'mp4': 'video/mp4',
+      'mov': 'video/quicktime',
+      'avi': 'video/x-msvideo',
+      'mkv': 'video/x-matroska',
+      'webm': 'video/webm',
+      '3gp': 'video/3gpp',
+      // Audio
+      'mp3': 'audio/mpeg',
+      'm4a': 'audio/mp4',
+      'aac': 'audio/aac',
+      'wav': 'audio/wav',
+      'ogg': 'audio/ogg',
+      'flac': 'audio/flac',
+      'opus': 'audio/opus',
+      // Documents
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx':
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx':
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx':
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'txt': 'text/plain',
+      'csv': 'text/csv',
+      'rtf': 'application/rtf',
+      // Archives
+      'zip': 'application/zip',
+      'rar': 'application/vnd.rar',
+      '7z': 'application/x-7z-compressed',
+      'tar': 'application/x-tar',
+      'gz': 'application/gzip',
+    };
+    return map[ext] ?? '';
+  }
+
+  String _fmtSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }
