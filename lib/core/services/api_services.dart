@@ -16,16 +16,10 @@ class ApiService {
   }
 
   // GET
-  Future<ApiResponse<dynamic>> get({
-    required String endpoint,
-    String? token,
-  }) async {
+  Future<ApiResponse<dynamic>> get({required String endpoint, String? token}) async {
     log("$baseUrl$endpoint");
     try {
-      final response = await http.get(
-        Uri.parse("$baseUrl$endpoint"),
-        headers: _headers(token),
-      );
+      final response = await http.get(Uri.parse("$baseUrl$endpoint"), headers: _headers(token));
 
       return _handleResponse(response);
     } catch (e) {
@@ -45,6 +39,7 @@ class ApiService {
         headers: _headers(token),
         body: jsonEncode(body),
       );
+      log(response.body);
 
       return _handleResponse(response);
     } catch (e) {
@@ -59,11 +54,7 @@ class ApiService {
     String? token,
   }) async {
     try {
-      final response = await http.put(
-        Uri.parse("$baseUrl$endpoint"),
-        headers: _headers(token),
-        body: jsonEncode(body),
-      );
+      final response = await http.put(Uri.parse("$baseUrl$endpoint"), headers: _headers(token), body: jsonEncode(body));
 
       return _handleResponse(response);
     } catch (e) {
@@ -72,15 +63,9 @@ class ApiService {
   }
 
   // DELETE
-  Future<ApiResponse<dynamic>> delete({
-    required String endpoint,
-    String? token,
-  }) async {
+  Future<ApiResponse<dynamic>> delete({required String endpoint, String? token}) async {
     try {
-      final response = await http.delete(
-        Uri.parse("$baseUrl$endpoint"),
-        headers: _headers(token),
-      );
+      final response = await http.delete(Uri.parse("$baseUrl$endpoint"), headers: _headers(token));
 
       return _handleResponse(response);
     } catch (e) {
@@ -97,10 +82,7 @@ class ApiService {
       if (statusCode >= 200 && statusCode < 300) {
         return ApiResponse.success(jsonData, statusCode);
       } else {
-        return ApiResponse.error(
-          jsonData["message"] ?? "Unknown error",
-          statusCode,
-        );
+        return ApiResponse.error(jsonData["message"] ?? "Unknown error", statusCode);
       }
     } catch (e) {
       return ApiResponse.error("Invalid response format", statusCode);

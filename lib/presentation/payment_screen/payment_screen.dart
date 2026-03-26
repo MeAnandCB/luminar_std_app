@@ -1,7 +1,5 @@
 // lib/main.dart - Updated to show single enrollment details
 
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
@@ -9,7 +7,9 @@ import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/repository/payment_screen/model.dart';
 import 'package:luminar_std/repository/payment_screen/service.dart';
+import 'package:luminar_std/repository/razorpay/model/emi_res_model.dart';
 import 'package:provider/provider.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 // Define enums locally if needed
 enum TransactionStatus { completed, failed, pending }
@@ -37,9 +37,6 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      await Provider.of<EnrollmentProvider>(context, listen: false).getEmiPaymentDetails(id: widget.uid);
-    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeData();
     });
@@ -47,6 +44,11 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
 
   Future<void> _initializeData() async {
     if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
       final controller = Provider.of<DashboardController>(context, listen: false);
@@ -173,7 +175,6 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    log('Thia is ${widget.uid}');
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -347,15 +348,37 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     );
   }
 
-  void _handlePayment(EmiInstallment emi) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Processing payment of ₹${(emi.totalAmount ?? 0).toStringAsFixed(0)}'),
-        backgroundColor: Colors.blue,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+  void _handlePayment(EmiInstallment emi) async {
+    final provider = Provider.of<EnrollmentProvider>(context, listen: false);
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.purple)),
     );
+
+    try {
+      await provider.getEmiPaymentDetails(id: emi.uid ?? "");
+      Navigator.pop(context); // Dismiss loading
+
+      if (provider.emiResData != null) {
+        _startEmiRazorpayPayment(provider.emiResData!);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(provider.errorMessage ?? 'Failed to get payment details'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+      );
+    }
   }
 
   Widget _buildDetailItem(String label, String value, {Color? statusColor}) {
@@ -557,15 +580,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            onTap: () async {
-                              final provider = Provider.of<EnrollmentProvider>(context, listen: false);
-                              log('this is key: ${provider.emiResData?.key ?? ""}');
-                              await Provider.of<EnrollmentProvider>(
-                                context,
-                                listen: false,
-                              ).getEmiPaymentDetails(id: widget.uid);
-                              ;
-                            },
+                            onTap: () => _handlePayment(nextDueEmi!),
                             borderRadius: BorderRadius.circular(16),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -780,17 +795,24 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       itemBuilder: (context, index) {
         final emi = sortedSchedule[index];
         final emiStatus = _mapEmiStatus(emi.status, emi.isOverdue ?? false);
+        final isEnabled = index == 0 || sortedSchedule[index - 1].status?.toLowerCase() == 'paid';
 
         return InkWell(
-          onTap: () {},
+          onTap: isEnabled && emiStatus != EmiStatus.paid
+              ? () {
+                  _handlePayment(emi);
+                }
+              : null,
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isEnabled ? Colors.white : Colors.grey[50],
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: emiStatus == EmiStatus.overdue
+                color: !isEnabled
+                    ? Colors.grey[200]!
+                    : emiStatus == EmiStatus.overdue
                     ? Colors.red[100]!
                     : emiStatus == EmiStatus.paid
                     ? Colors.green[100]!
@@ -804,7 +826,9 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: emiStatus == EmiStatus.paid
+                    color: !isEnabled
+                        ? Colors.grey[100]
+                        : emiStatus == EmiStatus.paid
                         ? Colors.green[50]
                         : emiStatus == EmiStatus.overdue
                         ? Colors.red[50]
@@ -812,17 +836,20 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                     shape: BoxShape.circle,
                   ),
                   child: Center(
-                    child: Text(
-                      '${emi.installmentNumber ?? index + 1}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: emiStatus == EmiStatus.paid
-                            ? Colors.green[700]
-                            : emiStatus == EmiStatus.overdue
-                            ? Colors.red[700]
-                            : Colors.blue[700],
-                      ),
+                    child: Icon(
+                      !isEnabled
+                          ? Icons.lock_outline
+                          : emiStatus == EmiStatus.paid
+                          ? Icons.check
+                          : Icons.payment,
+                      size: 16,
+                      color: !isEnabled
+                          ? Colors.grey[400]
+                          : emiStatus == EmiStatus.paid
+                          ? Colors.green[700]
+                          : emiStatus == EmiStatus.overdue
+                          ? Colors.red[700]
+                          : Colors.blue[700],
                     ),
                   ),
                 ),
@@ -833,12 +860,16 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                     children: [
                       Text(
                         'Installment ${emi.installmentNumber ?? index + 1}',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: isEnabled ? Colors.black87 : Colors.grey[400],
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Due: ${dateFormat.format(emi.dueDate ?? DateTime.now())}',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                        style: TextStyle(fontSize: 11, color: isEnabled ? Colors.grey[500] : Colors.grey[300]),
                       ),
                     ],
                   ),
@@ -851,7 +882,9 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: emiStatus == EmiStatus.overdue
+                        color: !isEnabled
+                            ? Colors.grey[300]
+                            : emiStatus == EmiStatus.overdue
                             ? Colors.red[600]
                             : emiStatus == EmiStatus.paid
                             ? Colors.green[600]
@@ -863,7 +896,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (emiStatus == EmiStatus.overdue)
+                          if (emiStatus == EmiStatus.overdue && isEnabled)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(4)),
@@ -872,25 +905,36 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                                 style: TextStyle(fontSize: 8, color: Colors.red[600], fontWeight: FontWeight.w500),
                               ),
                             ),
-                          if (emiStatus == EmiStatus.pending)
+                          if (emiStatus == EmiStatus.pending || !isEnabled)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.orange[50],
+                                color: isEnabled ? Colors.orange[50] : Colors.grey[100],
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                'Pending',
-                                style: TextStyle(fontSize: 8, color: Colors.orange[600], fontWeight: FontWeight.w500),
+                                !isEnabled ? 'Locked' : 'Pending',
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  color: isEnabled ? Colors.orange[600] : Colors.grey[400],
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           const SizedBox(width: 4),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(8)),
+                            decoration: BoxDecoration(
+                              color: isEnabled ? Colors.blue[50] : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: Text(
-                              'Pay',
-                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.blue[700]),
+                              isEnabled ? 'Pay' : 'Wait',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: isEnabled ? Colors.blue[700] : Colors.grey[400],
+                              ),
                             ),
                           ),
                         ],
@@ -1166,5 +1210,67 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
         ],
       ),
     );
+  }
+
+  void handlePaymentErrorResponse(PaymentFailureResponse response) {
+    showAlertDialog(context, "Payment Failed", "Code: ${response.code}\nDescription: ${response.message}");
+  }
+
+  void handlePaymentSuccessResponse(PaymentSuccessResponse response) {
+    showAlertDialog(context, "Payment Successful", "Payment ID: ${response.paymentId}");
+    // Refresh data after successful payment with a small delay to allow backend to update
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _initializeData();
+      }
+    });
+  }
+
+  void handleExternalWalletSelected(ExternalWalletResponse response) {
+    showAlertDialog(context, "External Wallet Selected", "${response.walletName}");
+  }
+
+  void showAlertDialog(BuildContext context, String title, String message) {
+    AlertDialog alert = AlertDialog(
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      content: Text(message),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      actions: [
+        TextButton(
+          child: const Text(
+            "OK",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
+    );
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
+  void _startEmiRazorpayPayment(EmiResponseData details) {
+    Razorpay razorpay = Razorpay();
+    var options = {
+      'key': details.key,
+      'amount': details.amount,
+      "order_id": details.orderId,
+      'name': details.name,
+      'description': details.description,
+      'retry': {'enabled': true, 'max_count': 1},
+      'send_sms_hash': true,
+      'prefill': {'contact': details.prefill?.contact, 'email': details.prefill?.email},
+      'external': {
+        'wallets': ['paytm'],
+      },
+    };
+    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlePaymentErrorResponse);
+    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlePaymentSuccessResponse);
+    razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handleExternalWalletSelected);
+    razorpay.open(options);
   }
 }
