@@ -416,11 +416,10 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     try {
-      final pageSize = chat.unreadCount.clamp(1, 50);
       final response = await _apiService!.fetchMessages(
         chat.uid,
         page: 1,
-        pageSize: pageSize,
+        pageSize: 50, // Fetch more to be sure we get unread ones
       );
 
       if (response.success && response.data != null) {
@@ -431,11 +430,19 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
             .toList();
 
         if (unreadUids.isNotEmpty) {
-          await _apiService!.markMessagesAsRead(chat.uid, unreadUids);
+          final markRes = await _apiService!.markMessagesAsRead(chat.uid, unreadUids);
+          if (markRes.success) {
+            _locallyReadChats.remove(chat.uid);
+          }
+        } else {
+          // No unread messages found from others, clear local state
+          _locallyReadChats.remove(chat.uid);
         }
+      } else {
+        // If fetch fails, we still remove to avoid stuck zero, 
+        // but it will be restored on next refresh
+        _locallyReadChats.remove(chat.uid);
       }
-
-      _locallyReadChats.remove(chat.uid);
     } catch (e) {
       debugPrint('[ChatProvider] MarkRead Error: $e');
     } finally {

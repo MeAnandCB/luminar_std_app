@@ -149,6 +149,15 @@ class ApiService {
     final statusCode = response.statusCode;
 
     try {
+      // Handle empty body (like 204 No Content or 201 Created with no body)
+      if (response.body.isEmpty) {
+        if (statusCode >= 200 && statusCode < 300) {
+          return ApiResponse.success({}, statusCode);
+        } else {
+          return ApiResponse.error("Empty error response", statusCode);
+        }
+      }
+
       final jsonData = jsonDecode(response.body);
 
       if (statusCode >= 200 && statusCode < 300) {
@@ -157,6 +166,10 @@ class ApiService {
         return ApiResponse.error(jsonData["message"] ?? "Unknown error", statusCode);
       }
     } catch (e) {
+      // If parsing fails but status code is success, return empty success Map
+      if (statusCode >= 200 && statusCode < 300) {
+        return ApiResponse.success({}, statusCode);
+      }
       return ApiResponse.error("Invalid response format", statusCode);
     }
   }
