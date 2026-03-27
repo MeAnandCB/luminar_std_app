@@ -60,12 +60,12 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Complete Profile'),
+        title: Text('Complete Profile'),
         backgroundColor: AppColors.white,
         elevation: 0,
         leading: _currentPage > 0
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+                icon: Icon(Icons.arrow_back, color: AppColors.primary),
                 onPressed: () {
                   if (_currentPage > 0) {
                     _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
@@ -97,7 +97,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
           ),
           if (_currentPage < _totalPages - 1)
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(16.0),
               child: ElevatedButton(
                 onPressed: () {
                   if (_validateCurrentPage()) {
@@ -111,14 +111,14 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                   foregroundColor: AppColors.white,
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 child: Text('Next'),
               ),
             )
           else if (_currentPage == _totalPages - 1)
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(16.0),
               child: Consumer2<ProfileController, CompleteProfileController>(
                 builder: (context, profileController, completeController, child) {
                   return ElevatedButton(
@@ -164,11 +164,11 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                       foregroundColor: AppColors.white,
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     child: completeController.isSubmitting
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Submit'),
+                        : Text('Submit'),
                   );
                 },
               ),
@@ -191,7 +191,7 @@ class ProfileHeader extends StatelessWidget {
         final remaining = controller.remainingFieldsCount;
 
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.white,
             boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 4, offset: const Offset(0, 2))],
@@ -201,24 +201,24 @@ class ProfileHeader extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Complete Profile',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       '$percentageInt%',
-                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
@@ -228,8 +228,8 @@ class ProfileHeader extends StatelessWidget {
                   minHeight: 8,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text('$remaining fields remaining', style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+              SizedBox(height: 8),
+              Text('$remaining fields remaining', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
             ],
           ),
         );
@@ -394,7 +394,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: AppColors.white,
               onSurface: AppColors.textPrimary,
@@ -420,7 +420,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
       builder: (context, controller, child) {
         _initData(controller);
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: Column(
@@ -428,7 +428,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
               children: [
                 // Profile Picture Section
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -437,11 +437,11 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Profile Picture',
                         style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Row(
                         children: [
                           Consumer<CompleteProfileController>(
@@ -453,19 +453,19 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                                     ? FileImage(File(completeController.profilePicPath!))
                                     : (_profilePicUrl != null ? NetworkImage(_profilePicUrl!) : null) as ImageProvider?,
                                 child: (completeController.profilePicPath == null && _profilePicUrl == null)
-                                    ? const Icon(Icons.person, size: 30, color: AppColors.textSecondary)
+                                    ? Icon(Icons.person, size: 30, color: AppColors.textSecondary)
                                     : null,
                               );
                             },
                           ),
-                          const SizedBox(width: 16),
+                          SizedBox(width: 16),
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: _pickImage,
-                              icon: const Icon(Icons.upload, color: AppColors.primary),
-                              label: const Text('Upload', style: TextStyle(color: AppColors.primary)),
+                              icon: Icon(Icons.upload, color: AppColors.primary),
+                              label: Text('Upload', style: TextStyle(color: AppColors.primary)),
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: AppColors.primary),
+                                side: BorderSide(color: AppColors.primary),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                             ),
@@ -475,11 +475,11 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // Personal Information Section
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -488,11 +488,11 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Personal Information',
                         style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 16),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       CustomTextField(
                         label: 'Full Name*',
@@ -509,7 +509,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
 
                       CustomTextField(
                         label: 'Email*',
@@ -530,7 +530,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
 
                       Row(
                         children: [
@@ -553,7 +553,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             flex: 1,
                             child: CustomTextField(
@@ -565,7 +565,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
 
                       // WhatsApp with Country Code Picker
                       Container(
@@ -589,7 +589,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                                 showCountryOnly: false,
                                 showOnlyCountryWhenClosed: false,
                                 alignLeft: false,
-                                textStyle: const TextStyle(color: AppColors.textPrimary),
+                                textStyle: TextStyle(color: AppColors.textPrimary),
                               ),
                             ),
                             Expanded(
@@ -616,7 +616,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
 
                       CustomTextField(
                         label: 'Address*',
@@ -633,7 +633,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
 
                       Row(
                         children: [
@@ -698,7 +698,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                               },
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             child: controller.isPincodeLoading
                                 ? Center(child: const CircularProgressIndicator())
@@ -767,7 +767,7 @@ class CustomTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.primary, size: 20) : null,
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        labelStyle: TextStyle(color: AppColors.textSecondary),
         counterText: '',
       ),
       onChanged: onChanged,
@@ -805,22 +805,22 @@ class IdProofSectionState extends State<IdProofSection> {
     final controller = context.read<CompleteProfileController>();
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppColors.primary),
-              title: const Text('Take Photo'),
+              leading: Icon(Icons.camera_alt, color: AppColors.primary),
+              title: Text('Take Photo'),
               onTap: () {
                 Navigator.pop(context);
                 controller.pickIdImage(isFront: isFront, source: ImageSource.camera);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: AppColors.primary),
-              title: const Text('Choose from Gallery'),
+              leading: Icon(Icons.photo_library, color: AppColors.primary),
+              title: Text('Choose from Gallery'),
               onTap: () {
                 Navigator.pop(context);
                 controller.pickIdImage(isFront: isFront, source: ImageSource.gallery);
@@ -838,12 +838,12 @@ class IdProofSectionState extends State<IdProofSection> {
       builder: (context, profileController, completeProfileController, child) {
         _initData(profileController);
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -852,11 +852,11 @@ class IdProofSectionState extends State<IdProofSection> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'ID Proof (Both sides required) *',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
                     // Front Side
                     _buildUploadSection(
@@ -867,9 +867,9 @@ class IdProofSectionState extends State<IdProofSection> {
                       isUploaded: _hasFrontId,
                     ),
 
-                    const SizedBox(height: 20),
-                    const Divider(),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
+                    Divider(),
+                    SizedBox(height: 20),
 
                     // Back Side
                     _buildUploadSection(
@@ -885,7 +885,7 @@ class IdProofSectionState extends State<IdProofSection> {
               if (profileController.error != null &&
                   (completeProfileController.idFrontPath == null || completeProfileController.idBackPath == null))
                 Padding(
-                  padding: const EdgeInsets.only(top: 12),
+                  padding: EdgeInsets.only(top: 12),
                   child: Text(
                     'Both ID proof sides are required',
                     style: TextStyle(color: AppColors.primary, fontSize: 12),
@@ -915,11 +915,11 @@ class IdProofSectionState extends State<IdProofSection> {
       children: [
         Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(8),
@@ -935,10 +935,10 @@ class IdProofSectionState extends State<IdProofSection> {
                       child: Image.file(File(imagePath), width: 50, height: 50, fit: BoxFit.cover),
                     )
                   else if (isUploaded)
-                    const Icon(Icons.check_circle, color: AppColors.statusActive, size: 40)
+                    Icon(Icons.check_circle, color: AppColors.statusActive, size: 40)
                   else
-                    const Icon(Icons.image_outlined, color: AppColors.textHint, size: 40),
-                  const SizedBox(width: 12),
+                    Icon(Icons.image_outlined, color: AppColors.textHint, size: 40),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -951,7 +951,7 @@ class IdProofSectionState extends State<IdProofSection> {
                           ),
                         ),
                         if (imagePath != null)
-                          const Text('Ready to save', style: TextStyle(color: AppColors.statusActive, fontSize: 12)),
+                          Text('Ready to save', style: TextStyle(color: AppColors.statusActive, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -968,7 +968,7 @@ class IdProofSectionState extends State<IdProofSection> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(subtitle, style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
             ],
           ),
@@ -1107,14 +1107,14 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
         }
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -1123,11 +1123,11 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Academic Information',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
 
                       // Qualification Dropdown
                       _buildDropdown(
@@ -1148,7 +1148,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         },
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // College/University
                       CustomTextField(
@@ -1167,7 +1167,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         },
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // CGPA
                       CustomTextField(
@@ -1187,7 +1187,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         },
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Specialization Dropdown
                       _buildDropdown(
@@ -1204,7 +1204,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         },
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Pass Out Year Dropdown
                       _buildDropdown(
@@ -1220,14 +1220,14 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         },
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Any Arrears?
-                      const Text(
+                      Text(
                         'Any Arrears?',
                         style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(child: _buildRadioButton('No', 'no', !_hasArrears)),
@@ -1258,9 +1258,9 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
             border: Border.all(color: AppColors.borderColor),
@@ -1271,7 +1271,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
               isExpanded: true,
               value: value,
               hint: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   isLoading ? 'Loading...' : 'Select ${label.replaceAll('*', '').trim()}',
                   style: TextStyle(fontSize: 14, color: AppColors.textHint),
@@ -1282,14 +1282,14 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                     (item) => DropdownMenuItem<String>(
                       value: item,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(item, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(item, style: TextStyle(fontSize: 14, color: AppColors.textPrimary)),
                       ),
                     ),
                   )
                   .toList(),
               onChanged: isEditable ? onChanged : null,
-              icon: const Padding(padding: EdgeInsets.only(right: 16), child: Icon(Icons.arrow_drop_down)),
+              icon: Padding(padding: EdgeInsets.only(right: 16), child: Icon(Icons.arrow_drop_down)),
             ),
           ),
         ),
@@ -1299,9 +1299,9 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
 
   Widget _buildRadioButton(String title, String value, bool isEnabled) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: 4),
       child: RadioListTile<String>(
-        title: Text(title, style: const TextStyle(fontSize: 14)),
+        title: Text(title, style: TextStyle(fontSize: 14)),
         value: value,
         groupValue: _anyArrears == true ? 'yes' : (_anyArrears == false ? 'no' : null),
         onChanged: isEnabled
@@ -1411,14 +1411,14 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
       builder: (context, controller, child) {
         _initData(controller);
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -1427,20 +1427,20 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Career Information',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
 
                       // Current Status
-                      const Text(
+                      Text(
                         'Current Status *',
                         style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        padding: EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
                           border: Border.all(color: AppColors.borderColor),
                           borderRadius: BorderRadius.circular(12),
@@ -1448,7 +1448,7 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                         child: DropdownButton<String>(
                           value: _currentStatus,
                           isExpanded: true,
-                          underline: const SizedBox(),
+                          underline: SizedBox(),
                           items: [
                             'Student',
                             'Working Professional',
@@ -1466,7 +1466,7 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Preferred Job Location
                       CustomTextField(
@@ -1485,12 +1485,12 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                         },
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Placement Assistance Checkbox
                       // Placement Assistance Checkbox
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(8)),
                         child: Row(
                           children: [
@@ -1507,7 +1507,7 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                                   : null,
                               activeColor: AppColors.primary,
                             ),
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'I am interested in placement assistance',
                                 style: TextStyle(color: AppColors.textPrimary),
@@ -1516,17 +1516,17 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       // Resume Upload Section
-                      const Text(
+                      Text(
                         'Resume (Optional)',
                         style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Consumer<CompleteProfileController>(
                         builder: (context, completeController, child) {
                           return Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
@@ -1542,7 +1542,7 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                                       ? AppColors.statusActive
                                       : AppColors.textHint,
                                 ),
-                                const SizedBox(width: 12),
+                                SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
                                     completeController.resumePath != null || _hasResume
@@ -1653,14 +1653,14 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
       builder: (context, controller, child) {
         _initData(controller);
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -1669,11 +1669,11 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Parent/Guardian',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
 
                       // Parent Name
                       CustomTextField(
@@ -1692,7 +1692,7 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                         },
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Parent Phone with Country Code
                       Container(
@@ -1716,7 +1716,7 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                                 showCountryOnly: false,
                                 showOnlyCountryWhenClosed: false,
                                 alignLeft: false,
-                                textStyle: const TextStyle(color: AppColors.textPrimary),
+                                textStyle: TextStyle(color: AppColors.textPrimary),
                               ),
                             ),
                             Expanded(

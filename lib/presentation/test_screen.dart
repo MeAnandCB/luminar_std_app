@@ -186,7 +186,7 @@ class FullScreenImageViewer extends StatelessWidget {
                     const SizedBox(height: 16),
                     Text(
                       'Error loading image: $error',
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: Colors.white),
                       textAlign: TextAlign.center,
                     ),
                   ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
@@ -12,7 +13,6 @@ import 'package:shimmer/shimmer.dart';
 // ─── palette ─────────────────────────────────────────────────────────────────
 const _kPrimary = Color(0xFF6C63FF);
 const _kPrimaryB = Color(0xFF3B82F6);
-const _kBg = Color(0xFFF0F2FF);
 
 const _kHeaderGradient = LinearGradient(
   colors: [_kPrimary, _kPrimaryB],
@@ -133,8 +133,9 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>(); // Rebuild on theme change
     return Scaffold(
-      backgroundColor: _kBg,
+      backgroundColor: AppColors.scaffoldBackground,
       // Column keeps the header fixed; the body below is scrollable per tab.
       body: Column(
         children: [
@@ -210,7 +211,7 @@ class _Header extends StatelessWidget {
           children: [
             // ── title row ───────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+              padding: EdgeInsets.fromLTRB(16, 14, 16, 12),
               child: Row(
                 children: const [
                   CircleAvatar(
@@ -273,7 +274,7 @@ class _TabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: LayoutBuilder(
         builder: (context, box) {
           final count = enrollments.length;
@@ -294,18 +295,18 @@ class _TabBar extends StatelessWidget {
               tabAlignment: needsScroll
                   ? TabAlignment.start
                   : TabAlignment.fill,
-              padding: const EdgeInsets.all(4),
+              padding: EdgeInsets.all(4),
               // remove horizontal padding so label controls the width
               labelPadding: EdgeInsets.zero,
               dividerColor: Colors.transparent,
               overlayColor: WidgetStateProperty.all(Colors.transparent),
               labelColor: _kPrimary,
               unselectedLabelColor: Colors.white,
-              labelStyle: const TextStyle(
+              labelStyle: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
-              unselectedLabelStyle: const TextStyle(
+              unselectedLabelStyle: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -329,7 +330,7 @@ class _TabBar extends StatelessWidget {
                     : raw;
                 return Tab(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    padding: EdgeInsets.symmetric(horizontal: 10),
                     child: Text(
                       label,
                       maxLines: 1,
@@ -390,14 +391,14 @@ class _EnrollmentPage extends StatelessWidget {
         // section header
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+            padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
             child: Row(
               children: [
                 Container(
                   width: 4,
                   height: 18,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       colors: [_kPrimary, _kPrimaryB],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -405,8 +406,8 @@ class _EnrollmentPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
-                const SizedBox(width: 10),
-                const Text(
+                SizedBox(width: 10),
+                Text(
                   'Quick Actions',
                   style: TextStyle(
                     fontSize: 15,
@@ -416,7 +417,7 @@ class _EnrollmentPage extends StatelessWidget {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(
+                  padding: EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 4,
                   ),
@@ -424,7 +425,7 @@ class _EnrollmentPage extends StatelessWidget {
                     color: _kPrimary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
+                  child: Text(
                     '4 features',
                     style: TextStyle(
                       fontSize: 11,
@@ -440,7 +441,7 @@ class _EnrollmentPage extends StatelessWidget {
 
         // feature cards
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 32),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
               _FeatureCard(
@@ -456,7 +457,7 @@ class _EnrollmentPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _FeatureCard(
                 feature: _kFeatures[1],
                 onTap: () => Navigator.push(
@@ -466,7 +467,7 @@ class _EnrollmentPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _FeatureCard(
                 feature: _kFeatures[2],
                 onTap: () => Navigator.push(
@@ -474,7 +475,7 @@ class _EnrollmentPage extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => LiveClassScreen()),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _FeatureCard(
                 feature: _kFeatures[3],
                 onTap: toEnrollDetails
@@ -523,10 +524,10 @@ class _CourseInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [_kPrimary, _kPrimaryB],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -551,13 +552,13 @@ class _CourseInfoCard extends StatelessWidget {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(13),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.menu_book_rounded,
               color: Colors.white,
               size: 22,
             ),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: 14),
           // texts – Expanded stops overflow
           Expanded(
             child: Column(
@@ -566,7 +567,7 @@ class _CourseInfoCard extends StatelessWidget {
               children: [
                 Text(
                   courseName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -575,7 +576,7 @@ class _CourseInfoCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
@@ -601,7 +602,7 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(20),
@@ -610,14 +611,14 @@ class _Chip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 11, color: Colors.white70),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.35,
             ),
             child: Text(
               label,
-              style: const TextStyle(fontSize: 11, color: Colors.white),
+              style: TextStyle(fontSize: 11, color: Colors.white),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -640,7 +641,7 @@ class _FeatureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: AppColors.cardBackground,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -648,9 +649,9 @@ class _FeatureCard extends StatelessWidget {
         splashColor: feature.colorA.withOpacity(0.08),
         child: Ink(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade100),
+            border: Border.all(color: AppColors.borderColor),
             boxShadow: [
               BoxShadow(
                 color: feature.colorA.withOpacity(0.07),
@@ -660,7 +661,7 @@ class _FeatureCard extends StatelessWidget {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             child: Row(
               children: [
                 // gradient icon box
@@ -677,7 +678,7 @@ class _FeatureCard extends StatelessWidget {
                   ),
                   child: Icon(feature.icon, color: Colors.white, size: 22),
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: 14),
                 // title + subtitle – Expanded prevents overflow
                 Expanded(
                   child: Column(
@@ -686,13 +687,13 @@ class _FeatureCard extends StatelessWidget {
                     children: [
                       Text(
                         feature.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      SizedBox(height: 3),
                       Text(
                         feature.subtitle,
                         style: TextStyle(
@@ -704,7 +705,7 @@ class _FeatureCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 // arrow button
                 Container(
                   width: 32,
@@ -739,7 +740,7 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -747,7 +748,7 @@ class _EmptyState extends StatelessWidget {
               width: 96,
               height: 96,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [_kPrimary, _kPrimaryB],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -761,14 +762,14 @@ class _EmptyState extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.school_rounded,
                 size: 48,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 28),
-            const Text(
+            SizedBox(height: 28),
+            Text(
               'No Enrollments Yet',
               style: TextStyle(
                 fontSize: 20,
@@ -777,7 +778,7 @@ class _EmptyState extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             Text(
               'You haven\'t enrolled in any courses yet.\nBrowse and start your learning journey today!',
               textAlign: TextAlign.center,
@@ -787,10 +788,10 @@ class _EmptyState extends StatelessWidget {
                 height: 1.6,
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             DecoratedBox(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [_kPrimary, _kPrimaryB],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -807,7 +808,7 @@ class _EmptyState extends StatelessWidget {
               child: TextButton(
                 onPressed: () {},
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
+                  padding: EdgeInsets.symmetric(
                     horizontal: 32,
                     vertical: 14,
                   ),
@@ -815,7 +816,7 @@ class _EmptyState extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Browse Courses',
                   style: TextStyle(
                     fontSize: 14,
@@ -840,7 +841,7 @@ class _ShimmerTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Shimmer.fromColors(
         baseColor: Colors.white24,
         highlightColor: Colors.white38,
@@ -848,7 +849,7 @@ class _ShimmerTabBar extends StatelessWidget {
           children: List.generate(
             3,
             (i) => Container(
-              margin: const EdgeInsets.only(right: 8),
+              margin: EdgeInsets.only(right: 8),
               width: 88,
               height: 38,
               decoration: BoxDecoration(
@@ -867,7 +868,7 @@ class _ShimmerBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 24),
       child: Column(
         children: [
           // course card skeleton
@@ -882,12 +883,12 @@ class _ShimmerBody extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           // feature card skeletons
           ...List.generate(
             4,
             (i) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: EdgeInsets.only(bottom: 12),
               child: Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,

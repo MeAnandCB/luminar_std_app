@@ -473,7 +473,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                             ),
                             child: Text(
                               _lastScannedCode!.displayValue ?? 'QR-2025-001',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF2D3436),

@@ -62,7 +62,7 @@ class VideoCard extends StatelessWidget {
                               ),
                               child: Text(
                                 durationText,
-                                style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w500),
+                                style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w500),
                               ),
                             ),
                           ),
@@ -78,11 +78,7 @@ class VideoCard extends StatelessWidget {
                         children: [
                           Text(
                             video.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -188,7 +184,7 @@ class VideoCard extends StatelessWidget {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Icon(Icons.play_arrow_rounded, size: 16, color: AppColors.white),
               SizedBox(width: 4),
               Text(

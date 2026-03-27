@@ -268,7 +268,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
               children: [
                 Text(
                   data.batch?.courseName ?? 'Unknown Course',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -533,7 +533,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                           const SizedBox(width: 4),
                           Text(
                             data.paymentType?.toUpperCase() ?? 'N/A',
-                            style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600),
+                            style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -549,12 +549,12 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                       children: [
                         Text(
                           isOverdue ? 'Overdue Amount' : 'Due Amount',
-                          style: const TextStyle(fontSize: 12, color: Colors.white70),
+                          style: TextStyle(fontSize: 12, color: Colors.white70),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '₹${NumberFormat('#,##0').format(nextDueAmount)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
@@ -596,7 +596,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                                 children: [
                                   Text(
                                     isOverdue ? 'Pay Overdue' : 'Pay Now',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
                                       color: Color(0xFF4158D0),
@@ -708,7 +708,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Payment', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      Text('Payment', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                       const SizedBox(height: 2),
                       Text(
                         '${dateFormat.format(txn.paymentDate ?? DateTime.now())} • ${txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'Unknown'}',
@@ -993,7 +993,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         children: [
                           Text(
                             data.batch?.courseName ?? 'Unknown Course',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -1238,7 +1238,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
 
   void showAlertDialog(BuildContext context, String title, String message) {
     AlertDialog alert = AlertDialog(
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
       content: Text(message),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       actions: [

@@ -94,7 +94,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   Expanded(
                     child: Text(
                       widget.videoTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -183,7 +183,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     // Title Section
                     Text(
                       widget.videoTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -315,7 +315,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+            style: TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
       ),
@@ -361,12 +361,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           children: [
             Text(
               'Title: ${widget.videoTitle}',
-              style: const TextStyle(color: Colors.white70),
+              style: TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 8),
             Text(
               'Video ID: ${widget.videoId}',
-              style: const TextStyle(color: Colors.white70),
+              style: TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 8),
             const Text(

@@ -84,7 +84,7 @@ class EnrollmentCard extends StatelessWidget {
                           ),
                           child: Text(
                             '#${index + 1}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -108,7 +108,7 @@ class EnrollmentCard extends StatelessWidget {
                               const SizedBox(height: 2),
                               Text(
                                 enrollment.enrollmentNumber,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -207,7 +207,7 @@ class EnrollmentCard extends StatelessWidget {
                             children: [
                               Text(
                                 enrollment.course.courseName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -321,7 +321,7 @@ class EnrollmentCard extends StatelessWidget {
                             children: [
                               Text(
                                 enrollment.batch.batchName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                 ),

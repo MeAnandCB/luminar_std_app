@@ -53,7 +53,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   children: [
                     // Header
                     Padding(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(20),
                       child: Row(
                         children: [
                           Container(
@@ -74,8 +74,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   color: AppColors.primary, size: 20),
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          const Text(
+                          SizedBox(width: 16),
+                          Text(
                             'Edit Profile',
                             style: TextStyle(
                                 fontSize: 28,
@@ -121,14 +121,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   ),
                                   child: (editController.profilePicPath == null && 
                                           profileController.profileData?.personalInfo?.profilePicture == null)
-                                    ? const Center(child: Icon(Icons.person_rounded, color: AppColors.white, size: 50))
+                                    ? Center(child: Icon(Icons.person_rounded, color: AppColors.white, size: 50))
                                     : null,
                                 ),
                                 Positioned(
                                   bottom: 0,
                                   right: 0,
                                   child: Container(
-                                    padding: const EdgeInsets.all(6),
+                                    padding: EdgeInsets.all(6),
                                     decoration: BoxDecoration(
                                       color: AppColors.white,
                                       shape: BoxShape.circle,
@@ -145,14 +145,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Text('Tap to change photo',
                               style: AppTextStyles.caption),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Personal Information
                     _buildEditSection(
@@ -182,13 +182,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Academic Information
                     _buildEditSection(
                       title: 'Academic Information',
                       icon: Icons.school_rounded,
-                      color: const Color(0xFFFF7675),
+                      color: Color(0xFFFF7675),
                     children: [
                         _buildTextField('Qualification', editController.qualificationController),
                         _buildTextField('College', editController.collegeController),
@@ -222,7 +222,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Contact Information
                     _buildEditSection(
@@ -243,7 +243,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Placement Information
                     _buildEditSection(
@@ -262,17 +262,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Save Button
                     if (editController.error != null)
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        child: Text(editController.error!, style: const TextStyle(color: Colors.red)),
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        child: Text(editController.error!, style: TextStyle(color: Colors.red)),
                       ),
                     
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: EdgeInsets.symmetric(horizontal: 20),
                       child: Container(
                         width: double.infinity,
                         height: 56,
@@ -306,13 +306,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                           child: editController.isSubmitting
                               ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text('Save Changes',
+                              : Text('Save Changes',
                                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -330,8 +330,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required List<Widget> children,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(24),
@@ -345,16 +345,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                     color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: color, size: 20),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Text(title, style: AppTextStyles.sectionTitle),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           ...children,
         ],
       ),
@@ -368,7 +368,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     bool isEditable = true,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -376,15 +376,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               Text(label, style: AppTextStyles.statLabel),
               if (!isEditable) ...[
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Icon(Icons.lock_outline_rounded, size: 12, color: AppColors.textSecondary),
               ],
             ],
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Container(
             decoration: BoxDecoration(
-              color: isEditable ? const Color(0xFFF1F3FA) : const Color(0xFFF5F5F5),
+              color: isEditable ? Color(0xFFF1F3FA) : Color(0xFFF5F5F5),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: isEditable ? AppColors.borderLight : Colors.grey.shade300),
             ),
@@ -398,7 +398,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 fontWeight: FontWeight.w500,
               ),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: InputBorder.none,
                 hintText: isEditable ? 'Enter $label' : 'Cannot edit',
                 hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.5), fontSize: 14),
@@ -412,18 +412,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Widget _buildDatePicker(String label, TextEditingController controller, VoidCallback onTap) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: AppTextStyles.statLabel),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           GestureDetector(
             onTap: onTap,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F3FA),
+                color: Color(0xFFF1F3FA),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.borderLight),
               ),
@@ -459,7 +459,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     bool isEditable = true,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -467,16 +467,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               Text(label, style: AppTextStyles.statLabel),
               if (!isEditable) ...[
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Icon(Icons.lock_outline_rounded, size: 12, color: AppColors.textSecondary),
               ],
             ],
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: isEditable ? const Color(0xFFF1F3FA) : const Color(0xFFF5F5F5),
+              color: isEditable ? Color(0xFFF1F3FA) : Color(0xFFF5F5F5),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: isEditable ? AppColors.borderLight : Colors.grey.shade300),
             ),
@@ -516,30 +516,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(32)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
                     color: AppColors.statsGreen.withOpacity(0.1), shape: BoxShape.circle),
                 child: Icon(Icons.check_circle_rounded, color: AppColors.statsGreen, size: 50),
               ),
-              const SizedBox(height: 20),
-              const Text(
+              SizedBox(height: 20),
+              Text(
                 'Profile Updated!',
                 style: TextStyle(
                     fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'Your changes have been saved successfully.',
                 style: AppTextStyles.bodyText,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -550,10 +550,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: const Text('Done'),
+                  child: Text('Done'),
                 ),
               ),
             ],

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:luminar_std/presentation/chat_screen/chat_screen.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/chat.dart';
@@ -154,7 +156,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         : null;
     final child = Text(
       chat.name.isNotEmpty ? chat.name[0].toUpperCase() : '?',
-      style: const TextStyle(
+      style: TextStyle(
         color: Colors.white,
         fontSize: 16,
         fontWeight: FontWeight.w600,
@@ -322,11 +324,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ChatProvider>();
+    context.watch<ThemeProvider>(); // Rebuild on theme change
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0.5,
         shadowColor: Colors.black12,
         titleSpacing: 16,
@@ -580,7 +583,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       chat.unreadCount > 99
                           ? '99+'
                           : chat.unreadCount.toString(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,

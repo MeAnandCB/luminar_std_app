@@ -51,7 +51,7 @@ class FolderCard extends StatelessWidget {
                       // Folder Name
                       Text(
                         folder.name,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -145,7 +145,7 @@ class FolderCard extends StatelessWidget {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
                 'Open',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.white),

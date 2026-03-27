@@ -231,7 +231,7 @@ class _CourseScreenState extends State<CourseScreen>
               children: [
                 Text(
                   widget.institute,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF2D3748),
@@ -261,7 +261,7 @@ class _CourseScreenState extends State<CourseScreen>
             ),
             child: Text(
               'ID: ${widget.enrollmentId.substring(0, 6)}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 color: Color(0xFF667EEA),
                 fontWeight: FontWeight.w600,
@@ -344,7 +344,7 @@ class _CourseScreenState extends State<CourseScreen>
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
             color: Color(0xFF2D3748),
@@ -485,7 +485,7 @@ class _CourseScreenState extends State<CourseScreen>
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF2D3748),
@@ -546,7 +546,7 @@ class _CourseScreenState extends State<CourseScreen>
                 ),
                 child: Text(
                   '${widget.discount}% Discount',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -614,7 +614,7 @@ class _CourseScreenState extends State<CourseScreen>
               ),
               Text(
                 '${widget.paymentCompleted}% Completed',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -634,7 +634,7 @@ class _CourseScreenState extends State<CourseScreen>
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -736,7 +736,7 @@ class _CourseScreenState extends State<CourseScreen>
               const SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,

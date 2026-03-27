@@ -168,7 +168,7 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
           : null;
       child = Text(
         chat.name.isNotEmpty ? chat.name[0].toUpperCase() : '?',
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
           fontSize: 15,
           fontWeight: FontWeight.w600,
@@ -266,7 +266,7 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
                           : msg.isFile
                           ? 'File'
                           : 'Message',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         color: Color(0xFF7B9FD4),
                         fontWeight: FontWeight.w600,
@@ -355,7 +355,7 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
                     ),
                     child: Text(
                       '${_selectedUids.length} selected',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF7B9FD4),
                         fontWeight: FontWeight.w600,
@@ -379,7 +379,7 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
               ),
               child: TextField(
                 controller: _searchController,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A2E)),
+                style: TextStyle(fontSize: 14, color: Color(0xFF1A1A2E)),
                 decoration: InputDecoration(
                   hintText: 'Search chats…',
                   hintStyle: TextStyle(
@@ -593,7 +593,7 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
                         children: [
                           Text(
                             chat.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               color: Color(0xFF4A7FA5),
                               fontWeight: FontWeight.w600,

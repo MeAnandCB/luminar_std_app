@@ -3,153 +3,150 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 
 class AppTextStyles {
   // Splash Screen Text Styles
-  static TextStyle tagline = TextStyle(
-    fontSize: 14,
-    color: AppColors.whiteWithOpacity90,
-    fontWeight: FontWeight.w500,
-  );
+  static TextStyle get tagline => TextStyle(
+        fontSize: 14,
+        color: AppColors.whiteWithOpacity90,
+        fontWeight: FontWeight.w500,
+      );
 
-  static TextStyle version = TextStyle(
-    fontSize: 12,
-    color: AppColors.versionText,
-  );
+  static TextStyle get version => TextStyle(
+        fontSize: 12,
+        color: AppColors.versionText,
+      );
 
-  // TODO :Dashboard Header Styles
-  static const TextStyle headerName = TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
+  // Dashboard Header Styles
+  static TextStyle get headerName => TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle headerSubtitle = TextStyle(
-    fontSize: 14,
-    color: AppColors.textSecondary,
-  );
+  static TextStyle get headerSubtitle => TextStyle(
+        fontSize: 14,
+        color: AppColors.textSecondary,
+      );
 
   // Welcome Status
-  static const TextStyle welcomeStatus = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
-    color: AppColors.statusActive,
-  );
+  static TextStyle get welcomeStatus => TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: AppColors.statusActive,
+      );
 
   // Course Card Styles
-  static const TextStyle courseCardLabel = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textWhite70,
-  );
+  static TextStyle get courseCardLabel => TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textWhite70,
+      );
 
-  static const TextStyle courseCardTitle = TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textWhite,
-  );
+  static TextStyle get courseCardTitle => TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textWhite,
+      );
 
-  static const TextStyle courseCardValue = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textWhite,
-  );
+  static TextStyle get courseCardValue => TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textWhite,
+      );
 
-  static const TextStyle courseCardProgress = TextStyle(
-    fontSize: 12,
-    color: AppColors.textWhite70,
-  );
+  static TextStyle get courseCardProgress => TextStyle(
+        fontSize: 12,
+        color: AppColors.textWhite70,
+      );
 
-  static const TextStyle courseCardButton = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textWhite,
-  );
+  static TextStyle get courseCardButton => TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textWhite,
+      );
 
   // Stats Card Styles
-  static const TextStyle statLabel = TextStyle(
-    fontSize: 12,
-    color: AppColors.textSecondary,
-  );
+  static TextStyle get statLabel => TextStyle(
+        fontSize: 12,
+        color: AppColors.textSecondary,
+      );
 
-  static const TextStyle statValue = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get statValue => TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
 
   // Section Title
-  static const TextStyle sectionTitle = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get sectionTitle => TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
 
   // Activity List Styles
-  static const TextStyle activityTitle = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get activityTitle => TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle activitySubtitle = TextStyle(
-    fontSize: 14,
-    color: AppColors.textSecondary,
-  );
+  static TextStyle get activitySubtitle => TextStyle(
+        fontSize: 14,
+        color: AppColors.textSecondary,
+      );
 
-  static const TextStyle activityTime = TextStyle(
-    fontSize: 12,
-    color: AppColors.textHint,
-  );
+  static TextStyle get activityTime => TextStyle(
+        fontSize: 12,
+        color: AppColors.textHint,
+      );
 
-  // Common Text Styles (for future use)
-  static const TextStyle heading1 = TextStyle(
-    fontSize: 24,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
+  // Common Text Styles
+  static TextStyle get heading1 => TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle heading2 = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get heading2 => TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle bodyText = TextStyle(
-    fontSize: 16,
-    color: AppColors.textSecondary,
-  );
+  static TextStyle get bodyText => TextStyle(
+        fontSize: 16,
+        color: AppColors.textSecondary,
+      );
 
-  static const TextStyle caption = TextStyle(
-    fontSize: 12,
-    color: AppColors.textSecondary,
-  );
+  static TextStyle get caption => TextStyle(
+        fontSize: 12,
+        color: AppColors.textSecondary,
+      );
 
-  //
+  static TextStyle get bodyText1 => TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textPrimary,
+      );
 
-  // Add these to your existing AppTextStyles class
-  static const TextStyle bodyText1 = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
-    color: Color(0xFF212121),
-  );
+  static TextStyle get bodyText2 => TextStyle(
+        fontSize: 14,
+        color: AppColors.textSecondary,
+      );
 
-  static const TextStyle bodyText2 = TextStyle(
-    fontSize: 14,
-    color: Color(0xFF424242),
-  );
+  static TextStyle get subtitle1 => TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle subtitle1 = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    color: Color(0xFF212121),
-  );
+  static TextStyle get hintText => TextStyle(
+        fontSize: 14,
+        color: AppColors.textHint,
+      );
 
-  static const TextStyle hintText = TextStyle(
-    fontSize: 14,
-    color: Color(0xFF9E9E9E),
-  );
-
-  static const TextStyle buttonText = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
-    color: Colors.white,
-  );
+  static TextStyle get buttonText => const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: Colors.white,
+      );
 }

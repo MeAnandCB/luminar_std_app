@@ -290,7 +290,7 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet>
                           : _isPaused
                           ? 'Paused'
                           : 'Recording…',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF1A1A2E),

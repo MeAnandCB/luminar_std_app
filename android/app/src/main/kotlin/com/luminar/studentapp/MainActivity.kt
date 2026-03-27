@@ -1,4 +1,4 @@
-package com.example.luminar_std
+package com.luminar.studentapp
 
 import io.flutter.embedding.android.FlutterActivity
 

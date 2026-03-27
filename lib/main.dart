@@ -18,6 +18,7 @@ import 'package:luminar_std/repository/attandance_screen/service.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
+import 'package:luminar_std/core/theme/app_theme.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 Future<void> requestPermissions() async {
@@ -84,7 +85,8 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: 'Luminar Student App',
           debugShowCheckedModeBanner: false,
-
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,
           home: const SplashScreen(),
         );

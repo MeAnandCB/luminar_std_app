@@ -236,7 +236,7 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
             children: [
               Text(
                 '${images.length} images',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
               if (isLoadingMore)
                 const Padding(

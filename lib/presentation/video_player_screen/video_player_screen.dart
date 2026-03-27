@@ -267,7 +267,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                 foregroundColor: Colors.white,
                 title: Text(
                   widget.video.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
@@ -393,7 +393,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 'Invalid video source: ${widget.video.videoSource.isNotEmpty ? widget.video.videoSource : widget.video.videoLink ?? widget.video.videoUrl ?? "Unknown"}',
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
+                style: TextStyle(color: Colors.white54, fontSize: 12),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -442,7 +442,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           // Title
           Text(
             widget.video.title,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -539,22 +539,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                 const SizedBox(height: 8),
                 Text(
                   'Gallery: ${widget.video.gallery}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  style: TextStyle(color: Colors.white54, fontSize: 11),
                 ),
                 if (widget.video.folder != null &&
                     widget.video.folder!.isNotEmpty)
                   Text(
                     'Folder: ${widget.video.folder}',
-                    style: const TextStyle(color: Colors.white54, fontSize: 11),
+                    style: TextStyle(color: Colors.white54, fontSize: 11),
                   ),
                 Text(
                   'Uploaded: ${_formatDate(widget.video.createdAt)}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  style: TextStyle(color: Colors.white54, fontSize: 11),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Video ID: $_videoId',
-                  style: const TextStyle(color: Colors.white54, fontSize: 10),
+                  style: TextStyle(color: Colors.white54, fontSize: 10),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -632,7 +632,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(color: Colors.white70, fontSize: 11),
+            style: TextStyle(color: Colors.white70, fontSize: 11),
           ),
         ],
       ),
@@ -694,41 +694,41 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           children: [
             Text(
               'Title: ${widget.video.title}',
-              style: const TextStyle(color: Colors.white70),
+              style: TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 8),
             Text(
               'Uploaded by: ${widget.video.uploadedByName}',
-              style: const TextStyle(color: Colors.white70),
+              style: TextStyle(color: Colors.white70),
             ),
             if (widget.video.duration != null) ...[
               const SizedBox(height: 8),
               Text(
                 'Duration: ${_formatDuration(widget.video.duration!)}',
-                style: const TextStyle(color: Colors.white70),
+                style: TextStyle(color: Colors.white70),
               ),
             ],
             if (widget.video.fileSize != null) ...[
               const SizedBox(height: 8),
               Text(
                 'File Size: ${_formatFileSize(widget.video.fileSize!)}',
-                style: const TextStyle(color: Colors.white70),
+                style: TextStyle(color: Colors.white70),
               ),
             ],
             const SizedBox(height: 8),
             Text(
               'Uploaded: ${_formatDate(widget.video.createdAt)}',
-              style: const TextStyle(color: Colors.white70),
+              style: TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 8),
             Text(
               'Video ID: $_videoId',
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              style: TextStyle(color: Colors.white70, fontSize: 12),
             ),
             const SizedBox(height: 8),
             Text(
               'Likes: $_likeCount',
-              style: const TextStyle(color: Colors.white70),
+              style: TextStyle(color: Colors.white70),
             ),
           ],
         ),

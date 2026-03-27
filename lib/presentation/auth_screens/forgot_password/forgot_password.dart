@@ -11,8 +11,7 @@ class ForgotPasswordScreen extends StatefulWidget {
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
-    with SingleTickerProviderStateMixin {
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -27,10 +26,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   void initState() {
     super.initState();
 
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
+    _animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 2000));
 
     _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
@@ -39,13 +35,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       ),
     );
 
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
-          ),
-        );
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
+      ),
+    );
 
     _animationController.forward();
   }
@@ -120,10 +115,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   }
 
   Future<void> _handleSendOtp(BuildContext context) async {
-    final controller = Provider.of<ForgotPasswordController>(
-      context,
-      listen: false,
-    );
+    final controller = Provider.of<ForgotPasswordController>(context, listen: false);
 
     final emailError = _validateEmail(controller.emailController.text);
     if (emailError != null) {
@@ -131,18 +123,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         SnackBar(
           content: Text(emailError),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    final success = await controller.sendOtp(
-      email: controller.emailController.text,
-    );
+    final success = await controller.sendOtp(email: controller.emailController.text);
 
     if (success && mounted) {
       setState(() {
@@ -154,9 +142,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         SnackBar(
           content: Text(controller.successMessage ?? 'OTP sent to your email'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: AppColors.statsGreen,
         ),
       );
@@ -165,9 +151,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         SnackBar(
           content: Text(controller.errorMessage ?? 'Failed to send OTP'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
         ),
       );
@@ -175,10 +159,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   }
 
   Future<void> _handleVerifyOtp(BuildContext context) async {
-    final controller = Provider.of<ForgotPasswordController>(
-      context,
-      listen: false,
-    );
+    final controller = Provider.of<ForgotPasswordController>(context, listen: false);
 
     final otpError = _validateOtp(controller.otpController.text);
     if (otpError != null) {
@@ -186,9 +167,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         SnackBar(
           content: Text(otpError),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
         ),
       );
@@ -207,13 +186,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            controller.successMessage ?? 'OTP verified successfully',
-          ),
+          content: Text(controller.successMessage ?? 'OTP verified successfully'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: AppColors.statsGreen,
         ),
       );
@@ -222,9 +197,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         SnackBar(
           content: Text(controller.errorMessage ?? 'Invalid OTP'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
         ),
       );
@@ -234,10 +207,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   Future<void> _handleResendOtp(BuildContext context) async {
     if (!_canResend) return;
 
-    final controller = Provider.of<ForgotPasswordController>(
-      context,
-      listen: false,
-    );
+    final controller = Provider.of<ForgotPasswordController>(context, listen: false);
 
     final success = await controller.resendOtp();
 
@@ -250,13 +220,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            controller.successMessage ?? 'New OTP sent to your email',
-          ),
+          content: Text(controller.successMessage ?? 'New OTP sent to your email'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: AppColors.statsGreen,
         ),
       );
@@ -265,9 +231,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         SnackBar(
           content: Text(controller.errorMessage ?? 'Failed to resend OTP'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
         ),
       );
@@ -275,20 +239,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   }
 
   Future<void> _handleResetPassword(BuildContext context) async {
-    final controller = Provider.of<ForgotPasswordController>(
-      context,
-      listen: false,
-    );
+    final controller = Provider.of<ForgotPasswordController>(context, listen: false);
 
     // Simplified validation - only check if password is at least 8 characters
     if (controller.newPasswordController.text.length < 8) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Password must be at least 8 characters'),
+          content: Text('Password must be at least 8 characters'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
         ),
       );
@@ -296,15 +255,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     }
 
     // Check if passwords match
-    if (controller.newPasswordController.text !=
-        controller.confirmPasswordController.text) {
+    if (controller.newPasswordController.text != controller.confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Passwords do not match'),
+          content: Text('Passwords do not match'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
         ),
       );
@@ -325,9 +281,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         SnackBar(
           content: Text(controller.errorMessage ?? 'Failed to reset password'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
         ),
       );
@@ -341,42 +295,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(32),
-          ),
+          padding: EdgeInsets.all(24),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.statsGreen.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.statsGreen,
-                  size: 50,
-                ),
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(color: AppColors.statsGreen.withOpacity(0.1), shape: BoxShape.circle),
+                child: Icon(Icons.check_circle_rounded, color: AppColors.statsGreen, size: 50),
               ),
-              const SizedBox(height: 20),
-              const Text(
+              SizedBox(height: 20),
+              Text(
                 'Password Reset Successfully!',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
-              const SizedBox(height: 8),
-              const Text(
+              SizedBox(height: 8),
+              Text(
                 'You can now login with your new password',
                 style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -387,12 +327,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: const Text('Go to Login'),
+                  child: Text('Go to Login'),
                 ),
               ),
             ],
@@ -432,46 +370,34 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight:
-                          size.height -
-                          MediaQuery.of(context).padding.top -
-                          MediaQuery.of(context).padding.bottom,
+                          size.height - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
                     ),
                     child: IntrinsicHeight(
                       child: Column(
                         children: [
                           // Header with back button
                           Padding(
-                            padding: const EdgeInsets.all(20),
+                            padding: EdgeInsets.all(20),
                             child: Row(
                               children: [
                                 Container(
                                   decoration: BoxDecoration(
                                     color: AppColors.white.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: AppColors.borderLighter,
-                                    ),
+                                    border: Border.all(color: AppColors.borderLighter),
                                   ),
                                   child: IconButton(
                                     onPressed: () {
                                       controller.reset();
                                       Navigator.pop(context);
                                     },
-                                    icon: const Icon(
-                                      Icons.arrow_back_ios_new_rounded,
-                                      color: AppColors.white,
-                                      size: 20,
-                                    ),
+                                    icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.white, size: 20),
                                   ),
                                 ),
-                                const SizedBox(width: 16),
-                                const Text(
+                                SizedBox(width: 16),
+                                Text(
                                   'Forgot Password',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.white,
-                                  ),
+                                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.white),
                                 ),
                               ],
                             ),
@@ -479,7 +405,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
                           // Step Indicator
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 30),
+                            padding: EdgeInsets.symmetric(horizontal: 30),
                             child: Row(
                               children: [
                                 _buildStepIndicator(1, 'Email'),
@@ -491,7 +417,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                             ),
                           ),
 
-                          const SizedBox(height: 30),
+                          SizedBox(height: 30),
 
                           // Form Section
                           Expanded(
@@ -499,7 +425,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                               position: _slideAnimation,
                               child: Container(
                                 width: double.infinity,
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   color: AppColors.white,
                                   borderRadius: BorderRadius.only(
                                     topLeft: Radius.circular(40),
@@ -507,18 +433,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                   ),
                                 ),
                                 child: Padding(
-                                  padding: const EdgeInsets.all(30),
+                                  padding: EdgeInsets.all(30),
                                   child: FadeTransition(
                                     opacity: _fadeAnimation,
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const SizedBox(height: 10),
+                                        SizedBox(height: 10),
 
                                         // Step 1: Email
                                         if (_currentStep == 1) ...[
-                                          const Text(
+                                          Text(
                                             'Enter your email',
                                             style: TextStyle(
                                               fontSize: 18,
@@ -526,72 +451,49 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                               color: AppColors.textPrimary,
                                             ),
                                           ),
-                                          const SizedBox(height: 8),
-                                          const Text(
+                                          SizedBox(height: 8),
+                                          Text(
                                             'We\'ll send a verification code to your email',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: AppColors.textSecondary,
-                                            ),
+                                            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                                           ),
-                                          const SizedBox(height: 30),
+                                          SizedBox(height: 30),
 
                                           // Email Field
-                                          const Text(
-                                            'Email',
-                                            style: AppTextStyles.statLabel,
-                                          ),
-                                          const SizedBox(height: 8),
+                                          Text('Email', style: AppTextStyles.statLabel),
+                                          SizedBox(height: 8),
                                           Container(
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF1F3FA),
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
+                                              color: Color(0xFFF1F3FA),
+                                              borderRadius: BorderRadius.circular(20),
                                               border: Border.all(
-                                                color:
-                                                    controller.errorMessage !=
-                                                        null
+                                                color: controller.errorMessage != null
                                                     ? Colors.red
                                                     : AppColors.borderLight,
                                               ),
                                             ),
                                             child: TextFormField(
-                                              controller:
-                                                  controller.emailController,
-                                              keyboardType:
-                                                  TextInputType.emailAddress,
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                color: AppColors.textPrimary,
-                                              ),
+                                              controller: controller.emailController,
+                                              keyboardType: TextInputType.emailAddress,
+                                              style: TextStyle(fontSize: 15, color: AppColors.textPrimary),
                                               decoration: InputDecoration(
                                                 hintText: 'Enter your email',
-                                                hintStyle: TextStyle(
-                                                  fontSize: 14,
-                                                  color: AppColors.textHint,
-                                                ),
-                                                prefixIcon: const Icon(
+                                                hintStyle: TextStyle(fontSize: 14, color: AppColors.textHint),
+                                                prefixIcon: Icon(
                                                   Icons.email_outlined,
                                                   color: AppColors.primary,
                                                   size: 20,
                                                 ),
                                                 border: InputBorder.none,
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 20,
-                                                      vertical: 16,
-                                                    ),
+                                                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                               ),
                                             ),
                                           ),
                                           if (controller.errorMessage != null)
                                             Padding(
-                                              padding: const EdgeInsets.only(
-                                                top: 8,
-                                              ),
+                                              padding: EdgeInsets.only(top: 8),
                                               child: Text(
                                                 controller.errorMessage!,
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   color: Colors.red,
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
@@ -599,60 +501,43 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                               ),
                                             ),
 
-                                          const SizedBox(height: 30),
+                                          SizedBox(height: 30),
 
                                           // Send OTP Button
                                           Container(
                                             width: double.infinity,
                                             height: 56,
                                             decoration: BoxDecoration(
-                                              gradient:
-                                                  AppColors.primaryGradient,
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
+                                              gradient: AppColors.primaryGradient,
+                                              borderRadius: BorderRadius.circular(30),
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: AppColors.primary
-                                                      .withOpacity(0.3),
+                                                  color: AppColors.primary.withOpacity(0.3),
                                                   blurRadius: 10,
                                                   offset: const Offset(0, 4),
                                                 ),
                                               ],
                                             ),
                                             child: ElevatedButton(
-                                              onPressed: controller.isLoading
-                                                  ? null
-                                                  : () =>
-                                                        _handleSendOtp(context),
+                                              onPressed: controller.isLoading ? null : () => _handleSendOtp(context),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    Colors.transparent,
-                                                foregroundColor:
-                                                    AppColors.textWhite,
+                                                backgroundColor: Colors.transparent,
+                                                foregroundColor: AppColors.textWhite,
                                                 elevation: 0,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(30),
-                                                ),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                               ),
                                               child: controller.isLoading
-                                                  ? const SizedBox(
+                                                  ? SizedBox(
                                                       width: 24,
                                                       height: 24,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                            color:
-                                                                AppColors.white,
-                                                            strokeWidth: 2,
-                                                          ),
-                                                    )
-                                                  : const Text(
-                                                      'Send OTP',
-                                                      style: TextStyle(
-                                                        fontSize: 18,
-                                                        fontWeight:
-                                                            FontWeight.w600,
+                                                      child: CircularProgressIndicator(
+                                                        color: AppColors.white,
+                                                        strokeWidth: 2,
                                                       ),
+                                                    )
+                                                  : Text(
+                                                      'Send OTP',
+                                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                                                     ),
                                             ),
                                           ),
@@ -660,7 +545,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
                                         // Step 2: OTP
                                         if (_currentStep == 2) ...[
-                                          const Text(
+                                          Text(
                                             'Enter verification code',
                                             style: TextStyle(
                                               fontSize: 18,
@@ -668,74 +553,47 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                               color: AppColors.textPrimary,
                                             ),
                                           ),
-                                          const SizedBox(height: 8),
+                                          SizedBox(height: 8),
                                           Text(
                                             'Code sent to ${controller.emailController.text}',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: AppColors.textSecondary,
-                                            ),
+                                            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                                           ),
-                                          const SizedBox(height: 30),
+                                          SizedBox(height: 30),
 
                                           // OTP Field
-                                          const Text(
-                                            'OTP',
-                                            style: AppTextStyles.statLabel,
-                                          ),
-                                          const SizedBox(height: 8),
+                                          Text('OTP', style: AppTextStyles.statLabel),
+                                          SizedBox(height: 8),
                                           Container(
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF1F3FA),
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
+                                              color: Color(0xFFF1F3FA),
+                                              borderRadius: BorderRadius.circular(20),
                                               border: Border.all(
-                                                color:
-                                                    controller.errorMessage !=
-                                                        null
+                                                color: controller.errorMessage != null
                                                     ? Colors.red
                                                     : AppColors.borderLight,
                                               ),
                                             ),
                                             child: TextFormField(
-                                              controller:
-                                                  controller.otpController,
-                                              keyboardType:
-                                                  TextInputType.number,
+                                              controller: controller.otpController,
+                                              keyboardType: TextInputType.number,
                                               maxLength: 6,
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                color: AppColors.textPrimary,
-                                              ),
+                                              style: TextStyle(fontSize: 15, color: AppColors.textPrimary),
                                               decoration: InputDecoration(
                                                 hintText: 'Enter 6-digit OTP',
-                                                hintStyle: TextStyle(
-                                                  fontSize: 14,
-                                                  color: AppColors.textHint,
-                                                ),
-                                                prefixIcon: const Icon(
-                                                  Icons.pin_rounded,
-                                                  color: AppColors.primary,
-                                                  size: 20,
-                                                ),
+                                                hintStyle: TextStyle(fontSize: 14, color: AppColors.textHint),
+                                                prefixIcon: Icon(Icons.pin_rounded, color: AppColors.primary, size: 20),
                                                 border: InputBorder.none,
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 20,
-                                                      vertical: 16,
-                                                    ),
+                                                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                                 counterText: '',
                                               ),
                                             ),
                                           ),
                                           if (controller.errorMessage != null)
                                             Padding(
-                                              padding: const EdgeInsets.only(
-                                                top: 8,
-                                              ),
+                                              padding: EdgeInsets.only(top: 8),
                                               child: Text(
                                                 controller.errorMessage!,
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   color: Colors.red,
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
@@ -743,34 +601,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                               ),
                                             ),
 
-                                          const SizedBox(height: 20),
+                                          SizedBox(height: 20),
 
                                           // Resend OTP
                                           Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
+                                            mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
-                                              const Text(
+                                              Text(
                                                 "Didn't receive code? ",
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  color:
-                                                      AppColors.textSecondary,
-                                                ),
+                                                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                                               ),
                                               if (_canResend)
                                                 GestureDetector(
-                                                  onTap: controller.isLoading
-                                                      ? null
-                                                      : () => _handleResendOtp(
-                                                          context,
-                                                        ),
-                                                  child: const Text(
+                                                  onTap: controller.isLoading ? null : () => _handleResendOtp(context),
+                                                  child: Text(
                                                     'Resend',
                                                     style: TextStyle(
                                                       fontSize: 13,
-                                                      fontWeight:
-                                                          FontWeight.w700,
+                                                      fontWeight: FontWeight.w700,
                                                       color: AppColors.primary,
                                                     ),
                                                   ),
@@ -778,7 +626,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                               else
                                                 Text(
                                                   'Resend in $_timerSeconds s',
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontSize: 13,
                                                     fontWeight: FontWeight.w600,
                                                     color: AppColors.textHint,
@@ -787,61 +635,43 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                             ],
                                           ),
 
-                                          const SizedBox(height: 30),
+                                          SizedBox(height: 30),
 
                                           // Verify OTP Button
                                           Container(
                                             width: double.infinity,
                                             height: 56,
                                             decoration: BoxDecoration(
-                                              gradient:
-                                                  AppColors.primaryGradient,
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
+                                              gradient: AppColors.primaryGradient,
+                                              borderRadius: BorderRadius.circular(30),
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: AppColors.primary
-                                                      .withOpacity(0.3),
+                                                  color: AppColors.primary.withOpacity(0.3),
                                                   blurRadius: 10,
                                                   offset: const Offset(0, 4),
                                                 ),
                                               ],
                                             ),
                                             child: ElevatedButton(
-                                              onPressed: controller.isLoading
-                                                  ? null
-                                                  : () => _handleVerifyOtp(
-                                                      context,
-                                                    ),
+                                              onPressed: controller.isLoading ? null : () => _handleVerifyOtp(context),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    Colors.transparent,
-                                                foregroundColor:
-                                                    AppColors.textWhite,
+                                                backgroundColor: Colors.transparent,
+                                                foregroundColor: AppColors.textWhite,
                                                 elevation: 0,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(30),
-                                                ),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                               ),
                                               child: controller.isLoading
-                                                  ? const SizedBox(
+                                                  ? SizedBox(
                                                       width: 24,
                                                       height: 24,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                            color:
-                                                                AppColors.white,
-                                                            strokeWidth: 2,
-                                                          ),
-                                                    )
-                                                  : const Text(
-                                                      'Verify OTP',
-                                                      style: TextStyle(
-                                                        fontSize: 18,
-                                                        fontWeight:
-                                                            FontWeight.w600,
+                                                      child: CircularProgressIndicator(
+                                                        color: AppColors.white,
+                                                        strokeWidth: 2,
                                                       ),
+                                                    )
+                                                  : Text(
+                                                      'Verify OTP',
+                                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                                                     ),
                                             ),
                                           ),
@@ -849,7 +679,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
                                         // Step 3: New Password
                                         if (_currentStep == 3) ...[
-                                          const Text(
+                                          Text(
                                             'Reset your password',
                                             style: TextStyle(
                                               fontSize: 18,
@@ -857,46 +687,30 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                               color: AppColors.textPrimary,
                                             ),
                                           ),
-                                          const SizedBox(height: 8),
-                                          const Text(
+                                          SizedBox(height: 8),
+                                          Text(
                                             'Enter your new password',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: AppColors.textSecondary,
-                                            ),
+                                            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                                           ),
-                                          const SizedBox(height: 30),
+                                          SizedBox(height: 30),
 
                                           // New Password
-                                          const Text(
-                                            'New Password',
-                                            style: AppTextStyles.statLabel,
-                                          ),
-                                          const SizedBox(height: 8),
+                                          Text('New Password', style: AppTextStyles.statLabel),
+                                          SizedBox(height: 8),
                                           Container(
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF1F3FA),
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              border: Border.all(
-                                                color: AppColors.borderLight,
-                                              ),
+                                              color: Color(0xFFF1F3FA),
+                                              borderRadius: BorderRadius.circular(20),
+                                              border: Border.all(color: AppColors.borderLight),
                                             ),
                                             child: TextFormField(
-                                              controller: controller
-                                                  .newPasswordController,
+                                              controller: controller.newPasswordController,
                                               obscureText: !_isPasswordVisible,
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                color: AppColors.textPrimary,
-                                              ),
+                                              style: TextStyle(fontSize: 15, color: AppColors.textPrimary),
                                               decoration: InputDecoration(
                                                 hintText: 'Enter new password',
-                                                hintStyle: TextStyle(
-                                                  fontSize: 14,
-                                                  color: AppColors.textHint,
-                                                ),
-                                                prefixIcon: const Icon(
+                                                hintStyle: TextStyle(fontSize: 14, color: AppColors.textHint),
+                                                prefixIcon: Icon(
                                                   Icons.lock_outline_rounded,
                                                   color: AppColors.primary,
                                                   size: 20,
@@ -904,68 +718,46 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                                 suffixIcon: IconButton(
                                                   icon: Icon(
                                                     _isPasswordVisible
-                                                        ? Icons
-                                                              .visibility_off_rounded
-                                                        : Icons
-                                                              .visibility_rounded,
+                                                        ? Icons.visibility_off_rounded
+                                                        : Icons.visibility_rounded,
                                                     color: AppColors.primary,
                                                     size: 20,
                                                   ),
                                                   onPressed: () {
                                                     setState(() {
-                                                      _isPasswordVisible =
-                                                          !_isPasswordVisible;
+                                                      _isPasswordVisible = !_isPasswordVisible;
                                                     });
                                                   },
                                                 ),
                                                 border: InputBorder.none,
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 20,
-                                                      vertical: 16,
-                                                    ),
+                                                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                               ),
                                             ),
                                           ),
 
-                                          const SizedBox(height: 16),
+                                          SizedBox(height: 16),
 
                                           // Confirm Password
-                                          const Text(
-                                            'Confirm Password',
-                                            style: AppTextStyles.statLabel,
-                                          ),
-                                          const SizedBox(height: 8),
+                                          Text('Confirm Password', style: AppTextStyles.statLabel),
+                                          SizedBox(height: 8),
                                           Container(
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF1F3FA),
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
+                                              color: Color(0xFFF1F3FA),
+                                              borderRadius: BorderRadius.circular(20),
                                               border: Border.all(
-                                                color:
-                                                    controller.errorMessage !=
-                                                        null
+                                                color: controller.errorMessage != null
                                                     ? Colors.red
                                                     : AppColors.borderLight,
                                               ),
                                             ),
                                             child: TextFormField(
-                                              controller: controller
-                                                  .confirmPasswordController,
-                                              obscureText:
-                                                  !_isConfirmPasswordVisible,
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                color: AppColors.textPrimary,
-                                              ),
+                                              controller: controller.confirmPasswordController,
+                                              obscureText: !_isConfirmPasswordVisible,
+                                              style: TextStyle(fontSize: 15, color: AppColors.textPrimary),
                                               decoration: InputDecoration(
-                                                hintText:
-                                                    'Confirm new password',
-                                                hintStyle: TextStyle(
-                                                  fontSize: 14,
-                                                  color: AppColors.textHint,
-                                                ),
-                                                prefixIcon: const Icon(
+                                                hintText: 'Confirm new password',
+                                                hintStyle: TextStyle(fontSize: 14, color: AppColors.textHint),
+                                                prefixIcon: Icon(
                                                   Icons.lock_outline_rounded,
                                                   color: AppColors.primary,
                                                   size: 20,
@@ -973,37 +765,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                                 suffixIcon: IconButton(
                                                   icon: Icon(
                                                     _isConfirmPasswordVisible
-                                                        ? Icons
-                                                              .visibility_off_rounded
-                                                        : Icons
-                                                              .visibility_rounded,
+                                                        ? Icons.visibility_off_rounded
+                                                        : Icons.visibility_rounded,
                                                     color: AppColors.primary,
                                                     size: 20,
                                                   ),
                                                   onPressed: () {
                                                     setState(() {
-                                                      _isConfirmPasswordVisible =
-                                                          !_isConfirmPasswordVisible;
+                                                      _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
                                                     });
                                                   },
                                                 ),
                                                 border: InputBorder.none,
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 20,
-                                                      vertical: 16,
-                                                    ),
+                                                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                               ),
                                             ),
                                           ),
                                           if (controller.errorMessage != null)
                                             Padding(
-                                              padding: const EdgeInsets.only(
-                                                top: 8,
-                                              ),
+                                              padding: EdgeInsets.only(top: 8),
                                               child: Text(
                                                 controller.errorMessage!,
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   color: Colors.red,
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
@@ -1011,21 +794,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                               ),
                                             ),
 
-                                          const SizedBox(height: 30),
+                                          SizedBox(height: 30),
 
                                           // Reset Password Button
                                           Container(
                                             width: double.infinity,
                                             height: 56,
                                             decoration: BoxDecoration(
-                                              gradient:
-                                                  AppColors.primaryGradient,
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
+                                              gradient: AppColors.primaryGradient,
+                                              borderRadius: BorderRadius.circular(30),
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: AppColors.primary
-                                                      .withOpacity(0.3),
+                                                  color: AppColors.primary.withOpacity(0.3),
                                                   blurRadius: 10,
                                                   offset: const Offset(0, 4),
                                                 ),
@@ -1034,38 +814,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                             child: ElevatedButton(
                                               onPressed: controller.isLoading
                                                   ? null
-                                                  : () => _handleResetPassword(
-                                                      context,
-                                                    ),
+                                                  : () => _handleResetPassword(context),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    Colors.transparent,
-                                                foregroundColor:
-                                                    AppColors.textWhite,
+                                                backgroundColor: Colors.transparent,
+                                                foregroundColor: AppColors.textWhite,
                                                 elevation: 0,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(30),
-                                                ),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                               ),
                                               child: controller.isLoading
-                                                  ? const SizedBox(
+                                                  ? SizedBox(
                                                       width: 24,
                                                       height: 24,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                            color:
-                                                                AppColors.white,
-                                                            strokeWidth: 2,
-                                                          ),
-                                                    )
-                                                  : const Text(
-                                                      'Reset Password',
-                                                      style: TextStyle(
-                                                        fontSize: 18,
-                                                        fontWeight:
-                                                            FontWeight.w600,
+                                                      child: CircularProgressIndicator(
+                                                        color: AppColors.white,
+                                                        strokeWidth: 2,
                                                       ),
+                                                    )
+                                                  : Text(
+                                                      'Reset Password',
+                                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                                                     ),
                                             ),
                                           ),
@@ -1103,9 +870,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             gradient: isActive ? AppColors.primaryGradient : null,
             color: isActive ? null : AppColors.borderLight,
             shape: BoxShape.circle,
-            border: isCurrent
-                ? Border.all(color: AppColors.white, width: 3)
-                : null,
+            border: isCurrent ? Border.all(color: AppColors.white, width: 3) : null,
           ),
           child: Center(
             child: Text(
@@ -1118,13 +883,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            color: isActive
-                ? AppColors.white
-                : AppColors.white.withOpacity(0.5),
+            color: isActive ? AppColors.white : AppColors.white.withOpacity(0.5),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -1138,7 +901,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
     return Container(
       height: 2,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
+      margin: EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         gradient: isActive ? AppColors.primaryGradient : null,
         color: isActive ? null : AppColors.white.withOpacity(0.3),

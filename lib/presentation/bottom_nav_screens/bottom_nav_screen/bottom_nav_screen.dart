@@ -1,8 +1,8 @@
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
-import 'package:luminar_std/presentation/auth_screens/loginform/loginform.dart';
 import 'package:luminar_std/presentation/chat_list_screen/chat_list_screen.dart';
 import 'package:luminar_std/presentation/home_screen/home_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
@@ -25,14 +25,6 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   late EnrollmentProvider enrollmentProvider;
   late int _currentIndex;
 
-  List<Widget> _pages = [
-    const StudentDashboard(),
-    const EnrollmentScreen(),
-    // const MessageScreen(), // Chat
-    ChatListScreen(),
-    const MoreEnrollmentScreen(), // More
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -46,42 +38,44 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 
   Future<void> _loadData() async {
     await enrollmentProvider.fetchEnrollData(context: context);
-    if (mounted) {
-      _updatePages();
-    }
-  }
-
-  void _updatePages() {
-    if (enrollmentProvider.enrollmentDataRes != null) {
-      setState(() {
-        _pages = [
-          const StudentDashboard(),
-          (enrollmentProvider.enrollmentDataRes!.enrollments[0].status.value == "not_set" ||
-                  enrollmentProvider.enrollmentDataRes!.enrollments[0]?.status.value == "demo_expired" ||
-                  enrollmentProvider.enrollmentDataRes!.enrollments[0]?.status.value == "admission_fee_paid")
-              ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false)
-              : const EnrollmentScreen(),
-          ChatListScreen(),
-
-          MoreEnrollmentScreen(),
-        ];
-      });
-    }
+    if (mounted) setState(() {});
   }
 
   void _navigateToScanner() {
     Navigator.push(context, MaterialPageRoute(builder: (context) => const ScannerApp()));
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  /// Pages are built here (not stored as state) so every build() call
+  /// picks up the freshly-read AppColors after a theme change.
+  List<Widget> _buildPages(EnrollmentProvider provider) {
+    if (provider.enrollmentDataRes == null) {
+      return [
+        StudentDashboard(),
+        EnrollmentScreen(),
+        ChatListScreen(),
+        MoreEnrollmentScreen(),
+      ];
+    }
+
+    final status = provider.enrollmentDataRes!.enrollments[0].status.value;
+    final isPaymentPending =
+        status == 'not_set' || status == 'demo_expired' || status == 'admission_fee_paid';
+
+    return [
+      StudentDashboard(),
+      isPaymentPending
+          ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false)
+          : EnrollmentScreen(),
+      ChatListScreen(),
+      MoreEnrollmentScreen(),
+    ];
+  }
+
+  Widget _buildNavItem(BuildContext context, int index, IconData icon, String label) {
     final isSelected = _currentIndex == index;
 
     return InkWell(
-      onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
+      onTap: () => setState(() => _currentIndex = index),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -108,16 +102,22 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<EnrollmentProvider>(context);
+    // Subscribe to theme changes so the entire widget rebuilds with fresh AppColors
+    context.watch<ThemeProvider>();
 
     if (provider.enrollmentDataRes != null) {
-      LoggerUtils.debug(provider.enrollmentDataRes!.enrollments.length.toString(), tag: 'BottomNav');
+      LoggerUtils.debug(
+        provider.enrollmentDataRes!.enrollments.length.toString(),
+        tag: 'BottomNav',
+      );
     }
+
+    final pages = _buildPages(provider);
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      body: SafeArea(child: _pages[_currentIndex]),
+      body: SafeArea(child: pages[_currentIndex]),
 
-      // Floating Action Button for Scanner
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToScanner,
@@ -127,7 +127,6 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
         child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 28),
       ),
 
-      // Bottom Navigation Bar with proper spacing
       bottomNavigationBar: BottomAppBar(
         color: AppColors.cardBackground,
         shape: const CircularNotchedRectangle(),
@@ -142,27 +141,22 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Left side items (Home and Course)
                 Expanded(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildNavItem(0, Icons.home, "Home"),
-                      _buildNavItem(1, Icons.grid_view_rounded, "Course"),
+                      _buildNavItem(context, 0, Icons.home, "Home"),
+                      _buildNavItem(context, 1, Icons.grid_view_rounded, "Course"),
                     ],
                   ),
                 ),
-
-                // Center space for FAB
                 const SizedBox(width: 40),
-
-                // Right side items (Chat and More)
                 Expanded(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildNavItem(2, Icons.wechat_rounded, "Chat"),
-                      _buildNavItem(3, Icons.menu_outlined, "More"),
+                      _buildNavItem(context, 2, Icons.wechat_rounded, "Chat"),
+                      _buildNavItem(context, 3, Icons.menu_outlined, "More"),
                     ],
                   ),
                 ),

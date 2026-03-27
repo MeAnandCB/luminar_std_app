@@ -15,6 +15,7 @@ import 'package:luminar_std/presentation/home_screen/widget/top_status_card.dart
 import 'package:luminar_std/presentation/instagram_view_screen.dart';
 import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 import 'package:provider/provider.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:intl/intl.dart';
 
 class StudentDashboard extends StatefulWidget {
@@ -73,6 +74,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final dashboardProvider = Provider.of<DashboardController>(context);
     final dashboard = dashboardProvider.dashboard;
     final provider = Provider.of<EnrollmentProvider>(context);
+    context.watch<ThemeProvider>(); // Rebuild when theme changes
 
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
@@ -95,20 +97,20 @@ class _StudentDashboardState extends State<StudentDashboard> {
               : dashboardProvider.error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(20.0),
+                    padding: EdgeInsets.all(20.0),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        const Icon(Icons.error_outline, size: 60, color: Colors.red),
-                        const SizedBox(height: 16),
+                        Icon(Icons.error_outline, size: 60, color: Colors.red),
+                        SizedBox(height: 16),
                         Text('Error loading dashboard', style: AppTextStyles.headerName.copyWith(color: Colors.red)),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text(
                           dashboardProvider.error!,
                           textAlign: TextAlign.center,
                           style: AppTextStyles.activitySubtitle,
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: () {
                             dashboardProvider.refreshDashboard(context: context);
@@ -118,40 +120,40 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             foregroundColor: Colors.white,
                             minimumSize: const Size(200, 45),
                           ),
-                          child: const Text('Try Again'),
+                          child: Text('Try Again'),
                         ),
                       ],
                     ),
                   ),
                 )
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       HeaderWidget(enrolldata: provider, studentName: studentName, provider: dashboardProvider),
                       StatusCard(status: dashboard?.studentDetails?.statusInfo?.currentStatus?.name ?? 'Active'),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       Center(child: _buildSectionTitle("Course Details")),
 
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                       if (dashboard != null) ...[
                         _buildCourseCard(dashboard, provider),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         Center(child: _buildSectionTitle("NACTET Registration")),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
                         const NactetBanner(),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
 
                         _buildQuickStatsGrid(dashboard),
 
-                        const SizedBox(height: 10),
+                        SizedBox(height: 10),
 
                         const AdvancedInstaCarousel(),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         // _buildSectionTitle("Recent Activities"),
-                        // const SizedBox(height: 12),
+                        // SizedBox(height: 12),
                         // _buildActivityList(dashboard),
                       ],
                     ],
@@ -170,9 +172,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
     if (enrollmentsList.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(20)),
-        child: const Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("CURRENT ENROLLMENT", style: AppTextStyles.courseCardLabel),
@@ -194,7 +196,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          padding: EdgeInsets.only(left: 4, bottom: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -209,7 +211,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   (index) => Container(
                     width: 6,
                     height: 6,
-                    margin: const EdgeInsets.only(right: 4),
+                    margin: EdgeInsets.only(right: 4),
                     decoration: BoxDecoration(
                       color: index == 0 ? AppColors.primary : AppColors.primary.withOpacity(0.3),
                       shape: BoxShape.circle,
@@ -251,15 +253,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("CURRENT ENROLLMENT", style: AppTextStyles.courseCardLabel),
-          const SizedBox(height: 8),
+          Text("CURRENT ENROLLMENT", style: AppTextStyles.courseCardLabel),
+          SizedBox(height: 8),
           Text(courseName, style: AppTextStyles.courseCardTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -268,14 +270,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
               _buildCourseInfoItem("Mode", attendanceMode),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           LinearProgressIndicator(
             minHeight: 8,
             value: progress / 100,
             backgroundColor: AppColors.whiteWithOpacity20,
             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.textWhite),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Text('Progress: ${progress}%', style: AppTextStyles.courseCardProgress),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -301,13 +303,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         );
                       },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     gradient: AppColors.successGradient,
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [BoxShadow(color: AppColors.shadowSuccess, blurRadius: 8, offset: const Offset(0, 2))],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.check_circle_rounded, size: 12, color: AppColors.textWhite),
@@ -342,8 +344,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
     return Container(
       width: 300, // Fixed width for horizontal scrolling
-      margin: const EdgeInsets.only(right: 16),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.only(right: 16),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,17 +355,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(color: AppColors.whiteWithOpacity20, borderRadius: BorderRadius.circular(12)),
                 child: Text(
                   '#${index + 1}',
-                  style: const TextStyle(color: AppColors.textWhite, fontSize: 10, fontWeight: FontWeight.w500),
+                  style: TextStyle(color: AppColors.textWhite, fontSize: 10, fontWeight: FontWeight.w500),
                 ),
               ),
               // Optional status badge if available
               if (status.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: _getStatusColor(status).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -376,7 +378,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             ],
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Keep your original course title styling
           Text(
@@ -388,7 +390,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             overflow: TextOverflow.ellipsis,
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Course details in row (keeping your layout)
           Row(
@@ -412,12 +414,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 backgroundColor: AppColors.whiteWithOpacity20,
                 valueColor: const AlwaysStoppedAnimation<Color>(AppColors.textWhite),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text('Progress: ${progress}%', style: AppTextStyles.courseCardProgress.copyWith(fontSize: 12)),
             ],
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -442,13 +444,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         );
                       },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     gradient: AppColors.successGradient,
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [BoxShadow(color: AppColors.shadowSuccess, blurRadius: 8, offset: const Offset(0, 2))],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.check_circle_rounded, size: 12, color: AppColors.textWhite),
@@ -527,7 +529,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
@@ -569,7 +571,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
     if (activities.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(12)),
         child: Center(child: Text('No recent activities', style: AppTextStyles.activitySubtitle)),
       );
@@ -579,7 +581,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: activities.length > 4 ? 4 : activities.length,
-      separatorBuilder: (context, index) => const Divider(color: Color.fromARGB(255, 239, 239, 239)),
+      separatorBuilder: (context, index) => Divider(color: Color.fromARGB(255, 239, 239, 239)),
       itemBuilder: (context, index) {
         final item = activities[index];
 

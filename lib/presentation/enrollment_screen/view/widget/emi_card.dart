@@ -6,12 +6,8 @@ class EmiBreakdownCard extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onSelect;
 
-  const EmiBreakdownCard({
-    Key? key,
-    required this.plan,
-    required this.isSelected,
-    required this.onSelect,
-  }) : super(key: key);
+  const EmiBreakdownCard({Key? key, required this.plan, required this.isSelected, required this.onSelect})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,21 +17,10 @@ class EmiBreakdownCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isSelected
-            ? AppColors.primary.withOpacity(0.05)
-            : AppColors.cardBackground,
+        color: isSelected ? AppColors.primary.withOpacity(0.05) : AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isSelected ? AppColors.primary : AppColors.borderColor,
-          width: isSelected ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: isSelected ? AppColors.primary : AppColors.borderColor, width: isSelected ? 2 : 1),
+        boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,8 +36,7 @@ class EmiBreakdownCard extends StatelessWidget {
               amount: entry.key == 0
                   ? plan['monthly']!
                   : entry.key == installments.length - 1
-                  ? (plan['total']! -
-                        (plan['monthly']! * (plan['months']! - 1)))
+                  ? (plan['total']! - (plan['monthly']! * (plan['months']! - 1)))
                   : plan['monthly']!,
               isFirst: entry.key == 0,
               isLast: entry.key == installments.length - 1,
@@ -73,16 +57,10 @@ class EmiBreakdownCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primary
-                : AppColors.primary.withOpacity(0.1),
+            color: isSelected ? AppColors.primary : AppColors.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            Icons.calendar_month_rounded,
-            color: isSelected ? Colors.white : AppColors.primary,
-            size: 20,
-          ),
+          child: Icon(Icons.calendar_month_rounded, color: isSelected ? Colors.white : AppColors.primary, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -91,19 +69,12 @@ class EmiBreakdownCard extends StatelessWidget {
             children: [
               Text(
                 '${plan['months']}-Month EMI Plan',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 4),
               Text(
                 '${plan['months']} monthly installments',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -111,17 +82,10 @@ class EmiBreakdownCard extends StatelessWidget {
         if (plan['isPopular'] == true)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.statsOrange,
-              borderRadius: BorderRadius.circular(20),
-            ),
+            decoration: BoxDecoration(color: AppColors.statsOrange, borderRadius: BorderRadius.circular(20)),
             child: const Text(
               'POPULAR',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
             ),
           ),
       ],
@@ -131,42 +95,27 @@ class EmiBreakdownCard extends StatelessWidget {
   Widget _buildScheduleTitle() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      decoration: BoxDecoration(
-        color: AppColors.scaffoldBackground,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Row(
+      decoration: BoxDecoration(color: AppColors.scaffoldBackground, borderRadius: BorderRadius.circular(12)),
+      child: Row(
         children: [
           Expanded(
             flex: 2,
             child: Text(
               'Installment',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
             ),
           ),
           Expanded(
             flex: 2,
             child: Text(
               'Due Date',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
             ),
           ),
           Expanded(
             child: Text(
               'Amount',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
               textAlign: TextAlign.right,
             ),
           ),
@@ -185,15 +134,8 @@ class EmiBreakdownCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: AppColors.borderColor.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        color: isLast
-            ? AppColors.primary.withOpacity(0.02)
-            : Colors.transparent,
+        border: Border(bottom: BorderSide(color: AppColors.borderColor.withOpacity(0.3), width: 1)),
+        color: isLast ? AppColors.primary.withOpacity(0.02) : Colors.transparent,
       ),
       child: Row(
         children: [
@@ -236,27 +178,16 @@ class EmiBreakdownCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: isLast ? FontWeight.w600 : FontWeight.w500,
-                        color: isLast
-                            ? AppColors.primary
-                            : AppColors.textPrimary,
+                        color: isLast ? AppColors.primary : AppColors.textPrimary,
                       ),
                     ),
                     Row(
                       children: [
-                        Icon(
-                          Icons.calendar_today_rounded,
-                          size: 10,
-                          color: AppColors.textHint,
-                        ),
+                        Icon(Icons.calendar_today_rounded, size: 10, color: AppColors.textHint),
                         const SizedBox(width: 4),
                         Text(
                           _formatDate(date),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isLast
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
-                          ),
+                          style: TextStyle(fontSize: 11, color: isLast ? AppColors.primary : AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -271,40 +202,26 @@ class EmiBreakdownCard extends StatelessWidget {
               children: [
                 if (isFirst)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: AppColors.statsOrange.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Text(
                       'First',
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: AppColors.statsOrange,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle(fontSize: 9, color: AppColors.statsOrange, fontWeight: FontWeight.w600),
                     ),
                   ),
                 if (isLast)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: AppColors.statsGreen.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Text(
                       'Last',
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: AppColors.statsGreen,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle(fontSize: 9, color: AppColors.statsGreen, fontWeight: FontWeight.w600),
                     ),
                   ),
               ],
@@ -328,16 +245,11 @@ class EmiBreakdownCard extends StatelessWidget {
 
   Widget _buildSummary() {
     final now = DateTime.now();
-    final lastDate = now.add(
-      Duration(days: 30 * ((plan['months'] as int) - 1)),
-    );
+    final lastDate = now.add(Duration(days: 30 * ((plan['months'] as int) - 1)));
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.scaffoldBackground,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(color: AppColors.scaffoldBackground, borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
           Row(
@@ -378,18 +290,11 @@ class EmiBreakdownCard extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 10, color: AppColors.textHint),
-        ),
+        Text(label, style: TextStyle(fontSize: 10, color: AppColors.textHint)),
         const SizedBox(height: 2),
         Text(
           value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color),
         ),
       ],
     );
@@ -406,16 +311,13 @@ class EmiBreakdownCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
-            side: BorderSide(
-              color: isSelected ? Colors.transparent : AppColors.primary,
-              width: 1.5,
-            ),
+            side: BorderSide(color: isSelected ? Colors.transparent : AppColors.primary, width: 1.5),
           ),
           elevation: isSelected ? 4 : 0,
         ),
         child: Text(
           isSelected ? 'Selected ✓' : 'Select This Plan',
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -430,20 +332,7 @@ class EmiBreakdownCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }

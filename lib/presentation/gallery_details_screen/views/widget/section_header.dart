@@ -17,7 +17,7 @@ class SectionHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               if (count != null) ...[
                 const SizedBox(width: 8),
                 Container(

@@ -68,7 +68,7 @@ class HeaderWidget extends StatelessWidget {
                         child: Center(
                           child: Text(
                             _getFirstLetter(),
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                         ),
                       ),
@@ -80,7 +80,7 @@ class HeaderWidget extends StatelessWidget {
                       child: Center(
                         child: Text(
                           _getFirstLetter(),
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ),
                     ),
@@ -139,7 +139,7 @@ class HeaderWidget extends StatelessWidget {
             backgroundColor: Colors.transparent,
             child: Stack(
               children: [
-                const Icon(Icons.notifications_active_outlined, color: AppColors.notificationIcon, size: 20),
+                Icon(Icons.notifications_active_outlined, color: AppColors.notificationIcon, size: 20),
                 if (unreadCount != null && unreadCount > 0)
                   Positioned(
                     right: 0,
@@ -150,7 +150,7 @@ class HeaderWidget extends StatelessWidget {
                       constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
                       child: Text(
                         '$unreadCount',
-                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
                     ),

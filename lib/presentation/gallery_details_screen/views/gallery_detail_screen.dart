@@ -89,7 +89,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
           children: [
             Text(
               widget.galleryName,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             if (widget.galleryDescription.isNotEmpty)
               Text(
@@ -361,7 +361,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
                 folder.name,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -457,7 +457,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                         ),
                         child: Text(
                           _formatDuration(video.duration!),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
@@ -477,7 +477,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                   children: [
                     Text(
                       video.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
@@ -568,7 +568,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                   Expanded(
                     child: Text(
                       video.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),

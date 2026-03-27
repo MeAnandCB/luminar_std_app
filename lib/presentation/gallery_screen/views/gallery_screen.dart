@@ -91,7 +91,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'Error: ${provider.error}',
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(color: Colors.red),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(

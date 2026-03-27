@@ -17,18 +17,11 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      await Provider.of<LiveClassController>(
-        context,
-        listen: false,
-      ).getLiveClassDetails();
+      await Provider.of<LiveClassController>(context, listen: false).getLiveClassDetails();
     });
   }
 
-  Future<void> _joinLiveClass(
-    BuildContext context,
-    String? classId,
-    String batchName,
-  ) async {
+  Future<void> _joinLiveClass(BuildContext context, String? classId, String batchName) async {
     // Show loading dialog
     if (!context.mounted) return;
 
@@ -44,37 +37,19 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-              ],
+              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 5))],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7675)),
-                ),
+                const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7675))),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Preparing your class...',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  batchName,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+                Text(batchName, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ),
@@ -84,10 +59,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
 
     try {
       // Call the API
-      final liveProvider = Provider.of<LiveClassController>(
-        context,
-        listen: false,
-      );
+      final liveProvider = Provider.of<LiveClassController>(context, listen: false);
 
       await liveProvider.getLiveClassLinkDetails(id: classId ?? '');
 
@@ -117,9 +89,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                   ],
                 ),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 backgroundColor: Colors.red,
                 duration: const Duration(seconds: 2),
               ),
@@ -139,9 +109,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                 ],
               ),
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               backgroundColor: Colors.orange,
               duration: const Duration(seconds: 2),
             ),
@@ -162,9 +130,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
               ],
             ),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -182,9 +148,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
       body: liveProvider.isLoading
           ? Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  const Color(0xFFFF7675),
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFFFF7675)),
                 backgroundColor: const Color(0xFFFF7675).withOpacity(0.2),
               ),
             )
@@ -202,35 +166,20 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                             color: AppColors.cardBackground,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
-                              BoxShadow(
-                                color: AppColors.shadowLight,
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
+                              BoxShadow(color: AppColors.shadowLight, blurRadius: 8, offset: const Offset(0, 2)),
                             ],
                           ),
                           child: IconButton(
                             onPressed: () => Navigator.pop(context),
-                            icon: Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              color: const Color(0xFFFF7675),
-                              size: 18,
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 40,
-                              minHeight: 40,
-                            ),
+                            icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFFFF7675), size: 18),
+                            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                             padding: EdgeInsets.zero,
                           ),
                         ),
                         const SizedBox(width: 16),
                         Text(
                           'Live Classes',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                         ),
                         const Spacer(),
                       ],
@@ -240,16 +189,10 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                   // Stats chips
                   if (liveProvider.liveClassResModel?.isNotEmpty ?? false)
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Row(
                         children: [
-                          _buildStatChip(
-                            'Total: ${liveProvider.liveClassResModel?.length ?? 0}',
-                            AppColors.statsBlue,
-                          ),
+                          _buildStatChip('Total: ${liveProvider.liveClassResModel?.length ?? 0}', AppColors.statsBlue),
                           const SizedBox(width: 8),
                         ],
                       ),
@@ -261,26 +204,15 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                         ? _buildEmptyState()
                         : ListView.separated(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount:
-                                liveProvider.liveClassResModel?.length ?? 0,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 12),
+                            itemCount: liveProvider.liveClassResModel?.length ?? 0,
+                            separatorBuilder: (context, index) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
-                              final liveClass =
-                                  liveProvider.liveClassResModel?[index];
+                              final liveClass = liveProvider.liveClassResModel?[index];
                               return GestureDetector(
                                 onTap: () {
-                                  _joinLiveClass(
-                                    context,
-                                    liveClass?.uid,
-                                    liveClass?.batchName ?? 'Unknown Batch',
-                                  );
+                                  _joinLiveClass(context, liveClass?.uid, liveClass?.batchName ?? 'Unknown Batch');
                                 },
-                                child: _buildLiveClassCard(
-                                  liveClass,
-                                  index,
-                                  liveProvider,
-                                ),
+                                child: _buildLiveClassCard(liveClass, index, liveProvider),
                               );
                             },
                           ),
@@ -301,20 +233,12 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
       ),
     );
   }
 
-  Widget _buildLiveClassCard(
-    liveClass,
-    int index,
-    LiveClassController liveProvider,
-  ) {
+  Widget _buildLiveClassCard(liveClass, int index, LiveClassController liveProvider) {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -324,11 +248,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF7675).withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+          BoxShadow(color: const Color(0xFFFF7675).withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 4)),
         ],
       ),
       child: ListTile(
@@ -340,15 +260,8 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
           child: Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.video_call_outlined,
-              color: AppColors.white,
-              size: 24,
-            ),
+            decoration: BoxDecoration(color: AppColors.white.withOpacity(0.2), shape: BoxShape.circle),
+            child: Icon(Icons.video_call_outlined, color: AppColors.white, size: 24),
           ),
         ),
         title: Column(
@@ -360,65 +273,40 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                 Container(
                   width: 8,
                   height: 8,
-                  decoration: BoxDecoration(
-                    color: AppColors.statsGreen,
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: AppColors.statsGreen, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  'Current Enrollment',
-                  style: const TextStyle(color: AppColors.white, fontSize: 10),
-                ),
+                Text('Current Enrollment', style: TextStyle(color: AppColors.white, fontSize: 10)),
               ],
             ),
             const SizedBox(height: 4),
             Text(
               liveClass?.batchName ?? "",
-              style: const TextStyle(
-                color: AppColors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(color: AppColors.white, fontSize: 13, fontWeight: FontWeight.w600),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
             Row(
               children: [
-                Text(
-                  'Join for Live Class',
-                  style: TextStyle(
-                    color: AppColors.white.withOpacity(0.8),
-                    fontSize: 11,
-                  ),
-                ),
+                Text('Join for Live Class', style: TextStyle(color: AppColors.white.withOpacity(0.8), fontSize: 11)),
               ],
             ),
           ],
         ),
         trailing: ElevatedButton(
           onPressed: () {
-            _joinLiveClass(
-              context,
-              liveClass?.uid,
-              liveClass?.batchName ?? 'Unknown Batch',
-            );
+            _joinLiveClass(context, liveClass?.uid, liveClass?.batchName ?? 'Unknown Batch');
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.white,
             foregroundColor: const Color(0xFFFF7675),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             minimumSize: const Size(60, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: const Text(
-            'Join Class',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-          ),
+          child: const Text('Join Class', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
         ),
       ),
     );
@@ -434,28 +322,14 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFFFF7675).withOpacity(0.1),
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFF7675).withOpacity(0.1),
-                  blurRadius: 30,
-                  spreadRadius: 5,
-                ),
-              ],
+              boxShadow: [BoxShadow(color: const Color(0xFFFF7675).withOpacity(0.1), blurRadius: 30, spreadRadius: 5)],
             ),
-            child: Icon(
-              Icons.live_tv_rounded,
-              size: 60,
-              color: const Color(0xFFFF7675),
-            ),
+            child: Icon(Icons.live_tv_rounded, size: 60, color: const Color(0xFFFF7675)),
           ),
           const SizedBox(height: 24),
           Text(
             'No Live Classes',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 12),
           Text(
@@ -466,25 +340,15 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFF7675), Color(0xFFFF9F9F)],
-              ),
+              gradient: const LinearGradient(colors: [Color(0xFFFF7675), Color(0xFFFF9F9F)]),
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFF7675).withOpacity(0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
+                BoxShadow(color: const Color(0xFFFF7675).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
               ],
             ),
-            child: const Text(
+            child: Text(
               'Refresh',
-              style: TextStyle(
-                color: AppColors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(color: AppColors.white, fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),
         ],
