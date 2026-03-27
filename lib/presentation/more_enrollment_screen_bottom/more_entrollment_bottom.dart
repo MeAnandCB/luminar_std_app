@@ -89,8 +89,8 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
   @override
   void initState() {
     super.initState();
+    _provider = Provider.of<EnrollmentProvider>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _provider = Provider.of<EnrollmentProvider>(context, listen: false);
       _fetchData();
     });
   }

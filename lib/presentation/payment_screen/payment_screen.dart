@@ -47,7 +47,6 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     });
   }
 
-
   Future<void> _initializeData() async {
     if (!mounted) return;
 

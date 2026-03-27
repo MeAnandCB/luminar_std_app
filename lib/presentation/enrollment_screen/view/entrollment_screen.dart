@@ -283,7 +283,10 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                                   );
                                 }
 
-                                if (!snapshot.hasData || !snapshot.data!.success || snapshot.data!.data == null || snapshot.data!.data!.isEmpty) {
+                                if (!snapshot.hasData ||
+                                    !snapshot.data!.success ||
+                                    snapshot.data!.data == null ||
+                                    snapshot.data!.data!.isEmpty) {
                                   return Center(
                                     child: Padding(
                                       padding: const EdgeInsets.all(20),
