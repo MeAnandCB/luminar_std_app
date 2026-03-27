@@ -4,12 +4,17 @@ import 'package:luminar_std/repository/profile_screen/model/profile_model.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileEditController extends ChangeNotifier {
   final CompleteProfileService _submissionService = CompleteProfileService();
 
   bool _isSubmitting = false;
   bool get isSubmitting => _isSubmitting;
+
+  final ImagePicker _picker = ImagePicker();
+  String? _profilePicPath;
+  String? get profilePicPath => _profilePicPath;
 
   String? _error;
   String? get error => _error;
@@ -124,6 +129,21 @@ class ProfileEditController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> pickProfileImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+      if (image != null) {
+        _profilePicPath = image.path;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error picking profile image: $e');
+    }
+  }
+
   Future<bool> updateProfile(BuildContext context, Profile? initialProfile) async {
     _isSubmitting = true;
     _error = null;
@@ -168,7 +188,7 @@ class ProfileEditController extends ChangeNotifier {
       addIfChanged('placement_assistance', _placementAssistance, pl?.placementAssistance);
       addIfChanged('preferred_job_location', preferredJobLocationController.text, pl?.preferredJobLocation);
 
-      if (deltaFields.isEmpty) {
+      if (deltaFields.isEmpty && _profilePicPath == null) {
         _isSubmitting = false;
         notifyListeners();
         return true;
@@ -177,6 +197,7 @@ class ProfileEditController extends ChangeNotifier {
       await _submissionService.submitProfile(
         student_id: p?.studentId.toString(),
         fields: deltaFields,
+        profilePicPath: _profilePicPath,
       );
 
       // Refresh ProfileController

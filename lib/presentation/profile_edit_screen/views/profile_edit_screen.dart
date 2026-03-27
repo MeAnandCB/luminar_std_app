@@ -4,6 +4,7 @@ import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/profile_edit_screen/controller/profile_edit_controller.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -89,51 +90,60 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     Center(
                       child: Column(
                         children: [
-                          Stack(
-                            children: [
-                              Container(
-                                width: 100,
-                                height: 100,
-                                decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primary.withOpacity(0.3),
-                                      blurRadius: 15,
-                                      offset: const Offset(0, 5),
-                                    ),
-                                  ],
-                                  image: profileController.profileData?.personalInfo?.profilePicture != null
-                                    ? DecorationImage(
-                                        image: NetworkImage(profileController.profileData!.personalInfo!.profilePicture!),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                                ),
-                                child: profileController.profileData?.personalInfo?.profilePicture == null
-                                  ? const Center(child: Icon(Icons.person_rounded, color: AppColors.white, size: 50))
-                                  : null,
-                              ),
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
+                          GestureDetector(
+                            onTap: () => editController.pickProfileImage(),
+                            child: Stack(
+                              children: [
+                                Container(
+                                  width: 100,
+                                  height: 100,
                                   decoration: BoxDecoration(
-                                    color: AppColors.white,
+                                    gradient: AppColors.primaryGradient,
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                          color: AppColors.shadowLight,
-                                          blurRadius: 5)
+                                        color: AppColors.primary.withOpacity(0.3),
+                                        blurRadius: 15,
+                                        offset: const Offset(0, 5),
+                                      ),
                                     ],
+                                    image: editController.profilePicPath != null
+                                      ? DecorationImage(
+                                          image: FileImage(File(editController.profilePicPath!)),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : profileController.profileData?.personalInfo?.profilePicture != null
+                                          ? DecorationImage(
+                                              image: NetworkImage(profileController.profileData!.personalInfo!.profilePicture!),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : null,
                                   ),
-                                  child: Icon(Icons.camera_alt_rounded,
-                                      color: AppColors.primary, size: 20),
+                                  child: (editController.profilePicPath == null && 
+                                          profileController.profileData?.personalInfo?.profilePicture == null)
+                                    ? const Center(child: Icon(Icons.person_rounded, color: AppColors.white, size: 50))
+                                    : null,
                                 ),
-                              ),
-                            ],
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: AppColors.shadowLight,
+                                            blurRadius: 5)
+                                      ],
+                                    ),
+                                    child: Icon(Icons.camera_alt_rounded,
+                                        color: AppColors.primary, size: 20),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text('Tap to change photo',
