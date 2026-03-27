@@ -140,37 +140,26 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   // ── Avatar ─────────────────────────────────────────────────────────────────
   Widget _buildAvatar(Chat chat, Map<int, bool> onlineStatus) {
+    if (chat.chatType != ChatType.individual) {
+      return _buildStackedAvatar(chat);
+    }
+
     final isOnline =
-        chat.chatType == ChatType.individual &&
         chat.otherParticipant != null &&
         onlineStatus[chat.otherParticipant!.id] == true;
 
-    Widget child;
-    Color bgColor;
-    ImageProvider? bgImage;
-
-    if (chat.chatType == ChatType.individual) {
-      bgColor = const Color(0xFF7B9FD4);
-      bgImage = chat.otherParticipant?.profilePic != null
-          ? NetworkImage(chat.otherParticipant!.profilePic!)
-          : null;
-      child = Text(
-        chat.name.isNotEmpty ? chat.name[0].toUpperCase() : '?',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-      );
-    } else if (chat.chatType == ChatType.batch) {
-      bgColor = Colors.orange.shade100;
-      bgImage = null;
-      child = Icon(Icons.school, color: Colors.orange.shade700, size: 22);
-    } else {
-      bgColor = Colors.purple.shade100;
-      bgImage = chat.groupIcon != null ? NetworkImage(chat.groupIcon!) : null;
-      child = Icon(Icons.group, color: Colors.purple.shade700, size: 22);
-    }
+    final bgColor = const Color(0xFF7B9FD4);
+    final bgImage = chat.otherParticipant?.profilePic != null
+        ? NetworkImage(chat.otherParticipant!.profilePic!)
+        : null;
+    final child = Text(
+      chat.name.isNotEmpty ? chat.name[0].toUpperCase() : '?',
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    );
 
     return Stack(
       children: [
@@ -195,6 +184,85 @@ class _ChatListScreenState extends State<ChatListScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  // ── Stacked Avatar for Groups/Batches ──────────────────────────────────────
+  Widget _buildStackedAvatar(Chat chat) {
+    final isBatch = chat.chatType == ChatType.batch;
+    final color = isBatch ? Colors.orange : Colors.purple;
+    final icon = isBatch ? Icons.school : Icons.group;
+
+    return SizedBox(
+      width: 52,
+      height: 52,
+      child: Stack(
+        children: [
+          // Background circle (offset to bottom-right)
+          Positioned(
+            right: 2,
+            bottom: 6,
+            child: CircleAvatar(
+              radius: 17,
+              backgroundColor: color.withOpacity(0.2),
+              child: Icon(
+                Icons.person_outline_rounded,
+                color: color.withOpacity(0.5),
+                size: 20,
+              ),
+            ),
+          ),
+          // Foreground circle (offset to top-left)
+          Positioned(
+            left: 0,
+            top: 2,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFF4F6FB), width: 2),
+              ),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: color.withOpacity(0.15),
+                backgroundImage:
+                    chat.groupIcon != null
+                        ? NetworkImage(chat.groupIcon!)
+                        : null,
+                child:
+                    chat.groupIcon == null
+                        ? Icon(
+                          Icons.person_rounded,
+                          color: color.withOpacity(0.8),
+                          size: 22,
+                        )
+                        : null,
+              ),
+            ),
+          ),
+          // Group/Batch icon badge (bottom-right corner)
+          Positioned(
+            right: 0,
+            bottom: 2,
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFF4F6FB), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: Colors.white, size: 11),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
