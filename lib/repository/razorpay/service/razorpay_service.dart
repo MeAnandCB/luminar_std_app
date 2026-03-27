@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
@@ -13,10 +13,9 @@ class RazorpayScreenService {
       token: await AppUtils.getAccessKey(),
       body: {},
     );
-    log(response.data.toString());
-    log(response.statusCode.toString());
+    LoggerUtils.debug(response.data.toString(), tag: 'Razorpay');
+    LoggerUtils.debug(response.statusCode.toString(), tag: 'Razorpay');
     if (response.success) {
-      log(response.data.toString());
       PaymentResModel resModel = PaymentResModel.fromJson(response.data);
       return ApiResponse(success: true, data: resModel, message: response.message, statusCode: response.statusCode);
     } else {
@@ -25,17 +24,15 @@ class RazorpayScreenService {
   }
 
   Future<ApiResponse> getEmiPaymentDetails({required String id}) async {
-    log("${AppEndpoints.razorpayEmi}$id/");
+    LoggerUtils.debug("${AppEndpoints.razorpayEmi}$id/", tag: 'Razorpay');
     final response = await ApiService().post(
       endpoint: '${AppEndpoints.razorpayEmi}$id/',
       token: await AppUtils.getAccessKey(),
       body: {},
     );
-    log(response.data.toString());
-    log(response.data.toString());
-    log(response.statusCode.toString());
+    LoggerUtils.debug(response.data.toString(), tag: 'Razorpay');
+    LoggerUtils.debug(response.statusCode.toString(), tag: 'Razorpay');
     if (response.success) {
-      log(response.data.toString());
       EmiPaymentResModel resModel = EmiPaymentResModel.fromJson(response.data);
       return ApiResponse(success: true, data: resModel, message: response.message, statusCode: response.statusCode);
     } else {

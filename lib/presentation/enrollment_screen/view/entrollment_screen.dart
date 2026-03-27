@@ -35,10 +35,15 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   bool _isLoadingPreview = false;
   String? _errorMessage;
   final PaymentDetailsApiService _apiService = PaymentDetailsApiService();
+  late Razorpay _razorpay;
 
   @override
   void initState() {
     super.initState();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlePaymentErrorResponse);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlePaymentSuccessResponse);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handleExternalWalletSelected);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       final provider = Provider.of<EnrollmentProvider>(context, listen: false);
       await Provider.of<EnrollmentProvider>(context, listen: false).fetchEnrollData(context: context);
@@ -47,6 +52,12 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
       Provider.of<EnrollmentProvider>(context, listen: false).enrollmentDataRes?.enrollments[widget.index].uid ?? "",
     );
     emiPlans = _apiService.fetchEmiPlans();
+  }
+
+  @override
+  void dispose() {
+    _razorpay.clear();
+    super.dispose();
   }
 
   void _selectPlan(EmiPlan plan) async {
@@ -1526,7 +1537,6 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   void _startRazorpayPayment(RazorpayPaymentDetails details) {
-    Razorpay razorpay = Razorpay();
     var options = {
       'key': details.key,
       'amount': details.amount,
@@ -1540,14 +1550,10 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
         'wallets': ['paytm'],
       },
     };
-    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlePaymentErrorResponse);
-    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlePaymentSuccessResponse);
-    razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handleExternalWalletSelected);
-    razorpay.open(options);
+    _razorpay.open(options);
   }
 
   void _startEmiRazorpayPayment(EmiResponseData details) {
-    Razorpay razorpay = Razorpay();
     var options = {
       'key': details.key,
       'amount': details.amount,
@@ -1561,10 +1567,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
         'wallets': ['paytm'],
       },
     };
-    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlePaymentErrorResponse);
-    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlePaymentSuccessResponse);
-    razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handleExternalWalletSelected);
-    razorpay.open(options);
+    _razorpay.open(options);
   }
 
   void showAlertDialog(BuildContext context, String title, String message) {

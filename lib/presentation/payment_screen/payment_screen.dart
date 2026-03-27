@@ -33,14 +33,20 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
   EnrollmentDetailResponse? _paymentData; // Single enrollment data
   bool _isLoading = true;
   String? _errorMessage;
+  late Razorpay _razorpay;
 
   @override
   void initState() {
     super.initState();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlePaymentErrorResponse);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlePaymentSuccessResponse);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handleExternalWalletSelected);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeData();
     });
   }
+
 
   Future<void> _initializeData() async {
     if (!mounted) return;
@@ -170,6 +176,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
 
   @override
   void dispose() {
+    _razorpay.clear();
     super.dispose();
   }
 
@@ -1254,7 +1261,6 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
   }
 
   void _startEmiRazorpayPayment(EmiResponseData details) {
-    Razorpay razorpay = Razorpay();
     var options = {
       'key': details.key,
       'amount': details.amount,
@@ -1268,9 +1274,6 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
         'wallets': ['paytm'],
       },
     };
-    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlePaymentErrorResponse);
-    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlePaymentSuccessResponse);
-    razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handleExternalWalletSelected);
-    razorpay.open(options);
+    _razorpay.open(options);
   }
 }

@@ -24,11 +24,7 @@ class ApiService {
   }
 
   // GET
-  Future<ApiResponse<dynamic>> get({
-    required String endpoint,
-    String? token,
-    Map<String, String>? queryParams,
-  }) async {
+  Future<ApiResponse<dynamic>> get({required String endpoint, String? token, Map<String, String>? queryParams}) async {
     final uri = _buildUri(endpoint, queryParams);
     LoggerUtils.debug("GET: $uri", tag: 'API');
     try {
@@ -49,11 +45,7 @@ class ApiService {
     final uri = _buildUri(endpoint, queryParams);
     LoggerUtils.debug("POST: $uri", tag: 'API');
     try {
-      final response = await http.post(
-        uri,
-        headers: _headers(token),
-        body: jsonEncode(body),
-      );
+      final response = await http.post(uri, headers: _headers(token), body: jsonEncode(body));
       LoggerUtils.debug("Response: ${response.body}", tag: 'API');
 
       return _handleResponse(response);
@@ -72,11 +64,7 @@ class ApiService {
     final uri = _buildUri(endpoint, queryParams);
     LoggerUtils.debug("PUT: $uri", tag: 'API');
     try {
-      final response = await http.put(
-        uri,
-        headers: _headers(token),
-        body: jsonEncode(body),
-      );
+      final response = await http.put(uri, headers: _headers(token), body: jsonEncode(body));
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.error(e.toString(), null);
@@ -93,11 +81,7 @@ class ApiService {
     final uri = _buildUri(endpoint, queryParams);
     LoggerUtils.debug("PATCH: $uri", tag: 'API');
     try {
-      final response = await http.patch(
-        uri,
-        headers: _headers(token),
-        body: jsonEncode(body),
-      );
+      final response = await http.patch(uri, headers: _headers(token), body: jsonEncode(body));
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.error(e.toString(), null);
@@ -174,4 +158,3 @@ class ApiService {
     }
   }
 }
-

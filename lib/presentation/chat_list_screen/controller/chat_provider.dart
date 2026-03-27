@@ -140,9 +140,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
       if (_currentUser?.id == 0 && _chats.isNotEmpty) {
         for (var chat in _chats) {
           if (chat.otherParticipant != null) {
-            final myId = (chat.participant1 == chat.otherParticipant!.id)
-                ? chat.participant2
-                : chat.participant1;
+            final myId = (chat.participant1 == chat.otherParticipant!.id) ? chat.participant2 : chat.participant1;
             if (myId != null && myId != 0) {
               _currentUser = User(
                 id: myId,
@@ -158,11 +156,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       // Initialize WebSocket
       final websocketUrl = "${GlobalLinks.websocketUrl}chat/?token=$token";
-      _webSocketService = WebSocketService(
-        url: websocketUrl,
-        currentUser: _currentUser!,
-        apiService: _apiService!,
-      );
+      _webSocketService = WebSocketService(url: websocketUrl, currentUser: _currentUser!, apiService: _apiService!);
 
       _setupListeners();
 
@@ -212,9 +206,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     // ── Messages we sent ourselves (broadcast back from ChatScreen) ─────────
     // These should update lastMessage preview but NEVER increment unread
-    _localMessageSubscription = _webSocketService!.localMessageStream.listen((
-      message,
-    ) {
+    _localMessageSubscription = _webSocketService!.localMessageStream.listen((message) {
       _handleIncomingMessage(message, fromSelf: true);
     });
 
@@ -229,11 +221,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
         // If deleted message was the last one shown, update preview text
         if (preview['message_uid'] == data['message_uid']) {
           _chats[chatIndex] = chat.copyWith(
-            lastMessagePreview: {
-              ...preview,
-              'content': 'Message deleted',
-              'is_deleted': true,
-            },
+            lastMessagePreview: {...preview, 'content': 'Message deleted', 'is_deleted': true},
           );
           notifyListeners();
         }
@@ -260,8 +248,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
       //   • Never if the user is currently inside that chat screen
       //   • Never if the chat is locally marked as read (tap in progress)
       final isViewing = _activeChatUid == chatUid;
-      final shouldIncrementUnread =
-          !fromSelf && !isViewing && !_locallyReadChats.contains(chatUid);
+      final shouldIncrementUnread = !fromSelf && !isViewing && !_locallyReadChats.contains(chatUid);
 
       _chats[chatIndex] = chat.copyWith(
         lastMessageAt: message.createdAt,
@@ -272,9 +259,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
           'message_uid': message.uid,
           'message_type': message.messageType,
         },
-        unreadCount: shouldIncrementUnread
-            ? chat.unreadCount + 1
-            : chat.unreadCount,
+        unreadCount: shouldIncrementUnread ? chat.unreadCount + 1 : chat.unreadCount,
       );
 
       _sortChats();
@@ -330,15 +315,11 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
           final existingTime = existing.lastMessageAt;
 
           // Only update if the server reports a newer message
-          final serverIsNewer =
-              freshTime != null &&
-              (existingTime == null || freshTime.isAfter(existingTime));
+          final serverIsNewer = freshTime != null && (existingTime == null || freshTime.isAfter(existingTime));
 
           if (serverIsNewer) {
             // Preserve locally-zeroed unread counts
-            final unread = _locallyReadChats.contains(freshChat.uid)
-                ? 0
-                : freshChat.unreadCount;
+            final unread = _locallyReadChats.contains(freshChat.uid) ? 0 : freshChat.unreadCount;
             _chats[idx] = freshChat.copyWith(unreadCount: unread);
             changed = true;
           }
@@ -402,8 +383,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> markChatAsRead(Chat chat) async {
-    if (_apiService == null || _markingReadInProgress.contains(chat.uid))
-      return;
+    if (_apiService == null || _markingReadInProgress.contains(chat.uid)) return;
 
     _markingReadInProgress.add(chat.uid);
     _locallyReadChats.add(chat.uid);
@@ -424,10 +404,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       if (response.success && response.data != null) {
         final messages = response.data!;
-        final unreadUids = messages
-            .where((m) => m.sender.id != _currentUser?.id)
-            .map((m) => m.uid)
-            .toList();
+        final unreadUids = messages.where((m) => m.sender.id != _currentUser?.id).map((m) => m.uid).toList();
 
         if (unreadUids.isNotEmpty) {
           final markRes = await _apiService!.markMessagesAsRead(chat.uid, unreadUids);
@@ -439,7 +416,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
           _locallyReadChats.remove(chat.uid);
         }
       } else {
-        // If fetch fails, we still remove to avoid stuck zero, 
+        // If fetch fails, we still remove to avoid stuck zero,
         // but it will be restored on next refresh
         _locallyReadChats.remove(chat.uid);
       }
