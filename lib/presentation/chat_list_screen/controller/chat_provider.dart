@@ -122,7 +122,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
             _currentUser = User(
               id: studentId,
               fullName: profile['full_name'] ?? 'Student',
-              profilePic: profile['profile_picture'],
+              profilePic: AppUtils.getAbsoluteUrl(profile['profile_picture']),
               email: profile['email'],
             );
           }

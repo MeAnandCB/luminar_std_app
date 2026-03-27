@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -3228,15 +3230,80 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     } else if (message.isFile) {
       return _buildFileContent(message, isMe);
     } else {
+      return _buildHyperlinkText(message.content, isMe);
+    }
+  }
+
+  Widget _buildHyperlinkText(String text, bool isMe) {
+    final urlRegex = RegExp(
+      r'((https?:\/\/)|(www\.))[^\s]+',
+      caseSensitive: false,
+    );
+
+    final matches = urlRegex.allMatches(text);
+    if (matches.isEmpty) {
       return Text(
-        message.content,
+        text,
+        style: TextStyle(
+          fontSize: 15,
+          color: isMe ? const Color(0xFF1A1A2E) : const Color(0xFF1A1A2E),
+          height: 1.45,
+        ),
+      );
+    }
+
+    final List<InlineSpan> spans = [];
+    int lastMatchEnd = 0;
+
+    for (final match in matches) {
+      // Add text before the match
+      if (match.start > lastMatchEnd) {
+        spans.add(TextSpan(text: text.substring(lastMatchEnd, match.start)));
+      }
+
+      final url = match.group(0)!;
+      final displayUrl = url;
+      final launchUrlStr = url.startsWith('http') ? url : 'https://$url';
+
+      spans.add(
+        TextSpan(
+          text: displayUrl,
+          style: const TextStyle(
+            color: Color(0xFF0066CC),
+            decoration: TextDecoration.underline,
+          ),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () async {
+              try {
+                final uri = Uri.parse(launchUrlStr);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              } catch (e) {
+                LoggerUtils.error('Could not launch URL: $e');
+              }
+            },
+        ),
+      );
+
+      lastMatchEnd = match.end;
+    }
+
+    // Add remaining text
+    if (lastMatchEnd < text.length) {
+      spans.add(TextSpan(text: text.substring(lastMatchEnd)));
+    }
+
+    return RichText(
+      text: TextSpan(
         style: const TextStyle(
           fontSize: 15,
           color: Color(0xFF1A1A2E),
           height: 1.45,
         ),
-      );
-    }
+        children: spans,
+      ),
+    );
   }
 
   // ── Video bubble — play icon + tap to open ─────────────────────────────────
@@ -3582,7 +3649,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               const SizedBox(width: 8),
               SizedBox(
                 width: 38,
-                child: showAvatar
+                child: (isGroupOrBatch && showAvatar)
                     ? CircleAvatar(
                         radius: 19,
                         backgroundImage: widget.currentUser.profilePic != null
