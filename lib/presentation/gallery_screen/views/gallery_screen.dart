@@ -22,7 +22,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
   void initState() {
     super.initState();
     _setupScrollListener();
-    _loadInitialData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadInitialData();
+    });
   }
 
   void _setupScrollListener() {
