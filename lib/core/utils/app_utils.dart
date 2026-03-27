@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:luminar_std/core/constants/app_endpoints.dart';
 
 import 'package:flutter/material.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.dart';
@@ -46,5 +47,12 @@ class AppUtils {
       return 'Your session has expired. Please login again.';
     }
     return message;
+  }
+
+  static String? getAbsoluteUrl(String? url) {
+    if (url == null || url.isEmpty) return url;
+    if (url.startsWith('http')) return url;
+    final cleanUrl = url.startsWith('/') ? url : '/$url';
+    return '${GlobalLinks.baseUrl}$cleanUrl';
   }
 }

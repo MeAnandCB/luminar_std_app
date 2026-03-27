@@ -1,3 +1,4 @@
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'user.dart';
 
 enum ChatType { individual, group, batch }
@@ -86,7 +87,7 @@ class Chat {
       isArchived: json['is_archived'] ?? false,
       groupName: json['group_name'],
       groupDescription: json['group_description'],
-      groupIcon: json['group_icon'],
+      groupIcon: AppUtils.getAbsoluteUrl(json['group_icon']),
     );
   }
 

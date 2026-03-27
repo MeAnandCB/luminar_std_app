@@ -1,3 +1,4 @@
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'user.dart';
 
 class Message {
@@ -108,10 +109,10 @@ class Message {
       sender: User.fromJson(json['sender'] as Map<String, dynamic>),
       messageType: json['message_type']?.toString() ?? 'text',
       content: json['content']?.toString() ?? '',
-      file: json['file']?.toString(),
+      file: AppUtils.getAbsoluteUrl(json['file']?.toString()),
       fileName: json['file_name']?.toString(),
       fileSize: _parseInt(json['file_size']),
-      fileUrl: json['file_url']?.toString(),
+      fileUrl: AppUtils.getAbsoluteUrl(json['file_url']?.toString()),
       isEdited: json['is_edited'] == true,
       editedAt: _parseDate(json['edited_at']),
       isDeleted: json['is_deleted'] == true,

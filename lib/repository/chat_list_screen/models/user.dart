@@ -1,3 +1,5 @@
+import 'package:luminar_std/core/utils/app_utils.dart';
+
 class User {
   final int id;
   final String fullName;
@@ -11,7 +13,7 @@ class User {
       id: json['id'],
       fullName: json['full_name'],
       email: json['email'],
-      profilePic: json['profile_pic'],
+      profilePic: AppUtils.getAbsoluteUrl(json['profile_pic'] ?? json['profile_picture']),
     );
   }
 
@@ -21,6 +23,7 @@ class User {
       'full_name': fullName,
       'email': email,
       'profile_pic': profilePic,
+      'profile_picture': profilePic,
     };
   }
 }

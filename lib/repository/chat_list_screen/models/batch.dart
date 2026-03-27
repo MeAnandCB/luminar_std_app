@@ -1,3 +1,5 @@
+import 'package:luminar_std/core/utils/app_utils.dart';
+
 class Batch {
   String? uid;
   String? chatType;
@@ -62,7 +64,7 @@ class Batch {
     isArchived: json["is_archived"],
     groupName: json["group_name"],
     groupDescription: json["group_description"],
-    groupIcon: json["group_icon"],
+    groupIcon: AppUtils.getAbsoluteUrl(json["group_icon"]),
   );
 
   Map<String, dynamic> toJson() => {
