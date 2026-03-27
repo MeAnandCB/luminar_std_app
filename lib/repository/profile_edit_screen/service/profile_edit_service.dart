@@ -1,5 +1,5 @@
 class ProfileEditService {
-  // "/api/student_portal/profile/"
+  // AppEndpoints.profile
   getProfileData() {
     // Simulate fetching profile data from an API or database
   }

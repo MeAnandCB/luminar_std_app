@@ -1,6 +1,7 @@
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
@@ -25,7 +26,7 @@ class HeaderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('🖼️ Building header with name: "$studentName"');
+    LoggerUtils.debug('🖼️ Building header with name: "$studentName"', tag: 'Dashboard');
 
     return Row(
       children: [

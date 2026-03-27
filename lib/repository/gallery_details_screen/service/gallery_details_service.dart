@@ -1,4 +1,5 @@
 // services/folder_browser_service.dart
+import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/repository/gallery_details_screen/models/gallery_detail_model.dart';
@@ -13,7 +14,7 @@ class FolderBrowserService {
     String? parentFolderUid,
   }) async {
     try {
-      String url = '/api/folders/?batch_uid=$batchId&gallery_uid=$galleryUid&is_active=true&without_subfolder=false';
+      String url = '${AppEndpoints.folders}?batch_uid=$batchId&gallery_uid=$galleryUid&is_active=true&without_subfolder=false';
 
       if (parentFolderUid != null) {
         url += '&parent_folder_uid=$parentFolderUid';
@@ -43,7 +44,7 @@ class FolderBrowserService {
     try {
       final response = await _apiService.get(
         endpoint:
-            '/api/videos/?batch_uid=$batchId&gallery_uid=$galleryUid&is_active=true&without_folder=false&page=$page&page_size=$pageSize&folder_uid=$folderUid',
+            '${AppEndpoints.videos}?batch_uid=$batchId&gallery_uid=$galleryUid&is_active=true&without_folder=false&page=$page&page_size=$pageSize&folder_uid=$folderUid',
       );
 
       if (response.success) {
@@ -126,7 +127,7 @@ class FolderBrowserService {
     try {
       final response = await _apiService.get(
         endpoint:
-            '/api/videos/?batch_uid=$batchId&gallery_uid=$galleryUid&is_active=true&without_folder=true&page=$page&page_size=$pageSize',
+            '${AppEndpoints.videos}?batch_uid=$batchId&gallery_uid=$galleryUid&is_active=true&without_folder=true&page=$page&page_size=$pageSize',
       );
 
       if (response.success) {

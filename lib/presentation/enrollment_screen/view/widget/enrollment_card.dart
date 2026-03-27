@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -24,7 +24,7 @@ class EnrollmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
     final dateFormat = DateFormat('dd MMM yyyy');
-    log(enrollment.progress.completionPercentage.toString());
+    LoggerUtils.debug(enrollment.progress.completionPercentage.toString(), tag: 'Enrollment');
     return GestureDetector(
       onTap: onTap,
       child: Container(

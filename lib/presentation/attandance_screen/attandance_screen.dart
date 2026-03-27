@@ -1,8 +1,9 @@
 // lib/screens/attendance/attendance_screen.dart
 
-import 'dart:developer';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/repository/attandance_screen/model.dart';
@@ -110,7 +111,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     try {
       final response = await _attendanceService.getBatchAttendance(
-        context: context,
         batchId: widget.batchId,
         startDate: _startDate?.toIso8601String().split('T')[0],
         endDate: _endDate?.toIso8601String().split('T')[0],
@@ -118,30 +118,47 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         pageSize: 10,
       );
 
-      setState(() {
-        if (page == 1) {
-          _attendanceRecords = response.results;
+      if (mounted) {
+        if (response.success && response.data != null) {
+          final data = response.data!;
+          setState(() {
+            if (page == 1) {
+              _attendanceRecords = data.results;
+            } else {
+              _attendanceRecords.addAll(data.results);
+            }
+
+            _summary = data.summary;
+            _studentId = data.studentId;
+            _batchId = data.batchId;
+
+            _currentPage = data.currentPage;
+            _totalPages = data.totalPages > 0 ? data.totalPages : 1;
+            _totalRecords = data.count;
+
+            _isLoading = false;
+            _isLoadingMore = false;
+          });
         } else {
-          _attendanceRecords.addAll(response.results);
+          setState(() {
+            _errorMessage = response.message;
+            _isLoading = false;
+            _isLoadingMore = false;
+          });
+          if (response.statusCode == 401) {
+            await AppUtils.clearUserSession();
+            if (context.mounted) AppUtils.navigateToLogin(context);
+          }
         }
-
-        _summary = response.summary;
-        _studentId = response.studentId;
-        _batchId = response.batchId;
-
-        _currentPage = response.currentPage;
-        _totalPages = response.totalPages > 0 ? response.totalPages : 1;
-        _totalRecords = response.count;
-
-        _isLoading = false;
-        _isLoadingMore = false;
-      });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-        _isLoadingMore = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+          _isLoadingMore = false;
+        });
+      }
     }
   }
 
@@ -520,7 +537,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    log("${widget.batchId}");
+    LoggerUtils.debug("${widget.batchId}", tag: 'Attendance');
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(

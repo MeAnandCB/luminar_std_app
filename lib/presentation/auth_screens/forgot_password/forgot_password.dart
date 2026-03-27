@@ -141,7 +141,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     }
 
     final success = await controller.sendOtp(
-      context: context,
       email: controller.emailController.text,
     );
 
@@ -197,7 +196,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     }
 
     final success = await controller.verifyOtp(
-      context: context,
       email: controller.emailController.text,
       otp: controller.otpController.text,
     );
@@ -241,7 +239,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       listen: false,
     );
 
-    final success = await controller.resendOtp(context: context);
+    final success = await controller.resendOtp();
 
     if (success && mounted) {
       setState(() {
@@ -314,7 +312,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     }
 
     final success = await controller.resetPassword(
-      context: context,
       email: controller.emailController.text,
       otp: controller.otpController.text,
       newPassword: controller.newPasswordController.text,

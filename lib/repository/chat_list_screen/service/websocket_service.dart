@@ -108,22 +108,23 @@ class WebSocketService {
     final targetUid = chatUid ?? '';
     if (targetUid.isEmpty) throw Exception('No chat UID');
 
-    try {
-      final message = await apiService.sendMessage(
-        chatUid: targetUid,
-        content: content,
-        replyTo: replyTo,
-      );
-      return message;
-    } catch (e) {
-      rethrow;
+    final response = await apiService.sendMessage(
+      chatUid: targetUid,
+      content: content,
+      replyTo: replyTo,
+    );
+
+    if (response.success && response.data != null) {
+      return response.data!;
+    } else {
+      throw Exception(response.message ?? 'Failed to send message');
     }
   }
 
   Future<void> deleteMessage(String chatUid, String messageUid) async {
-    try {
-      await apiService.deleteMessage(chatUid, messageUid);
+    final response = await apiService.deleteMessage(chatUid, messageUid);
 
+    if (response.success) {
       if (_channel != null) {
         final deleteEvent = {
           'type': 'message_deleted',
@@ -135,8 +136,8 @@ class WebSocketService {
       }
 
       _deleteController.add({'chat_uid': chatUid, 'message_uid': messageUid});
-    } catch (e) {
-      rethrow;
+    } else {
+      throw Exception(response.message ?? 'Failed to delete message');
     }
   }
 
@@ -145,9 +146,9 @@ class WebSocketService {
     String messageUid,
     String emoji,
   ) async {
-    try {
-      await apiService.sendReaction(chatUid, messageUid, emoji);
+    final response = await apiService.sendReaction(chatUid, messageUid, emoji);
 
+    if (response.success) {
       if (_channel != null) {
         final reactionEvent = {
           'type': 'message_reaction',
@@ -168,8 +169,8 @@ class WebSocketService {
         'user_id': currentUser.id,
         'user_name': currentUser.fullName,
       });
-    } catch (e) {
-      rethrow;
+    } else {
+      throw Exception(response.message ?? 'Failed to send reaction');
     }
   }
 

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:developer';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/response.dart';
@@ -15,12 +15,24 @@ class ApiService {
     };
   }
 
-  // GET
-  Future<ApiResponse<dynamic>> get({required String endpoint, String? token}) async {
-    log("$baseUrl$endpoint");
-    try {
-      final response = await http.get(Uri.parse("$baseUrl$endpoint"), headers: _headers(token));
+  Uri _buildUri(String endpoint, Map<String, String>? queryParams) {
+    if (queryParams != null && queryParams.isNotEmpty) {
+      final queryString = Uri(queryParameters: queryParams).query;
+      return Uri.parse("$baseUrl$endpoint?$queryString");
+    }
+    return Uri.parse("$baseUrl$endpoint");
+  }
 
+  // GET
+  Future<ApiResponse<dynamic>> get({
+    required String endpoint,
+    String? token,
+    Map<String, String>? queryParams,
+  }) async {
+    final uri = _buildUri(endpoint, queryParams);
+    LoggerUtils.debug("GET: $uri", tag: 'API');
+    try {
+      final response = await http.get(uri, headers: _headers(token));
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.error(e.toString(), null);
@@ -32,14 +44,17 @@ class ApiService {
     required String endpoint,
     required Map<String, dynamic> body,
     String? token,
+    Map<String, String>? queryParams,
   }) async {
+    final uri = _buildUri(endpoint, queryParams);
+    LoggerUtils.debug("POST: $uri", tag: 'API');
     try {
       final response = await http.post(
-        Uri.parse("$baseUrl$endpoint"),
+        uri,
         headers: _headers(token),
         body: jsonEncode(body),
       );
-      log(response.body);
+      LoggerUtils.debug("Response: ${response.body}", tag: 'API');
 
       return _handleResponse(response);
     } catch (e) {
@@ -52,10 +67,37 @@ class ApiService {
     required String endpoint,
     required Map<String, dynamic> body,
     String? token,
+    Map<String, String>? queryParams,
   }) async {
+    final uri = _buildUri(endpoint, queryParams);
+    LoggerUtils.debug("PUT: $uri", tag: 'API');
     try {
-      final response = await http.put(Uri.parse("$baseUrl$endpoint"), headers: _headers(token), body: jsonEncode(body));
+      final response = await http.put(
+        uri,
+        headers: _headers(token),
+        body: jsonEncode(body),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return ApiResponse.error(e.toString(), null);
+    }
+  }
 
+  // PATCH
+  Future<ApiResponse<dynamic>> patch({
+    required String endpoint,
+    required Map<String, dynamic> body,
+    String? token,
+    Map<String, String>? queryParams,
+  }) async {
+    final uri = _buildUri(endpoint, queryParams);
+    LoggerUtils.debug("PATCH: $uri", tag: 'API');
+    try {
+      final response = await http.patch(
+        uri,
+        headers: _headers(token),
+        body: jsonEncode(body),
+      );
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.error(e.toString(), null);
@@ -63,9 +105,39 @@ class ApiService {
   }
 
   // DELETE
-  Future<ApiResponse<dynamic>> delete({required String endpoint, String? token}) async {
+  Future<ApiResponse<dynamic>> delete({
+    required String endpoint,
+    String? token,
+    Map<String, String>? queryParams,
+  }) async {
+    final uri = _buildUri(endpoint, queryParams);
+    LoggerUtils.debug("DELETE: $uri", tag: 'API');
     try {
-      final response = await http.delete(Uri.parse("$baseUrl$endpoint"), headers: _headers(token));
+      final response = await http.delete(uri, headers: _headers(token));
+      return _handleResponse(response);
+    } catch (e) {
+      return ApiResponse.error(e.toString(), null);
+    }
+  }
+
+  // MULTIPART (for file uploads)
+  Future<ApiResponse<dynamic>> multipart({
+    required String endpoint,
+    required String method,
+    required Map<String, String> fields,
+    required List<http.MultipartFile> files,
+    String? token,
+  }) async {
+    final uri = _buildUri(endpoint, null);
+    LoggerUtils.debug("$method (Multipart): $uri", tag: 'API');
+    try {
+      var request = http.MultipartRequest(method, uri);
+      request.headers.addAll(_headers(token));
+      request.fields.addAll(fields);
+      request.files.addAll(files);
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       return _handleResponse(response);
     } catch (e) {
@@ -89,3 +161,4 @@ class ApiService {
     }
   }
 }
+

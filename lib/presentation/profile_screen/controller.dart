@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:luminar_std/core/utils/logger_utils.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/repository/profile_screen/model/profile_model.dart';
 import 'package:luminar_std/repository/profile_screen/service/profile_screen_service.dart';
 import 'package:luminar_std/repository/pincode/service.dart';
@@ -24,38 +26,31 @@ class ProfileController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final fetchedData = await ProfileScreenService().GetProfileData(
-        context: context,
-      );
+      final response = await ProfileScreenService().getProfileData();
 
-      // Check if fetchedData is ProfileModel (not DashBoardModel)
-      if (fetchedData is ProfileModel) {
-        profileModel = fetchedData;
-        profile =
-            fetchedData.profile; // Make sure ProfileModel has a profile field
+      if (response.success && response.data != null) {
+        profileModel = response.data;
+        profile = profileModel?.profile;
 
         if (profile != null) {
-          print('✅ Profile data loaded successfully');
           _error = null;
         } else {
-          print('⚠️ Profile data is null in response');
           _error = 'No profile data available';
         }
       } else {
-        print('❌ Invalid response format: $fetchedData');
-        _error = 'Invalid response format';
-        profile = null;
-        profileModel = null;
+        _error = response.message;
+        if (response.statusCode == 401) {
+          await AppUtils.clearUserSession();
+          if (context.mounted) AppUtils.navigateToLogin(context);
+        }
       }
     } catch (e) {
-      print('❌ Error loading profile: $e');
       _error = e.toString();
       profile = null;
       profileModel = null;
     } finally {
       _isLoading = false;
       notifyListeners();
-      print('📊 Loading state: $_isLoading, Error: $_error');
     }
 
     return profile;
@@ -75,7 +70,7 @@ class ProfileController extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('❌ Error fetching district: $e');
+      LoggerUtils.error('❌ Error fetching district: $e', tag: 'Profile');
     } finally {
       _isPincodeLoading = false;
       notifyListeners();

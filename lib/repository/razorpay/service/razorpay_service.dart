@@ -1,5 +1,5 @@
 import 'dart:developer';
-
+import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
@@ -9,7 +9,7 @@ import 'package:luminar_std/repository/razorpay/model/razorpay_model.dart';
 class RazorpayScreenService {
   Future<ApiResponse> getPaymentDetails({required String id}) async {
     final response = await ApiService().post(
-      endpoint: '/api/student-payments/full/$id/',
+      endpoint: '${AppEndpoints.razorpayFull}$id/',
       token: await AppUtils.getAccessKey(),
       body: {},
     );
@@ -25,9 +25,9 @@ class RazorpayScreenService {
   }
 
   Future<ApiResponse> getEmiPaymentDetails({required String id}) async {
-    log("/api/payments/emi/$id/");
+    log("${AppEndpoints.razorpayEmi}$id/");
     final response = await ApiService().post(
-      endpoint: '/api/payments/emi/$id/',
+      endpoint: '${AppEndpoints.razorpayEmi}$id/',
       token: await AppUtils.getAccessKey(),
       body: {},
     );

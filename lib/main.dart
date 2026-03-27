@@ -1,3 +1,4 @@
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/auth_screens/forgot_password/controller/forgot_password.dart';
@@ -32,12 +33,12 @@ void main() async {
   String? accessToken;
   try {
     accessToken = await AppUtils.getAccessKey();
-    print('Token loaded in main: ${accessToken != null ? 'Yes' : 'No'}');
+    LoggerUtils.info('Token loaded in main: ${accessToken != null ? 'Yes' : 'No'}', tag: 'Main');
     if (accessToken != null) {
-      print('Token preview: ${accessToken.substring(0, 10)}...');
+      LoggerUtils.info('Token preview: ${accessToken.substring(0, 10)}...', tag: 'Main');
     }
   } catch (e) {
-    print('Error loading token in main: $e');
+    LoggerUtils.error('Error loading token in main: $e', tag: 'Main');
   }
 
   runApp(

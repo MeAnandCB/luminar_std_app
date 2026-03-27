@@ -103,16 +103,16 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     }
 
     try {
-      final details = await PaymentScreenService.fetchEnrollmentDetails(targetEnrollmentId, accessKey);
+      final detailsResponse = await PaymentScreenService().fetchEnrollmentDetails(targetEnrollmentId, accessKey);
 
-      if (details != null && mounted) {
+      if (detailsResponse.success && detailsResponse.data != null && mounted) {
         setState(() {
-          _paymentData = details;
+          _paymentData = detailsResponse.data;
         });
       } else {
         if (mounted) {
           setState(() {
-            _errorMessage = 'Failed to load enrollment details';
+            _errorMessage = detailsResponse.message ?? 'Failed to load enrollment details';
           });
         }
       }

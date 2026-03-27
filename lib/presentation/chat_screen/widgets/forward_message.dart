@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:luminar_std/core/constants/app_endpoints.dart';
+import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/chat.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/message.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/api_service.dart';
@@ -15,6 +15,8 @@ class ForwardResult {
 // ── Forward API service (bulk endpoint) ───────────────────────────────────────
 class ForwardMessageService {
   final ChatApiService apiService;
+  final ApiService _apiService = ApiService();
+
   ForwardMessageService({required this.apiService});
 
   Future<ForwardResult> forwardMessage({
@@ -52,42 +54,31 @@ class ForwardMessageService {
       body['file_name'] = message.fileName ?? '';
     }
 
-    debugPrint('[Forward] POST ${apiService.baseUrl}/api/chats/messages/bulk/');
-    debugPrint('[Forward] body: ${json.encode(body)}');
+    final response = await _apiService.post(
+      endpoint: AppEndpoints.bulkMessage,
+      token: apiService.token,
+      body: body,
+    );
 
-    try {
-      final response = await http.post(
-        Uri.parse('${apiService.baseUrl}/api/chats/messages/bulk/'),
-        headers: {
-          'Authorization': 'Bearer ${apiService.token}',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(body),
-      );
-
-      debugPrint('[Forward] status: ${response.statusCode}');
-      debugPrint('[Forward] body  : ${response.body}');
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return const ForwardResult(success: true);
-      }
-      return ForwardResult(
-        success: false,
-        error: 'Server error ${response.statusCode}: ${response.body}',
-      );
-    } catch (e) {
-      return ForwardResult(success: false, error: e.toString());
+    if (response.success) {
+      return const ForwardResult(success: true);
     }
+    return ForwardResult(
+      success: false,
+      error: response.message ?? 'Unknown error',
+    );
   }
 
   String _resolveForwardContent(Message message) {
-    if (message.isImage)
+    if (message.isImage) {
       return message.content.isNotEmpty ? message.content : '📷 Photo';
+    }
     if (message.isAudio) return message.fileName ?? '🎤 Voice message';
     if (message.isFile) return message.fileName ?? '📎 File';
     return message.content;
   }
 }
+
 
 // ── Forward Sheet ─────────────────────────────────────────────────────────────
 class ForwardMessageSheet extends StatefulWidget {

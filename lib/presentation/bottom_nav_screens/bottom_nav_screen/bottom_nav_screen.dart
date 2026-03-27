@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
@@ -110,7 +110,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
     final provider = Provider.of<EnrollmentProvider>(context);
 
     if (provider.enrollmentDataRes != null) {
-      log(provider.enrollmentDataRes!.enrollments.length.toString());
+      LoggerUtils.debug(provider.enrollmentDataRes!.enrollments.length.toString(), tag: 'BottomNav');
     }
 
     return Scaffold(

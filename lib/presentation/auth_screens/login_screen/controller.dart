@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/repository/loginscreen/model.dart';
 import 'package:luminar_std/repository/loginscreen/service.dart';
@@ -37,7 +38,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print('🚀 AuthProvider: Starting login process...');
+      LoggerUtils.info('🚀 Starting login process...', tag: 'Auth');
 
       final response = await _apiService.login(
         body: {'email': email, 'password': password},
@@ -64,87 +65,82 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
 
         // Print confirmation
-        print('=' * 50);
-        print('✅ LOGIN SUCCESSFUL');
-        print('=' * 50);
-        print('👤 Student Name: $fullName');
-        print('🆔 Student ID: ${loginResponseModel.student.profile.studentId}');
-        print('📧 Email: ${loginResponseModel.student.profile.email}');
-        print('=' * 50);
+        LoggerUtils.info('✅ LOGIN SUCCESSFUL | 👤 Student: $fullName', tag: 'Auth');
 
         return true;
       } else {
         _errorMessage = response.message;
         _isLoading = false;
         notifyListeners();
-        print('❌ AuthProvider: Login failed - ${response.message}');
+        LoggerUtils.warning('❌ Login failed - ${response.message}', tag: 'Auth');
         return false;
       }
     } catch (e) {
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
-      print('🔥 AuthProvider: Error during login - $e');
+      LoggerUtils.error('🔥 Error during login - $e', tag: 'Auth');
       return false;
     }
   }
 
   Future<void> logout() async {
     try {
-      print('🚪 Logging out...');
+      LoggerUtils.info('🚪 Logging out...', tag: 'Auth');
       await SharedPrefService.clearAllData();
       _loginResponse = null;
       notifyListeners();
-      print('✅ Logout successful');
+      LoggerUtils.info('✅ Logout successful', tag: 'Auth');
     } catch (e) {
-      print('❌ Logout error: $e');
+      LoggerUtils.error('❌ Logout error: $e', tag: 'Auth');
     }
   }
 
   Future<bool> checkLoginStatus() async {
     try {
       final isLoggedIn = await SharedPrefService.isLoggedIn();
-      print('🔍 CheckLoginStatus: isLoggedIn = $isLoggedIn');
+      LoggerUtils.info('🔍 CheckLoginStatus: isLoggedIn = $isLoggedIn', tag: 'Auth');
 
       if (isLoggedIn) {
         // Try to get full user data from SharedPrefs
         final userData = await SharedPrefService.getUserData();
         final savedName = await SharedPrefService.getFullName();
 
-        print('🔍 CheckLoginStatus: saved name = $savedName');
-        print('🔍 CheckLoginStatus: userData exists = ${userData != null}');
+        LoggerUtils.debug('🔍 CheckLoginStatus: saved name = $savedName', tag: 'Auth');
+        LoggerUtils.debug('🔍 CheckLoginStatus: userData exists = ${userData != null}', tag: 'Auth');
 
         // If we have user data, reconstruct the login response
         if (userData != null) {
           try {
             // Reconstruct LoginResponseModel from saved data
             _loginResponse = LoginResponseModel.fromJson(userData);
-            print('✅ Successfully reconstructed user data');
-            print(
+            LoggerUtils.info('✅ Successfully reconstructed user data', tag: 'Auth');
+            LoggerUtils.debug(
               '👤 Reconstructed name: ${_loginResponse?.student.profile.fullName}',
+              tag: 'Auth',
             );
             notifyListeners();
             return true;
           } catch (e) {
-            print('❌ Error reconstructing user data: $e');
+            LoggerUtils.error('❌ Error reconstructing user data: $e', tag: 'Auth');
 
             // If reconstruction fails but we have the name, create minimal profile
             if (savedName != null && savedName.isNotEmpty) {
               // Create a minimal response with just the name
               // This is a fallback - you might want to handle this differently
-              print('⚠️ Using minimal profile with name: $savedName');
+              LoggerUtils.warning('⚠️ Using minimal profile with name: $savedName', tag: 'Auth');
             }
             return true;
           }
         } else {
           // If no user data but isLoggedIn is true, something is wrong
-          print('⚠️ Inconsistent state: isLoggedIn true but no user data');
+          LoggerUtils.warning('⚠️ Inconsistent state: isLoggedIn true but no user data', tag: 'Auth');
           return true; // Still return true since they are logged in
         }
       }
       return false;
     } catch (e) {
-      print('❌ CheckLoginStatus error: $e');
+      LoggerUtils.error('❌ CheckLoginStatus error: $e', tag: 'Auth');
       return false;
     }
   }
@@ -156,12 +152,13 @@ class AuthProvider extends ChangeNotifier {
       if (userData != null) {
         _loginResponse = LoginResponseModel.fromJson(userData);
         notifyListeners();
-        print(
+        LoggerUtils.info(
           '🔄 User data refreshed: ${_loginResponse?.student.profile.fullName}',
+          tag: 'Auth',
         );
       }
     } catch (e) {
-      print('❌ Error refreshing user data: $e');
+      LoggerUtils.error('❌ Error refreshing user data: $e', tag: 'Auth');
     }
   }
 

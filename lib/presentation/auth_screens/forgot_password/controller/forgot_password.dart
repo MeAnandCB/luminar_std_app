@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/repository/forgot_pass/forgot_pass_service.dart';
 
 class ForgotPasswordController extends ChangeNotifier {
@@ -57,7 +58,6 @@ class ForgotPasswordController extends ChangeNotifier {
 
   // Step 1: Send OTP to email
   Future<bool> sendOtp({
-    required BuildContext context,
     required String email,
   }) async {
     _isLoading = true;
@@ -66,21 +66,20 @@ class ForgotPasswordController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print('📧 ForgotPasswordController: Sending OTP to $email');
+      LoggerUtils.info('📧 Sending OTP to $email', tag: 'ForgotPassword');
 
       final response = await _forgotPassService.sendOtp(
-        context: context,
         email: email,
       );
 
-      if (response.success!) {
+      if (response.success) {
         _otpSent = true;
-        _email = response.email ?? email;
+        _email = response.data?.email ?? email;
         _successMessage = response.message ?? 'OTP sent successfully';
         _isLoading = false;
         notifyListeners();
 
-        print('✅ OTP sent successfully to ${response.email}');
+        LoggerUtils.info('✅ OTP sent successfully to ${response.data?.email}', tag: 'ForgotPassword');
         return true;
       } else {
         _errorMessage = response.message ?? 'Failed to send OTP';
@@ -92,14 +91,13 @@ class ForgotPasswordController extends ChangeNotifier {
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
-      print('❌ Error sending OTP: $e');
+      LoggerUtils.error('❌ Error sending OTP: $e', tag: 'ForgotPassword');
       return false;
     }
   }
 
-  // Step 2: Verify OTP (you'll need to implement this endpoint)
+  // Step 2: Verify OTP
   Future<bool> verifyOtp({
-    required BuildContext context,
     required String email,
     required String otp,
   }) async {
@@ -108,30 +106,23 @@ class ForgotPasswordController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print('🔐 ForgotPasswordController: Verifying OTP for $email');
+      LoggerUtils.info('🔐 Verifying OTP for $email', tag: 'ForgotPassword');
 
-      // Implement this API call in your service
       final response = await _forgotPassService.verifyOtp(
-        context: context,
         email: email,
         otp: otp,
       );
 
-      if (response['success'] == true) {
+      if (response.success) {
         _otpVerified = true;
-        _successMessage = response['message'] ?? 'OTP verified successfully';
+        _successMessage = response.message ?? 'OTP verified successfully';
         _isLoading = false;
         notifyListeners();
 
-        print('✅ OTP verified successfully');
+        LoggerUtils.info('✅ OTP verified successfully', tag: 'ForgotPassword');
         return true;
       } else {
-        // Handle error response
-        String errorMsg = 'Invalid OTP';
-        if (response['errors'] != null && response['errors']['otp'] != null) {
-          errorMsg = (response['errors']['otp'] as List).first;
-        }
-        _errorMessage = errorMsg;
+        _errorMessage = response.message ?? 'Invalid OTP';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -140,14 +131,13 @@ class ForgotPasswordController extends ChangeNotifier {
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
-      print('❌ Error verifying OTP: $e');
+      LoggerUtils.error('❌ Error verifying OTP: $e', tag: 'ForgotPassword');
       return false;
     }
   }
 
-  // Step 3: Reset password (you'll need to implement this endpoint)
+  // Step 3: Reset password
   Future<bool> resetPassword({
-    required BuildContext context,
     required String email,
     required String otp,
     required String newPassword,
@@ -172,19 +162,17 @@ class ForgotPasswordController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print('🔑 ForgotPasswordController: Resetting password for $email');
+      LoggerUtils.info('🔑 Resetting password for $email', tag: 'ForgotPassword');
 
-      // Implement this API call in your service
       final response = await _forgotPassService.resetPassword(
-        context: context,
         email: email,
         otp: otp,
         newPassword: newPassword,
         comPass: confirmPassword,
       );
 
-      if (response['success'] == true) {
-        _successMessage = response['message'] ?? 'Password reset successfully';
+      if (response.success) {
+        _successMessage = response.message ?? 'Password reset successfully';
         _isLoading = false;
 
         // Reset all states after successful password reset
@@ -200,10 +188,10 @@ class ForgotPasswordController extends ChangeNotifier {
 
         notifyListeners();
 
-        print('✅ Password reset successfully');
+        LoggerUtils.info('✅ Password reset successfully', tag: 'ForgotPassword');
         return true;
       } else {
-        _errorMessage = response['message'] ?? 'Failed to reset password';
+        _errorMessage = response.message ?? 'Failed to reset password';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -212,20 +200,20 @@ class ForgotPasswordController extends ChangeNotifier {
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
-      print('❌ Error resetting password: $e');
+      LoggerUtils.error('❌ Error resetting password: $e', tag: 'ForgotPassword');
       return false;
     }
   }
 
   // Convenience method to resend OTP
-  Future<bool> resendOtp({required BuildContext context}) async {
+  Future<bool> resendOtp() async {
     if (_email == null || _email!.isEmpty) {
       _errorMessage = 'Email not found';
       notifyListeners();
       return false;
     }
 
-    return sendOtp(context: context, email: _email!);
+    return sendOtp(email: _email!);
   }
 
   @override

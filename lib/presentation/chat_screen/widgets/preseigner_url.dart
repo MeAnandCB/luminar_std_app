@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
@@ -81,8 +81,8 @@ class FileUploadService {
     final url = '$baseUrl/api/generate-presigned-url/';
     final payload = json.encode({'file_name': fileName, 'folder': folder});
 
-    debugPrint('[Upload] POST $url');
-    debugPrint('[Upload] Payload: $payload');
+    LoggerUtils.info('[Upload] POST $url', tag: 'Upload');
+    LoggerUtils.debug('[Upload] Payload: $payload', tag: 'Upload');
 
     final response = await http.post(
       Uri.parse(url),
@@ -90,8 +90,8 @@ class FileUploadService {
       body: payload,
     );
 
-    debugPrint('[Upload] Presigned status: ${response.statusCode}');
-    debugPrint('[Upload] Presigned body  : ${response.body}');
+    LoggerUtils.info('[Upload] Presigned status: ${response.statusCode}', tag: 'Upload');
+    LoggerUtils.debug('[Upload] Presigned body  : ${response.body}', tag: 'Upload');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = json.decode(response.body) as Map<String, dynamic>;
@@ -111,9 +111,9 @@ class FileUploadService {
     required File file,
     void Function(double)? onProgress,
   }) async {
-    debugPrint('[Upload] S3 POST → ${presigned.uploadUrl}');
-    debugPrint('[Upload] Content-Type: ${presigned.contentType}');
-    debugPrint('[Upload] File: ${file.path}');
+    LoggerUtils.info('[Upload] S3 POST → ${presigned.uploadUrl}', tag: 'Upload');
+    LoggerUtils.debug('[Upload] Content-Type: ${presigned.contentType}', tag: 'Upload');
+    LoggerUtils.debug('[Upload] File: ${file.path}', tag: 'Upload');
 
     // Determine safe MediaType — fall back to application/octet-stream
     MediaType mediaType;
@@ -128,7 +128,7 @@ class FileUploadService {
       mediaType = MediaType('application', 'octet-stream');
     }
 
-    debugPrint('[Upload] MediaType: $mediaType');
+    LoggerUtils.debug('[Upload] MediaType: $mediaType', tag: 'Upload');
 
     final request = http.MultipartRequest(
       'POST',
@@ -138,7 +138,7 @@ class FileUploadService {
     // All policy fields must come BEFORE the file field
     presigned.fields.forEach((k, v) {
       request.fields[k] = v;
-      debugPrint('[Upload] S3 field: $k = $v');
+      LoggerUtils.debug('[Upload] S3 field: $k = $v', tag: 'Upload');
     });
 
     request.files.add(
@@ -153,8 +153,8 @@ class FileUploadService {
     final streamed = await request.send();
     final responseBody = await streamed.stream.bytesToString();
 
-    debugPrint('[Upload] S3 response status: ${streamed.statusCode}');
-    debugPrint('[Upload] S3 response body  : $responseBody');
+    LoggerUtils.info('[Upload] S3 response status: ${streamed.statusCode}', tag: 'Upload');
+    LoggerUtils.debug('[Upload] S3 response body  : $responseBody', tag: 'Upload');
 
     if (streamed.statusCode != 204 &&
         streamed.statusCode != 200 &&
@@ -165,7 +165,7 @@ class FileUploadService {
     }
 
     onProgress?.call(1.0);
-    debugPrint('[Upload] ✓ S3 upload complete: ${presigned.finalUrl}');
+    LoggerUtils.info('[Upload] ✓ S3 upload complete: ${presigned.finalUrl}', tag: 'Upload');
   }
 
   // ── Public entry point ────────────────────────────────────────────────────
@@ -186,9 +186,9 @@ class FileUploadService {
       mimeType = 'application/octet-stream';
     }
 
-    debugPrint('[Upload] File: $fileName');
-    debugPrint('[Upload] Size: ${_fmtSize(fileSize)}');
-    debugPrint('[Upload] MIME: $mimeType');
+    LoggerUtils.info('[Upload] File: $fileName', tag: 'Upload');
+    LoggerUtils.debug('[Upload] Size: ${_fmtSize(fileSize)}', tag: 'Upload');
+    LoggerUtils.debug('[Upload] MIME: $mimeType', tag: 'Upload');
 
     onProgress?.call(0.05);
 

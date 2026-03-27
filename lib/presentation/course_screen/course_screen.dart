@@ -1,5 +1,5 @@
 // screens/course_screen.dart
-import 'dart:developer';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -77,7 +77,7 @@ class _CourseScreenState extends State<CourseScreen>
 
   @override
   Widget build(BuildContext context) {
-    log({widget.paymentCompleted}.toString());
+    LoggerUtils.debug({widget.paymentCompleted}.toString(), tag: 'Course');
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(

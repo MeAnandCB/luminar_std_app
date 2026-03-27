@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 
 class AdvancedInstaCarousel extends StatefulWidget {
   const AdvancedInstaCarousel({super.key});
@@ -88,10 +89,10 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
           nextUrl = null;
         }
 
-        print("Loaded ${newImages.length} images. Total: ${images.length}");
+        LoggerUtils.info("Loaded ${newImages.length} images. Total: ${images.length}", tag: 'Instagram');
       }
     } catch (e) {
-      print("Error fetching images: $e");
+      LoggerUtils.error("Error fetching images: $e", tag: 'Instagram');
     }
   }
 
@@ -128,7 +129,7 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
         }
       }
     } catch (e) {
-      print("Error preloading images: $e");
+      LoggerUtils.error("Error preloading images: $e", tag: 'Instagram');
     } finally {
       isPreloading = false;
     }

@@ -1,24 +1,13 @@
-// lib/repository/attandance_screen/attendance_service.dart
-
-import 'package:flutter/material.dart';
-import 'package:luminar_std/repository/attandance_screen/model.dart';
-import 'package:luminar_std/repository/global/helper.dart';
+import 'package:luminar_std/core/constants/app_endpoints.dart';
+import 'package:luminar_std/core/services/api_services.dart';
+import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
-import 'dart:convert';
+import 'package:luminar_std/repository/attandance_screen/model.dart';
 
 class AttendanceService {
-  final ApiHelper apiHelper = ApiHelper();
+  final ApiService _apiService = ApiService();
 
-  void _prettyPrintJson(String label, dynamic data) {
-    print('📦 $label:');
-    const encoder = JsonEncoder.withIndent('  ');
-    String prettyJson = encoder.convert(data);
-    print(prettyJson);
-    print('════════════════════════════════════════');
-  }
-
-  Future<AttendanceResponse> getBatchAttendance({
-    required BuildContext context,
+  Future<ApiResponse<AttendanceResponse>> getBatchAttendance({
     required String batchId,
     String? sessionId,
     String? startDate,
@@ -30,12 +19,9 @@ class AttendanceService {
       final accessKey = await AppUtils.getAccessKey();
 
       if (accessKey == null || accessKey.isEmpty) {
-        print('❌ No access key found');
-        AppUtils.navigateToLogin(context);
-        throw ApiException('Session expired. Please login again.', null);
+        return ApiResponse.error('Session expired. Please login again.', 401);
       }
 
-      // Build query parameters
       final queryParams = <String, String>{
         'page': page.toString(),
         'page_size': pageSize.toString(),
@@ -45,53 +31,22 @@ class AttendanceService {
       if (startDate != null) queryParams['start_date'] = startDate;
       if (endDate != null) queryParams['end_date'] = endDate;
 
-      // Build endpoint with query parameters
-      final endpoint = '/api/attendance/my-batch-attendance/$batchId';
-      final uri = Uri(path: endpoint, queryParameters: queryParams);
-      final fullEndpoint = uri.toString();
-
-      print('📍 Fetching attendance from: $fullEndpoint (Page $page)');
-
-      final response = await apiHelper.get(
-        headers: {'Authorization': 'Bearer $accessKey'},
-        context,
-        fullEndpoint,
+      final response = await _apiService.get(
+        endpoint: '${AppEndpoints.attendance}$batchId',
+        token: accessKey,
+        queryParams: queryParams,
       );
 
-      _prettyPrintJson('Attendance API Response', response);
-
-      if (response['status'] == 'success' || response['statusCode'] == 200) {
-        print('✅ Attendance data fetched successfully');
-        print(
-          '📊 Page $page of ${response['total_pages']} - Total records: ${response['count']}',
+      if (response.success) {
+        return ApiResponse.success(
+          AttendanceResponse.fromJson(response.data),
+          response.statusCode ?? 200,
         );
-        return AttendanceResponse.fromJson(response);
-      } else if (response['statusCode'] == 401) {
-        print('❌ Unauthorized - Session expired');
-        await AppUtils.clearUserSession();
-        AppUtils.navigateToLogin(context);
-        throw ApiException('Session expired. Please login again.', response);
-      } else if (response['statusCode'] == 404) {
-        print('❌ Batch not found: $batchId');
-        throw ApiException(
-          'Batch not found. Please check the batch ID.',
-          response,
-        );
-      } else if (response['status'] == 'error' ||
-          response['statusCode'] >= 400) {
-        final errorMsg = response['message'] ?? 'Failed to load attendance';
-        print('❌ API Error: $errorMsg');
-        throw ApiException(errorMsg, response);
-      } else {
-        print('❌ Unexpected response format');
-        throw ApiException('Unexpected response from server', response);
       }
-    } on ApiException catch (e) {
-      print('❌ ApiException caught: ${e.message}');
-      rethrow;
+      
+      return response.cast<AttendanceResponse>();
     } catch (e) {
-      print('❌ Unexpected error: $e');
-      throw ApiException('Network error. Please check your connection.', null);
+      return ApiResponse.error('Unexpected error: ${e.toString()}', null);
     }
   }
 }

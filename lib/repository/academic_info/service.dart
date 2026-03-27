@@ -1,3 +1,4 @@
+import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/repository/academic_info/model.dart';
@@ -5,7 +6,7 @@ import 'package:luminar_std/repository/academic_info/model.dart';
 class AcademicInfoService {
   Future<ApiResponse<QualificationResponse>> getQualifications() async {
     final response = await ApiService().get(
-      endpoint: '/api/public/lead/qualifications/',
+      endpoint: AppEndpoints.qualifications,
     );
 
     if (response.success && response.data != null) {
@@ -23,7 +24,7 @@ class AcademicInfoService {
 
   Future<ApiResponse<SpecializationResponse>> getSpecializations() async {
     final response = await ApiService().get(
-      endpoint: '/api/specializations/list/',
+      endpoint: AppEndpoints.specializations,
     );
 
     if (response.success && response.data != null) {

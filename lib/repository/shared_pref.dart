@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPrefService {
@@ -19,8 +20,7 @@ class SharedPrefService {
     await prefs.setString(keyRefreshToken, refreshToken);
     await prefs.setString(keyFullName, fullname);
     await prefs.setBool(keyIsLoggedIn, true);
-    print('✅ Tokens and name saved successfully');
-    print('👤 Saved name: $fullname');
+    LoggerUtils.info('✅ Tokens and name saved successfully | 👤 Saved name: $fullname', tag: 'SharedPref');
   }
 
   // Get full name
@@ -34,8 +34,8 @@ class SharedPrefService {
     final prefs = await SharedPreferences.getInstance();
     final String jsonString = json.encode(userData);
     await prefs.setString(keyUserData, jsonString);
-    print('✅ User data saved successfully');
-    print('📦 Saved JSON: $jsonString');
+    LoggerUtils.info('✅ User data saved successfully', tag: 'SharedPref');
+    LoggerUtils.debug('📦 Saved JSON: $jsonString', tag: 'SharedPref');
   }
 
   // Get access token
@@ -57,10 +57,10 @@ class SharedPrefService {
 
     if (userDataString != null) {
       try {
-        print('📖 Retrieved user data string: $userDataString');
+        LoggerUtils.debug('📖 Retrieved user data string: $userDataString', tag: 'SharedPref');
         return Map<String, dynamic>.from(json.decode(userDataString));
       } catch (e) {
-        print('❌ Error parsing user data: $e');
+        LoggerUtils.error('❌ Error parsing user data: $e', tag: 'SharedPref');
         return null;
       }
     }
@@ -81,6 +81,6 @@ class SharedPrefService {
     await prefs.remove(keyFullName);
     await prefs.remove(keyUserData);
     await prefs.remove(keyIsLoggedIn);
-    print('🚪 User logged out, all data cleared');
+    LoggerUtils.info('🚪 User logged out, all data cleared', tag: 'SharedPref');
   }
 }

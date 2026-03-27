@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'dart:io';
 
 import 'package:country_code_picker/country_code_picker.dart';
@@ -151,7 +151,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                                 }
                               } catch (e) {
                                 if (context.mounted) {
-                                  log(e.toString());
+                                  LoggerUtils.error(e.toString(), tag: 'ProfileCompletion');
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
                                   );

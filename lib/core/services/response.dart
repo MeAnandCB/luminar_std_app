@@ -13,4 +13,12 @@ class ApiResponse<T> {
   factory ApiResponse.error(String message, int? statusCode) {
     return ApiResponse(success: false, message: message, statusCode: statusCode);
   }
+
+  ApiResponse<R> cast<R>() {
+    return ApiResponse<R>(
+      success: success,
+      message: message,
+      statusCode: statusCode,
+    );
+  }
 }

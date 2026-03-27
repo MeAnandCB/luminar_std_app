@@ -1,49 +1,32 @@
-// ==================== API SERVICE ====================
-
-import 'dart:convert';
-
 import 'package:luminar_std/core/constants/app_endpoints.dart';
+import 'package:luminar_std/core/services/api_services.dart';
+import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/emiplans_model.dart';
-import 'package:http/http.dart' as http;
 
 class PaymentDetailsApiService {
-  static const String baseUrl = '${GlobalLinks.baseUrl}/api';
+  final ApiService _apiService = ApiService();
 
   // Store enrollment ID to use in requests
   String? _enrollmentId;
 
   // Method to set enrollment ID
   void setEnrollmentId(String enrollmentId) {
-    print('🔑 Setting enrollment ID: $enrollmentId');
     _enrollmentId = enrollmentId;
   }
 
-  Future<List<EmiPlan>> fetchEmiPlans() async {
-    print('📡 Fetching EMI plans...');
+  Future<ApiResponse<List<EmiPlan>>> fetchEmiPlans() async {
     try {
       final accessKey = await AppUtils.getAccessKey();
-      print('🔑 Access key retrieved');
-
-      final url = Uri.parse('$baseUrl/emi-plans/');
-      print('🌐 URL: $url');
-
-      final response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessKey',
-        },
+      final response = await _apiService.get(
+        endpoint: AppEndpoints.emiPlans,
+        token: accessKey,
       );
 
-      print('📥 Response status: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        print('✅ JSON parsed successfully');
-
-        // Handle different response structures
+      if (response.success) {
+        final jsonData = response.data;
         List<dynamic> plansJson = [];
+        
         if (jsonData is List) {
           plansJson = jsonData;
         } else if (jsonData is Map) {
@@ -56,28 +39,25 @@ class PaymentDetailsApiService {
           }
         }
 
-        print('📊 Number of plans found: ${plansJson.length}');
-        return plansJson.map((json) => EmiPlan.fromJson(json)).toList();
+        final plans = plansJson.map((json) => EmiPlan.fromJson(json)).toList();
+        return ApiResponse.success(plans, response.statusCode ?? 200);
       } else {
-        throw Exception('Failed to load EMI plans: ${response.statusCode}');
+        return response.cast<List<EmiPlan>>();
       }
     } catch (e) {
-      print('❌ Exception in fetchEmiPlans: $e');
-      throw Exception('Failed to connect to server: $e');
+      return ApiResponse.error(e.toString(), null);
     }
   }
 
-  Future<EmiPreviewResponse> fetchEmiPreview(String emiPlanId) async {
-    print('📡 Fetching EMI preview for plan: "$emiPlanId"');
-
+  Future<ApiResponse<EmiPreviewResponse>> fetchEmiPreview(String emiPlanId) async {
     // Validate emiPlanId
     if (emiPlanId.isEmpty) {
-      throw ApiException(message: 'emi_plan_id cannot be empty');
+      return ApiResponse.error('emi_plan_id cannot be empty', null);
     }
 
     // Check if enrollment ID is set
     if (_enrollmentId == null || _enrollmentId!.isEmpty) {
-      throw ApiException(message: 'Enrollment ID is required but not set');
+      return ApiResponse.error('Enrollment ID is required but not set', null);
     }
 
     final Map<String, dynamic> payload = {
@@ -87,68 +67,22 @@ class PaymentDetailsApiService {
 
     try {
       final accessKey = await AppUtils.getAccessKey();
-      print('🔑 Access key retrieved');
-
-      final url = Uri.parse('$baseUrl/student-enrollment/emi-preview/');
-      print('🌐 URL: $url');
-      print('📤 Payload: $payload');
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessKey',
-        },
-        body: json.encode(payload),
+      final response = await _apiService.post(
+        endpoint: AppEndpoints.emiPreview,
+        token: accessKey,
+        body: payload,
       );
 
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body: ${response.body}');
-
-      // Parse the response body
-      final Map<String, dynamic> jsonData = json.decode(response.body);
-
-      if (response.statusCode == 200) {
-        print('✅ JSON parsed successfully');
-        return EmiPreviewResponse.fromJson(jsonData);
-      } else {
-        // Handle error responses
-        String errorMessage = 'Failed to load EMI preview';
-
-        if (jsonData.containsKey('message')) {
-          errorMessage = jsonData['message'];
-        } else if (jsonData.containsKey('error')) {
-          errorMessage = jsonData['error'];
-        }
-
-        print('❌ API Error: $errorMessage');
-        throw ApiException(
-          message: errorMessage,
-          statusCode: response.statusCode,
-          data: jsonData,
+      if (response.success) {
+        return ApiResponse.success(
+          EmiPreviewResponse.fromJson(response.data),
+          response.statusCode ?? 200,
         );
+      } else {
+        return response.cast<EmiPreviewResponse>();
       }
     } catch (e) {
-      print('❌ Exception in fetchEmiPreview: $e');
-
-      if (e is ApiException) {
-        rethrow;
-      } else if (e is FormatException) {
-        throw ApiException(message: 'Invalid response format from server');
-      } else {
-        throw ApiException(message: 'Failed to connect to server: $e');
-      }
+      return ApiResponse.error(e.toString(), null);
     }
   }
-}
-
-class ApiException implements Exception {
-  final String message;
-  final int? statusCode;
-  final dynamic data;
-
-  ApiException({required this.message, this.statusCode, this.data});
-
-  @override
-  String toString() => '$message';
 }

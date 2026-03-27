@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
@@ -49,7 +50,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       setState(() {
         _displayName = name;
       });
-      print('📝 Name loaded: $_displayName');
+      LoggerUtils.info('📝 Name loaded: $_displayName', tag: 'Dashboard');
     }
   }
 

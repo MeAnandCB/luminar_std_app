@@ -1,6 +1,6 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/logger_utils.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
 import 'package:luminar_std/repository/enrollment_screen/service/enrollment_service.dart';
 import 'package:luminar_std/repository/razorpay/model/emi_res_model.dart';
@@ -40,7 +40,7 @@ class EnrollmentProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Fetch enrollment data - FIX: Fixed method name and assignment
+  // Fetch enrollment data
   Future<void> fetchEnrollData({
     required BuildContext context,
     bool showLoading = true,
@@ -53,19 +53,25 @@ class EnrollmentProvider extends ChangeNotifier {
     }
 
     try {
-      final data = await _enrollmentRepository.getEnrollmentData(
-        context: context,
-      );
+      final response = await _enrollmentRepository.getEnrollmentData();
 
-      // FIX: Assign the data correctly (not to itself)
-      enrollmentDataRes = data;
-      _errorMessage = null;
+      if (response.success) {
+        enrollmentDataRes = response.data;
+        _errorMessage = null;
+      } else {
+        _errorMessage = response.message ?? 'Failed to fetch enrollment data';
+        enrollmentDataRes = null;
+
+        if (response.statusCode == 401) {
+          AppUtils.clearUserSession();
+          AppUtils.navigateToLogin(context);
+        }
+      }
 
       if (showLoading) {
         _isLoading = false;
         notifyListeners();
       }
-      print("callme");
     } catch (e) {
       _errorMessage = e.toString();
       enrollmentDataRes = null;
@@ -88,12 +94,12 @@ class EnrollmentProvider extends ChangeNotifier {
     }
   }
 
-  // Refresh data - FIX: Update method name
+  // Refresh data
   Future<void> refreshData(BuildContext context) async {
     await fetchEnrollData(context: context, showLoading: true);
   }
 
-  // Load data silently (without showing loader) - FIX: Update method name
+  // Load data silently (without showing loader)
   Future<void> loadDataSilently(BuildContext context) async {
     await fetchEnrollData(context: context, showLoading: false);
   }
@@ -113,10 +119,10 @@ class EnrollmentProvider extends ChangeNotifier {
         PaymentResModel resModel = response.data;
         paymentDetails = resModel.paymentDetails;
       } else {
-        log(response.message.toString());
+        LoggerUtils.warning(response.message.toString(), tag: 'Enrollment');
       }
     } catch (e) {
-      print(e.toString());
+      LoggerUtils.error(e.toString(), tag: 'Enrollment');
     }
   }
 
@@ -126,23 +132,23 @@ class EnrollmentProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      log("Fetching EMI payment details for ID: $id");
+      LoggerUtils.debug("Fetching EMI payment details for ID: $id", tag: 'Enrollment');
       final response = await RazorpayScreenService().getEmiPaymentDetails(
         id: id,
       );
 
       if (response.success) {
-        log("EMI payment details fetched successfully");
+        LoggerUtils.info("EMI payment details fetched successfully", tag: 'Enrollment');
         EmiPaymentResModel resModel = response.data;
         emiResData = resModel.emiResData;
         _errorMessage = null;
       } else {
         _errorMessage = response.message ?? "Failed to get EMI payment details";
-        log("Error fetching EMI payment details: $_errorMessage");
+        LoggerUtils.warning("Error fetching EMI payment details: $_errorMessage", tag: 'Enrollment');
       }
     } catch (e) {
       _errorMessage = e.toString();
-      log("Exception in getEmiPaymentDetails: $e");
+      LoggerUtils.error("Exception in getEmiPaymentDetails: $e", tag: 'Enrollment');
     } finally {
       _isLoading = false;
       notifyListeners();

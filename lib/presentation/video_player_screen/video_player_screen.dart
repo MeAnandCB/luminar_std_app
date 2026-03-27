@@ -160,11 +160,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       });
 
       // API Call - Replace with your actual endpoint
+      /*
       final Map<String, dynamic> requestData = {
         'video_id': widget.video.videoLink,
         'action': newLikeState ? 'like' : 'unlike',
         'user_id': 'current_user_id', // Get from auth service
       };
+      */
 
       // Example API call structure:
       // final response = await _repository.toggleLikeVideo(widget.video.id, !_isLiked);

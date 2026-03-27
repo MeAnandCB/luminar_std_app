@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/complete_your_profile/view/complete_your_profile.dart';
-import 'package:luminar_std/presentation/profile_edit_screen/views/profile_edit_screen.dart';
 import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 import 'package:luminar_std/repository/home_screen/service.dart';
 
@@ -22,38 +22,38 @@ class DashboardController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final fetchedData = await DashboardService().GetDashboardData(
-        context: context,
-      );
+      final response = await DashboardService().getDashboardData();
 
-      // Check if fetchedData is a DashBoardModel and has dashboard data
-      _dashboardModel = fetchedData;
-      _dashboard = fetchedData.dashboard;
+      if (response.success && response.data != null) {
+        _dashboardModel = response.data;
+        _dashboard = _dashboardModel?.dashboard;
 
-      if (_dashboard != null) {
-        print('✅ Dashboard data loaded successfully');
-        if (_dashboard?.studentDetails?.basicInfo?.profileCompleted != true) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => ProfileCompletionScreen()),
-            (route) => false,
-          );
+        if (_dashboard != null) {
+          if (_dashboard?.studentDetails?.basicInfo?.profileCompleted != true) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => ProfileCompletionScreen()),
+              (route) => false,
+            );
+          }
+          _error = null;
+        } else {
+          _error = 'No dashboard data available';
         }
-
-        _error = null;
       } else {
-        print('⚠️ Dashboard data is null in response');
-        _error = 'No dashboard data available';
+        _error = response.message;
+        if (response.statusCode == 401) {
+          await AppUtils.clearUserSession();
+          if (context.mounted) AppUtils.navigateToLogin(context);
+        }
       }
     } catch (e) {
-      print('❌ Error loading dashboard: $e');
       _error = e.toString();
       _dashboard = null;
       _dashboardModel = null;
     } finally {
       _isLoading = false;
       notifyListeners();
-      print('📊 Loading state: $_isLoading, Error: $_error');
     }
 
     return _dashboard;

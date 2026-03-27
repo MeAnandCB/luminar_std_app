@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
+import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/widget/pay_in_full_card.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/emiplans_model.dart';
@@ -28,7 +29,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   int? expandedEmiTile;
   bool showFullPaymentDetails = true;
 
-  late Future<List<EmiPlan>> emiPlans;
+  late Future<ApiResponse<List<EmiPlan>>> emiPlans;
   EmiPlan? _selectedPlan;
   EmiPreviewResponse? _previewData;
   bool _isLoadingPreview = false;
@@ -74,11 +75,15 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     });
 
     try {
-      final preview = await _apiService.fetchEmiPreview(plan.id);
-      setState(() {
-        _previewData = preview;
-        _isLoadingPreview = false;
-      });
+      final response = await _apiService.fetchEmiPreview(plan.id);
+      if (response.success) {
+        setState(() {
+          _previewData = response.data;
+          _isLoadingPreview = false;
+        });
+      } else {
+        throw response.message ?? 'Failed to load EMI preview';
+      }
     } catch (e) {
       String errorMsg = e.toString();
 
@@ -222,7 +227,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                             const SizedBox(height: 20),
                             _buildEmiPlansHeader(),
                             const SizedBox(height: 12),
-                            FutureBuilder<List<EmiPlan>>(
+                            FutureBuilder<ApiResponse<List<EmiPlan>>>(
                               future: emiPlans,
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -267,19 +272,19 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                                   );
                                 }
 
-                                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                if (!snapshot.hasData || !snapshot.data!.success || snapshot.data!.data == null || snapshot.data!.data!.isEmpty) {
                                   return Center(
                                     child: Padding(
                                       padding: const EdgeInsets.all(20),
                                       child: Text(
-                                        'No EMI plans available',
+                                        snapshot.data?.message ?? 'No EMI plans available',
                                         style: TextStyle(color: AppColors.textSecondary),
                                       ),
                                     ),
                                   );
                                 }
 
-                                final plans = snapshot.data!;
+                                final plans = snapshot.data!.data!;
                                 return Column(
                                   children: [
                                     ...plans.asMap().entries.map(

@@ -309,9 +309,10 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
     _pollTimer = Timer.periodic(_pollInterval, (_) async {
       if (_apiService == null) return;
       try {
-        final fresh = await _apiService!.fetchChats();
-        if (fresh.isEmpty) return;
+        final response = await _apiService!.fetchChats();
+        if (!response.success || response.data == null || response.data!.isEmpty) return;
 
+        final fresh = response.data!;
         bool changed = false;
 
         for (final freshChat in fresh) {
@@ -365,17 +366,22 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
         notifyListeners();
       }
 
-      final chats = await _apiService!.fetchChats();
+      final response = await _apiService!.fetchChats();
 
-      // Apply local read overrides so badge doesn't flash back
-      _chats = chats.map((chat) {
-        if (_locallyReadChats.contains(chat.uid)) {
-          return chat.copyWith(unreadCount: 0);
-        }
-        return chat;
-      }).toList();
+      if (response.success && response.data != null) {
+        final chats = response.data!;
+        // Apply local read overrides so badge doesn't flash back
+        _chats = chats.map((chat) {
+          if (_locallyReadChats.contains(chat.uid)) {
+            return chat.copyWith(unreadCount: 0);
+          }
+          return chat;
+        }).toList();
 
-      _sortChats();
+        _sortChats();
+      } else {
+        _error = response.message;
+      }
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -411,19 +417,22 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     try {
       final pageSize = chat.unreadCount.clamp(1, 50);
-      final messages = await _apiService!.fetchMessages(
+      final response = await _apiService!.fetchMessages(
         chat.uid,
         page: 1,
         pageSize: pageSize,
       );
 
-      final unreadUids = messages
-          .where((m) => m.sender.id != _currentUser?.id)
-          .map((m) => m.uid)
-          .toList();
+      if (response.success && response.data != null) {
+        final messages = response.data!;
+        final unreadUids = messages
+            .where((m) => m.sender.id != _currentUser?.id)
+            .map((m) => m.uid)
+            .toList();
 
-      if (unreadUids.isNotEmpty) {
-        await _apiService!.markMessagesAsRead(chat.uid, unreadUids);
+        if (unreadUids.isNotEmpty) {
+          await _apiService!.markMessagesAsRead(chat.uid, unreadUids);
+        }
       }
 
       _locallyReadChats.remove(chat.uid);

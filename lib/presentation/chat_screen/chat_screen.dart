@@ -250,8 +250,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   // ── Load all chats for forward sheet ──────────────────────────────────────
   Future<void> _loadAllChats() async {
     try {
-      final chats = await widget.apiService.fetchChats();
-      if (mounted) setState(() => _allChats = chats);
+      final response = await widget.apiService.fetchChats();
+      if (mounted && response.success && response.data != null) {
+        setState(() => _allChats = response.data!);
+      }
     } catch (_) {}
   }
 
@@ -357,16 +359,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     try {
       // Returns null when the API responds with a success string instead of
       // a full message object — in that case we keep the optimistic version.
-      final updated = await widget.apiService.editMessage(
+      final response = await widget.apiService.editMessage(
         chatUid: widget.chat.uid,
         messageUid: message.uid,
         content: newContent,
       );
-      if (mounted && updated != null) {
+      if (mounted && response.success && response.data != null) {
         // API returned a full message object — use it as the source of truth
         setState(() {
           final idx = _messages.indexWhere((m) => m.uid == message.uid);
-          if (idx != -1) _messages[idx] = updated;
+          if (idx != -1) _messages[idx] = response.data!;
         });
       }
       // If updated == null the optimistic bubble is already correct — no action needed
@@ -1239,7 +1241,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         },
       );
 
-      final actual = await widget.apiService.sendFileMessage(
+      final response = await widget.apiService.sendFileMessage(
         chatUid: widget.chat.uid,
         upload: result,
         replyTo: replyToUid,
@@ -1247,14 +1249,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       );
 
       if (mounted) {
-        setState(() {
-          final idx = _messages.indexWhere((m) => m.uid == optimisticUid);
-          if (idx != -1) _messages[idx] = actual;
-          _isUploading = false;
-          _uploadProgress = 0.0;
-          _uploadingFileName = null;
-        });
-        _webSocketService.broadcastLocalMessage(actual);
+        if (response.success && response.data != null) {
+          final actual = response.data!;
+          setState(() {
+            final idx = _messages.indexWhere((m) => m.uid == optimisticUid);
+            if (idx != -1) _messages[idx] = actual;
+            _isUploading = false;
+            _uploadProgress = 0.0;
+            _uploadingFileName = null;
+          });
+          _webSocketService.broadcastLocalMessage(actual);
+        } else {
+          throw Exception(response.message);
+        }
       }
     } catch (e, stack) {
       debugPrint('[Upload] ✗ Error uploading "$fileName": $e');
@@ -1739,20 +1746,30 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         _currentPage = 1;
         _hasNextPage = true;
       });
-      final messages = await widget.apiService.fetchMessages(
+      final response = await widget.apiService.fetchMessages(
         widget.chat.uid,
         page: _currentPage,
         pageSize: _pageSize,
       );
-      setState(() {
-        _messages
-          ..clear()
-          ..addAll(messages)
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        _isLoadingMessages = false;
-        if (messages.length < _pageSize) _hasNextPage = false;
-      });
-      _scrollToBottom();
+      if (mounted) {
+        if (response.success && response.data != null) {
+          final messages = response.data!;
+          setState(() {
+            _messages
+              ..clear()
+              ..addAll(messages)
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            _isLoadingMessages = false;
+            if (messages.length < _pageSize) _hasNextPage = false;
+          });
+          _scrollToBottom();
+        } else {
+          setState(() {
+            _error = response.message;
+            _isLoadingMessages = false;
+          });
+        }
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -1768,20 +1785,25 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     setState(() => _isLoadingMore = true);
     try {
       final nextPage = _currentPage + 1;
-      final older = await widget.apiService.fetchMessages(
+      final response = await widget.apiService.fetchMessages(
         widget.chat.uid,
         page: nextPage,
         pageSize: _pageSize,
       );
       if (!mounted) return;
-      setState(() {
-        _currentPage = nextPage;
-        if (older.isEmpty || older.length < _pageSize) _hasNextPage = false;
-        final existing = _messages.map((m) => m.uid).toSet();
-        _messages.addAll(older.where((m) => !existing.contains(m.uid)));
-        _messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        _isLoadingMore = false;
-      });
+      if (response.success && response.data != null) {
+        final older = response.data!;
+        setState(() {
+          _currentPage = nextPage;
+          if (older.isEmpty || older.length < _pageSize) _hasNextPage = false;
+          final existing = _messages.map((m) => m.uid).toSet();
+          _messages.addAll(older.where((m) => !existing.contains(m.uid)));
+          _messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          _isLoadingMore = false;
+        });
+      } else {
+        setState(() => _isLoadingMore = false);
+      }
     } catch (_) {
       if (mounted) setState(() => _isLoadingMore = false);
     }
@@ -1791,8 +1813,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
       if (!mounted) return;
       try {
-        final msgs = await widget.apiService.fetchMessages(widget.chat.uid);
-        if (!mounted) return;
+        final response = await widget.apiService.fetchMessages(widget.chat.uid);
+        if (!mounted || !response.success || response.data == null) return;
+        final msgs = response.data!;
         final existing = _messages.map((m) => m.uid).toSet();
         final newMsgs = msgs.where((m) => !existing.contains(m.uid)).toList();
         if (newMsgs.isNotEmpty) {

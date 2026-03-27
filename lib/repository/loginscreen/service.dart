@@ -1,3 +1,4 @@
+import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/repository/loginscreen/model.dart';
@@ -5,7 +6,7 @@ import 'package:luminar_std/repository/loginscreen/model.dart';
 class LoginService {
   Future<ApiResponse> login({required Map<String, dynamic> body}) async {
     final response = await ApiService().post(
-      endpoint: '/api/auth/student/login/',
+      endpoint: AppEndpoints.login,
       body: body, //,
     );
 
