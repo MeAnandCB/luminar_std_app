@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/status.dart' as status;
 import '../models/message.dart';
 import '../models/user.dart';
 import 'api_service.dart';
@@ -84,7 +83,11 @@ class WebSocketService {
   }
 
   void disconnect() {
-    _channel?.sink.close(status.normalClosure);
+    try {
+      _channel?.sink.close(1000); // 1000 = normalClosure
+    } catch (e) {
+      debugPrint('[WS] Disconnect error: $e');
+    }
     _channel = null;
   }
 
