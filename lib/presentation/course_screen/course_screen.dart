@@ -598,7 +598,7 @@ class _CourseScreenState extends State<CourseScreen>
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: widget.paymentCompleted / 100,
-              backgroundColor: AppColors.white.withOpacity(0.2),
+              backgroundColor: Colors.white.withOpacity(0.3),
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
               minHeight: 8,
             ),

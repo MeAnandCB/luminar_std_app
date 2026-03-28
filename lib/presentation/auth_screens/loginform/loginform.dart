@@ -313,7 +313,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                         onChanged: (value) =>
                                             setState(() => _hasArrears = false),
                                       ),
-                                      const Text('No'),
+                                      Text('No', style: TextStyle(color: AppColors.textPrimary)),
                                     ],
                                   ),
                                 ),
@@ -328,7 +328,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                         onChanged: (value) =>
                                             setState(() => _hasArrears = true),
                                       ),
-                                      const Text('Yes'),
+                                      Text('Yes', style: TextStyle(color: AppColors.textPrimary)),
                                     ],
                                   ),
                                 ),

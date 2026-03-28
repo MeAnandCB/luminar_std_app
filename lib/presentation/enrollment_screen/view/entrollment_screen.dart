@@ -132,7 +132,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
             errorMsg.length > 100 ? 'Failed to load EMI preview' : errorMsg,
             style: TextStyle(fontSize: 13),
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           duration: const Duration(seconds: 3),
