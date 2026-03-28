@@ -185,11 +185,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       case 'online':
         return AppColors.statsGreen;
       case 'offline':
-        return Colors.grey;
+        return AppColors.textSecondary;
       case 'recording':
         return AppColors.statsOrange;
       case 'absent':
-        return const Color(0xFFFF7675);
+        return AppColors.error;
       default:
         return AppColors.primary;
     }
@@ -226,7 +226,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 30, offset: const Offset(0, 10))],
                 ),
@@ -285,9 +285,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF1F3FA),
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderLight),
+                          border: Border.all(color: AppColors.borderColor.withOpacity(0.5)),
                         ),
                         child: Row(
                           children: [
@@ -338,9 +338,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF1F3FA),
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderLight),
+                          border: Border.all(color: AppColors.borderColor.withOpacity(0.5)),
                         ),
                         child: Row(
                           children: [
@@ -365,9 +365,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F3FA),
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.borderLight),
+                        border: Border.all(color: AppColors.borderColor.withOpacity(0.5)),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -474,7 +474,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Widget build(BuildContext context) {
     LoggerUtils.debug("${widget.batchId}", tag: 'Attendance');
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -537,10 +537,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: AppColors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
-                BoxShadow(color: AppColors.primary.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 4)),
               ],
             ),
             child: IconButton(
@@ -560,9 +560,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 5))],
+        boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 15, offset: const Offset(0, 5))],
       ),
       child: Row(
         children: [
@@ -606,7 +606,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 5))],
       ),
@@ -667,7 +667,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
       ),
@@ -726,10 +726,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               padding: const EdgeInsets.only(left: 12),
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(color: AppColors.primary.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                    BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: IconButton(
@@ -769,14 +769,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 if (_startDate != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20)),
-                    child: Text('From: ${_formatDate(_startDate)}', style: TextStyle(fontSize: 12)),
+                    decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(20)),
+                    child: Text('From: ${_formatDate(_startDate)}', style: TextStyle(fontSize: 12, color: AppColors.textPrimary)),
                   ),
                 if (_endDate != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20)),
-                    child: Text('To: ${_formatDate(_endDate)}', style: TextStyle(fontSize: 12)),
+                    decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(20)),
+                    child: Text('To: ${_formatDate(_endDate)}', style: TextStyle(fontSize: 12, color: AppColors.textPrimary)),
                   ),
                 if (_selectedStatus != 'All Status')
                   Container(
@@ -865,7 +865,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(color: _getStatusColor(record.status).withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
@@ -943,9 +943,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 5))],
+        boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 20, offset: const Offset(0, 5))],
       ),
       child: Column(
         children: [
@@ -991,7 +991,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             Text(
               _errorMessage ?? 'Unknown error occurred',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(

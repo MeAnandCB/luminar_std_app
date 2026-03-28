@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
 
 class NactetBanner extends StatefulWidget {
   final int pendingCount;
@@ -238,13 +239,13 @@ class _NactetBannerState extends State<NactetBanner>
                     ),
                   ),
                   const SizedBox(height: 2),
-                  const Text(
+                  Text(
                     'NACTET Registration',
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1C1917),
+                      color: AppColors.textPrimary,
                       height: 1.2,
                     ),
                   ),
@@ -296,7 +297,7 @@ class _NactetBannerState extends State<NactetBanner>
                     style: TextStyle(
                       fontSize: 8,
                       fontWeight: FontWeight.w600,
-                      color: Colors.brown.shade400,
+                      color: AppColors.textSecondary,
                       letterSpacing: 0.3,
                       height: 1.2,
                     ),
@@ -338,17 +339,17 @@ class _NactetBannerState extends State<NactetBanner>
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                icon: const Icon(
+                icon: Icon(
                   Icons.edit_outlined,
                   size: 13,
-                  color: Colors.white,
+                  color: AppColors.white,
                 ),
-                label: const Text(
+                label: Text(
                   'Fill Form',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: AppColors.white,
                     letterSpacing: 0.3,
                   ),
                 ),

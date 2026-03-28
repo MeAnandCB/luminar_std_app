@@ -107,7 +107,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         Icon(
                           Icons.error_outline,
                           size: 60,
-                          color: Colors.red,
+                          color: AppColors.error,
                         ),
                         SizedBox(height: 16),
                         Text(
@@ -131,7 +131,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
+                            foregroundColor: AppColors.white,
                             minimumSize: const Size(200, 45),
                           ),
                           child: Text('Try Again'),
@@ -630,17 +630,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
     switch (status) {
       case 'active':
       case 'admission_fee_paid':
-        return Colors.green;
+        return AppColors.statsGreen;
       case 'pending':
       case 'not_set':
-        return Colors.orange;
+        return AppColors.statsOrange;
       case 'completed':
-        return Colors.blue;
+        return AppColors.statsBlue;
       case 'expired':
       case 'demo_expired':
-        return Colors.red;
+        return AppColors.error;
       default:
-        return Colors.grey;
+        return AppColors.textSecondary;
     }
   }
 
@@ -764,7 +764,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: activities.length > 4 ? 4 : activities.length,
       separatorBuilder: (context, index) =>
-          Divider(color: Color.fromARGB(255, 239, 239, 239)),
+          Divider(color: AppColors.borderColor.withOpacity(0.5)),
       itemBuilder: (context, index) {
         final item = activities[index];
 

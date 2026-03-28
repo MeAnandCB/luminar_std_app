@@ -10,6 +10,7 @@ import 'package:luminar_std/repository/enrollment_screen/model/emiplans_model.da
 import 'package:luminar_std/repository/enrollment_screen/service/installment_service.dart';
 import 'package:luminar_std/repository/razorpay/model/emi_res_model.dart';
 import 'package:luminar_std/repository/razorpay/model/razorpay_model.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
@@ -152,6 +153,8 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final paymentDetailsScreenProvider = Provider.of<EnrollmentProvider>(context);
+    // Subscribe to theme changes
+    context.watch<ThemeProvider>();
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -486,7 +489,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                               ),
                               child: Text(
                                 'POPULAR',
-                                style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: AppColors.textWhite, fontSize: 9, fontWeight: FontWeight.bold),
                               ),
                             ),
                         ],
@@ -601,9 +604,9 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
       return Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.05),
+          color: AppColors.error.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.red.withOpacity(0.3)),
+          border: Border.all(color: AppColors.error.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -612,8 +615,8 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
               children: [
                 Container(
                   padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                  child: Icon(Icons.error_outline, color: Colors.red, size: 24),
+                  decoration: BoxDecoration(color: AppColors.error.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                  child: Icon(Icons.error_outline, color: AppColors.error, size: 24),
                 ),
                 SizedBox(width: 12),
                 Expanded(
@@ -622,12 +625,12 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                     children: [
                       Text(
                         errorTitle,
-                        style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.error, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 4),
                       Text(
                         'Unable to load EMI details',
-                        style: TextStyle(color: Colors.red.withOpacity(0.8), fontSize: 13),
+                        style: TextStyle(color: AppColors.error.withOpacity(0.8), fontSize: 13),
                       ),
                     ],
                   ),
@@ -641,9 +644,9 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
               width: double.infinity,
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.withOpacity(0.2)),
+                border: Border.all(color: AppColors.error.withOpacity(0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,7 +681,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                     _buildAnalysisRow(
                       'Amount to Finance',
                       '₹${_formatAmount(errorData['payment_analysis']['amount_to_finance'])}',
-                      valueColor: Colors.red,
+                      valueColor: AppColors.error,
                       isBold: true,
                     ),
                     if (errorData['payment_analysis'].containsKey('calculation')) ...[
@@ -853,11 +856,11 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Amount You Paid", style: TextStyle(color: Colors.white, fontSize: 12)),
+                      Text("Amount You Paid", style: TextStyle(color: AppColors.textWhite, fontSize: 12)),
                       SizedBox(width: 20),
                       Text(
                         "₹$amountPaid",
-                        style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.textWhite, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -867,11 +870,11 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                     children: [
                       Text(
                         "Amount to Pay:",
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.textWhite, fontWeight: FontWeight.bold),
                       ),
                       Text(
                         "₹$pendingAmount",
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.textWhite, fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),

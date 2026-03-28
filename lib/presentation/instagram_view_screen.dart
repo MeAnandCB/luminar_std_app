@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:luminar_std/core/theme/app_text_styles.dart';
@@ -37,6 +38,9 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
 
   Future<void> loadInitialImages() async {
     if (!mounted) return;
+    // Don't re-fetch if we already have images
+    if (images.isNotEmpty) return;
+    
     setState(() => isLoading = true);
     await fetchInstagramImages(reset: true);
     if (!mounted) return;
@@ -60,14 +64,10 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
       final response = await http.get(Uri.parse(requestUrl));
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        List media = data["data"];
-
-        List<String> newImages = media
-            .where((item) => item["media_type"] == "IMAGE")
-            .map<String>((item) => item["media_url"])
-            .toList();
+        // Parse in a background isolate
+        final parsedData = await compute(_parseInstagramResponse, response.body);
+        final List<String> newImages = parsedData['images'];
+        final String? next = parsedData['nextUrl'];
 
         if (!mounted) return;
         setState(() {
@@ -78,16 +78,14 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
           }
         });
 
-        // Pre-cache images
+        // Pre-cache images in a non-blocking way
         for (String url in newImages) {
-          await precacheImage(CachedNetworkImageProvider(url), context);
+          precacheImage(CachedNetworkImageProvider(url), context).catchError((e) {
+             debugPrint("Error pre-caching image: $e");
+          });
         }
 
-        if (data["paging"] != null && data["paging"]["next"] != null) {
-          nextUrl = data["paging"]["next"];
-        } else {
-          nextUrl = null;
-        }
+        nextUrl = next;
 
         LoggerUtils.info("Loaded ${newImages.length} images. Total: ${images.length}", tag: 'Instagram');
       }
@@ -108,25 +106,20 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
       final response = await http.get(Uri.parse(nextUrl!));
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        // Parse in a background isolate
+        final parsedData = await compute(_parseInstagramResponse, response.body);
+        preloadedImages = parsedData['images'];
 
-        List media = data["data"];
-
-        preloadedImages = media
-            .where((item) => item["media_type"] == "IMAGE")
-            .map<String>((item) => item["media_url"])
-            .toList();
-
-        // Pre-cache these images
+        // Pre-cache these images in a non-blocking way
         for (String url in preloadedImages) {
-          await precacheImage(CachedNetworkImageProvider(url), context);
+          if (mounted) {
+            precacheImage(CachedNetworkImageProvider(url), context).catchError((e) {
+               debugPrint("Error pre-caching preloaded image: $e");
+            });
+          }
         }
 
-        if (data["paging"] != null && data["paging"]["next"] != null) {
-          nextUrl = data["paging"]["next"];
-        } else {
-          nextUrl = null;
-        }
+        nextUrl = parsedData['nextUrl'];
       }
     } catch (e) {
       LoggerUtils.error("Error preloading images: $e", tag: 'Instagram');
@@ -299,4 +292,26 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
       ),
     );
   }
+}
+
+/// Parsing function for the Instagram response.
+/// This runs in a background isolate to keep the UI smooth.
+Map<String, dynamic> _parseInstagramResponse(String responseBody) {
+  final data = jsonDecode(responseBody);
+  final List media = data["data"] ?? [];
+
+  final List<String> images = media
+      .where((item) => item["media_type"] == "IMAGE")
+      .map<String>((item) => item["media_url"] as String)
+      .toList();
+
+  String? next;
+  if (data["paging"] != null && data["paging"]["next"] != null) {
+    next = data["paging"]["next"];
+  }
+
+  return {
+    'images': images,
+    'nextUrl': next,
+  };
 }

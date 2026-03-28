@@ -491,8 +491,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     ];
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -506,13 +506,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               width: 36,
               height: 3,
               margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(2)),
             ),
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Share',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E)),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
             ),
             const SizedBox(height: 16),
@@ -547,11 +547,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           const SizedBox(height: 6),
           Text(
             item.label,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E)),
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           ),
           Text(
             item.sublabel,
-            style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 9, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -567,7 +567,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 28),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(20)),
         child: SafeArea(
           top: false,
           child: Column(
@@ -577,11 +577,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 width: 36,
                 height: 3,
                 margin: const EdgeInsets.only(top: 10, bottom: 16),
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(2)),
               ),
-              const Text(
+              Text(
                 'Camera',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E)),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 20),
               Padding(
@@ -640,7 +640,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           const SizedBox(height: 10),
           Text(
             label,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -1629,7 +1629,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         alignment: Alignment.bottomCenter,
         child: Container(
           margin: const EdgeInsets.fromLTRB(12, 0, 12, 24),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(16)),
           child: SafeArea(
             top: false,
             child: Column(
@@ -1664,7 +1664,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             child: Container(
                               width: 40,
                               height: 40,
-                              decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
+                              decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
                               child: Center(child: Text(emoji, style: TextStyle(fontSize: 20))),
                             ),
                           ),
@@ -1672,7 +1672,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         .toList(),
                   ),
                 ),
-                Divider(height: 1, color: Colors.grey.shade100),
+                Divider(height: 1, color: AppColors.borderColor),
                 _messageOption(
                   icon: Icons.reply_rounded,
                   label: 'Reply',
@@ -1764,7 +1764,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Widget _messageOption({required IconData icon, required String label, required VoidCallback onTap, Color? color}) {
-    final c = color ?? const Color(0xFF1A1A2E);
+    final c = color ?? AppColors.textPrimary;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -1997,10 +1997,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       child: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-          decoration: BoxDecoration(color: const Color(0xFFE1F0FA), borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(
+            color: AppColors.isDark ? const Color(0xFF1E3A5F) : const Color(0xFFE1F0FA),
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Text(
             label,
-            style: TextStyle(fontSize: 11, color: Color(0xFF4A7FA5), fontWeight: FontWeight.w600, letterSpacing: 0.3),
+            style: TextStyle(
+              fontSize: 11,
+              color: AppColors.isDark ? const Color(0xFF7EB3D4) : const Color(0xFF4A7FA5),
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
           ),
         ),
       ),
@@ -2018,23 +2026,23 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: AppColors.surface,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),
                 topRight: const Radius.circular(18),
                 bottomLeft: Radius.circular(isMe ? 18 : 4),
                 bottomRight: Radius.circular(isMe ? 4 : 18),
               ),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: AppColors.borderColor),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.block, size: 14, color: Colors.grey.shade400),
+                Icon(Icons.block, size: 14, color: AppColors.textHint),
                 const SizedBox(width: 6),
                 Text(
                   'This message was deleted',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade400, fontStyle: FontStyle.italic),
+                  style: TextStyle(fontSize: 13, color: AppColors.textHint, fontStyle: FontStyle.italic),
                 ),
               ],
             ),
@@ -2065,7 +2073,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       child: Container(
         margin: const EdgeInsets.only(bottom: 6),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xFFC5D8EF) : Colors.grey.shade100,
+          color: isMe
+              ? (AppColors.isDark ? const Color(0xFF1A3A5C) : const Color(0xFFC5D8EF))
+              : AppColors.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border(left: BorderSide(color: isMe ? const Color(0xFF4A7FA5) : const Color(0xFF7B9FD4), width: 3.5)),
         ),
@@ -2090,7 +2100,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               quotedContent,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12.5, color: Colors.grey.shade600, height: 1.3),
+              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary, height: 1.3),
             ),
           ],
         ),
@@ -2261,7 +2271,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         if (hasCaption)
           Padding(
             padding: const EdgeInsets.only(top: 6, left: 2, right: 2),
-            child: Text(message.content, style: TextStyle(fontSize: 14, color: Color(0xFF1A1A2E), height: 1.4)),
+            child: Text(message.content, style: TextStyle(fontSize: 14, color: AppColors.textPrimary, height: 1.4)),
           ),
       ],
     );
@@ -2470,7 +2480,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       constraints: const BoxConstraints(minWidth: 200, maxWidth: 280),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isMe ? const Color(0xFFC5D8EF).withOpacity(0.5) : Colors.grey.shade100,
+        color: isMe
+            ? (AppColors.isDark ? const Color(0xFF1A3A5C).withOpacity(0.7) : const Color(0xFFC5D8EF).withOpacity(0.5))
+            : AppColors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -2518,7 +2530,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   message.fileName ?? 'File',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E), height: 1.3),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary, height: 1.3),
                 ),
                 const SizedBox(height: 4),
                 if (isUploading)
@@ -2589,7 +2601,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xFFC5D8EF).withOpacity(0.5) : Colors.grey.shade100,
+          color: isMe
+              ? (AppColors.isDark ? const Color(0xFF1A3A5C).withOpacity(0.5) : const Color(0xFFC5D8EF).withOpacity(0.5))
+              : AppColors.surface,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -2632,7 +2646,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     if (matches.isEmpty) {
       return RichText(
         text: TextSpan(
-          style: TextStyle(fontSize: 15, color: const Color(0xFF1A1A2E), height: 1.45),
+          style: TextStyle(fontSize: 15, color: AppColors.textPrimary, height: 1.45),
           children: _parseBoldText(text),
         ),
       );
@@ -2679,7 +2693,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     return RichText(
       text: TextSpan(
-        style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A2E), height: 1.45),
+        style: TextStyle(fontSize: 15, color: AppColors.textPrimary, height: 1.45),
         children: spans,
       ),
     );
@@ -3038,7 +3052,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
     if (_messages.isEmpty) {
       return Center(
-        child: Text('No messages yet. Say hello! 👋', style: TextStyle(color: Colors.grey.shade500, fontSize: 15)),
+        child: Text(
+          'No messages yet. Say hello! 👋',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+        ),
       );
     }
 
@@ -3111,8 +3128,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   errorBuilder: (_, __, ___) => Container(
                     width: 40,
                     height: 40,
-                    color: Colors.grey.shade200,
-                    child: const Icon(Icons.image, size: 18, color: Colors.grey),
+                    color: AppColors.surface,
+                    child: Icon(Icons.image, size: 18, color: AppColors.textHint),
                   ),
                 ),
               ),
@@ -3138,7 +3155,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         : msg.content,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -3149,8 +3166,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               child: Container(
                 width: 28,
                 height: 28,
-                decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
-                child: Icon(Icons.close_rounded, size: 16, color: Colors.grey.shade600),
+                decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
+                child: Icon(Icons.close_rounded, size: 16, color: AppColors.textSecondary),
               ),
             ),
           ],
@@ -3201,7 +3218,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     msg.content,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -3212,8 +3229,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               child: Container(
                 width: 28,
                 height: 28,
-                decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
-                child: Icon(Icons.close_rounded, size: 16, color: Colors.grey.shade600),
+                decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
+                child: Icon(Icons.close_rounded, size: 16, color: AppColors.textSecondary),
               ),
             ),
           ],
@@ -3253,7 +3270,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   horizontalSpacing: 0,
                   gridPadding: EdgeInsets.zero,
                   recentsLimit: 28,
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppColors.cardBackground,
                   buttonMode: ButtonMode.MATERIAL,
                   loadingIndicator: const Center(
                     child: CircularProgressIndicator(color: Color(0xFF7B9FD4), strokeWidth: 2),
@@ -3261,9 +3278,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 ),
                 categoryViewConfig: CategoryViewConfig(
                   initCategory: Category.RECENT,
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppColors.cardBackground,
                   indicatorColor: const Color(0xFF7B9FD4),
-                  iconColor: Colors.grey,
+                  iconColor: AppColors.isDark ? Colors.grey.shade400 : Colors.grey,
                   iconColorSelected: const Color(0xFF7B9FD4),
                   categoryIcons: const CategoryIcons(),
                   tabIndicatorAnimDuration: kTabScrollDuration,
@@ -3272,12 +3289,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 bottomActionBarConfig: BottomActionBarConfig(
                   enabled: true,
                   showBackspaceButton: true,
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppColors.cardBackground,
                   buttonColor: const Color(0xFF7B9FD4),
                   buttonIconColor: Colors.white,
                 ),
                 searchViewConfig: SearchViewConfig(
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppColors.cardBackground,
                   buttonIconColor: const Color(0xFF7B9FD4),
                   hintText: 'Search emoji',
                 ),
@@ -3321,7 +3338,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF4F6FB),
+                        color: AppColors.isDark ? const Color(0xFF1E3A5C) : const Color(0xFFF4F6FB),
                         borderRadius: BorderRadius.circular(26),
                       ),
                       child: Row(
@@ -3354,7 +3371,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                               focusNode: _messageFocusNode,
                               minLines: 1,
                               maxLines: 4,
-                              style: TextStyle(fontSize: 15, color: Color(0xFF1A1A2E)),
+                              style: TextStyle(fontSize: 15, color: AppColors.textPrimary),
                               decoration: InputDecoration(
                                 hintText: _editingMessage != null
                                     ? 'Edit message…'
@@ -3491,7 +3508,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
 
     return Container(
-      color: Colors.white,
+      color: AppColors.cardBackground,
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: SafeArea(
         top: false,
@@ -3520,7 +3537,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               child: Container(
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(color: const Color(0xFFF4F6FB), borderRadius: BorderRadius.circular(26)),
+                decoration: BoxDecoration(
+                  color: AppColors.isDark ? const Color(0xFF1E3A5C) : const Color(0xFFF4F6FB),
+                  borderRadius: BorderRadius.circular(26),
+                ),
                 child: Row(
                   children: [
                     // Blinking dot
@@ -3592,7 +3612,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.send_rounded, color: Colors.white, size: 22),
+                child: Icon(Icons.send_rounded, color: AppColors.white, size: 22),
               ),
             ),
           ],
@@ -3611,7 +3631,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       appBar: AppBar(
         backgroundColor: AppColors.cardBackground,
         elevation: 0.5,
-        shadowColor: Colors.black12,
+        shadowColor: AppColors.shadowLight,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
@@ -3626,7 +3646,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               children: [
                 Text(
                   widget.chat.name,
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E)),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
                 _buildAppBarSubtitle(),
               ],
@@ -3635,7 +3655,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Color(0xFF1A1A2E)),
+            icon: Icon(Icons.more_vert, color: AppColors.textPrimary),
             onPressed: () {},
           ),
         ],
@@ -3711,9 +3731,9 @@ class _ImageCaptionSheetState extends State<_ImageCaptionSheet> {
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -3723,7 +3743,7 @@ class _ImageCaptionSheetState extends State<_ImageCaptionSheet> {
               width: 36,
               height: 3,
               margin: const EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(2)),
             ),
 
             // ── Header ───────────────────────────────────────────────────
@@ -3739,7 +3759,7 @@ class _ImageCaptionSheetState extends State<_ImageCaptionSheet> {
                     child: Text(
                       'Send Image',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Color(0xFF1A1A2E), fontSize: 15, fontWeight: FontWeight.w700),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                     ),
                   ),
                   const SizedBox(width: 48),
@@ -3779,7 +3799,7 @@ class _ImageCaptionSheetState extends State<_ImageCaptionSheet> {
                         autofocus: false,
                         minLines: 1,
                         maxLines: 4,
-                        style: TextStyle(color: Color(0xFF1A1A2E), fontSize: 15),
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 15),
                         decoration: InputDecoration(
                           hintText: 'Add a caption…',
                           hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),

@@ -1,5 +1,6 @@
 // screens/gallery_screen.dart
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/gallery_details_screen/views/gallery_detail_screen.dart';
 import 'package:luminar_std/presentation/gallery_screen/controller/gallery_screen_controller.dart';
 import 'package:luminar_std/presentation/gallery_screen/views/widgets/gallery_card.dart';
@@ -65,12 +66,12 @@ class _GalleryScreenState extends State<GalleryScreen> {
     final provider = Provider.of<GalleryProvider>(context, listen: false);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        title: const Text('Videos'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 1,
+        title: Text('Videos', style: TextStyle(color: AppColors.textPrimary)),
+        backgroundColor: AppColors.cardBackground,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
         actions: [
           // IconButton(
           //   icon: const Icon(Icons.search),

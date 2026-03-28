@@ -43,7 +43,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 1,
         title: Text(
           'Complete Profile',
@@ -435,7 +435,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           keyboardType: keyboardType,
           maxLines: maxLines ?? 1,
           maxLength: maxLength,
-          style: AppTextStyles.bodyText2,
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: AppTextStyles.hintText,

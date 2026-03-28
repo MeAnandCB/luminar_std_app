@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/chat.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/message.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/api_service.dart';
@@ -206,9 +207,9 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F6FB),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE1E8F0)),
+        border: Border.all(color: AppColors.borderColor),
       ),
       child: Row(
         children: [
@@ -305,9 +306,9 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
     final filtered = _filteredChats;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -318,7 +319,7 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
             height: 3,
             margin: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: AppColors.borderColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -334,12 +335,12 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
                   size: 22,
                 ),
                 const SizedBox(width: 10),
-                const Text(
+                Text(
                   'Forward Message',
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const Spacer(),
@@ -374,12 +375,12 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF4F6FB),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: TextField(
                 controller: _searchController,
-                style: TextStyle(fontSize: 14, color: Color(0xFF1A1A2E)),
+                style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Search chats…',
                   hintStyle: TextStyle(
@@ -504,7 +505,7 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
                                         fontWeight: isSelected
                                             ? FontWeight.w700
                                             : FontWeight.w600,
-                                        color: const Color(0xFF1A1A2E),
+                                        color: AppColors.textPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
@@ -512,7 +513,7 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
                                       _subtitleFor(chat),
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.grey.shade500,
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                   ],

@@ -32,7 +32,7 @@ class GalleryCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(color: AppColors.shadowLight, spreadRadius: 1, blurRadius: 6, offset: const Offset(0, 2)),

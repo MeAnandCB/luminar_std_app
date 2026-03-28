@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/presentation/auth_screens/forgot_password/controller/forgot_password.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -296,7 +295,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
         backgroundColor: Colors.transparent,
         child: Container(
           padding: EdgeInsets.all(24),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32)),
+          decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(32)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -459,16 +458,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
                                           SizedBox(height: 30),
 
                                           // Email Field
-                                          Text('Email', style: AppTextStyles.statLabel),
+                                          Text('Email', style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimary,
+                                          )),
                                           SizedBox(height: 8),
                                           Container(
                                             decoration: BoxDecoration(
-                                              color: Color(0xFFF1F3FA),
+                                              color: AppColors.surface,
                                               borderRadius: BorderRadius.circular(20),
                                               border: Border.all(
                                                 color: controller.errorMessage != null
                                                     ? Colors.red
-                                                    : AppColors.borderLight,
+                                                    : AppColors.borderColor,
                                               ),
                                             ),
                                             child: TextFormField(
@@ -561,16 +564,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
                                           SizedBox(height: 30),
 
                                           // OTP Field
-                                          Text('OTP', style: AppTextStyles.statLabel),
+                                          Text('OTP', style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimary,
+                                          )),
                                           SizedBox(height: 8),
                                           Container(
                                             decoration: BoxDecoration(
-                                              color: Color(0xFFF1F3FA),
+                                              color: AppColors.surface,
                                               borderRadius: BorderRadius.circular(20),
                                               border: Border.all(
                                                 color: controller.errorMessage != null
                                                     ? Colors.red
-                                                    : AppColors.borderLight,
+                                                    : AppColors.borderColor,
                                               ),
                                             ),
                                             child: TextFormField(
@@ -695,13 +702,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
                                           SizedBox(height: 30),
 
                                           // New Password
-                                          Text('New Password', style: AppTextStyles.statLabel),
+                                          Text('New Password', style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimary,
+                                          )),
                                           SizedBox(height: 8),
                                           Container(
                                             decoration: BoxDecoration(
-                                              color: Color(0xFFF1F3FA),
+                                              color: AppColors.surface,
                                               borderRadius: BorderRadius.circular(20),
-                                              border: Border.all(color: AppColors.borderLight),
+                                              border: Border.all(color: AppColors.borderColor),
                                             ),
                                             child: TextFormField(
                                               controller: controller.newPasswordController,
@@ -738,16 +749,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
                                           SizedBox(height: 16),
 
                                           // Confirm Password
-                                          Text('Confirm Password', style: AppTextStyles.statLabel),
+                                          Text('Confirm Password', style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimary,
+                                          )),
                                           SizedBox(height: 8),
                                           Container(
                                             decoration: BoxDecoration(
-                                              color: Color(0xFFF1F3FA),
+                                              color: AppColors.surface,
                                               borderRadius: BorderRadius.circular(20),
                                               border: Border.all(
                                                 color: controller.errorMessage != null
                                                     ? Colors.red
-                                                    : AppColors.borderLight,
+                                                    : AppColors.borderColor,
                                               ),
                                             ),
                                             child: TextFormField(

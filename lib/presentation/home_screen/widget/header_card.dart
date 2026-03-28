@@ -68,7 +68,7 @@ class HeaderWidget extends StatelessWidget {
                         child: Center(
                           child: Text(
                             _getFirstLetter(),
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.white),
                           ),
                         ),
                       ),
@@ -80,7 +80,7 @@ class HeaderWidget extends StatelessWidget {
                       child: Center(
                         child: Text(
                           _getFirstLetter(),
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.white),
                         ),
                       ),
                     ),
@@ -146,11 +146,11 @@ class HeaderWidget extends StatelessWidget {
                     top: 0,
                     child: Container(
                       padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(6)),
+                      decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(6)),
                       constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
                       child: Text(
                         '$unreadCount',
-                        style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.white, fontSize: 8, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
                     ),

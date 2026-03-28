@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import '../../bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -130,7 +131,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     final size = MediaQuery.of(context).size;
     final authProvider = Provider.of<AuthProvider>(context);
 
-    return Scaffold(
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -236,13 +239,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   SizedBox(height: 20),
 
                                   // Email Field
-                                  Text('Email', style: AppTextStyles.statLabel),
+                                  Text('Email', style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  )),
                                   SizedBox(height: 8),
                                   Container(
                                     decoration: BoxDecoration(
-                                      color: Color(0xFFF1F3FA),
+                                      color: AppColors.surface,
                                       borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: AppColors.borderLight),
+                                      border: Border.all(color: AppColors.borderColor),
                                     ),
                                     child: TextFormField(
                                       controller: _emailController,
@@ -256,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                         border: InputBorder.none,
                                         contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                         errorStyle: TextStyle(
-                                          color: Colors.red,
+                                          color: AppColors.error,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -266,13 +273,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   SizedBox(height: 20),
 
                                   // Password Field
-                                  Text('Password', style: AppTextStyles.statLabel),
+                                  Text('Password', style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  )),
                                   SizedBox(height: 8),
                                   Container(
                                     decoration: BoxDecoration(
-                                      color: Color(0xFFF1F3FA),
+                                      color: AppColors.surface,
                                       borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: AppColors.borderLight),
+                                      border: Border.all(color: AppColors.borderColor),
                                     ),
                                     child: TextFormField(
                                       controller: _passwordController,
@@ -304,7 +315,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                         border: InputBorder.none,
                                         contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                         errorStyle: TextStyle(
-                                          color: Colors.red,
+                                          color: AppColors.error,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -324,7 +335,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                             child: Text(
                                               authProvider.errorMessage!,
                                               style: TextStyle(
-                                                color: Colors.red,
+                                                color: AppColors.error,
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w500,
                                               ),
@@ -431,6 +442,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

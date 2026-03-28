@@ -181,7 +181,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF4CAF50),
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFF4F6FB), width: 2),
+                border: Border.all(color: AppColors.cardBackground, width: 2),
               ),
             ),
           ),
@@ -221,7 +221,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFF4F6FB), width: 2),
+                border: Border.all(color: AppColors.cardBackground, width: 2),
               ),
               child: CircleAvatar(
                 radius: 18,
@@ -251,7 +251,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               decoration: BoxDecoration(
                 color: color,
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFF4F6FB), width: 2),
+                border: Border.all(color: AppColors.cardBackground, width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: color.withOpacity(0.3),
@@ -282,20 +282,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.shade50,
+        color: AppColors.isDark ? color.withOpacity(0.2) : color.shade50,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.shade200, width: 0.8),
+        border: Border.all(color: AppColors.isDark ? color.withOpacity(0.4) : color.shade200, width: 0.8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 10, color: color.shade700),
+          Icon(icon, size: 10, color: AppColors.isDark ? color.shade200 : color.shade700),
           const SizedBox(width: 3),
           Text(
             label,
             style: TextStyle(
               fontSize: 10,
-              color: color.shade700,
+              color: AppColors.isDark ? color.shade200 : color.shade700,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -335,12 +335,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
         titleSpacing: 16,
         title: Row(
           children: [
-            const Text(
+            Text(
               'Chats',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A2E),
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(width: 8),
@@ -350,7 +350,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         actions: [
           IconButton(
             onPressed: () => provider.refresh(),
-            icon: const Icon(Icons.refresh, color: Color(0xFF1A1A2E)),
+            icon: Icon(Icons.refresh, color: AppColors.textPrimary),
           ),
           const SizedBox(width: 4),
         ],
@@ -489,7 +489,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                             fontWeight: hasUnread
                                 ? FontWeight.w700
                                 : FontWeight.w600,
-                            color: const Color(0xFF1A1A2E),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -531,8 +531,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         color: hasUnread
-                            ? const Color(0xFF1A1A2E)
-                            : Colors.grey.shade500,
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
                         fontWeight: hasUnread
                             ? FontWeight.w500
                             : FontWeight.normal,

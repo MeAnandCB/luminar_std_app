@@ -58,10 +58,10 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
   }
 
   Color _getProgressColor(double percentage) {
-    if (percentage >= 75) return Colors.green;
-    if (percentage >= 50) return Colors.blue;
-    if (percentage >= 25) return Colors.orange;
-    return Colors.red;
+    if (percentage >= 75) return AppColors.statsGreen;
+    if (percentage >= 50) return AppColors.statsBlue;
+    if (percentage >= 25) return AppColors.statsOrange;
+    return AppColors.error;
   }
 
   Color _getStatusColor(String colorHex) {
@@ -70,49 +70,39 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
         return Color(int.parse(colorHex.substring(1), radix: 16) + 0xFF000000);
       }
     } catch (e) {
-      return Colors.blue;
+      return AppColors.primary;
     }
-    return Colors.blue;
+    return AppColors.primary;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         title: Padding(
-          padding: EdgeInsets.only(left: 20),
-          child: const Text(
+          padding: const EdgeInsets.only(left: 20),
+          child: Text(
             'My Enrollments',
             style: TextStyle(
-              color: AppColors.bottomNavSelected,
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
           ),
         ),
 
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                const Color.fromARGB(255, 255, 255, 255),
-                const Color.fromARGB(255, 255, 255, 255),
-              ],
-            ),
-          ),
-        ),
-        elevation: 0,
+        backgroundColor: AppColors.cardBackground,
+        elevation: 0.5,
+        shadowColor: AppColors.shadowLight,
       ),
       body: Consumer<EnrollmentProvider>(
         builder: (context, provider, child) {
           // Handle loading state
           if (provider.isLoading && provider.enrollmentData == null) {
-            return const Center(
+            return Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
             );
           }
@@ -126,7 +116,7 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                   Icon(
                     Icons.error_outline,
                     size: 80,
-                    color: Colors.red.shade300,
+                    color: AppColors.error.withOpacity(0.7),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -134,20 +124,20 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     provider.errorMessage ?? 'Failed to load enrollments',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _loadData,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade400,
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
@@ -176,12 +166,12 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                     height: 160,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.grey.shade100,
+                      color: AppColors.surface,
                     ),
                     child: Icon(
                       Icons.school_outlined,
                       size: 80,
-                      color: Colors.grey.shade400,
+                      color: AppColors.textHint,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -190,13 +180,13 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Start your learning journey today!',
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                    style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                   ),
                 ],
               ),

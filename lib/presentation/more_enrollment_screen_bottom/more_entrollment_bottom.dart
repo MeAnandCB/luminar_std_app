@@ -11,10 +11,11 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 // ─── palette ─────────────────────────────────────────────────────────────────
-const _kPrimary = Color(0xFF6C63FF);
-const _kPrimaryB = Color(0xFF3B82F6);
+// ─── palette ─────────────────────────────────────────────────────────────────
+final Color _kPrimary = AppColors.primary;
+final Color _kPrimaryB = AppColors.primaryLight;
 
-const _kHeaderGradient = LinearGradient(
+final _kHeaderGradient = LinearGradient(
   colors: [_kPrimary, _kPrimaryB],
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
@@ -203,7 +204,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(gradient: _kHeaderGradient),
+      decoration: BoxDecoration(gradient: _kHeaderGradient),
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -213,13 +214,13 @@ class _Header extends StatelessWidget {
             Padding(
               padding: EdgeInsets.fromLTRB(16, 14, 16, 12),
               child: Row(
-                children: const [
-                  CircleAvatar(
+                children: [
+                   CircleAvatar(
                     backgroundColor: Colors.white24,
                     radius: 18,
                     child: Icon(
                       Icons.school_rounded,
-                      color: Colors.white,
+                      color: AppColors.textWhite,
                       size: 18,
                     ),
                   ),
@@ -234,13 +235,13 @@ class _Header extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppColors.textWhite,
                             letterSpacing: -0.3,
                           ),
                         ),
                         Text(
                           'Track your progress',
-                          style: TextStyle(fontSize: 11, color: Colors.white60),
+                          style: TextStyle(fontSize: 11, color: AppColors.textWhite.withOpacity(0.6)),
                         ),
                       ],
                     ),
@@ -311,11 +312,11 @@ class _TabBar extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
               indicator: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.10),
+                    color: AppColors.shadowLight,
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -570,7 +571,7 @@ class _CourseInfoCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.textWhite,
                     height: 1.3,
                   ),
                   maxLines: 2,
@@ -618,7 +619,7 @@ class _Chip extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: TextStyle(fontSize: 11, color: Colors.white),
+              style: TextStyle(fontSize: 11, color: AppColors.textWhite),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -676,7 +677,7 @@ class _FeatureCard extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(feature.icon, color: Colors.white, size: 22),
+                  child: Icon(feature.icon, color: AppColors.textWhite, size: 22),
                 ),
                 SizedBox(width: 14),
                 // title + subtitle – Expanded prevents overflow
@@ -843,8 +844,8 @@ class _ShimmerTabBar extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Shimmer.fromColors(
-        baseColor: Colors.white24,
-        highlightColor: Colors.white38,
+        baseColor: AppColors.white.withOpacity(0.1),
+        highlightColor: AppColors.white.withOpacity(0.2),
         child: Row(
           children: List.generate(
             3,
@@ -853,7 +854,7 @@ class _ShimmerTabBar extends StatelessWidget {
               width: 88,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
@@ -873,12 +874,12 @@ class _ShimmerBody extends StatelessWidget {
         children: [
           // course card skeleton
           Shimmer.fromColors(
-            baseColor: Colors.grey[300]!,
-            highlightColor: Colors.grey[100]!,
+            baseColor: AppColors.isDark ? Colors.grey[800]! : Colors.grey[300]!,
+            highlightColor: AppColors.isDark ? Colors.grey[700]! : Colors.grey[100]!,
             child: Container(
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBackground,
                 borderRadius: BorderRadius.circular(18),
               ),
             ),
@@ -890,12 +891,12 @@ class _ShimmerBody extends StatelessWidget {
             (i) => Padding(
               padding: EdgeInsets.only(bottom: 12),
               child: Shimmer.fromColors(
-                baseColor: Colors.grey[300]!,
-                highlightColor: Colors.grey[100]!,
+                baseColor: AppColors.isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                highlightColor: AppColors.isDark ? Colors.grey[700]! : Colors.grey[100]!,
                 child: Container(
                   height: 78,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.cardBackground,
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),

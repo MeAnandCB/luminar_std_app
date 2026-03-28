@@ -3,7 +3,9 @@ import 'package:luminar_std/core/utils/logger_utils.dart';
 
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
+import 'package:provider/provider.dart';
 
 class CourseScreen extends StatefulWidget {
   const CourseScreen({
@@ -78,6 +80,8 @@ class _CourseScreenState extends State<CourseScreen>
   @override
   Widget build(BuildContext context) {
     LoggerUtils.debug({widget.paymentCompleted}.toString(), tag: 'Course');
+    // Subscribe to theme changes
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
@@ -141,7 +145,7 @@ class _CourseScreenState extends State<CourseScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.purple.withOpacity(0.3),
+            color: AppColors.primary.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 5),
           ),
@@ -161,9 +165,9 @@ class _CourseScreenState extends State<CourseScreen>
                   width: 1,
                 ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
+                color: AppColors.white,
                 size: 18,
               ),
             ),
@@ -175,7 +179,7 @@ class _CourseScreenState extends State<CourseScreen>
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: AppColors.textWhite,
                 letterSpacing: 0.5,
               ),
             ),
@@ -189,17 +193,17 @@ class _CourseScreenState extends State<CourseScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: AppColors.shadowLight,
             blurRadius: 20,
             offset: const Offset(0, 5),
             spreadRadius: 2,
           ),
         ],
-        border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
+        border: Border.all(color: AppColors.borderColor, width: 1),
       ),
       child: Row(
         children: [
@@ -218,9 +222,9 @@ class _CourseScreenState extends State<CourseScreen>
                 ),
               ],
             ),
-            child: const Icon(
+            child: Icon(
               Icons.school_rounded,
-              color: Colors.white,
+              color: AppColors.white,
               size: 24,
             ),
           ),
@@ -234,13 +238,13 @@ class _CourseScreenState extends State<CourseScreen>
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF2D3748),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   widget.courseName,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -250,12 +254,10 @@ class _CourseScreenState extends State<CourseScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.purple.shade50, Colors.blue.shade50],
-              ),
+              color: AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.purple.withOpacity(0.2),
+                color: AppColors.primary.withOpacity(0.2),
                 width: 1,
               ),
             ),
@@ -263,7 +265,7 @@ class _CourseScreenState extends State<CourseScreen>
               'ID: ${widget.enrollmentId.substring(0, 6)}',
               style: TextStyle(
                 fontSize: 11,
-                color: Color(0xFF667EEA),
+                color: AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -277,11 +279,11 @@ class _CourseScreenState extends State<CourseScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: AppColors.shadowLight,
             blurRadius: 20,
             offset: const Offset(0, 5),
             spreadRadius: 2,
@@ -295,27 +297,27 @@ class _CourseScreenState extends State<CourseScreen>
               'Progress',
               '${widget.progress}%',
               Icons.trending_up_rounded,
-              Colors.blue,
+              AppColors.statsBlue,
               widget.progress / 100,
             ),
           ),
-          Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.2)),
+          Container(height: 40, width: 1, color: AppColors.borderColor),
           Expanded(
             child: _buildEnhancedStatItem(
               'Attendance',
               '${widget.attendance}%',
               Icons.calendar_month_rounded,
-              Colors.green,
+              AppColors.statsGreen,
               double.parse(widget.attendance) / 100,
             ),
           ),
-          Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.2)),
+          Container(height: 40, width: 1, color: AppColors.borderColor),
           Expanded(
             child: _buildEnhancedStatItem(
               'Payment',
               '${widget.paymentCompleted}%',
               Icons.payments_rounded,
-              Colors.purple,
+              AppColors.statsPurple,
               widget.paymentCompleted / 100,
             ),
           ),
@@ -347,7 +349,7 @@ class _CourseScreenState extends State<CourseScreen>
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF2D3748),
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 4),
@@ -355,7 +357,7 @@ class _CourseScreenState extends State<CourseScreen>
           label,
           style: TextStyle(
             fontSize: 11,
-            color: Colors.grey[600],
+            color: AppColors.textSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -377,11 +379,11 @@ class _CourseScreenState extends State<CourseScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: AppColors.shadowLight,
             blurRadius: 20,
             offset: const Offset(0, 5),
             spreadRadius: 2,
@@ -391,11 +393,11 @@ class _CourseScreenState extends State<CourseScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.info_outline_rounded,
-                color: Color(0xFF667EEA),
+                color: AppColors.primary,
                 size: 20,
               ),
               SizedBox(width: 8),
@@ -404,7 +406,7 @@ class _CourseScreenState extends State<CourseScreen>
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D3748),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -413,7 +415,7 @@ class _CourseScreenState extends State<CourseScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -422,7 +424,7 @@ class _CourseScreenState extends State<CourseScreen>
                   Icons.calendar_month_rounded,
                   'Start Date',
                   _formatDate(widget.startDate),
-                  Colors.blue,
+                  AppColors.statsBlue,
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
@@ -432,7 +434,7 @@ class _CourseScreenState extends State<CourseScreen>
                   Icons.access_time_rounded,
                   'Schedule',
                   _formatTimeDetailed(widget.schedule),
-                  Colors.orange,
+                  AppColors.statsOrange,
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
@@ -444,15 +446,15 @@ class _CourseScreenState extends State<CourseScreen>
                   widget.attendanceMode,
                   _getModeColor(widget.attendanceMode),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(height: 1, color: AppColors.borderColor.withOpacity(0.5)),
                 ),
                 _buildInfoRow(
                   Icons.group_rounded,
                   'Batch',
                   widget.batchName,
-                  Colors.purple,
+                  AppColors.statsPurple,
                 ),
               ],
             ),
@@ -480,7 +482,7 @@ class _CourseScreenState extends State<CourseScreen>
             children: [
               Text(
                 label,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 2),
               Text(
@@ -488,7 +490,7 @@ class _CourseScreenState extends State<CourseScreen>
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2D3748),
+                  color: AppColors.textPrimary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -512,7 +514,7 @@ class _CourseScreenState extends State<CourseScreen>
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.purple.withOpacity(0.3),
+            color: AppColors.primary.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -528,7 +530,7 @@ class _CourseScreenState extends State<CourseScreen>
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: AppColors.textWhite,
                 ),
               ),
               Container(
@@ -548,7 +550,7 @@ class _CourseScreenState extends State<CourseScreen>
                   '${widget.discount}% Discount',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white,
+                    color: AppColors.textWhite,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -596,8 +598,8 @@ class _CourseScreenState extends State<CourseScreen>
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: widget.paymentCompleted / 100,
-              backgroundColor: Colors.white.withOpacity(0.2),
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              backgroundColor: AppColors.white.withOpacity(0.2),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
               minHeight: 8,
             ),
           ),
@@ -609,14 +611,14 @@ class _CourseScreenState extends State<CourseScreen>
                 'Payment Progress',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withOpacity(0.8),
+                  color: AppColors.white.withOpacity(0.8),
                 ),
               ),
               Text(
                 '${widget.paymentCompleted}% Completed',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white,
+                  color: AppColors.textWhite,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -637,13 +639,13 @@ class _CourseScreenState extends State<CourseScreen>
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: AppColors.textWhite,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.8)),
+          style: TextStyle(fontSize: 11, color: AppColors.white.withOpacity(0.8)),
         ),
       ],
     );
@@ -655,15 +657,15 @@ class _CourseScreenState extends State<CourseScreen>
       height: 30,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isActive ? Colors.green : Colors.grey.shade300,
+        color: isActive ? AppColors.statsGreen : AppColors.surface,
         border: Border.all(
-          color: isActive ? Colors.green.shade200 : Colors.grey.shade400,
+          color: isActive ? AppColors.statsGreen.withOpacity(0.3) : AppColors.borderColor,
           width: 2,
         ),
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: Colors.green.withOpacity(0.3),
+                  color: AppColors.statsGreen.withOpacity(0.3),
                   blurRadius: 8,
                   spreadRadius: 2,
                 ),
@@ -673,7 +675,7 @@ class _CourseScreenState extends State<CourseScreen>
       child: Center(
         child: Icon(
           isActive ? Icons.check_rounded : Icons.circle_rounded,
-          color: isActive ? Colors.white : Colors.grey.shade600,
+          color: isActive ? AppColors.white : AppColors.textSecondary.withOpacity(0.5),
           size: isActive ? 16 : 8,
         ),
       ),
@@ -732,14 +734,14 @@ class _CourseScreenState extends State<CourseScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.white, size: 20),
+              Icon(icon, color: AppColors.textWhite, size: 20),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: AppColors.textWhite,
                 ),
               ),
             ],
@@ -791,15 +793,15 @@ class _CourseScreenState extends State<CourseScreen>
   Color _getModeColor(String mode) {
     switch (mode.toLowerCase()) {
       case 'online':
-        return Colors.blue;
+        return AppColors.primary;
       case 'offline':
-        return Colors.green;
+        return AppColors.statsGreen;
       case 'hybrid':
-        return Colors.orange;
+        return AppColors.statsOrange;
       case 'recording':
-        return Colors.purple;
+        return AppColors.primary;
       default:
-        return Colors.grey;
+        return AppColors.textSecondary;
     }
   }
 

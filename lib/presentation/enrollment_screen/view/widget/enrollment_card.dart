@@ -2,6 +2,7 @@ import 'package:luminar_std/core/utils/logger_utils.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
 
 class EnrollmentCard extends StatelessWidget {
@@ -30,10 +31,10 @@ class EnrollmentCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 0,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            spreadRadius: 0,
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -45,12 +46,8 @@ class EnrollmentCard extends StatelessWidget {
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.white, Colors.grey.shade50],
-                ),
-                border: Border.all(color: Colors.grey.shade200, width: 1),
+                color: AppColors.cardBackground,
+                border: Border.all(color: AppColors.borderColor, width: 1),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,14 +66,14 @@ class EnrollmentCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                Colors.blue.shade400,
-                                Colors.blue.shade600,
+                                AppColors.primary,
+                                AppColors.primaryLight,
                               ],
                             ),
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blue.withOpacity(0.3),
+                                color: AppColors.primary.withOpacity(0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -170,9 +167,7 @@ class EnrollmentCard extends StatelessWidget {
                     margin: const EdgeInsets.symmetric(horizontal: 20),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      gradient: LinearGradient(
-                        colors: [Colors.blue.shade50, Colors.purple.shade50],
-                      ),
+                      color: AppColors.surface,
                     ),
                     child: Row(
                       children: [
@@ -182,11 +177,11 @@ class EnrollmentCard extends StatelessWidget {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.cardBackground,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blue.withOpacity(0.2),
+                                color: AppColors.primary.withOpacity(0.1),
                                 blurRadius: 10,
                                 offset: const Offset(0, 5),
                               ),
@@ -194,7 +189,7 @@ class EnrollmentCard extends StatelessWidget {
                           ),
                           child: Icon(
                             Icons.school_outlined,
-                            color: Colors.blue.shade600,
+                            color: AppColors.primary,
                             size: 28,
                           ),
                         ),
@@ -239,7 +234,7 @@ class EnrollmentCard extends StatelessWidget {
                                     height: 4,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: Colors.grey.shade400,
+                                      color: AppColors.textHint,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -259,11 +254,11 @@ class EnrollmentCard extends StatelessWidget {
                                         color: switch (enrollment
                                             .attendanceMode
                                             .value) {
-                                          'online' => Colors.blue.shade400,
-                                          'offline' => Colors.green.shade400,
-                                          'hybrid' => Colors.amber.shade400,
-                                          'recording' => Colors.orange.shade400,
-                                          _ => Colors.grey.shade400,
+                                          'online' => AppColors.statsBlue,
+                                          'offline' => AppColors.statsGreen,
+                                          'hybrid' => AppColors.statsOrange,
+                                          'recording' => AppColors.primary,
+                                          _ => AppColors.textHint,
                                         },
                                       ),
                                       const SizedBox(width: 4),
@@ -275,12 +270,11 @@ class EnrollmentCard extends StatelessWidget {
                                           color: switch (enrollment
                                               .attendanceMode
                                               .value) {
-                                            'online' => Colors.blue.shade400,
-                                            'offline' => Colors.green.shade400,
-                                            'hybrid' => Colors.amber.shade400,
-                                            'recording' =>
-                                              Colors.orange.shade400,
-                                            _ => Colors.grey.shade400,
+                                            'online' => AppColors.statsBlue,
+                                            'offline' => AppColors.statsGreen,
+                                            'hybrid' => AppColors.statsOrange,
+                                            'recording' => AppColors.primary,
+                                            _ => AppColors.textHint,
                                           },
                                         ),
                                       ),
@@ -305,13 +299,13 @@ class EnrollmentCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.orange.shade50,
+                            color: AppColors.statsOrange.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
                             Icons.group,
                             size: 16,
-                            color: Colors.orange.shade700,
+                            color: AppColors.statsOrange,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -341,13 +335,13 @@ class EnrollmentCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
+                              color: AppColors.statsBlue.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
                               Icons.video_call,
                               size: 16,
-                              color: Colors.blue.shade700,
+                              color: AppColors.statsBlue,
                             ),
                           ),
                       ],

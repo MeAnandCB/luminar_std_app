@@ -97,8 +97,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.8,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
         ),
         child: Column(
@@ -109,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AppColors.borderColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -241,7 +241,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       width: 320, // Reduced width
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -386,7 +386,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF2D3748),
+                          color: AppColors.textPrimary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -421,7 +421,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         width: double.infinity,
                         padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.grey[50],
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: Color(0xFF6C5CE7).withOpacity(0.2),
@@ -1169,7 +1169,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: EdgeInsets.symmetric(horizontal: 20),
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -1241,7 +1241,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color: isSuccess
                     ? AppColors.statsGreen.withOpacity(0.1)
-                    : Color(0xFFFF7675).withOpacity(0.1),
+                    : AppColors.error.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -1250,7 +1250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   fontSize: 12,
                   color: isSuccess
                       ? AppColors.statsGreen
-                      : Color(0xFFFF7675),
+                      : AppColors.error,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1330,7 +1330,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primary.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.05),
+                    : AppColors.borderColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -1428,7 +1428,7 @@ Widget _buildCompactDetailRow(IconData icon, String label, String value) {
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
+                color: AppColors.textSecondary,
               ),
             ),
             Text(
@@ -1436,7 +1436,7 @@ Widget _buildCompactDetailRow(IconData icon, String label, String value) {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF2D3748),
+                color: AppColors.textPrimary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1453,7 +1453,7 @@ class IdCardBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Color(0xFF6C5CE7).withOpacity(0.03)
+      ..color = AppColors.primary.withOpacity(0.03)
       ..style = PaintingStyle.fill;
 
     // Draw subtle circles pattern
@@ -1465,7 +1465,7 @@ class IdCardBackgroundPainter extends CustomPainter {
 
     // Draw corner accents
     final cornerPaint = Paint()
-      ..color = Color(0xFF6C5CE7).withOpacity(0.1);
+      ..color = AppColors.primary.withOpacity(0.1);
 
     // Top right corner
     canvas.drawCircle(Offset(size.width - 20, 20), 30, cornerPaint);

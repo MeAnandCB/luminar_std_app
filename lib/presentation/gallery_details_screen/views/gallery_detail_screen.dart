@@ -1,9 +1,8 @@
 // screens/folder_browser_screen.dart
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/gallery_details_screen/controller/gallery_details_screen_controller.dart';
-import 'package:luminar_std/presentation/gallery_details_screen/views/widget/folder_card.dart';
 import 'package:luminar_std/presentation/gallery_details_screen/views/widget/section_header.dart';
-import 'package:luminar_std/presentation/gallery_details_screen/views/widget/video_card.dart';
 import 'package:luminar_std/presentation/video_player_screen/video_player_screen.dart';
 import 'package:luminar_std/repository/gallery_details_screen/models/gallery_detail_model.dart';
 import 'package:provider/provider.dart';
@@ -82,24 +81,24 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               widget.galleryName,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
             if (widget.galleryDescription.isNotEmpty)
               Text(
                 widget.galleryDescription,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
           ],
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: AppColors.cardBackground,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
       ),
@@ -148,7 +147,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                         provider.videosError ??
                         'Failed to load folder',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -215,7 +214,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                             Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
+                                color: AppColors.surface,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -229,7 +228,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                               'No videos in this folder',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Colors.grey[600],
+                                color: AppColors.textSecondary,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -331,11 +330,11 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.05),
+              color: AppColors.shadowLight,
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -364,7 +363,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: AppColors.textPrimary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -379,7 +378,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                 ),
                 child: Text(
                   folder.description!,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -404,11 +403,11 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.05),
+              color: AppColors.shadowLight,
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -480,7 +479,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: AppColors.textPrimary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -489,7 +488,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                     if (video.description.isNotEmpty)
                       Text(
                         video.description,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -522,7 +521,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
               child: Icon(
                 Icons.chevron_right,
                 size: 20,
-                color: Colors.grey[400],
+                color: AppColors.textSecondary.withOpacity(0.5),
               ),
             ),
           ],

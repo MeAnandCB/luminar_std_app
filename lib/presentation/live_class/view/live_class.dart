@@ -35,9 +35,9 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 5))],
+              boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 5))],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -322,7 +322,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFFFF7675).withOpacity(0.1),
               shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: const Color(0xFFFF7675).withOpacity(0.1), blurRadius: 30, spreadRadius: 5)],
+              boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 30, spreadRadius: 5)],
             ),
             child: Icon(Icons.live_tv_rounded, size: 60, color: const Color(0xFFFF7675)),
           ),
