@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/repository/attandance_screen/model.dart';
 import 'package:luminar_std/repository/attandance_screen/service.dart';
+import 'package:provider/provider.dart';
 
 class AttendanceScreen extends StatefulWidget {
   final String batchId;
@@ -266,8 +268,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               data: Theme.of(context).copyWith(
                                 colorScheme: ColorScheme.light(
                                   primary: AppColors.primary,
-                                  onPrimary: AppColors.white,
-                                  surface: AppColors.white,
+                                  onPrimary: AppColors.textWhite,
+                                  surface: AppColors.cardBackground,
                                   onSurface: AppColors.textPrimary,
                                 ),
                               ),
@@ -319,8 +321,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               data: Theme.of(context).copyWith(
                                 colorScheme: ColorScheme.light(
                                   primary: AppColors.primary,
-                                  onPrimary: AppColors.white,
-                                  surface: AppColors.white,
+                                  onPrimary: AppColors.textWhite,
+                                  surface: AppColors.cardBackground,
                                   onSurface: AppColors.textPrimary,
                                 ),
                               ),
@@ -473,6 +475,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     LoggerUtils.debug("${widget.batchId}", tag: 'Attendance');
+    // Subscribe to theme changes
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
@@ -614,9 +618,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildLegendItem('Online', AppColors.statsGreen),
-          _buildLegendItem('Offline', Colors.grey),
+          _buildLegendItem('Offline', AppColors.textSecondary),
           _buildLegendItem('Recording', AppColors.statsOrange),
-          _buildLegendItem('Absent', const Color(0xFFFF7675)),
+          _buildLegendItem('Absent', AppColors.error),
         ],
       ),
     );
@@ -654,9 +658,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         children: [
           _buildStatCard('Total', _summary.totalDays.toString(), AppColors.primary, Icons.people_rounded),
           _buildStatCard('Online', _summary.online.toString(), AppColors.statsGreen, Icons.wifi_rounded),
-          _buildStatCard('Offline', _summary.offline.toString(), Colors.grey, Icons.wifi_off_rounded),
+          _buildStatCard('Offline', _summary.offline.toString(), AppColors.textSecondary, Icons.wifi_off_rounded),
           _buildStatCard('Recording', _summary.recording.toString(), AppColors.statsOrange, Icons.videocam_rounded),
-          _buildStatCard('Absent', _summary.absent.toString(), const Color(0xFFFF7675), Icons.person_off_rounded),
+          _buildStatCard('Absent', _summary.absent.toString(), AppColors.error, Icons.person_off_rounded),
           _buildStatCard('Present', present.toString(), AppColors.primary, Icons.check_circle_rounded),
         ],
       ),
@@ -734,7 +738,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
                 child: IconButton(
                   onPressed: _clearFilters,
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFFFF7675)),
+                  icon: Icon(Icons.close_rounded, color: AppColors.error),
                 ),
               ),
             ),
@@ -840,18 +844,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.1),
+          color: AppColors.statsOrange.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+          border: Border.all(color: AppColors.statsOrange.withOpacity(0.3)),
         ),
         child: Row(
           children: [
-            Icon(Icons.info_outline, color: Colors.orange),
+            Icon(Icons.info_outline, color: AppColors.statsOrange),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 _message,
-                style: TextStyle(color: Colors.orange[800], fontWeight: FontWeight.w500),
+                style: TextStyle(color: AppColors.statsOrange, fontWeight: FontWeight.w500),
               ),
             ),
           ],
@@ -984,7 +988,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text('Failed to load attendance', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
