@@ -60,11 +60,11 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-<string>Used to take photos and record videos</string>
-<key>NSMicrophoneUsageDescription</key>
-<string>Used to record video audio</string>
+	<string>Used to take photos and record videos</string>
 	<key>NSMicrophoneUsageDescription</key>
-<string>Needed to record voice messages</string>
+	<string>Used to record video audio and voice messages</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Used to select photos and videos from your library</string>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
