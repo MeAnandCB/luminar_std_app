@@ -21,6 +21,8 @@ import 'core/theme/theme_provider.dart';
 import 'package:luminar_std/core/theme/app_theme.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 Future<void> requestPermissions() async {
   await [Permission.storage, Permission.photos].request();
 }
@@ -88,6 +90,7 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,
+          navigatorKey: navigatorKey,
           home: const SplashScreen(),
         );
       },

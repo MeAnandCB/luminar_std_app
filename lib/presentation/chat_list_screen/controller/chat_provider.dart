@@ -292,9 +292,29 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(_pollInterval, (_) async {
-      if (_apiService == null) return;
+      if (_apiService == null) {
+        _pollTimer?.cancel();
+        return;
+      }
+
+      // Check if user is still logged in before polling
+      final isLoggedIn = await SharedPrefService.isLoggedIn();
+      if (!isLoggedIn) {
+        debugPrint('[ChatProvider] User logged out — stopping poll timer');
+        _resetInternal();
+        return;
+      }
+
       try {
         final response = await _apiService!.fetchChats();
+        
+        // If session expired (401 or status: "expired"), stop polling immediately
+        if (response.statusCode == 401 || (response.data is Map && (response.data as Map)['status'] == 'expired')) {
+          debugPrint('[ChatProvider] Session expired during poll — stopping timer');
+          _resetInternal();
+          return;
+        }
+
         if (!response.success || response.data == null || response.data!.isEmpty) return;
 
         final fresh = response.data!;

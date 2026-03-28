@@ -278,7 +278,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
     EnrollmentProvider provider,
     int index,
   ) {
-    final enrollments = provider.enrollmentData!.enrollments;
+    final enrollmentData = provider.enrollmentData;
+    if (enrollmentData == null) return const SizedBox.shrink();
+
+    final enrollments = enrollmentData.enrollments;
+    if (index >= enrollments.length) return const SizedBox.shrink();
+
     final courseName =
         enrollment?.courseInfo?.courseName ??
         enrollment?.courseDetails?.toString() ??

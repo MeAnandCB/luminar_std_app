@@ -10,11 +10,7 @@ class SharedPrefService {
   static const String keyFullName = 'fullname';
 
   // Save tokens
-  static Future<void> saveTokens(
-    String accessToken,
-    String refreshToken,
-    String fullname,
-  ) async {
+  static Future<void> saveTokens(String accessToken, String refreshToken, String fullname) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(keyAccessToken, accessToken);
     await prefs.setString(keyRefreshToken, refreshToken);
@@ -76,11 +72,13 @@ class SharedPrefService {
   // Clear all data (logout)
   static Future<void> clearAllData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(keyAccessToken);
-    await prefs.remove(keyRefreshToken);
-    await prefs.remove(keyFullName);
-    await prefs.remove(keyUserData);
-    await prefs.remove(keyIsLoggedIn);
+    await prefs.clear();
+
+    // await prefs.remove(keyAccessToken);
+    // await prefs.remove(keyRefreshToken);
+    // await prefs.remove(keyFullName);
+    // await prefs.remove(keyUserData);
+    // await prefs.remove(keyIsLoggedIn);
     LoggerUtils.info('🚪 User logged out, all data cleared', tag: 'SharedPref');
   }
 }

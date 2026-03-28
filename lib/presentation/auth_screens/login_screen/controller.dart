@@ -133,9 +133,12 @@ class AuthProvider extends ChangeNotifier {
             return true;
           }
         } else {
-          // If no user data but isLoggedIn is true, something is wrong
-          LoggerUtils.warning('⚠️ Inconsistent state: isLoggedIn true but no user data', tag: 'Auth');
-          return true; // Still return true since they are logged in
+          // If no user data but isLoggedIn is true, force logout
+          LoggerUtils.warning('⚠️ Inconsistent state: isLoggedIn true but no user data found. Force clearing.', tag: 'Auth');
+          await SharedPrefService.clearAllData();
+          _loginResponse = null;
+          notifyListeners();
+          return false;
         }
       }
       return false;
