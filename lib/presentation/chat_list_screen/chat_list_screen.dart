@@ -95,7 +95,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     width: 8,
                     height: 8,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF4CAF50),
+                      color: AppColors.statsGreen,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -105,7 +105,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF4CAF50),
+                      color: AppColors.statsGreen,
                     ),
                   ),
                 ],
@@ -121,7 +121,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade400,
+                      color: AppColors.textSecondary.withOpacity(0.4),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -131,7 +131,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade400,
+                      color: AppColors.textSecondary.withOpacity(0.6),
                     ),
                   ),
                 ],
@@ -150,14 +150,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
         chat.otherParticipant != null &&
         onlineStatus[chat.otherParticipant!.id] == true;
 
-    final bgColor = const Color(0xFF7B9FD4);
+    final bgColor = AppColors.primary.withOpacity(0.2);
     final bgImage = chat.otherParticipant?.profilePic != null
         ? NetworkImage(chat.otherParticipant!.profilePic!)
         : null;
     final child = Text(
       chat.name.isNotEmpty ? chat.name[0].toUpperCase() : '?',
       style: TextStyle(
-        color: Colors.white,
+        color: AppColors.primary,
         fontSize: 16,
         fontWeight: FontWeight.w600,
       ),
@@ -179,7 +179,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               width: 13,
               height: 13,
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50),
+                color: AppColors.statsGreen,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.cardBackground, width: 2),
               ),
@@ -331,7 +331,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.cardBackground,
         elevation: 0.5,
-        shadowColor: Colors.black12,
+        shadowColor: AppColors.shadowLight,
         titleSpacing: 16,
         title: Row(
           children: [
@@ -361,8 +361,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Widget _buildBody(ChatProvider provider) {
     if (provider.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF7B9FD4)),
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
@@ -397,7 +397,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               ElevatedButton(
                 onPressed: () => provider.loadChats(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7B9FD4),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -508,7 +508,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           width: 6,
                           height: 6,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF4CAF50),
+                            color: AppColors.statsGreen,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -517,7 +517,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           'Online',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF4CAF50),
+                            color: AppColors.statsGreen,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -575,7 +575,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     height: 20,
                     padding: const EdgeInsets.symmetric(horizontal: 5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF7B9FD4),
+                      color: AppColors.primary,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     alignment: Alignment.center,

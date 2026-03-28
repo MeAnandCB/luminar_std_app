@@ -98,7 +98,7 @@ class EnrollmentCard extends StatelessWidget {
                                 'Enrollment ID',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey.shade500,
+                                  color: AppColors.textSecondary,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -214,8 +214,7 @@ class EnrollmentCard extends StatelessWidget {
                                 children: [
                                   Icon(
                                     Icons.calendar_today,
-                                    size: 12,
-                                    color: Colors.grey.shade500,
+                                    color: AppColors.textSecondary,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -224,7 +223,7 @@ class EnrollmentCard extends StatelessWidget {
                                     ),
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: Colors.grey.shade500,
+                                      color: AppColors.textSecondary,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -325,7 +324,7 @@ class EnrollmentCard extends StatelessWidget {
                                 '${dateFormat.format(enrollment.batch.startDate)} - ${dateFormat.format(enrollment.batch.endDate)}',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey.shade500,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             ],

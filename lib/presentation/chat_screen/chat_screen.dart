@@ -2668,7 +2668,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       spans.add(
         TextSpan(
           text: displayUrl,
-          style: const TextStyle(color: Color(0xFF0066CC), decoration: TextDecoration.underline),
+          style: TextStyle(color: AppColors.primary, decoration: TextDecoration.underline),
           recognizer: TapGestureRecognizer()
             ..onTap = () async {
               try {
@@ -2904,9 +2904,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                 width: 11,
                                 height: 11,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF4CAF50),
+                                  color: AppColors.statsGreen,
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1.5),
+                                  border: Border.all(color: AppColors.cardBackground, width: 1.5),
                                 ),
                               ),
                             ),
@@ -2940,7 +2940,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       bottomRight: Radius.circular(isMe ? 4 : 18),
                     ),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 2)),
+                      BoxShadow(color: AppColors.shadowLight, blurRadius: 6, offset: const Offset(0, 2)),
                     ],
                   ),
                   child: Column(
@@ -2955,7 +2955,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: isGroupOrBatch ? _senderNameColor(message.sender.id) : const Color(0xFF5B8CC4),
+                              color: isGroupOrBatch ? _senderNameColor(message.sender.id) : AppColors.primary,
                             ),
                           ),
                         ),
@@ -3008,7 +3008,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         backgroundImage: widget.currentUser.profilePic != null
                             ? NetworkImage(widget.currentUser.profilePic!)
                             : null,
-                        backgroundColor: const Color(0xFF7B9FD4),
+                        backgroundColor: AppColors.primary,
                         child: widget.currentUser.profilePic == null
                             ? Text(
                                 widget.currentUser.fullName.isNotEmpty
@@ -3338,7 +3338,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.isDark ? const Color(0xFF1E3A5C) : const Color(0xFFF4F6FB),
+                        color: AppColors.cardBackground,
                         borderRadius: BorderRadius.circular(26),
                       ),
                       child: Row(
@@ -3355,10 +3355,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                   _showEmojiPicker ? Icons.keyboard_rounded : Icons.emoji_emotions_outlined,
                                   key: ValueKey(_showEmojiPicker),
                                   color: (_isUploading || _isPicking)
-                                      ? Colors.grey.shade300
+                                      ? AppColors.textSecondary.withOpacity(0.3)
                                       : _showEmojiPicker
-                                      ? const Color(0xFF7B9FD4)
-                                      : Colors.grey.shade500,
+                                      ? AppColors.primary
+                                      : AppColors.textSecondary,
                                   size: 22,
                                 ),
                               ),
@@ -3378,7 +3378,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                     : _replyingTo != null
                                     ? 'Reply…'
                                     : 'Type here..',
-                                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+                                hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 15),
                                 border: InputBorder.none,
                                 isDense: true,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -3400,7 +3400,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                 padding: const EdgeInsets.only(bottom: 10),
                                 child: Icon(
                                   Icons.attach_file_rounded,
-                                  color: (_isUploading || _isPicking) ? Colors.grey.shade300 : Colors.grey.shade500,
+                                  color: (_isUploading || _isPicking) ? AppColors.textSecondary.withOpacity(0.3) : AppColors.textSecondary,
                                   size: 22,
                                 ),
                               ),
@@ -3412,7 +3412,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                 padding: const EdgeInsets.only(bottom: 10),
                                 child: Icon(
                                   Icons.camera_alt_outlined,
-                                  color: (_isUploading || _isPicking) ? Colors.grey.shade300 : Colors.grey.shade500,
+                                  color: (_isUploading || _isPicking) ? AppColors.textSecondary.withOpacity(0.3) : AppColors.textSecondary,
                                   size: 22,
                                 ),
                               ),
@@ -3440,10 +3440,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         height: 48,
                         decoration: BoxDecoration(
                           color: (_isUploading || _isEditing)
-                              ? Colors.grey.shade300
+                              ? AppColors.textSecondary.withOpacity(0.3)
                               : _editingMessage != null
-                              ? const Color(0xFF4CAF50)
-                              : const Color(0xFF7B9FD4),
+                              ? AppColors.statsGreen
+                              : AppColors.primary,
                           shape: BoxShape.circle,
                         ),
                         child: (_isUploading || _isEditing)

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({Key? key}) : super(key: key);
@@ -40,6 +42,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>(); // Rebuild when theme changes
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
