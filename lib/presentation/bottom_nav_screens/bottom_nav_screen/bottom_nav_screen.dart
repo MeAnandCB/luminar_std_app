@@ -21,19 +21,44 @@ class BottomNavScreen extends StatefulWidget {
   State<BottomNavScreen> createState() => _BottomNavScreenState();
 }
 
-class _BottomNavScreenState extends State<BottomNavScreen> {
+class _BottomNavScreenState extends State<BottomNavScreen>
+    with SingleTickerProviderStateMixin {
   late EnrollmentProvider enrollmentProvider;
   late int _currentIndex;
+
+  // Animation controller for FAB press feedback
+  late AnimationController _fabController;
+  late Animation<double> _fabScale;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
 
+    _fabController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+      lowerBound: 0.0,
+      upperBound: 1.0,
+    );
+    _fabScale = Tween<double>(
+      begin: 1.0,
+      end: 0.88,
+    ).animate(CurvedAnimation(parent: _fabController, curve: Curves.easeInOut));
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
+      enrollmentProvider = Provider.of<EnrollmentProvider>(
+        context,
+        listen: false,
+      );
       _loadData();
     });
+  }
+
+  @override
+  void dispose() {
+    _fabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -41,12 +66,16 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
     if (mounted) setState(() {});
   }
 
-  void _navigateToScanner() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const ScannerApp()));
+  void _navigateToScanner() async {
+    await _fabController.forward();
+    await _fabController.reverse();
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const QRScannerScreen()),
+    );
   }
 
-  /// Pages are built here (not stored as state) so every build() call
-  /// picks up the freshly-read AppColors after a theme change.
   List<Widget> _buildPages(EnrollmentProvider provider) {
     if (provider.enrollmentDataRes == null) {
       return [
@@ -59,7 +88,9 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 
     final status = provider.enrollmentDataRes!.enrollments[0].status.value;
     final isPaymentPending =
-        status == 'not_set' || status == 'demo_expired' || status == 'admission_fee_paid';
+        status == 'not_set' ||
+        status == 'demo_expired' ||
+        status == 'admission_fee_paid';
 
     return [
       StudentDashboard(),
@@ -71,38 +102,9 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
     ];
   }
 
-  Widget _buildNavItem(BuildContext context, int index, IconData icon, String label) {
-    final isSelected = _currentIndex == index;
-
-    return InkWell(
-      onTap: () => setState(() => _currentIndex = index),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: isSelected ? AppColors.primary : AppColors.textHint, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: AppTextStyles.caption.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textHint,
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<EnrollmentProvider>(context);
-    // Subscribe to theme changes so the entire widget rebuilds with fresh AppColors
     context.watch<ThemeProvider>();
 
     if (provider.enrollmentDataRes != null) {
@@ -119,50 +121,169 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
       body: SafeArea(child: pages[_currentIndex]),
 
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToScanner,
-        backgroundColor: AppColors.primary,
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 28),
-      ),
 
-      bottomNavigationBar: BottomAppBar(
-        color: AppColors.cardBackground,
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 6,
-        elevation: 8,
-        padding: EdgeInsets.zero,
-        child: SizedBox(
-          height: 70,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildNavItem(context, 0, Icons.home, "Home"),
-                      _buildNavItem(context, 1, Icons.grid_view_rounded, "Course"),
-                    ],
-                  ),
+      // ★ Creative FAB — larger, with ring glow
+      floatingActionButton: ScaleTransition(
+        scale: _fabScale,
+        child: GestureDetector(
+          onTap: _navigateToScanner,
+          child: Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withOpacity(0.95),
+                  AppColors.primary,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              // Double ring effect
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.45),
+                  blurRadius: 16,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 4),
                 ),
-                const SizedBox(width: 40),
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildNavItem(context, 2, Icons.wechat_rounded, "Chat"),
-                      _buildNavItem(context, 3, Icons.menu_outlined, "More"),
-                    ],
-                  ),
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.15),
+                  blurRadius: 0,
+                  spreadRadius: 6,
+                  offset: Offset.zero,
                 ),
               ],
             ),
+            child: const Icon(
+              Icons.qr_code_scanner_rounded,
+              color: Colors.white,
+              size: 26,
+            ),
           ),
+        ),
+      ),
+
+      // ★ Creative bottom nav — compact, pill highlights, no Divider
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      // ★ Smaller height than default BottomAppBar
+      height: 62,
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: Stack(
+          children: [
+            // Subtle top separator line
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 0.5,
+                color: AppColors.borderColor.withOpacity(0.4),
+              ),
+            ),
+
+            // Nav row with notch gap in center
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Left two items
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildNavItem(0, Icons.home_rounded, 'Home'),
+                        _buildNavItem(1, Icons.grid_view_rounded, 'Course'),
+                      ],
+                    ),
+                  ),
+
+                  // Center gap for FAB
+                  const SizedBox(width: 64),
+
+                  // Right two items
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildNavItem(2, Icons.wechat_rounded, 'Chat'),
+                        _buildNavItem(3, Icons.menu_rounded, 'More'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ★ Creative nav item — active state gets a pill background + coloured icon
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    final isSelected = _currentIndex == index;
+
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withOpacity(0.10)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              transitionBuilder: (child, animation) =>
+                  ScaleTransition(scale: animation, child: child),
+              child: Icon(
+                icon,
+                key: ValueKey(isSelected),
+                color: isSelected ? AppColors.primary : AppColors.textHint,
+                size: 22,
+              ),
+            ),
+            const SizedBox(height: 3),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? AppColors.primary : AppColors.textHint,
+                letterSpacing: 0.2,
+              ),
+              child: Text(label),
+            ),
+          ],
         ),
       ),
     );

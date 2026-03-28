@@ -14,12 +14,78 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
+  // ── Search ─────────────────────────────────────────────────────────────────
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ChatProvider>().init();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // ── Filter chats by search query ───────────────────────────────────────────
+  List<Chat> _filteredChats(List<Chat> chats) {
+    if (_searchQuery.isEmpty) return chats;
+    final q = _searchQuery.toLowerCase();
+    return chats.where((chat) {
+      if (chat.name.toLowerCase().contains(q)) return true;
+      final preview = _buildPreviewText(chat).toLowerCase();
+      return preview.contains(q);
+    }).toList();
+  }
+
+  // ── Search bar widget ──────────────────────────────────────────────────────
+  Widget _buildSearchBar() {
+    return Container(
+      color: AppColors.cardBackground,
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (v) => setState(() => _searchQuery = v.trim()),
+        style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+        decoration: InputDecoration(
+          hintText: 'Search chats…',
+          hintStyle: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: AppColors.textSecondary,
+            size: 20,
+          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textSecondary,
+                    size: 18,
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: AppColors.scaffoldBackground,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 10,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
   }
 
   // ── Time formatting ────────────────────────────────────────────────────────
@@ -53,15 +119,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
   // ── Chat tile tap handler ──────────────────────────────────────────────────
   void _onChatTap(Chat chat) {
     final provider = context.read<ChatProvider>();
-
-    if (chat.unreadCount > 0) {
-      provider.markChatAsRead(chat);
-    }
-
-    // Tell the provider which chat is open so incoming messages
-    // for THIS chat don't increment the unread badge while viewing
+    if (chat.unreadCount > 0) provider.markChatAsRead(chat);
     provider.setActiveChat(chat.uid);
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -73,14 +132,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
           webSocketService: provider.webSocketService,
         ),
       ),
-    ).then((_) {
-      // User left the chat screen — clear active chat so unread
-      // resumes incrementing for that chat normally
-      provider.setActiveChat(null);
-    });
+    ).then((_) => provider.setActiveChat(null));
   }
 
-  // ── WebSocket connection indicator ───────────────────────────────────────────
+  // ── WebSocket connection indicator ─────────────────────────────────────────
   Widget _buildWsIndicator(bool isConnected) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 400),
@@ -145,11 +200,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
     if (chat.chatType != ChatType.individual) {
       return _buildStackedAvatar(chat);
     }
-
     final isOnline =
         chat.otherParticipant != null &&
         onlineStatus[chat.otherParticipant!.id] == true;
-
     final bgColor = AppColors.primary.withOpacity(0.2);
     final bgImage = chat.otherParticipant?.profilePic != null
         ? NetworkImage(chat.otherParticipant!.profilePic!)
@@ -162,7 +215,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
         fontWeight: FontWeight.w600,
       ),
     );
-
     return Stack(
       children: [
         CircleAvatar(
@@ -189,18 +241,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
-  // ── Stacked Avatar for Groups/Batches ──────────────────────────────────────
+  // ── Stacked Avatar ─────────────────────────────────────────────────────────
   Widget _buildStackedAvatar(Chat chat) {
     final isBatch = chat.chatType == ChatType.batch;
     final color = isBatch ? Colors.orange : Colors.purple;
     final icon = isBatch ? Icons.school : Icons.group;
-
     return SizedBox(
       width: 52,
       height: 52,
       child: Stack(
         children: [
-          // Background circle (offset to bottom-right)
           Positioned(
             right: 2,
             bottom: 6,
@@ -214,7 +264,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
               ),
             ),
           ),
-          // Foreground circle (offset to top-left)
           Positioned(
             left: 0,
             top: 2,
@@ -226,22 +275,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
               child: CircleAvatar(
                 radius: 18,
                 backgroundColor: color.withOpacity(0.15),
-                backgroundImage:
-                    chat.groupIcon != null
-                        ? NetworkImage(chat.groupIcon!)
-                        : null,
-                child:
-                    chat.groupIcon == null
-                        ? Icon(
-                          Icons.person_rounded,
-                          color: color.withOpacity(0.8),
-                          size: 22,
-                        )
-                        : null,
+                backgroundImage: chat.groupIcon != null
+                    ? NetworkImage(chat.groupIcon!)
+                    : null,
+                child: chat.groupIcon == null
+                    ? Icon(
+                        Icons.person_rounded,
+                        color: color.withOpacity(0.8),
+                        size: 22,
+                      )
+                    : null,
               ),
             ),
           ),
-          // Group/Batch icon badge (bottom-right corner)
           Positioned(
             right: 0,
             bottom: 2,
@@ -271,25 +317,30 @@ class _ChatListScreenState extends State<ChatListScreen> {
   // ── Chat type badge ────────────────────────────────────────────────────────
   Widget _buildTypeBadge(Chat chat) {
     if (chat.chatType == ChatType.individual) return const SizedBox.shrink();
-
     final isBatch = chat.chatType == ChatType.batch;
     final color = isBatch ? Colors.orange : Colors.purple;
     final icon = isBatch ? Icons.school_outlined : Icons.group_outlined;
     final label = isBatch
         ? (chat.batchName ?? 'Batch')
         : (chat.groupName ?? 'Group');
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: AppColors.isDark ? color.withOpacity(0.2) : color.shade50,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.isDark ? color.withOpacity(0.4) : color.shade200, width: 0.8),
+        border: Border.all(
+          color: AppColors.isDark ? color.withOpacity(0.4) : color.shade200,
+          width: 0.8,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 10, color: AppColors.isDark ? color.shade200 : color.shade700),
+          Icon(
+            icon,
+            size: 10,
+            color: AppColors.isDark ? color.shade200 : color.shade700,
+          ),
           const SizedBox(width: 3),
           Text(
             label,
@@ -308,12 +359,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
   String _buildPreviewText(Chat chat) {
     final preview = chat.lastMessagePreview;
     if (preview == null) return '';
-
     final content = preview['content'] as String? ?? '';
     final sender = preview['sender'] as String? ?? '';
     final isGroupOrBatch =
         chat.chatType == ChatType.group || chat.chatType == ChatType.batch;
-
     if (isGroupOrBatch && sender.isNotEmpty && content.isNotEmpty) {
       return '$sender: $content';
     }
@@ -324,13 +373,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ChatProvider>();
-    context.watch<ThemeProvider>(); // Rebuild on theme change
+    context.watch<ThemeProvider>();
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: AppColors.cardBackground,
-        elevation: 0.5,
+        elevation: 0,
         shadowColor: AppColors.shadowLight,
         titleSpacing: 16,
         title: Row(
@@ -354,6 +403,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
           ),
           const SizedBox(width: 4),
         ],
+        // ── Search bar pinned below the title row ──────────────────────
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(52),
+          child: _buildSearchBar(),
+        ),
       ),
       body: _buildBody(provider),
     );
@@ -361,9 +415,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Widget _buildBody(ChatProvider provider) {
     if (provider.isLoading) {
-      return Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
+      return Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
 
     if (provider.error != null) {
@@ -415,6 +467,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
       );
     }
 
+    final chats = _filteredChats(provider.chats); // ← apply search filter
+
     if (provider.chats.isEmpty) {
       return Center(
         child: Column(
@@ -439,14 +493,34 @@ class _ChatListScreenState extends State<ChatListScreen> {
       );
     }
 
+    // Empty search results state
+    if (chats.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off_rounded,
+              size: 44,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No chats match "$_searchQuery"',
+              style: TextStyle(fontSize: 15, color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      );
+    }
+
     return RefreshIndicator(
       color: const Color(0xFF7B9FD4),
       onRefresh: () => provider.loadChats(),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: provider.chats.length,
-        itemBuilder: (context, index) =>
-            _buildChatTile(provider.chats[index], provider),
+        itemCount: chats.length,
+        itemBuilder: (context, index) => _buildChatTile(chats[index], provider),
       ),
     );
   }
@@ -468,11 +542,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // ── Avatar ─────────────────────────────────────────────────
             _buildAvatar(chat, provider.userOnlineStatus),
             const SizedBox(width: 12),
-
-            // ── Name + preview / online status ──────────────────────────
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,7 +571,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     ],
                   ),
                   const SizedBox(height: 3),
-                  // Show "Online" when active, otherwise show last message preview
                   if (isOnline)
                     Row(
                       children: [
@@ -550,10 +620,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 ],
               ),
             ),
-
             const SizedBox(width: 8),
-
-            // ── Time + unread badge ─────────────────────────────────────
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -583,7 +650,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       chat.unreadCount > 99
                           ? '99+'
                           : chat.unreadCount.toString(),
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,

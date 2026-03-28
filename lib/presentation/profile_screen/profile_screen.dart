@@ -16,6 +16,16 @@ import 'dart:io';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+// ── ID Card brand colours ──────────────────────────────────────────────────
+const _kCardDark = Color(0xFF1E163A);
+const _kCardMid = Color(0xFF2E2075);
+const _kCardAccent = Color(0xFF4A35B0);
+const _kCardLight = Color(0xFF7C6BE8);
+const _kCardPale = Color(0xFFECE9FF);
+const _kCardPaleTx = Color(0xFFB8AAFF);
+const _kCardLabel = Color(0xFF9C8FC8);
+const _kCardBody = Color(0xFF1A1235);
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, required this.course});
 
@@ -38,6 +48,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ).getProfileData(context: context);
     });
   }
+
+  // ─── Logout ────────────────────────────────────────────────────────────────
 
   void _showLogoutConfirmation(BuildContext context) {
     showDialog(
@@ -81,8 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     if (context.mounted) {
-      Navigator.pop(context); // Close loading dialog
-      // Navigate to login screen
+      Navigator.pop(context);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -90,51 +101,101 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // ─── Student ID Card bottom sheet ──────────────────────────────────────────
+
   void _showStudentIdCard(BuildContext context, ProfileController provider) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        height: MediaQuery.of(context).size.height * 0.92,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
           children: [
             // Handle bar
             Container(
-              margin: EdgeInsets.only(top: 12),
+              margin: const EdgeInsets.only(top: 12),
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.borderColor,
+                color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            // Title
-            Text(
-              'Student ID Card',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+            // Title row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Student ID Card',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: _kCardBody,
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'Official Luminar identification',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _kCardLabel,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _kCardPale,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF1D9E75),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        const Text(
+                          'Active',
+                          style: TextStyle(
+                            color: _kCardAccent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: 4),
-            Text(
-              'Show this card for identification',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-            ),
 
-            SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            // ID Card
             Expanded(
-              child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: RepaintBoundary(
                   key: _repaintKey,
                   child: _buildStudentIdCard(provider),
@@ -142,23 +203,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
-            // Download button
-            Padding(
-              padding: EdgeInsets.all(20),
+            // Action buttons
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(color: Colors.grey.shade100, width: 1),
+                ),
+              ),
               child: Row(
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => _downloadIdCard(),
-                      icon: Icon(Icons.download_rounded),
-                      label: Text('Download ID Card'),
+                      icon: const Icon(Icons.download_rounded, size: 18),
+                      label: const Text('Download'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textWhite,
-                        padding: EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: _kCardDark,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _downloadIdCard(),
+                      icon: const Icon(Icons.share_rounded, size: 18),
+                      label: const Text('Share'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _kCardPale,
+                        foregroundColor: _kCardAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: _kCardAccent.withOpacity(0.18),
+                          ),
+                        ),
+                        elevation: 0,
                       ),
                     ),
                   ),
@@ -170,6 +258,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  // ─── Download / Share ───────────────────────────────────────────────────────
 
   Future<void> _downloadIdCard() async {
     try {
@@ -189,14 +279,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (byteData != null) {
         Uint8List pngBytes = byteData.buffer.asUint8List();
-
         final tempDir = await getTemporaryDirectory();
         final file = await File('${tempDir.path}/student_id_card.png').create();
         await file.writeAsBytes(pngBytes);
 
         if (context.mounted) {
           Navigator.pop(context);
-
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -213,8 +301,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           );
-
-          Share.shareXFiles([XFile(file.path)], text: 'My Student ID Card');
+          Share.shareXFiles([
+            XFile(file.path),
+          ], text: 'My Luminar Technolab Student ID Card');
         }
       }
     } catch (e) {
@@ -230,6 +319,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // ─── Portrait ID Card ───────────────────────────────────────────────────────
+
   Widget _buildStudentIdCard(ProfileController provider) {
     final fullName = provider.profile?.personalInfo?.fullName ?? '';
     final studentId = provider.profile?.personalInfo?.studentId ?? '';
@@ -237,265 +328,454 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final email = provider.profile?.personalInfo?.email ?? '';
     final phone = provider.profile?.personalInfo?.phone ?? '';
     final profilePic = provider.profile?.personalInfo?.profilePicture;
+    final admDate = provider.profile?.academicInfo?.admissionDate;
 
     return Container(
-      width: 320, // Reduced width
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: _kCardAccent.withOpacity(0.14),
+            blurRadius: 36,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
+        borderRadius: BorderRadius.circular(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Background decorative elements
-            CustomPaint(
-              size: const Size(320, 450), // Fixed size
-              painter: IdCardBackgroundPainter(),
-            ),
-
-            // Main content
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header - Reduced height
-                Container(
-                  width: double.infinity,
-                  height: 70, // Fixed height
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF6C5CE7), Color(0xFF8B7BF2)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+            // ── Curved arc header ───────────────────────────────────
+            SizedBox(
+              height: 210,
+              child: Stack(
+                alignment: Alignment.topCenter,
+                children: [
+                  ClipPath(
+                    clipper: _IdCardArcClipper(),
+                    child: Container(
+                      height: 210,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [_kCardDark, _kCardMid, _kCardAccent],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
                     ),
                   ),
-                  child: Stack(
-                    children: [
-                      // Decorative circles
-                      Positioned(
-                        top: -15,
-                        left: -15,
-                        child: Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: -20,
-                        right: -10,
-                        child: Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-
-                      // Header text
-                      Center(
-                        child: Text(
-                          'STUDENT ID CARD',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ),
-                    ],
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: SizedBox(
+                      width: 130,
+                      height: 120,
+                      child: CustomPaint(painter: _IdCardDotPatternPainter()),
+                    ),
                   ),
-                ),
-
-                // Body - Reduced padding
-                Padding(
-                  padding: EdgeInsets.all(12), // Reduced padding
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                  Positioned(
+                    top: -20,
+                    right: -20,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.07),
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -8,
+                    left: 18,
+                    child: Container(
+                      width: 62,
+                      height: 62,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _kCardLight.withOpacity(0.15),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Column(
                     children: [
-                      // Profile Image - Smaller
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: 70,
-                            height: 70,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
-                              ),
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.all(2),
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.all(2),
-                                  child: Container(
-                                    width: 60,
-                                    height: 60,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      image:
-                                          profilePic != null &&
-                                              profilePic.isNotEmpty
-                                          ? DecorationImage(
-                                              image: NetworkImage(profilePic),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : null,
-                                    ),
-                                    child:
-                                        profilePic == null || profilePic.isEmpty
-                                        ? Icon(
-                                            Icons.person_rounded,
-                                            color: Color(0xFF6C5CE7),
-                                            size: 30,
-                                          )
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: 8),
-
-                      // Name
-                      Text(
-                        fullName.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                      SizedBox(height: 4),
-
-                      // ID Number
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Color(0xFF6C5CE7).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'ID: $studentId',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF6C5CE7),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: 12),
-
-                      // Details Container - Compact
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Color(0xFF6C5CE7).withOpacity(0.2),
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                        child: Row(
                           children: [
-                            _buildCompactDetailRow(
-                              Icons.school_rounded,
-                              'COURSE',
-                              course,
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(11),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.18),
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.shield_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             ),
-                            Divider(height: 8),
-                            _buildCompactDetailRow(
-                              Icons.email_rounded,
-                              'EMAIL',
-                              email,
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Luminar Technolab',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Accredited Technical Institute',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.45),
+                                      fontSize: 9,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            Divider(height: 8),
-                            _buildCompactDetailRow(
-                              Icons.phone_rounded,
-                              'PHONE',
-                              phone,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.09),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.13),
+                                ),
+                              ),
+                              child: Text(
+                                'STUDENT',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.55),
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.8,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
-
-                      SizedBox(height: 12),
-
-                      // Footer - Compact
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Luminar Technolab',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              Text(
-                                'Educational Institution',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
+                      const SizedBox(height: 20),
+                      Container(
+                        width: 88,
+                        height: 88,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [_kCardLight, _kCardAccent],
                           ),
-                          Container(
-                            padding: EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF6C5CE7).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _kCardAccent.withOpacity(0.4),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
                             ),
-                            child: Icon(
-                              Icons.qr_code_scanner_rounded,
-                              color: Color(0xFF6C5CE7),
-                              size: 16,
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(3),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                          ),
+                          padding: const EdgeInsets.all(2),
+                          child: ClipOval(
+                            child: Container(
+                              color: const Color(0xFFC4B8FF),
+                              child: profilePic != null && profilePic.isNotEmpty
+                                  ? Image.network(profilePic, fit: BoxFit.cover)
+                                  : const Icon(
+                                      Icons.person_rounded,
+                                      color: _kCardAccent,
+                                      size: 36,
+                                    ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
+                ],
+              ),
+            ),
+
+            // ── ID pill ─────────────────────────────────────────────
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              decoration: BoxDecoration(
+                color: _kCardDark,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: _kCardLight.withOpacity(0.25)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: _kCardLight,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    studentId.isNotEmpty ? studentId : '—',
+                    style: const TextStyle(
+                      color: _kCardPaleTx,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.8,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Name + course tag ───────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+              child: Column(
+                children: [
+                  Text(
+                    fullName.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: _kCardBody,
+                      letterSpacing: -0.3,
+                      height: 1.2,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _kCardPale,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      course,
+                      style: const TextStyle(
+                        color: _kCardAccent,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Gradient divider ────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+              child: Container(
+                height: 0.5,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      _kCardLabel.withOpacity(0.3),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
-              ],
+              ),
+            ),
+
+            // ── Info rows ───────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+              child: Column(
+                children: [
+                  _buildCardInfoRow(
+                    iconData: Icons.school_rounded,
+                    iconColor: _kCardAccent,
+                    iconBg: _kCardPale,
+                    label: 'Course',
+                    value: course,
+                  ),
+                  Divider(color: _kCardPale, height: 1, thickness: 0.5),
+                  _buildCardInfoRow(
+                    iconData: Icons.email_rounded,
+                    iconColor: const Color(0xFF185FA5),
+                    iconBg: const Color(0xFFE6F1FB),
+                    label: 'Email',
+                    value: email,
+                  ),
+                  Divider(color: _kCardPale, height: 1, thickness: 0.5),
+                  _buildCardInfoRow(
+                    iconData: Icons.phone_rounded,
+                    iconColor: const Color(0xFF0F6E56),
+                    iconBg: const Color(0xFFE1F5EE),
+                    label: 'Mobile',
+                    value: phone,
+                  ),
+                  if (admDate != null) ...[
+                    Divider(color: _kCardPale, height: 1, thickness: 0.5),
+                    _buildCardInfoRow(
+                      iconData: Icons.calendar_today_rounded,
+                      iconColor: const Color(0xFF854F0B),
+                      iconBg: const Color(0xFFFAEEDA),
+                      label: 'Admission Date',
+                      value: DateFormat('dd MMMM yyyy').format(admDate),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            // ── Dark footer ─────────────────────────────────────────
+            Container(
+              margin: const EdgeInsets.only(top: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [_kCardDark, _kCardMid],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ACADEMIC YEAR',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.35),
+                          fontSize: 7.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.8,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        '2025 – 2026 Batch',
+                        style: TextStyle(
+                          color: _kCardPaleTx,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    width: 48,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF7C6BE8),
+                          Color(0xFFB8AAFF),
+                          Color(0xFF4A35B0),
+                          Color(0xFFE8D5A3),
+                          Color(0xFF7C6BE8),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.07),
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    child: Icon(
+                      Icons.qr_code_2_rounded,
+                      color: Colors.white.withOpacity(0.55),
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Validity strip ──────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+              color: const Color(0xFFF7F5FF),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Validity: December 2026',
+                    style: TextStyle(
+                      color: _kCardLabel,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF1D9E75),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text(
+                        'Active',
+                        style: TextStyle(
+                          color: Color(0xFF0F6E56),
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -503,56 +783,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildIdDetailRow({
-    required IconData icon,
+  Widget _buildCardInfoRow({
+    required IconData iconData,
+    required Color iconColor,
+    required Color iconBg,
     required String label,
     required String value,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: 16, // Reduced from 18
-          color: Color(0xFF6C5CE7),
-        ),
-        SizedBox(width: 8), // Reduced from 12
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min, // Important!
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10, // Reduced from 11
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey[600],
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 12, // Reduced from 13
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF2D3748),
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(iconData, color: iconColor, size: 14),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    color: _kCardLabel,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: _kCardBody,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
+  // ─── Main build ─────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    // Subscribe to theme changes
     context.watch<ThemeProvider>();
-    
+
     final profileProvider = Provider.of<ProfileController>(context);
     final String proof1 = profileProvider.profile?.personalInfo?.idProof ?? "";
     final String proof2 = profileProvider.profile?.personalInfo?.idProof2 ?? "";
@@ -566,7 +855,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header with back button, title, ID card icon and logout
+                    // ── Header ─────────────────────────────────────────
                     Padding(
                       padding: EdgeInsets.all(20),
                       child: Row(
@@ -606,36 +895,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ],
                           ),
-
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.cardBackground,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                          Row(
+                            children: [
+                              // ID Card button
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.cardBackground,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: IconButton(
-                              onPressed: () {
-                                // Logout Button
-                                _showLogoutConfirmation(context);
-                              },
-                              icon: Icon(
-                                Icons.logout,
-                                color: AppColors.primary,
-                                size: 20,
+                                child: IconButton(
+                                  onPressed: () => _showStudentIdCard(
+                                    context,
+                                    profileProvider,
+                                  ),
+                                  icon: Icon(
+                                    Icons.badge_rounded,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
+                                  tooltip: 'View ID Card',
+                                ),
                               ),
-                            ),
+                              SizedBox(width: 8),
+                              // Logout button
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.cardBackground,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: IconButton(
+                                  onPressed: () =>
+                                      _showLogoutConfirmation(context),
+                                  icon: Icon(
+                                    Icons.logout,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
 
-                    // Profile Header Card
+                    // ── Profile Header Card ─────────────────────────────
                     Container(
                       margin: EdgeInsets.symmetric(horizontal: 20),
                       padding: EdgeInsets.all(24),
@@ -662,25 +980,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             decoration: BoxDecoration(
                               color: AppColors.whiteWithOpacity20,
                               shape: BoxShape.circle,
-                              image: profileProvider.profile?.personalInfo
+                              image:
+                                  profileProvider
+                                              .profile
+                                              ?.personalInfo
                                               ?.profilePicture !=
                                           null &&
-                                      profileProvider.profile!.personalInfo!
-                                          .profilePicture!.isNotEmpty
-                                  ? DecorationImage(
-                                      image: NetworkImage(profileProvider
+                                      profileProvider
                                           .profile!
                                           .personalInfo!
-                                          .profilePicture!),
+                                          .profilePicture!
+                                          .isNotEmpty
+                                  ? DecorationImage(
+                                      image: NetworkImage(
+                                        profileProvider
+                                            .profile!
+                                            .personalInfo!
+                                            .profilePicture!,
+                                      ),
                                       fit: BoxFit.cover,
                                     )
                                   : null,
                             ),
-                            child: profileProvider.profile?.personalInfo
+                            child:
+                                profileProvider
+                                            .profile
+                                            ?.personalInfo
                                             ?.profilePicture ==
                                         null ||
-                                    profileProvider.profile!.personalInfo!
-                                        .profilePicture!.isEmpty
+                                    profileProvider
+                                        .profile!
+                                        .personalInfo!
+                                        .profilePicture!
+                                        .isEmpty
                                 ? Icon(
                                     Icons.person_rounded,
                                     color: AppColors.white,
@@ -764,7 +1096,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     SizedBox(height: 20),
 
-                    // Personal Information Card
+                    // ── Personal Information ────────────────────────────
                     _buildSectionCard(
                       title: 'Personal Information',
                       icon: Icons.person_outline_rounded,
@@ -792,7 +1124,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         _buildInfoRow(
                           'Date of Birth',
-
                           profileProvider.profile?.personalInfo?.dateOfBirth !=
                                   null
                               ? DateFormat('dd MM yyyy').format(
@@ -812,13 +1143,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _buildInfoRow(
                           'Student/Working Professional',
                           (() {
-                            final status = profileProvider.profile?.academicInfo
+                            final status = profileProvider
+                                .profile
+                                ?.academicInfo
                                 ?.studentOrWorkingProfessional
                                 ?.toLowerCase();
                             if (status == 'student') return 'Student';
-                            if (status != null && status.isNotEmpty) {
+                            if (status != null && status.isNotEmpty)
                               return 'Working Professional';
-                            }
                             return "";
                           })(),
                         ),
@@ -827,7 +1159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     SizedBox(height: 16),
 
-                    // Account Status Card
+                    // ── Account Status ──────────────────────────────────
                     _buildSectionCard(
                       title: 'Account Status',
                       icon: Icons.account_circle_rounded,
@@ -882,7 +1214,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     SizedBox(height: 16),
 
-                    // Your Counselor Card
+                    // ── Your Counselor ──────────────────────────────────
                     _buildSectionCard(
                       title: 'Your Counselor',
                       icon: Icons.support_agent_rounded,
@@ -905,7 +1237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     SizedBox(height: 16),
 
-                    // Academic Information Card
+                    // ── Academic Information ────────────────────────────
                     _buildSectionCard(
                       title: 'Academic Information',
                       icon: Icons.school_rounded,
@@ -979,7 +1311,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     SizedBox(height: 16),
 
-                    // Contact Information Card
+                    // ── Contact Information ─────────────────────────────
                     _buildSectionCard(
                       title: 'Contact Information',
                       icon: Icons.contact_phone_rounded,
@@ -1026,7 +1358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     SizedBox(height: 16),
 
-                    // Placement Information Card
+                    // ── Placement Information ───────────────────────────
                     _buildSectionCard(
                       title: 'Placement Information',
                       icon: Icons.work_rounded,
@@ -1061,7 +1393,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     SizedBox(height: 16),
 
-                    // Documents Card
+                    // ── Documents ───────────────────────────────────────
                     _buildSectionCard(
                       title: 'Documents',
                       icon: Icons.folder_rounded,
@@ -1074,42 +1406,115 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     SizedBox(height: 20),
 
-                    // App Theme Card
+                    // ── App Theme (attractive new design) ───────────────
                     Consumer<ThemeProvider>(
                       builder: (context, themeProvider, child) {
-                        return _buildSectionCard(
-                          title: 'App Theme',
-                          icon: Icons.brightness_6_rounded,
-                          color: AppColors.primary,
-                          children: [
-                            _buildThemeOption(
-                              label: 'System Default',
-                              icon: Icons.settings_suggest_rounded,
-                              isSelected: themeProvider.themeMode == ThemeMode.system,
-                              onTap: () => themeProvider.setThemeMode(ThemeMode.system),
-                            ),
-                            Divider(height: 8),
-                            _buildThemeOption(
-                              label: 'Light Mode',
-                              icon: Icons.light_mode_rounded,
-                              isSelected: themeProvider.themeMode == ThemeMode.light,
-                              onTap: () => themeProvider.setThemeMode(ThemeMode.light),
-                            ),
-                            Divider(height: 8),
-                            _buildThemeOption(
-                              label: 'Dark Mode',
-                              icon: Icons.dark_mode_rounded,
-                              isSelected: themeProvider.themeMode == ThemeMode.dark,
-                              onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
-                            ),
-                          ],
+                        return Container(
+                          margin: EdgeInsets.symmetric(horizontal: 20),
+                          padding: EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.cardBackground,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Section header
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      Icons.brightness_6_rounded,
+                                      color: AppColors.primary,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    'App Theme',
+                                    style: AppTextStyles.sectionTitle,
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 16),
+
+                              // System Default
+                              _buildThemeOption(
+                                label: 'System Default',
+                                subtitle: 'Follows your device setting',
+                                icon: Icons.settings_suggest_rounded,
+                                selectedBg: [
+                                  Color(0xFFF7F5FF),
+                                  Color(0xFFEDE9FE),
+                                ],
+                                iconColor: AppColors.primary,
+                                iconBg: AppColors.primary.withOpacity(0.12),
+                                isDark: false,
+                                isSelected:
+                                    themeProvider.themeMode == ThemeMode.system,
+                                onTap: () => themeProvider.setThemeMode(
+                                  ThemeMode.system,
+                                ),
+                              ),
+                              SizedBox(height: 10),
+
+                              // Light Mode
+                              _buildThemeOption(
+                                label: 'Light Mode',
+                                subtitle: 'Bright & clean interface',
+                                icon: Icons.light_mode_rounded,
+                                selectedBg: [
+                                  Color(0xFFFFFBF0),
+                                  Color(0xFFFEF3C7),
+                                ],
+                                iconColor: Color(0xFFF59E0B),
+                                iconBg: Color(0xFFF59E0B).withOpacity(0.15),
+                                isDark: false,
+                                isSelected:
+                                    themeProvider.themeMode == ThemeMode.light,
+                                onTap: () =>
+                                    themeProvider.setThemeMode(ThemeMode.light),
+                              ),
+                              SizedBox(height: 10),
+
+                              // Dark Mode
+                              _buildThemeOption(
+                                label: 'Dark Mode',
+                                subtitle: 'Easy on the eyes',
+                                icon: Icons.dark_mode_rounded,
+                                selectedBg: [
+                                  Color(0xFF1E163A),
+                                  Color(0xFF2E2075),
+                                ],
+                                iconColor: Color(0xFFB8AAFF),
+                                iconBg: Colors.white.withOpacity(0.10),
+                                isDark: true,
+                                isSelected:
+                                    themeProvider.themeMode == ThemeMode.dark,
+                                onTap: () =>
+                                    themeProvider.setThemeMode(ThemeMode.dark),
+                              ),
+                            ],
+                          ),
                         );
                       },
                     ),
 
                     SizedBox(height: 20),
 
-                    // Quick Actions
+                    // ── Update Profile ──────────────────────────────────
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20),
                       child: Container(
@@ -1161,6 +1566,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  // ─── Reusable section widgets ───────────────────────────────────────────────
 
   Widget _buildSectionCard({
     required String title,
@@ -1251,9 +1658,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 value,
                 style: TextStyle(
                   fontSize: 12,
-                  color: isSuccess
-                      ? AppColors.statsGreen
-                      : AppColors.error,
+                  color: isSuccess ? AppColors.statsGreen : AppColors.error,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1315,56 +1720,123 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ─── Attractive theme option tile ──────────────────────────────────────────
+
   Widget _buildThemeOption({
     required String label,
+    required String subtitle,
     required IconData icon,
+    required List<Color> selectedBg,
+    required Color iconColor,
+    required Color iconBg,
+    required bool isDark,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isSelected
+                ? selectedBg
+                : isDark
+                ? [const Color(0xFF1E163A), const Color(0xFF1E163A)]
+                : [AppColors.cardBackground, AppColors.cardBackground],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? (isDark
+                      ? Colors.white.withOpacity(0.12)
+                      : AppColors.primary.withOpacity(0.22))
+                : (isDark
+                      ? Colors.white.withOpacity(0.06)
+                      : AppColors.borderColor.withOpacity(0.3)),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
         child: Row(
           children: [
+            // Icon box
             Container(
-              padding: EdgeInsets.all(8),
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary.withOpacity(0.1)
-                    : AppColors.borderColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
+                color: iconBg,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            SizedBox(width: 14),
+            // Labels
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: isDark
+                          ? Colors.white.withOpacity(0.45)
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
+            // Animated check circle
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark
+                          ? Colors.white.withOpacity(0.08)
+                          : Colors.black.withOpacity(0.06)),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primary
+                      : (isDark
+                            ? Colors.white.withOpacity(0.15)
+                            : Colors.black.withOpacity(0.10)),
+                  width: 1.5,
                 ),
               ),
+              child: isSelected
+                  ? const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 13,
+                    )
+                  : null,
             ),
-            if (isSelected)
-              Icon(
-                Icons.check_circle_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
           ],
         ),
       ),
     );
   }
 }
+
+// ── Full-screen image viewer ────────────────────────────────────────────────
 
 class FullScreenImageViewer extends StatelessWidget {
   final String imageUrl;
@@ -1414,7 +1886,8 @@ class FullScreenImageViewer extends StatelessWidget {
   }
 }
 
-// Compact detail row for better space management
+// ── Compact detail row (kept for backward compatibility) ────────────────────
+
 Widget _buildCompactDetailRow(IconData icon, String label, String value) {
   return Row(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1451,29 +1924,63 @@ Widget _buildCompactDetailRow(IconData icon, String label, String value) {
   );
 }
 
-// Updated CustomPainter
+// ── ID card arc clipper ─────────────────────────────────────────────────────
+
+class _IdCardArcClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.lineTo(0, size.height - 40);
+    path.quadraticBezierTo(
+      size.width / 2,
+      size.height + 20,
+      size.width,
+      size.height - 40,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> old) => false;
+}
+
+// ── ID card dot pattern painter ─────────────────────────────────────────────
+
+class _IdCardDotPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.10)
+      ..style = PaintingStyle.fill;
+    const spacing = 11.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 1.2, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => false;
+}
+
+// ── Original background painter (kept for compatibility) ────────────────────
+
 class IdCardBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = AppColors.primary.withOpacity(0.03)
       ..style = PaintingStyle.fill;
-
-    // Draw subtle circles pattern
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 2; j++) {
         canvas.drawCircle(Offset(40.0 + i * 100, 60.0 + j * 150), 20, paint);
       }
     }
-
-    // Draw corner accents
-    final cornerPaint = Paint()
-      ..color = AppColors.primary.withOpacity(0.1);
-
-    // Top right corner
+    final cornerPaint = Paint()..color = AppColors.primary.withOpacity(0.1);
     canvas.drawCircle(Offset(size.width - 20, 20), 30, cornerPaint);
-
-    // Bottom left corner
     canvas.drawCircle(Offset(20, size.height - 20), 40, cornerPaint);
   }
 

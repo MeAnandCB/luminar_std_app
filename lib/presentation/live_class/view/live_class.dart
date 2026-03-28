@@ -18,39 +18,118 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      await Provider.of<LiveClassController>(context, listen: false).getLiveClassDetails();
+      await Provider.of<LiveClassController>(
+        context,
+        listen: false,
+      ).getLiveClassDetails();
     });
   }
 
-  Future<void> _joinLiveClass(BuildContext context, String? classId, String batchName) async {
-    // Show loading dialog
+  Future<void> _joinLiveClass(
+    BuildContext context,
+    String? classId,
+    String batchName,
+  ) async {
     if (!context.mounted) return;
+
+    // ★ Track whether user cancelled
+    bool cancelled = false;
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: AppColors.cardBackground,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 5))],
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadowLight,
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
-                const SizedBox(height: 16),
+                // ── Loading spinner ──────────────────────────────
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // ── Title ────────────────────────────────────────
                 Text(
                   'Preparing your class...',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(batchName, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+
+                const SizedBox(height: 6),
+
+                // ── Batch name ───────────────────────────────────
+                Text(
+                  batchName,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // ── ★ Cancel button ──────────────────────────────
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      cancelled = true;
+                      Navigator.pop(dialogContext);
+                    },
+                    icon: const Icon(Icons.close_rounded, size: 16),
+                    label: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      side: BorderSide(color: AppColors.borderColor, width: 1),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -59,38 +138,44 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
     );
 
     try {
-      // Call the API
-      final liveProvider = Provider.of<LiveClassController>(context, listen: false);
+      final liveProvider = Provider.of<LiveClassController>(
+        context,
+        listen: false,
+      );
 
       await liveProvider.getLiveClassLinkDetails(id: classId ?? '');
 
-      // Close the loading dialog if context is still valid
-      if (context.mounted) {
-        Navigator.pop(context); // Close loading dialog
-      }
+      // If user cancelled while loading, do nothing
+      if (cancelled) return;
 
-      // Get the join URL from provider
+      if (context.mounted) Navigator.pop(context);
+
       String? joinUrl = liveProvider.classLinkData?.joinUrl;
 
       if (joinUrl != null && joinUrl.isNotEmpty) {
-        // Launch the URL
         final Uri url = Uri.parse(joinUrl);
         if (await canLaunchUrl(url)) {
           await launchUrl(url, mode: LaunchMode.externalApplication);
         } else {
-          // Show error if URL can't be launched
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
                   children: [
-                    Icon(Icons.error_outline_rounded, color: AppColors.textWhite),
+                    Icon(
+                      Icons.error_outline_rounded,
+                      color: AppColors.textWhite,
+                    ),
                     const SizedBox(width: 12),
-                    const Expanded(child: Text('Could not launch the class link')),
+                    const Expanded(
+                      child: Text('Could not launch the class link'),
+                    ),
                   ],
                 ),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 backgroundColor: AppColors.error,
                 duration: const Duration(seconds: 2),
               ),
@@ -98,7 +183,6 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
           }
         }
       } else {
-        // Show error if no URL
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -110,7 +194,9 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                 ],
               ),
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               backgroundColor: AppColors.statsOrange,
               duration: const Duration(seconds: 2),
             ),
@@ -118,9 +204,9 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
         }
       }
     } catch (e) {
-      // Handle any errors
+      if (cancelled) return;
       if (context.mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -131,7 +217,9 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
               ],
             ),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 3),
           ),
@@ -142,7 +230,6 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Subscribe to theme changes
     context.watch<ThemeProvider>();
     final liveProvider = Provider.of<LiveClassController>(context);
 
@@ -169,20 +256,35 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                             color: AppColors.cardBackground,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
-                              BoxShadow(color: AppColors.shadowLight, blurRadius: 8, offset: const Offset(0, 2)),
+                              BoxShadow(
+                                color: AppColors.shadowLight,
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
                             ],
                           ),
                           child: IconButton(
                             onPressed: () => Navigator.pop(context),
-                            icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primary, size: 18),
-                            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                            icon: Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: AppColors.primary,
+                              size: 18,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 40,
+                              minHeight: 40,
+                            ),
                             padding: EdgeInsets.zero,
                           ),
                         ),
                         const SizedBox(width: 16),
                         Text(
                           'Live Classes',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                         const Spacer(),
                       ],
@@ -192,10 +294,16 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                   // Stats chips
                   if (liveProvider.liveClassResModel?.isNotEmpty ?? false)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       child: Row(
                         children: [
-                          _buildStatChip('Total: ${liveProvider.liveClassResModel?.length ?? 0}', AppColors.statsBlue),
+                          _buildStatChip(
+                            'Total: ${liveProvider.liveClassResModel?.length ?? 0}',
+                            AppColors.statsBlue,
+                          ),
                           const SizedBox(width: 8),
                         ],
                       ),
@@ -204,18 +312,29 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                   // Live Classes List
                   Expanded(
                     child: liveProvider.liveClassResModel?.isEmpty ?? true
-                        ? _buildEmptyState()
+                        ? _buildEmptyState(context)
                         : ListView.separated(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: liveProvider.liveClassResModel?.length ?? 0,
-                            separatorBuilder: (context, index) => const SizedBox(height: 12),
+                            itemCount:
+                                liveProvider.liveClassResModel?.length ?? 0,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 12),
                             itemBuilder: (context, index) {
-                              final liveClass = liveProvider.liveClassResModel?[index];
+                              final liveClass =
+                                  liveProvider.liveClassResModel?[index];
                               return GestureDetector(
                                 onTap: () {
-                                  _joinLiveClass(context, liveClass?.uid, liveClass?.batchName ?? 'Unknown Batch');
+                                  _joinLiveClass(
+                                    context,
+                                    liveClass?.uid,
+                                    liveClass?.batchName ?? 'Unknown Batch',
+                                  );
                                 },
-                                child: _buildLiveClassCard(liveClass, index, liveProvider),
+                                child: _buildLiveClassCard(
+                                  liveClass,
+                                  index,
+                                  liveProvider,
+                                ),
                               );
                             },
                           ),
@@ -236,18 +355,30 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 
-  Widget _buildLiveClassCard(liveClass, int index, LiveClassController liveProvider) {
+  Widget _buildLiveClassCard(
+    liveClass,
+    int index,
+    LiveClassController liveProvider,
+  ) {
     return Container(
       decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: AppColors.primary.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: ListTile(
@@ -255,12 +386,18 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
         leading: AvatarGlow(
           glowColor: AppColors.white,
           duration: const Duration(milliseconds: 1500),
-
           child: Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(color: AppColors.white.withOpacity(0.2), shape: BoxShape.circle),
-            child: Icon(Icons.video_call_outlined, color: AppColors.white, size: 24),
+            decoration: BoxDecoration(
+              color: AppColors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.video_call_outlined,
+              color: AppColors.white,
+              size: 24,
+            ),
           ),
         ),
         title: Column(
@@ -272,85 +409,134 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                 Container(
                   width: 8,
                   height: 8,
-                  decoration: BoxDecoration(color: AppColors.statsGreen, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: AppColors.statsGreen,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 6),
-                Text('Current Enrollment', style: TextStyle(color: AppColors.white, fontSize: 10)),
+                Text(
+                  'Current Enrollment',
+                  style: TextStyle(color: AppColors.white, fontSize: 10),
+                ),
               ],
             ),
             const SizedBox(height: 4),
             Text(
               liveClass?.batchName ?? "",
-              style: TextStyle(color: AppColors.white, fontSize: 13, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: AppColors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
-            Row(
-              children: [
-                Text('Join for Live Class', style: TextStyle(color: AppColors.white.withOpacity(0.8), fontSize: 11)),
-              ],
+            Text(
+              'Join for Live Class',
+              style: TextStyle(
+                color: AppColors.white.withOpacity(0.8),
+                fontSize: 11,
+              ),
             ),
           ],
         ),
         trailing: ElevatedButton(
           onPressed: () {
-            _joinLiveClass(context, liveClass?.uid, liveClass?.batchName ?? 'Unknown Batch');
+            _joinLiveClass(
+              context,
+              liveClass?.uid,
+              liveClass?.batchName ?? 'Unknown Batch',
+            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.white,
             foregroundColor: AppColors.primary,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             minimumSize: const Size(60, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: const Text('Join Class', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          child: const Text(
+            'Join Class',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 30, spreadRadius: 5)],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowLight,
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.live_tv_rounded,
+                size: 60,
+                color: AppColors.primary,
+              ),
             ),
-            child: Icon(Icons.live_tv_rounded, size: 60, color: AppColors.primary),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No Live Classes',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Check back later for upcoming sessions',
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
-              ],
+            const SizedBox(height: 24),
+            Text(
+              'No Live Classes',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
-            child: Text(
-              'Refresh',
-              style: TextStyle(color: AppColors.white, fontSize: 14, fontWeight: FontWeight.w600),
+            const SizedBox(height: 12),
+            Text(
+              'There are no live classes scheduled right now.\nCheck back later for upcoming sessions.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close_rounded, size: 18),
+                label: const Text(
+                  'Close',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

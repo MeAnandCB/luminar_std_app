@@ -1,29 +1,107 @@
+import 'dart:convert';
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
-import 'dart:async';
-import 'dart:ui';
-import 'package:flutter/services.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
+import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:vibration/vibration.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
-class ScannerApp extends StatelessWidget {
-  const ScannerApp({super.key});
+// NOTE: Adjust these import paths to match your project structure
+import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Student QR Scanner',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Poppins',
-        primaryColor: const Color(0xFF6C5CE7),
-        scaffoldBackgroundColor: const Color(0xFFF8F9FF),
-        useMaterial3: true,
-      ),
-      home: const QRScannerScreen(),
+// ─────────────────────────────────────────────────────────────────────────────
+// QR Payload Model
+// ─────────────────────────────────────────────────────────────────────────────
+
+class QRPayload {
+  final String batchId;
+  final String startTime;
+  final String endTime;
+  final int timestamp;
+
+  QRPayload({
+    required this.batchId,
+    required this.startTime,
+    required this.endTime,
+    required this.timestamp,
+  });
+
+  factory QRPayload.fromJson(Map<String, dynamic> json) => QRPayload(
+    batchId: json['batchId']?.toString() ?? '',
+    startTime: json['startTime']?.toString() ?? '',
+    endTime: json['endTime']?.toString() ?? '',
+    timestamp: json['timestamp'] is int
+        ? json['timestamp']
+        : int.tryParse(json['timestamp']?.toString() ?? '0') ?? 0,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Attendance API Service
+// ─────────────────────────────────────────────────────────────────────────────
+
+class AttendanceService {
+  static const String _base = 'https://api.crm.dev.luminartechnohub.com';
+
+  static Future<Map<String, dynamic>> markAttendance({
+    required String batchId,
+    required String sessionId,
+    required String studentId,
+  }) async {
+    final String? token = await AppUtils.getAccessKey();
+    final uri = Uri.parse('$_base/api/attendance/qr-scan/');
+
+    final payload = {
+      'batch_id': batchId,
+      'session_id': sessionId,
+      'student_id': studentId,
+    };
+
+    debugPrint('─── Attendance Request ─────────────────');
+    debugPrint('  POST       : $uri');
+    debugPrint('  Token      : Bearer $token');
+    debugPrint('  batch_id   : $batchId');
+    debugPrint('  session_id : $sessionId');
+    debugPrint('  student_id : $studentId');
+    debugPrint('────────────────────────────────────────');
+
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(payload),
     );
+
+    debugPrint('─── Attendance Response ────────────────');
+    debugPrint('  Status  : ${response.statusCode}');
+    debugPrint('  Body    : ${response.body}');
+    debugPrint('  Headers : ${response.headers}');
+    debugPrint('────────────────────────────────────────');
+
+    Map<String, dynamic> data = {};
+    try {
+      data = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      // non-JSON response
+      data = {'raw_body': response.body};
+    }
+
+    return {
+      'statusCode': response.statusCode,
+      'success': response.statusCode == 200 || response.statusCode == 201,
+      ...data,
+    };
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QR Scanner Screen  (single full screen — no bottom nav)
+// ─────────────────────────────────────────────────────────────────────────────
 
 class QRScannerScreen extends StatefulWidget {
   const QRScannerScreen({super.key});
@@ -33,570 +111,685 @@ class QRScannerScreen extends StatefulWidget {
 }
 
 class _QRScannerScreenState extends State<QRScannerScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  late AnimationController _animationController;
-  late Animation<double> _scanAnimation;
+    with WidgetsBindingObserver {
+  late final MobileScannerController _controller;
+
+  bool _detected = false;
+  bool _isLoading = false;
   bool _isFlashOn = false;
-  bool _isScanning = true;
-  bool _hasPermission = false;
-  bool _isProcessing = false;
-  MobileScannerController? _scannerController;
-  Barcode? _lastScannedCode;
-  final Duration _scanDelay = const Duration(seconds: 2);
+  String _statusText = 'Loading your enrollment data...';
+
+  EnrollmentResponse? _enrollmentData;
+  bool _enrollmentLoaded = false;
+  bool _enrollmentError = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkPermissions();
-
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-
-    _scanAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      facing: CameraFacing.back,
+      torchEnabled: false,
     );
-  }
-
-  Future<void> _checkPermissions() async {
-    // Request camera permission
-    final cameraStatus = await Permission.camera.request();
-
-    // Internet permission is automatically granted on Android/iOS
-    // No need to explicitly request it
-
-    if (cameraStatus.isGranted) {
-      setState(() {
-        _hasPermission = true;
-      });
-      _scannerController = MobileScannerController(
-        detectionSpeed: DetectionSpeed.normal,
-        facing: CameraFacing.back,
-        torchEnabled: _isFlashOn,
-      );
-    } else if (cameraStatus.isDenied) {
-      _showPermissionDialog();
-    } else if (cameraStatus.isPermanentlyDenied) {
-      _showSettingsDialog();
-    }
-  }
-
-  void _showPermissionDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Camera Permission Required'),
-        content: const Text('Camera permission is needed to scan QR codes.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final status = await Permission.camera.request();
-              if (status.isGranted) {
-                setState(() {
-                  _hasPermission = true;
-                });
-                _scannerController = MobileScannerController(
-                  detectionSpeed: DetectionSpeed.normal,
-                  facing: CameraFacing.back,
-                  torchEnabled: _isFlashOn,
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C5CE7),
-            ),
-            child: const Text('Allow'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSettingsDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Camera Permission Required'),
-        content: const Text(
-          'Camera permission is permanently denied. '
-          'Please enable it in app settings.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              openAppSettings();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C5CE7),
-            ),
-            child: const Text('Open Settings'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handleBarcode(BarcodeCapture capture) {
-    if (!mounted || _isProcessing) return;
-
-    final List<Barcode> barcodes = capture.barcodes;
-    if (barcodes.isEmpty) return;
-
-    for (final barcode in barcodes) {
-      if (barcode.displayValue != null && barcode.displayValue!.isNotEmpty) {
-        _processScannedCode(barcode);
-        break;
-      }
-    }
-  }
-
-  Future<void> _processScannedCode(Barcode barcode) async {
-    if (_isProcessing) return;
-
-    setState(() {
-      _isProcessing = true;
-      _lastScannedCode = barcode;
-      _isScanning = false;
-    });
-
-    // Vibrate on successful scan
-    if (await Vibration.hasVibrator() ?? false) {
-      Vibration.vibrate(duration: 100);
-    }
-
-    HapticFeedback.heavyImpact();
-
-    // Auto hide result after 3 seconds
-    Timer(const Duration(seconds: 3), () {
-      if (mounted && !_isScanning) {
-        setState(() {
-          _isScanning = true;
-          _isProcessing = false;
-        });
-      }
-    });
-  }
-
-  void _toggleFlash() {
-    setState(() {
-      _isFlashOn = !_isFlashOn;
-    });
-    _scannerController?.toggleTorch();
-    HapticFeedback.lightImpact();
-  }
-
-  void _resetScanner() {
-    setState(() {
-      _isScanning = true;
-      _isProcessing = false;
-      _lastScannedCode = null;
-    });
+    // Camera stays paused until enrollments are loaded
+    _controller.stop();
+    _loadEnrollments();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _checkPermissions();
+    if (state == AppLifecycleState.resumed &&
+        _enrollmentLoaded &&
+        !_detected &&
+        !_isLoading) {
+      _controller.start();
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      _controller.stop();
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _animationController.dispose();
-    _scannerController?.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
+  // ── Step 1: Load enrollments, then start camera ───────────────────────────
+
+  Future<void> _loadEnrollments() async {
+    setState(() {
+      _enrollmentError = false;
+      _enrollmentLoaded = false;
+      _statusText = 'Loading your enrollment data...';
+    });
+
+    try {
+      final provider = Provider.of<EnrollmentProvider>(context, listen: false);
+
+      if (!provider.hasData) {
+        await provider.fetchEnrollData(context: context, showLoading: false);
+      }
+
+      if (!mounted) return;
+
+      if (provider.hasError || provider.enrollmentData == null) {
+        setState(() {
+          _enrollmentError = true;
+          _statusText = 'Could not load enrollment data.';
+        });
+        return;
+      }
+
+      _enrollmentData = provider.enrollmentData;
+      _enrollmentLoaded = true;
+
+      debugPrint('─── Enrollments Response Body ──────────');
+      debugPrint(
+        jsonEncode({
+          'status': _enrollmentData!.status,
+          'summary': {
+            'total_enrollments': _enrollmentData!.summary.totalEnrollments,
+            'active_enrollments': _enrollmentData!.summary.activeEnrollments,
+            'completed_enrollments':
+                _enrollmentData!.summary.completedEnrollments,
+            'demo_enrollments': _enrollmentData!.summary.demoEnrollments,
+            'total_fees_paid': _enrollmentData!.summary.totalFeesPaid,
+            'total_fees_pending': _enrollmentData!.summary.totalFeesPending,
+          },
+          'enrollments': _enrollmentData!.enrollments
+              .map(
+                (e) => {
+                  'uid': e.uid,
+                  'enrollment_number': e.enrollmentNumber,
+                  'enrollment_date': e.enrollmentDate.toIso8601String(),
+                  'source': e.source,
+                  'special_notes': e.specialNotes,
+                  'tags': e.tags,
+                  'status': {
+                    'name': e.status.name,
+                    'value': e.status.value,
+                    'color': e.status.color,
+                  },
+                  'batch': {
+                    'uid': e.batch.uid,
+                    'batch_name': e.batch.batchName,
+                    'start_date': e.batch.startDate.toIso8601String(),
+                    'end_date': e.batch.endDate.toIso8601String(),
+                    'time': e.batch.time,
+                    'status': e.batch.status,
+                  },
+                  'course': {
+                    'course_name': e.course.courseName,
+                    'duration': e.course.duration,
+                  },
+                  'attendance_mode': {
+                    'name': e.attendanceMode.name,
+                    'value': e.attendanceMode.value,
+                  },
+                  'payment_info': {
+                    'gross_amount': e.paymentInfo.grossAmount,
+                    'net_amount': e.paymentInfo.netAmount,
+                    'amount_paid': e.paymentInfo.amountPaid,
+                    'pending_amount': e.paymentInfo.pendingAmount,
+                    'is_fully_paid': e.paymentInfo.isFullyPaid,
+                  },
+                  'progress': {
+                    'attendance_percentage': e.progress.attendancePercentage,
+                    'completion_percentage': e.progress.completionPercentage,
+                    'final_grade': e.progress.finalGrade,
+                    'certificate_issued': e.progress.certificateIssued,
+                  },
+                },
+              )
+              .toList(),
+        }),
+      );
+      debugPrint('────────────────────────────────────────');
+
+      setState(() => _statusText = 'Align QR code within the frame');
+      _controller.start();
+    } catch (e) {
+      debugPrint('  [_loadEnrollments] Error: $e');
+      if (!mounted) return;
+      setState(() {
+        _enrollmentError = true;
+        _statusText = 'Could not load enrollment data.';
+      });
+    }
+  }
+
+  // ── Step 2: QR detected — fires exactly once ──────────────────────────────
+
+  void _onDetect(BarcodeCapture capture) {
+    if (_detected || _isLoading || !_enrollmentLoaded) return;
+
+    for (final Barcode barcode in capture.barcodes) {
+      final String? raw = barcode.rawValue;
+      if (raw == null || raw.isEmpty) continue;
+
+      // Stop immediately — single fire guaranteed
+      _detected = true;
+      _controller.stop();
+
+      debugPrint('═══════════════════════════════════════');
+      debugPrint('  QR SCANNED (single fire)');
+      debugPrint('  Format  : ${barcode.format.name}');
+      debugPrint('  Raw Data: $raw');
+      debugPrint('═══════════════════════════════════════');
+      developer.log(raw, name: 'QRScanner');
+
+      try {
+        final json = jsonDecode(raw) as Map<String, dynamic>;
+        final payload = QRPayload.fromJson(json);
+        _validateAndSubmit(payload);
+      } catch (_) {
+        _showResult(
+          success: false,
+          title: 'Invalid QR Code',
+          message:
+              'This is not a valid attendance QR code.\nPlease scan the correct session QR.',
+        );
+      }
+      break;
+    }
+  }
+
+  // ── Step 3: Validate batchId against enrollments ──────────────────────────
+
+  void _validateAndSubmit(QRPayload payload) {
+    debugPrint('─── Batch Validation ───────────────────');
+    debugPrint('  QR Batch ID : ${payload.batchId}');
+
+    final enrollments = _enrollmentData?.enrollments ?? [];
+    Enrollment? matched;
+
+    for (final e in enrollments) {
+      debugPrint('  Checking    : ${e.batch.uid}');
+      if (e.batch.uid == payload.batchId) {
+        matched = e;
+        break;
+      }
+    }
+
+    if (matched == null) {
+      debugPrint('  Result      : ❌ No matching batch found');
+      debugPrint('────────────────────────────────────────');
+      _showResult(
+        success: false,
+        title: 'Session Not Found',
+        message:
+            'This session does not belong to your enrolled batches.\nPlease verify you are scanning the correct QR.',
+      );
+      return;
+    }
+
+    debugPrint('  Result      : ✅ Matched → ${matched.batch.batchName}');
+    debugPrint('────────────────────────────────────────');
+
+    _callAttendanceApi(
+      batchId: matched.batch.uid,
+      sessionId: payload.startTime,
+      studentId: matched.uid, // enrollment uid as student_id
+      batchName: matched.batch.batchName,
+    );
+  }
+
+  // ── Step 4: Call attendance API ───────────────────────────────────────────
+
+  Future<void> _callAttendanceApi({
+    required String batchId,
+    required String sessionId,
+    required String studentId,
+    required String batchName,
+  }) async {
+    setState(() {
+      _isLoading = true;
+      _statusText = 'Marking attendance...';
+    });
+
+    try {
+      final result = await AttendanceService.markAttendance(
+        batchId: batchId,
+        sessionId: sessionId,
+        studentId: studentId,
+      );
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        _showResult(
+          success: true,
+          title: 'Attendance Marked!',
+          message:
+              '🎉 Your attendance has been successfully recorded for\n$batchName.\nHave a great session!',
+        );
+      } else {
+        // Show whatever the server returned
+        final msg =
+            result['message'] ??
+            result['detail'] ??
+            result['error'] ??
+            result['raw_body'] ??
+            'Status ${result['statusCode']} — Something went wrong.';
+        debugPrint('  [API Fail] Full result: $result');
+        _showResult(
+          success: false,
+          title: 'Attendance Failed (${result['statusCode']})',
+          message: msg.toString(),
+        );
+      }
+    } catch (e) {
+      debugPrint('  [API Error] $e');
+      if (!mounted) return;
+      _showResult(
+        success: false,
+        title: 'Network Error',
+        message:
+            'Could not connect to the server.\nCheck your internet and try again.',
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // ── Result dialog — resets scanner on dismiss ─────────────────────────────
+
+  void _showResult({
+    required bool success,
+    required String title,
+    required String message,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _ResultDialog(
+        success: success,
+        title: title,
+        message: message,
+        onPressed: () {
+          Navigator.pop(context); // close dialog
+          // Reset and restart scanner
+          setState(() {
+            _detected = false;
+            _statusText = 'Align QR code within the frame';
+          });
+          _controller.start();
+        },
+      ),
+    );
+  }
+
+  Future<void> _toggleFlash() async {
+    await _controller.toggleTorch();
+    setState(() => _isFlashOn = !_isFlashOn);
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Camera Preview
-          if (_hasPermission && _scannerController != null && _isScanning)
-            MobileScanner(
-              controller: _scannerController!,
-              onDetect: _handleBarcode,
-              fit: BoxFit.cover,
-            )
-          else if (!_hasPermission)
-            // Permission required placeholder
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: const [Color(0xFF1A1B2F), Color(0xFF2D2F4A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt_rounded,
-                        size: 60,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: _checkPermissions,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6C5CE7),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 40,
-                          vertical: 15,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text('Enable Camera'),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else if (_isScanning)
-            // Loading state
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              color: Colors.black,
-              child: const Center(
-                child: CircularProgressIndicator(color: Color(0xFF6C5CE7)),
-              ),
-            ),
+          // Full-screen camera feed
+          MobileScanner(controller: _controller, onDetect: _onDetect),
 
-          // Scanner Overlay (only when scanning)
-          if (_isScanning && _hasPermission)
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              color: Colors.transparent,
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    // Top Bar with only icons (no text)
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Back button
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                              ),
-                            ),
-                            child: IconButton(
-                              onPressed: () => Navigator.pop(context),
-                              icon: Icon(
-                                Icons.arrow_back_ios_new_rounded,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            ),
-                          ),
-                          // Flash button
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                              ),
-                            ),
-                            child: IconButton(
-                              onPressed: _toggleFlash,
-                              icon: Icon(
-                                _isFlashOn
-                                    ? Icons.flash_on_rounded
-                                    : Icons.flash_off_rounded,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+          // Scan frame overlay
+          const _ScanOverlay(),
 
-                    const Spacer(),
-
-                    // Scanner Frame
-                    Center(
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Scanner frame
-                          Container(
-                            width: size.width * 0.7,
-                            height: size.width * 0.7,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(40),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.5),
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(
-                                    0xFF6C5CE7,
-                                  ).withOpacity(0.3),
-                                  blurRadius: 30,
-                                  spreadRadius: 5,
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Corner decorations
-                          ..._buildScannerCorners(size),
-
-                          // Animated scan line
-                          AnimatedBuilder(
-                            animation: _animationController,
-                            builder: (context, child) {
-                              return Positioned(
-                                top:
-                                    (size.height / 2) -
-                                    (size.width * 0.35) +
-                                    (size.width * 0.7 * _scanAnimation.value),
-                                child: Container(
-                                  width: size.width * 0.7,
-                                  height: 4,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.transparent,
-                                        const Color(
-                                          0xFF6C5CE7,
-                                        ).withOpacity(0.8),
-                                        const Color(
-                                          0xFF8B7BF2,
-                                        ).withOpacity(0.8),
-                                        const Color(
-                                          0xFF6C5CE7,
-                                        ).withOpacity(0.8),
-                                        Colors.transparent,
-                                      ],
-                                      stops: const [0.0, 0.3, 0.5, 0.7, 1.0],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const Spacer(),
-
-                    // Bottom padding only (no text)
-                    const SizedBox(height: 40),
-                  ],
-                ),
-              ),
-            ),
-
-          // Scan Result Overlay (shows when QR is scanned)
-          if (!_isScanning && _lastScannedCode != null)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black.withOpacity(0.8),
-                child: SafeArea(
-                  child: Center(
-                    child: Container(
-                      margin: const EdgeInsets.all(30),
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(32),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6C5CE7).withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.check_circle_rounded,
-                              color: Color(0xFF6C5CE7),
-                              size: 60,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          const Icon(
-                            Icons.qr_code,
-                            size: 40,
-                            color: Color(0xFF6C5CE7),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              _lastScannedCode!.displayValue ?? 'QR-2025-001',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF2D3436),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextButton(
-                                  onPressed: _resetScanner,
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: const Icon(Icons.refresh_rounded),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    _resetScanner();
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF6C5CE7),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: const Icon(Icons.check_rounded),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+          // Top bar
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Back button
+                  _CircleBtn(
+                    icon: Icons.arrow_back_ios_new_rounded,
+                    onTap: () => Navigator.pop(context),
+                  ),
+                  // Title
+                  const Text(
+                    'Scan Attendance',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.4,
                     ),
                   ),
+                  // Flash toggle (only when camera is active)
+                  _CircleBtn(
+                    icon: _isFlashOn ? Icons.flash_on : Icons.flash_off,
+                    active: _isFlashOn,
+                    onTap: _enrollmentLoaded ? _toggleFlash : () {},
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Full-screen loading overlay (enrollment fetch OR API call)
+          if (_isLoading || (!_enrollmentLoaded && !_enrollmentError))
+            Container(
+              color: Colors.black,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(
+                      color: Color(0xFF00C2A8),
+                      strokeWidth: 3,
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      _isLoading
+                          ? 'Marking attendance...'
+                          : 'Loading enrollment data...',
+                      style: const TextStyle(color: Colors.white, fontSize: 15),
+                    ),
+                  ],
                 ),
+              ),
+            ),
+
+          // Enrollment error state
+          if (_enrollmentError)
+            Container(
+              color: Colors.black87,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Color(0xFFFF5252),
+                      size: 60,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Failed to load enrollment data',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Please check your internet connection.',
+                      style: TextStyle(color: Colors.white54, fontSize: 13),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: _loadEnrollments,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00C2A8),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Bottom status hint
+          if (!_isLoading && !_enrollmentError)
+            Positioned(
+              bottom: 60,
+              left: 0,
+              right: 0,
+              child: Column(
+                children: [
+                  Icon(
+                    _enrollmentLoaded
+                        ? Icons.qr_code_scanner
+                        : Icons.hourglass_top_rounded,
+                    color: const Color(0xFF00C2A8),
+                    size: 28,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _statusText,
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
         ],
       ),
     );
   }
+}
 
-  List<Widget> _buildScannerCorners(Size size) {
-    double cornerSize = 30;
-    double frameSize = size.width * 0.7;
-    double left = (size.width - frameSize) / 2;
-    double top = (size.height - frameSize) / 2 - 40;
+// ─────────────────────────────────────────────────────────────────────────────
+// Scan Overlay
+// ─────────────────────────────────────────────────────────────────────────────
 
-    return [
-      // Top Left
-      Positioned(
-        left: left,
-        top: top,
-        child: Container(
-          width: cornerSize,
-          height: cornerSize,
-          decoration: BoxDecoration(
-            border: Border(
-              top: const BorderSide(color: Color(0xFF6C5CE7), width: 4),
-              left: const BorderSide(color: Color(0xFF6C5CE7), width: 4),
+class _ScanOverlay extends StatelessWidget {
+  const _ScanOverlay();
+  @override
+  Widget build(BuildContext context) =>
+      CustomPaint(painter: _OverlayPainter(), child: const SizedBox.expand());
+}
+
+class _OverlayPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double s = 260.0;
+    final r = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2 - 20),
+      width: s,
+      height: s,
+    );
+
+    canvas.drawPath(
+      Path()
+        ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
+        ..addRRect(RRect.fromRectAndRadius(r, const Radius.circular(20)))
+        ..fillType = PathFillType.evenOdd,
+      Paint()..color = Colors.black.withOpacity(0.68),
+    );
+
+    final p = Paint()
+      ..color = const Color(0xFF00C2A8)
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    const cs = 30.0;
+    final l = r.left;
+    final t = r.top;
+    final ri = r.right;
+    final b = r.bottom;
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(l, t + cs)
+        ..lineTo(l, t + 10)
+        ..arcToPoint(Offset(l + 10, t), radius: const Radius.circular(10))
+        ..lineTo(l + cs, t),
+      p,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(ri - cs, t)
+        ..lineTo(ri - 10, t)
+        ..arcToPoint(Offset(ri, t + 10), radius: const Radius.circular(10))
+        ..lineTo(ri, t + cs),
+      p,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(l, b - cs)
+        ..lineTo(l, b - 10)
+        ..arcToPoint(
+          Offset(l + 10, b),
+          radius: const Radius.circular(10),
+          clockwise: false,
+        )
+        ..lineTo(l + cs, b),
+      p,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(ri - cs, b)
+        ..lineTo(ri - 10, b)
+        ..arcToPoint(
+          Offset(ri, b - 10),
+          radius: const Radius.circular(10),
+          clockwise: false,
+        )
+        ..lineTo(ri, b - cs),
+      p,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_) => false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Circle Button
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CircleBtn extends StatelessWidget {
+  const _CircleBtn({
+    required this.icon,
+    required this.onTap,
+    this.active = false,
+  });
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: active
+            ? const Color(0xFF00C2A8).withOpacity(0.85)
+            : Colors.white.withOpacity(0.15),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: Colors.white, size: 22),
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Result Dialog
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ResultDialog extends StatelessWidget {
+  const _ResultDialog({
+    required this.success,
+    required this.title,
+    required this.message,
+    required this.onPressed,
+  });
+
+  final bool success;
+  final String title;
+  final String message;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = success ? const Color(0xFF00C2A8) : const Color(0xFFFF5252);
+    final icon = success ? Icons.check_circle_rounded : Icons.error_rounded;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A2E),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: color.withOpacity(0.5), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.2),
+              blurRadius: 30,
+              spreadRadius: 2,
             ),
-          ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 82,
+              height: 82,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withOpacity(0.15),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.35),
+                    blurRadius: 22,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: color, size: 48),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+                height: 1.6,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onPressed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: color,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                child: Text(success ? 'Great! Done' : 'Try Again'),
+              ),
+            ),
+          ],
         ),
       ),
-      // Top Right
-      Positioned(
-        right: left,
-        top: top,
-        child: Container(
-          width: cornerSize,
-          height: cornerSize,
-          decoration: BoxDecoration(
-            border: Border(
-              top: const BorderSide(color: Color(0xFF6C5CE7), width: 4),
-              right: const BorderSide(color: Color(0xFF6C5CE7), width: 4),
-            ),
-          ),
-        ),
-      ),
-      // Bottom Left
-      Positioned(
-        left: left,
-        bottom: MediaQuery.of(context).size.height - top - frameSize,
-        child: Container(
-          width: cornerSize,
-          height: cornerSize,
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: const BorderSide(color: Color(0xFF6C5CE7), width: 4),
-              left: const BorderSide(color: Color(0xFF6C5CE7), width: 4),
-            ),
-          ),
-        ),
-      ),
-      // Bottom Right
-      Positioned(
-        right: left,
-        bottom: MediaQuery.of(context).size.height - top - frameSize,
-        child: Container(
-          width: cornerSize,
-          height: cornerSize,
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: const BorderSide(color: Color(0xFF6C5CE7), width: 4),
-              right: const BorderSide(color: Color(0xFF6C5CE7), width: 4),
-            ),
-          ),
-        ),
-      ),
-    ];
+    );
   }
 }
