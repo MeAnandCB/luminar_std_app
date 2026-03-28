@@ -56,8 +56,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _handleLogout(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.textWhite,
             ),
             child: Text('Logout'),
           ),
@@ -154,7 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       label: Text('Download ID Card'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.textWhite,
                         padding: EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -466,14 +466,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF2D3748),
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                               Text(
                                 'Educational Institution',
                                 style: TextStyle(
                                   fontSize: 9,
-                                  color: Colors.grey[600],
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             ],
@@ -550,6 +550,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribe to theme changes
+    context.watch<ThemeProvider>();
+    
     final profileProvider = Provider.of<ProfileController>(context);
     final String proof1 = profileProvider.profile?.personalInfo?.idProof ?? "";
     final String proof2 = profileProvider.profile?.personalInfo?.idProof2 ?? "";
@@ -573,7 +576,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               Container(
                                 decoration: BoxDecoration(
-                                  color: AppColors.white,
+                                  color: AppColors.cardBackground,
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -606,7 +609,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                           Container(
                             decoration: BoxDecoration(
-                              color: AppColors.white,
+                              color: AppColors.cardBackground,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
@@ -906,7 +909,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildSectionCard(
                       title: 'Academic Information',
                       icon: Icons.school_rounded,
-                      color: Color(0xFFFF7675),
+                      color: AppColors.error,
                       children: [
                         _buildInfoRow(
                           'Qualification',
@@ -1416,7 +1419,7 @@ Widget _buildCompactDetailRow(IconData icon, String label, String value) {
   return Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Icon(icon, size: 14, color: Color(0xFF6C5CE7)),
+      Icon(icon, size: 14, color: AppColors.primary),
       SizedBox(width: 8),
       Expanded(
         child: Column(

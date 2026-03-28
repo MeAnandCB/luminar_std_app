@@ -1,6 +1,7 @@
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/live_class/controller/live_class_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -42,7 +43,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7675))),
+                CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
                 const SizedBox(height: 16),
                 Text(
                   'Preparing your class...',
@@ -82,15 +83,15 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
-                  children: const [
-                    Icon(Icons.error_outline_rounded, color: Colors.white),
-                    SizedBox(width: 12),
-                    Expanded(child: Text('Could not launch the class link')),
+                  children: [
+                    Icon(Icons.error_outline_rounded, color: AppColors.textWhite),
+                    const SizedBox(width: 12),
+                    const Expanded(child: Text('Could not launch the class link')),
                   ],
                 ),
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.error,
                 duration: const Duration(seconds: 2),
               ),
             );
@@ -102,15 +103,15 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
-                children: const [
-                  Icon(Icons.link_off_rounded, color: Colors.white),
-                  SizedBox(width: 12),
-                  Expanded(child: Text('Class link not available')),
+                children: [
+                  Icon(Icons.link_off_rounded, color: AppColors.textWhite),
+                  const SizedBox(width: 12),
+                  const Expanded(child: Text('Class link not available')),
                 ],
               ),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppColors.statsOrange,
               duration: const Duration(seconds: 2),
             ),
           );
@@ -124,14 +125,14 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.error_outline_rounded, color: Colors.white),
+                Icon(Icons.error_outline_rounded, color: AppColors.textWhite),
                 const SizedBox(width: 12),
                 Expanded(child: Text('Failed to load class: ${e.toString()}')),
               ],
             ),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -141,6 +142,8 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribe to theme changes
+    context.watch<ThemeProvider>();
     final liveProvider = Provider.of<LiveClassController>(context);
 
     return Scaffold(
@@ -148,8 +151,8 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
       body: liveProvider.isLoading
           ? Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFFFF7675)),
-                backgroundColor: const Color(0xFFFF7675).withOpacity(0.2),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                backgroundColor: AppColors.primary.withOpacity(0.2),
               ),
             )
           : SafeArea(
@@ -171,7 +174,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                           ),
                           child: IconButton(
                             onPressed: () => Navigator.pop(context),
-                            icon: Icon(Icons.arrow_back_ios_new_rounded, color: const Color(0xFFFF7675), size: 18),
+                            icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primary, size: 18),
                             constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                             padding: EdgeInsets.zero,
                           ),
@@ -241,14 +244,10 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
   Widget _buildLiveClassCard(liveClass, int index, LiveClassController liveProvider) {
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFF7675), Color(0xFFFF9F9F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: const Color(0xFFFF7675).withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(color: AppColors.primary.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 4)),
         ],
       ),
       child: ListTile(
@@ -300,7 +299,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.white,
-            foregroundColor: const Color(0xFFFF7675),
+            foregroundColor: AppColors.primary,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             minimumSize: const Size(60, 32),
@@ -320,11 +319,11 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF7675).withOpacity(0.1),
+              color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
               boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 30, spreadRadius: 5)],
             ),
-            child: Icon(Icons.live_tv_rounded, size: 60, color: const Color(0xFFFF7675)),
+            child: Icon(Icons.live_tv_rounded, size: 60, color: AppColors.primary),
           ),
           const SizedBox(height: 24),
           Text(
@@ -340,10 +339,10 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFFFF7675), Color(0xFFFF9F9F)]),
+              gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
-                BoxShadow(color: const Color(0xFFFF7675).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
+                BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
               ],
             ),
             child: Text(
