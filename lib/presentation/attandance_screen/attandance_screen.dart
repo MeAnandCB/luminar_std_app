@@ -266,12 +266,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           builder: (context, child) {
                             return Theme(
                               data: Theme.of(context).copyWith(
-                                colorScheme: ColorScheme.light(
-                                  primary: AppColors.primary,
-                                  onPrimary: AppColors.textWhite,
-                                  surface: AppColors.cardBackground,
-                                  onSurface: AppColors.textPrimary,
-                                ),
+                                colorScheme: AppColors.isDark
+                                    ? ColorScheme.dark(
+                                        primary: AppColors.primary,
+                                        onPrimary: AppColors.textWhite,
+                                        surface: AppColors.cardBackground,
+                                        onSurface: AppColors.textPrimary,
+                                      )
+                                    : ColorScheme.light(
+                                        primary: AppColors.primary,
+                                        onPrimary: AppColors.textWhite,
+                                        surface: AppColors.cardBackground,
+                                        onSurface: AppColors.textPrimary,
+                                      ),
                               ),
                               child: child!,
                             );
@@ -319,12 +326,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           builder: (context, child) {
                             return Theme(
                               data: Theme.of(context).copyWith(
-                                colorScheme: ColorScheme.light(
-                                  primary: AppColors.primary,
-                                  onPrimary: AppColors.textWhite,
-                                  surface: AppColors.cardBackground,
-                                  onSurface: AppColors.textPrimary,
-                                ),
+                                colorScheme: AppColors.isDark
+                                    ? ColorScheme.dark(
+                                        primary: AppColors.primary,
+                                        onPrimary: AppColors.textWhite,
+                                        surface: AppColors.cardBackground,
+                                        onSurface: AppColors.textPrimary,
+                                      )
+                                    : ColorScheme.light(
+                                        primary: AppColors.primary,
+                                        onPrimary: AppColors.textWhite,
+                                        surface: AppColors.cardBackground,
+                                        onSurface: AppColors.textPrimary,
+                                      ),
                               ),
                               child: child!,
                             );

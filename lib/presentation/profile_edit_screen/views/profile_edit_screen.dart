@@ -39,9 +39,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           }
 
           if (profileController.isLoading && !_initialized) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
 
           return Scaffold(
@@ -58,11 +56,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                              color: AppColors.white,
+                              color: AppColors.cardBackground,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: AppColors.shadowLight,
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -70,17 +68,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ),
                             child: IconButton(
                               onPressed: () => Navigator.pop(context),
-                              icon: Icon(Icons.arrow_back_ios_new_rounded,
-                                  color: AppColors.primary, size: 20),
+                              icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primary, size: 20),
                             ),
                           ),
                           SizedBox(width: 16),
                           Text(
                             'Edit Profile',
-                            style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary),
+                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                           ),
                         ],
                       ),
@@ -108,21 +102,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       ),
                                     ],
                                     image: editController.profilePicPath != null
-                                      ? DecorationImage(
-                                          image: FileImage(File(editController.profilePicPath!)),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : profileController.profileData?.personalInfo?.profilePicture != null
-                                          ? DecorationImage(
-                                              image: NetworkImage(profileController.profileData!.personalInfo!.profilePicture!),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : null,
+                                        ? DecorationImage(
+                                            image: FileImage(File(editController.profilePicPath!)),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : profileController.profileData?.personalInfo?.profilePicture != null
+                                        ? DecorationImage(
+                                            image: NetworkImage(
+                                              profileController.profileData!.personalInfo!.profilePicture!,
+                                            ),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
                                   ),
-                                  child: (editController.profilePicPath == null && 
+                                  child:
+                                      (editController.profilePicPath == null &&
                                           profileController.profileData?.personalInfo?.profilePicture == null)
-                                    ? Center(child: Icon(Icons.person_rounded, color: AppColors.white, size: 50))
-                                    : null,
+                                      ? Center(child: Icon(Icons.person_rounded, color: AppColors.white, size: 50))
+                                      : null,
                                 ),
                                 Positioned(
                                   bottom: 0,
@@ -132,22 +129,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     decoration: BoxDecoration(
                                       color: AppColors.white,
                                       shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                            color: AppColors.shadowLight,
-                                            blurRadius: 5)
-                                      ],
+                                      boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 5)],
                                     ),
-                                    child: Icon(Icons.camera_alt_rounded,
-                                        color: AppColors.primary, size: 20),
+                                    child: Icon(Icons.camera_alt_rounded, color: AppColors.primary, size: 20),
                                   ),
                                 ),
                               ],
                             ),
                           ),
                           SizedBox(height: 8),
-                          Text('Tap to change photo',
-                              style: AppTextStyles.caption),
+                          Text('Tap to change photo', style: AppTextStyles.caption),
                         ],
                       ),
                     ),
@@ -160,25 +151,59 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       icon: Icons.person_outline_rounded,
                       color: AppColors.primary,
                       children: [
-                        _buildTextField('Full Name', editController.fullNameController,
-                            isEditable: false),
-                        _buildTextField('Email Address', editController.emailController,
-                            keyboardType: TextInputType.emailAddress, isEditable: false),
-                        _buildTextField('Phone Number', editController.phoneController,
-                            keyboardType: TextInputType.phone, isEditable: false),
-                        _buildTextField('WhatsApp Number', editController.whatsappController,
-                            keyboardType: TextInputType.phone),
+                        _buildTextField('Full Name', editController.fullNameController, isEditable: false),
+                        _buildTextField(
+                          'Email Address',
+                          editController.emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          isEditable: false,
+                        ),
+                        _buildTextField(
+                          'Phone Number',
+                          editController.phoneController,
+                          keyboardType: TextInputType.phone,
+                          isEditable: false,
+                        ),
+                        _buildTextField(
+                          'WhatsApp Number',
+                          editController.whatsappController,
+                          keyboardType: TextInputType.phone,
+                        ),
                         _buildDatePicker('Date of Birth', editController.dobController, () async {
                           final date = await showDatePicker(
                             context: context,
                             initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
                             firstDate: DateTime(1900),
                             lastDate: DateTime.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: AppColors.isDark
+                                      ? ColorScheme.dark(
+                                          primary: AppColors.primary,
+                                          onPrimary: Colors.white,
+                                          surface: AppColors.cardBackground,
+                                          onSurface: AppColors.textPrimary,
+                                        )
+                                      : ColorScheme.light(
+                                          primary: AppColors.primary,
+                                          onPrimary: Colors.white,
+                                          surface: AppColors.cardBackground,
+                                          onSurface: AppColors.textPrimary,
+                                        ),
+                                ),
+                                child: child!,
+                              );
+                            },
                           );
                           if (date != null) editController.updateDob(date);
                         }),
-                        _buildTextField('Age', editController.ageController,
-                            keyboardType: TextInputType.number, isEditable: false),
+                        _buildTextField(
+                          'Age',
+                          editController.ageController,
+                          keyboardType: TextInputType.number,
+                          isEditable: false,
+                        ),
                       ],
                     ),
 
@@ -189,14 +214,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       title: 'Academic Information',
                       icon: Icons.school_rounded,
                       color: Color(0xFFFF7675),
-                    children: [
+                      children: [
                         _buildTextField('Qualification', editController.qualificationController),
                         _buildTextField('College', editController.collegeController),
-                        _buildTextField('Pass Out Year', editController.passoutYearController,
-                            keyboardType: TextInputType.number),
+                        _buildTextField(
+                          'Pass Out Year',
+                          editController.passoutYearController,
+                          keyboardType: TextInputType.number,
+                        ),
                         _buildTextField('Specialization', editController.specializationController),
-                        _buildTextField('CGPA', editController.cgpaController,
-                            keyboardType: TextInputType.number),
+                        _buildTextField('CGPA', editController.cgpaController, keyboardType: TextInputType.number),
                         _buildDropdownField(
                           'Student/Working Professional',
                           ['student', 'working_professional'],
@@ -209,13 +236,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           editController.anyArrears ? 'Yes' : 'No',
                           (value) => editController.anyArrears = value == 'Yes',
                         ),
-                        _buildDatePicker('Admission Date', editController.admissionDateController,
-                            () async {
+                        _buildDatePicker('Admission Date', editController.admissionDateController, () async {
                           final date = await showDatePicker(
                             context: context,
                             initialDate: DateTime.now(),
                             firstDate: DateTime(2000),
                             lastDate: DateTime.now().add(const Duration(days: 365)),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: AppColors.isDark
+                                      ? ColorScheme.dark(
+                                          primary: AppColors.primary,
+                                          onPrimary: Colors.white,
+                                          surface: AppColors.cardBackground,
+                                          onSurface: AppColors.textPrimary,
+                                        )
+                                      : ColorScheme.light(
+                                          primary: AppColors.primary,
+                                          onPrimary: Colors.white,
+                                          surface: AppColors.cardBackground,
+                                          onSurface: AppColors.textPrimary,
+                                        ),
+                                ),
+                                child: child!,
+                              );
+                            },
                           );
                           if (date != null) editController.updateAdmissionDate(date);
                         }),
@@ -232,13 +278,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       children: [
                         _buildTextField('Address', editController.addressController),
                         _buildTextField('District', editController.districtController),
-                        _buildTextField('Pincode', editController.pincodeController,
-                            keyboardType: TextInputType.number),
-                        _buildTextField('Preferred Location',
-                            editController.preferredLocationController),
+                        _buildTextField(
+                          'Pincode',
+                          editController.pincodeController,
+                          keyboardType: TextInputType.number,
+                        ),
+                        _buildTextField('Preferred Location', editController.preferredLocationController),
                         _buildTextField('Parent/Guardian Name', editController.parentNameController),
-                        _buildTextField('Parent/Guardian Phone', editController.parentPhoneController,
-                            keyboardType: TextInputType.phone),
+                        _buildTextField(
+                          'Parent/Guardian Phone',
+                          editController.parentPhoneController,
+                          keyboardType: TextInputType.phone,
+                        ),
                         _buildTextField('How did you hear about us?', editController.hearAboutController),
                       ],
                     ),
@@ -257,8 +308,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           editController.placementAssistance ? 'Yes' : 'No',
                           (value) => editController.placementAssistance = value == 'Yes',
                         ),
-                        _buildTextField('Preferred Job Location',
-                            editController.preferredJobLocationController),
+                        _buildTextField('Preferred Job Location', editController.preferredJobLocationController),
                       ],
                     ),
 
@@ -270,7 +320,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                         child: Text(editController.error!, style: TextStyle(color: Colors.red)),
                       ),
-                    
+
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20),
                       child: Container(
@@ -292,7 +342,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ? null
                               : () async {
                                   final success = await editController.updateProfile(
-                                      context, profileController.profileData);
+                                    context,
+                                    profileController.profileData,
+                                  );
                                   if (success && mounted) {
                                     _showSuccessDialog();
                                   }
@@ -301,13 +353,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             backgroundColor: Colors.transparent,
                             foregroundColor: AppColors.white,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           ),
                           child: editController.isSubmitting
                               ? const CircularProgressIndicator(color: Colors.white)
-                              : Text('Save Changes',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                              : Text('Save Changes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                         ),
                       ),
                     ),
@@ -333,11 +383,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       margin: EdgeInsets.symmetric(horizontal: 20),
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(color: color.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 5))
-        ],
+        boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 20, offset: const Offset(0, 5))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,8 +394,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               Container(
                 padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                    color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: color, size: 20),
               ),
               SizedBox(width: 12),
@@ -384,9 +431,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           SizedBox(height: 6),
           Container(
             decoration: BoxDecoration(
-              color: isEditable ? Color(0xFFF1F3FA) : Color(0xFFF5F5F5),
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isEditable ? AppColors.borderLight : Colors.grey.shade300),
+              border: Border.all(color: AppColors.borderColor),
             ),
             child: TextField(
               controller: controller,
@@ -401,7 +448,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: InputBorder.none,
                 hintText: isEditable ? 'Enter $label' : 'Cannot edit',
-                hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.5), fontSize: 14),
+                hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
               ),
             ),
           ),
@@ -423,9 +470,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: Color(0xFFF1F3FA),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderLight),
+                border: Border.all(color: AppColors.borderColor),
               ),
               child: Row(
                 children: [
@@ -435,7 +482,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         color: controller.text.isEmpty
-                            ? AppColors.textSecondary.withOpacity(0.5)
+                            ? AppColors.textHint
                             : AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
@@ -476,9 +523,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: isEditable ? Color(0xFFF1F3FA) : Color(0xFFF5F5F5),
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isEditable ? AppColors.borderLight : Colors.grey.shade300),
+              border: Border.all(color: AppColors.borderColor),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
@@ -517,21 +564,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         backgroundColor: Colors.transparent,
         child: Container(
           padding: EdgeInsets.all(24),
-          decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(32)),
+          decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(32)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                    color: AppColors.statsGreen.withOpacity(0.1), shape: BoxShape.circle),
+                decoration: BoxDecoration(color: AppColors.statsGreen.withOpacity(0.1), shape: BoxShape.circle),
                 child: Icon(Icons.check_circle_rounded, color: AppColors.statsGreen, size: 50),
               ),
               SizedBox(height: 20),
               Text(
                 'Profile Updated!',
-                style: TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
               SizedBox(height: 8),
               Text(

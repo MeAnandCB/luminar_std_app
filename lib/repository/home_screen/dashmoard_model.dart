@@ -214,9 +214,9 @@ class OverallMetrics {
 }
 
 class PerformanceByCourse {
-  EnrollmentNumber? enrollmentNumber;
+  String? enrollmentNumber;
   String? courseName;
-  BatchName? batchName;
+  String? batchName;
   int? attendancePercentage;
   int? completionPercentage;
   String? finalGrade;
@@ -244,11 +244,9 @@ class PerformanceByCourse {
     }
 
     return PerformanceByCourse(
-      enrollmentNumber: json["enrollment_number"] != null
-          ? enrollmentNumberValues.map[json["enrollment_number"]]
-          : null,
+      enrollmentNumber: json["enrollment_number"],
       courseName: json["course_name"],
-      batchName: json["batch_name"] != null ? batchNameValues.map[json["batch_name"]] : null,
+      batchName: json["batch_name"],
       attendancePercentage: toInt(json["attendance_percentage"]),
       completionPercentage: toInt(json["completion_percentage"]),
       finalGrade: json["final_grade"],
@@ -258,9 +256,9 @@ class PerformanceByCourse {
   }
 
   Map<String, dynamic> toJson() => {
-    "enrollment_number": enrollmentNumber != null ? enrollmentNumberValues.reverse[enrollmentNumber] : null,
+    "enrollment_number": enrollmentNumber,
     "course_name": courseName,
-    "batch_name": batchName != null ? batchNameValues.reverse[batchName] : null,
+    "batch_name": batchName,
     "attendance_percentage": attendancePercentage,
     "completion_percentage": completionPercentage,
     "final_grade": finalGrade,
@@ -269,13 +267,7 @@ class PerformanceByCourse {
   };
 }
 
-enum BatchName { GGF }
 
-final batchNameValues = EnumValues({"ggf": BatchName.GGF});
-
-enum EnrollmentNumber { ENR2026033570 }
-
-final enrollmentNumberValues = EnumValues({"ENR2026033570": EnrollmentNumber.ENR2026033570});
 
 class BatchDetails {
   List<dynamic>? currentBatches;
@@ -478,7 +470,7 @@ class CurrentStatus {
 
 class EnrollmentBasicInfo {
   String? uid;
-  EnrollmentNumber? enrollmentNumber;
+  String? enrollmentNumber;
   DateTime? enrollmentDate;
   String? source;
   bool? crmAccess;
@@ -504,9 +496,7 @@ class EnrollmentBasicInfo {
 
     return EnrollmentBasicInfo(
       uid: json["uid"],
-      enrollmentNumber: json["enrollment_number"] != null
-          ? enrollmentNumberValues.map[json["enrollment_number"]]
-          : null,
+      enrollmentNumber: json["enrollment_number"],
       enrollmentDate: json["enrollment_date"] == null ? null : DateTime.parse(json["enrollment_date"]),
       source: json["source"],
       crmAccess: json["crm_access"],
@@ -516,7 +506,7 @@ class EnrollmentBasicInfo {
 
   Map<String, dynamic> toJson() => {
     "uid": uid,
-    "enrollment_number": enrollmentNumber != null ? enrollmentNumberValues.reverse[enrollmentNumber] : null,
+    "enrollment_number": enrollmentNumber,
     "enrollment_date": enrollmentDate?.toIso8601String(),
     "source": source,
     "crm_access": crmAccess,
@@ -526,7 +516,7 @@ class EnrollmentBasicInfo {
 
 class BatchInfo {
   String? uid;
-  BatchName? batchName;
+  String? batchName;
   DateTime? startDate;
   DateTime? endDate;
   String? time;
@@ -568,7 +558,7 @@ class BatchInfo {
 
     return BatchInfo(
       uid: json["uid"],
-      batchName: json["batch_name"] != null ? batchNameValues.map[json["batch_name"]] : null,
+      batchName: json["batch_name"],
       startDate: json["start_date"] == null ? null : DateTime.parse(json["start_date"]),
       endDate: json["end_date"] == null ? null : DateTime.parse(json["end_date"]),
       time: json["time"],
@@ -586,7 +576,7 @@ class BatchInfo {
 
   Map<String, dynamic> toJson() => {
     "uid": uid,
-    "batch_name": batchName != null ? batchNameValues.reverse[batchName] : null,
+    "batch_name": batchName,
     "start_date": startDate != null
         ? "${startDate!.year.toString().padLeft(4, '0')}-${startDate!.month.toString().padLeft(2, '0')}-${startDate!.day.toString().padLeft(2, '0')}"
         : null,
@@ -634,32 +624,26 @@ class Sessions {
 }
 
 class Counselors {
-  FullName? enrollmentCounselor;
+  String? enrollmentCounselor;
   dynamic academicCounselor;
   String? admissionCounselor;
 
   Counselors({this.enrollmentCounselor, this.academicCounselor, this.admissionCounselor});
 
   factory Counselors.fromJson(Map<String, dynamic> json) => Counselors(
-    enrollmentCounselor: json["enrollment_counselor"] != null ? fullNameValues.map[json["enrollment_counselor"]] : null,
+    enrollmentCounselor: json["enrollment_counselor"],
     academicCounselor: json["academic_counselor"],
     admissionCounselor: json["admission_counselor"],
   );
 
   Map<String, dynamic> toJson() => {
-    "enrollment_counselor": enrollmentCounselor != null ? fullNameValues.reverse[enrollmentCounselor] : null,
+    "enrollment_counselor": enrollmentCounselor,
     "academic_counselor": academicCounselor,
     "admission_counselor": admissionCounselor,
   };
 }
 
-enum FullName { AMNANABEEL, M_BTEST, SYSTEM }
 
-final fullNameValues = EnumValues({
-  "amnanabeel": FullName.AMNANABEEL,
-  "MBtest": FullName.M_BTEST,
-  "System": FullName.SYSTEM,
-});
 
 class CourseInfo {
   String? courseName;
@@ -940,23 +924,23 @@ class EmiInformation {
 }
 
 class EnrollmentWiseBreakdown {
-  EnrollmentNumber? enrollmentNumber;
-  BatchName? batchName;
+  String? enrollmentNumber;
+  String? batchName;
   Breakdown? paymentBreakdown;
   String? paymentType;
 
   EnrollmentWiseBreakdown({this.enrollmentNumber, this.batchName, this.paymentBreakdown, this.paymentType});
 
   factory EnrollmentWiseBreakdown.fromJson(Map<String, dynamic> json) => EnrollmentWiseBreakdown(
-    enrollmentNumber: json["enrollment_number"] != null ? enrollmentNumberValues.map[json["enrollment_number"]] : null,
-    batchName: json["batch_name"] != null ? batchNameValues.map[json["batch_name"]] : null,
+    enrollmentNumber: json["enrollment_number"],
+    batchName: json["batch_name"],
     paymentBreakdown: json["payment_breakdown"] == null ? null : Breakdown.fromJson(json["payment_breakdown"]),
     paymentType: json["payment_type"],
   );
 
   Map<String, dynamic> toJson() => {
-    "enrollment_number": enrollmentNumber != null ? enrollmentNumberValues.reverse[enrollmentNumber] : null,
-    "batch_name": batchName != null ? batchNameValues.reverse[batchName] : null,
+    "enrollment_number": enrollmentNumber,
+    "batch_name": batchName,
     "payment_breakdown": paymentBreakdown?.toJson(),
     "payment_type": paymentType,
   };
@@ -1321,8 +1305,8 @@ class EntActivity {
   String? description;
   int? amount;
   DateTime? date;
-  FullName? performedBy;
-  Priority? priority;
+  String? performedBy;
+  String? priority;
   EnrollmentInfo? enrollmentInfo;
   bool? requiresFollowUp;
   List<dynamic>? tags;
@@ -1357,8 +1341,8 @@ class EntActivity {
       description: json["description"],
       amount: toInt(json["amount"]),
       date: json["date"] == null ? null : DateTime.parse(json["date"]),
-      performedBy: json["performed_by"] != null ? fullNameValues.map[json["performed_by"]] : null,
-      priority: json["priority"] != null ? priorityValues.map[json["priority"]] : null,
+      performedBy: json["performed_by"],
+      priority: json["priority"],
       enrollmentInfo: json["enrollment_info"] == null ? null : EnrollmentInfo.fromJson(json["enrollment_info"]),
       requiresFollowUp: json["requires_follow_up"],
       tags: json["tags"] == null ? [] : List<dynamic>.from(json["tags"]!.map((x) => x)),
@@ -1372,8 +1356,8 @@ class EntActivity {
     "description": description,
     "amount": amount,
     "date": date?.toIso8601String(),
-    "performed_by": performedBy != null ? fullNameValues.reverse[performedBy] : null,
-    "priority": priority != null ? priorityValues.reverse[priority] : null,
+    "performed_by": performedBy,
+    "priority": priority,
     "enrollment_info": enrollmentInfo?.toJson(),
     "requires_follow_up": requiresFollowUp,
     "tags": tags == null ? [] : List<dynamic>.from(tags!.map((x) => x)),
@@ -1381,25 +1365,21 @@ class EntActivity {
 }
 
 class EnrollmentInfo {
-  EnrollmentNumber? enrollmentNumber;
-  BatchName? batchName;
+  String? enrollmentNumber;
+  String? batchName;
 
   EnrollmentInfo({this.enrollmentNumber, this.batchName});
 
   factory EnrollmentInfo.fromJson(Map<String, dynamic> json) => EnrollmentInfo(
-    enrollmentNumber: json["enrollment_number"] != null ? enrollmentNumberValues.map[json["enrollment_number"]] : null,
-    batchName: json["batch_name"] != null ? batchNameValues.map[json["batch_name"]] : null,
+    enrollmentNumber: json["enrollment_number"],
+    batchName: json["batch_name"],
   );
 
   Map<String, dynamic> toJson() => {
-    "enrollment_number": enrollmentNumber != null ? enrollmentNumberValues.reverse[enrollmentNumber] : null,
-    "batch_name": batchName != null ? batchNameValues.reverse[batchName] : null,
+    "enrollment_number": enrollmentNumber,
+    "batch_name": batchName,
   };
 }
-
-enum Priority { MEDIUM }
-
-final priorityValues = EnumValues({"medium": Priority.MEDIUM});
 
 class RecentActivitiesSummary {
   int? totalActivities;
@@ -1565,7 +1545,7 @@ class AddressInfo {
 
 class StudentDetailsBasicInfo {
   String? studentId;
-  FullName? fullName;
+  String? fullName;
   String? email;
   String? phone;
   String? whatsappNumber;
@@ -1597,7 +1577,7 @@ class StudentDetailsBasicInfo {
 
     return StudentDetailsBasicInfo(
       studentId: json["student_id"],
-      fullName: json["full_name"] != null ? fullNameValues.map[json["full_name"]] : null,
+      fullName: json["full_name"],
       email: json["email"],
       phone: json["phone"],
       whatsappNumber: json["whatsapp_number"],
@@ -1610,7 +1590,7 @@ class StudentDetailsBasicInfo {
 
   Map<String, dynamic> toJson() => {
     "student_id": studentId,
-    "full_name": fullName != null ? fullNameValues.reverse[fullName] : null,
+    "full_name": fullName,
     "email": email,
     "phone": phone,
     "whatsapp_number": whatsappNumber,

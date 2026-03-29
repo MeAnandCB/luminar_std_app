@@ -282,17 +282,6 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
     super.dispose();
   }
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   WidgetsBinding.instance.addPostFrameCallback((_) async {
-  //     final controller = context.read<ProfileController>();
-  //     if (controller.profileData != null) {
-  //       _initData(controller);
-  //     }
-  //   });
-  // }
-
   void _initData(ProfileController controller) {
     if (_initialized || controller.profileData == null) return;
 
@@ -394,11 +383,19 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.white,
-              onSurface: AppColors.textPrimary,
-            ),
+            colorScheme: AppColors.isDark
+                ? ColorScheme.dark(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: AppColors.cardBackground,
+                    onSurface: AppColors.textPrimary,
+                  )
+                : ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: AppColors.cardBackground,
+                    onSurface: AppColors.textPrimary,
+                  ),
           ),
           child: child!,
         );

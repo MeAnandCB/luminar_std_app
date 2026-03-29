@@ -289,12 +289,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         enrollment?.courseDetails?.toString() ??
         'No Course Enrolled';
 
-    final batchName =
-        enrollment?.batchInfo?.batchName?.toString().replaceAll(
-          'BatchName.',
-          '',
-        ) ??
-        'N/A';
+    final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
 
     final startDate = enrollment?.batchInfo?.startDate;
     final attendanceMode = enrollment?.attendanceMode?.name ?? 'Hybrid';
@@ -426,12 +421,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         enrollment?.courseDetails?.toString() ??
         'No Course Enrolled';
 
-    final batchName =
-        enrollment?.batchInfo?.batchName?.toString().replaceAll(
-          'BatchName.',
-          '',
-        ) ??
-        'N/A';
+    final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
 
     final startDate = enrollment?.batchInfo?.startDate;
     final attendanceMode = enrollment?.attendanceMode?.name ?? 'Hybrid';

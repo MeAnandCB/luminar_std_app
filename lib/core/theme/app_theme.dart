@@ -15,6 +15,17 @@ class AppTheme {
         onSurface: AppColors.textPrimary,
         error: AppColors.error,
       ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: AppColors.cardBackground,
+        headerBackgroundColor: AppColors.primary,
+        headerForegroundColor: Colors.white,
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return AppColors.textPrimary;
+        }),
+        todayForegroundColor: WidgetStateProperty.all(AppColors.primary),
+        surfaceTintColor: Colors.transparent,
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -52,6 +63,17 @@ class AppTheme {
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurfaceVariant: AppColors.textSecondary,
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: AppColors.cardBackground,
+        headerBackgroundColor: AppColors.primary,
+        headerForegroundColor: Colors.white,
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return AppColors.textPrimary;
+        }),
+        todayForegroundColor: WidgetStateProperty.all(AppColors.primary),
+        surfaceTintColor: Colors.transparent,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
