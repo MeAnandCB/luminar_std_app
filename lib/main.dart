@@ -5,7 +5,6 @@ import 'package:luminar_std/presentation/auth_screens/forgot_password/controller
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/controller/bottom_nav_controller.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
-import 'package:luminar_std/presentation/chat_list_screen/controller/controller/chat_list_screen_controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/gallery_details_screen/controller/gallery_details_screen_controller.dart';
 import 'package:luminar_std/presentation/gallery_screen/controller/gallery_screen_controller.dart';
@@ -36,9 +35,15 @@ void main() async {
   String? accessToken;
   try {
     accessToken = await AppUtils.getAccessKey();
-    LoggerUtils.info('Token loaded in main: ${accessToken != null ? 'Yes' : 'No'}', tag: 'Main');
+    LoggerUtils.info(
+      'Token loaded in main: ${accessToken != null ? 'Yes' : 'No'}',
+      tag: 'Main',
+    );
     if (accessToken != null) {
-      LoggerUtils.info('Token preview: ${accessToken.substring(0, 10)}...', tag: 'Main');
+      LoggerUtils.info(
+        'Token preview: ${accessToken.substring(0, 10)}...',
+        tag: 'Main',
+      );
     }
   } catch (e) {
     LoggerUtils.error('Error loading token in main: $e', tag: 'Main');

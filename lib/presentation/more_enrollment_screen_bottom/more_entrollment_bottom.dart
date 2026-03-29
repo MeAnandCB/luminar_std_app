@@ -7,6 +7,7 @@ import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_scre
 import 'package:luminar_std/presentation/gallery_screen/views/gallery_screen.dart';
 import 'package:luminar_std/presentation/live_class/view/live_class.dart';
 import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
+import 'package:luminar_std/presentation/test_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -62,6 +63,13 @@ const _kFeatures = [
   _Feature(
     Icons.payment_rounded,
     'Payment',
+    'Track and manage your fee payments',
+    Color(0xFFF59E0B),
+    Color(0xFFFBBF24),
+  ),
+  _Feature(
+    Icons.payment_rounded,
+    'Empty screens',
     'Track and manage your fee payments',
     Color(0xFFF59E0B),
     Color(0xFFFBBF24),
@@ -215,7 +223,7 @@ class _Header extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(16, 14, 16, 12),
               child: Row(
                 children: [
-                   CircleAvatar(
+                  CircleAvatar(
                     backgroundColor: Colors.white24,
                     radius: 18,
                     child: Icon(
@@ -241,7 +249,10 @@ class _Header extends StatelessWidget {
                         ),
                         Text(
                           'Track your progress',
-                          style: TextStyle(fontSize: 11, color: AppColors.textWhite.withOpacity(0.6)),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textWhite.withOpacity(0.6),
+                          ),
                         ),
                       ],
                     ),
@@ -303,10 +314,7 @@ class _TabBar extends StatelessWidget {
               overlayColor: WidgetStateProperty.all(Colors.transparent),
               labelColor: _kPrimary,
               unselectedLabelColor: Colors.white,
-              labelStyle: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
+              labelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               unselectedLabelStyle: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
@@ -418,10 +426,7 @@ class _EnrollmentPage extends StatelessWidget {
                 ),
                 const Spacer(),
                 Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: _kPrimary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -466,6 +471,14 @@ class _EnrollmentPage extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (_) => GalleryScreen(batchId: batchId),
                   ),
+                ),
+              ),
+              SizedBox(height: 12),
+              _FeatureCard(
+                feature: _kFeatures[2],
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => DemoScreen()),
                 ),
               ),
               SizedBox(height: 12),
@@ -553,11 +566,7 @@ class _CourseInfoCard extends StatelessWidget {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(13),
             ),
-            child: Icon(
-              Icons.menu_book_rounded,
-              color: Colors.white,
-              size: 22,
-            ),
+            child: Icon(Icons.menu_book_rounded, color: Colors.white, size: 22),
           ),
           SizedBox(width: 14),
           // texts – Expanded stops overflow
@@ -677,7 +686,11 @@ class _FeatureCard extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(feature.icon, color: AppColors.textWhite, size: 22),
+                  child: Icon(
+                    feature.icon,
+                    color: AppColors.textWhite,
+                    size: 22,
+                  ),
                 ),
                 SizedBox(width: 14),
                 // title + subtitle – Expanded prevents overflow
@@ -763,11 +776,7 @@ class _EmptyState extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(
-                Icons.school_rounded,
-                size: 48,
-                color: Colors.white,
-              ),
+              child: Icon(Icons.school_rounded, size: 48, color: Colors.white),
             ),
             SizedBox(height: 28),
             Text(
@@ -809,10 +818,7 @@ class _EmptyState extends StatelessWidget {
               child: TextButton(
                 onPressed: () {},
                 style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 14,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -875,7 +881,9 @@ class _ShimmerBody extends StatelessWidget {
           // course card skeleton
           Shimmer.fromColors(
             baseColor: AppColors.isDark ? Colors.grey[800]! : Colors.grey[300]!,
-            highlightColor: AppColors.isDark ? Colors.grey[700]! : Colors.grey[100]!,
+            highlightColor: AppColors.isDark
+                ? Colors.grey[700]!
+                : Colors.grey[100]!,
             child: Container(
               height: 80,
               decoration: BoxDecoration(
@@ -891,8 +899,12 @@ class _ShimmerBody extends StatelessWidget {
             (i) => Padding(
               padding: EdgeInsets.only(bottom: 12),
               child: Shimmer.fromColors(
-                baseColor: AppColors.isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                highlightColor: AppColors.isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                baseColor: AppColors.isDark
+                    ? Colors.grey[800]!
+                    : Colors.grey[300]!,
+                highlightColor: AppColors.isDark
+                    ? Colors.grey[700]!
+                    : Colors.grey[100]!,
                 child: Container(
                   height: 78,
                   decoration: BoxDecoration(
