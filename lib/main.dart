@@ -11,6 +11,7 @@ import 'package:luminar_std/presentation/gallery_screen/controller/gallery_scree
 import 'package:luminar_std/presentation/live_class/controller/live_class_controller.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/complete_your_profile/controller/complete_profile_controller.dart';
+import 'package:luminar_std/presentation/nactet_registration/controller/nactet_registration_controller.dart';
 import 'package:luminar_std/presentation/splash_screen/splash_screen.dart';
 import 'package:luminar_std/repository/attandance_screen/service.dart';
 
@@ -76,6 +77,7 @@ void main() async {
 
         // Existing ChatProvider from your codebase
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => NactetRegistrationController()),
       ],
       child: const MyApp(),
     ),

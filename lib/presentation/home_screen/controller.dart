@@ -3,18 +3,33 @@ import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/complete_your_profile/view/complete_your_profile.dart';
 import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 import 'package:luminar_std/repository/home_screen/service.dart';
+import 'package:luminar_std/repository/nactet_registration/model/nactet_check_display_model.dart';
+import 'package:luminar_std/repository/nactet_registration/service/nactet_registration_service.dart';
 
 class DashboardController extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   Dashboard? _dashboard;
   DashBoardModel? _dashboardModel;
+  NactetCheckDisplayResponse? _nactetStatus;
 
   // Getters
   bool get isLoading => _isLoading;
   String? get error => _error;
   Dashboard? get dashboard => _dashboard;
   DashBoardModel? get dashboardModel => _dashboardModel;
+  NactetCheckDisplayResponse? get nactetStatus => _nactetStatus;
+
+  bool get shouldShowNactetBanner {
+    return _nactetStatus?.displayForm ?? false;
+  }
+
+  String? get nactetStatusReason => _nactetStatus?.reason;
+
+  int get pendingNactetCount {
+    if (_nactetStatus == null) return 0;
+    return _nactetStatus!.totalEligibleEnrollments - _nactetStatus!.enrollmentsWithCertificateData;
+  }
 
   Future<Dashboard?> getDashboardData({required BuildContext context}) async {
     _isLoading = true;
@@ -62,12 +77,26 @@ class DashboardController extends ChangeNotifier {
   // Convenience method to refresh dashboard data
   Future<void> refreshDashboard({required BuildContext context}) async {
     await getDashboardData(context: context);
+    await getNactetStatus();
+  }
+
+  Future<void> getNactetStatus() async {
+    try {
+      final response = await NactetRegistrationService().fetchCheckDisplayStatus();
+      if (response.success && response.data != null) {
+        _nactetStatus = NactetCheckDisplayResponse.fromJson(response.data);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error fetching NACTET status: $e');
+    }
   }
 
   // Clear dashboard data (useful for logout)
   void clearDashboardData() {
     _dashboard = null;
     _dashboardModel = null;
+    _nactetStatus = null;
     _error = null;
     _isLoading = false;
     notifyListeners();

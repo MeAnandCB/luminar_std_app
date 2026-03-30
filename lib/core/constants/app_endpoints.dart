@@ -66,6 +66,10 @@ class AppEndpoints {
   // attandance
 
   static const String attandance = '/api/attendance/qr-scan/';
+
+  // NACTET Certificates
+  static const String certificatesCreate = '/api/certificates/create/';
+  static const String certificatesCheckDisplay = '/api/certificates/check-display/';
 }
 
 class GlobalLinks {
