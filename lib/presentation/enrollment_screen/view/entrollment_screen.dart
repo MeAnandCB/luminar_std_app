@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
+import 'package:luminar_std/presentation/widgets/status_screens.dart';
 import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/widget/pay_in_full_card.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
@@ -338,30 +339,9 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   Widget _buildErrorWidget(EnrollmentProvider provider) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 60, color: Colors.red),
-            SizedBox(height: 16),
-            Text('Error loading EnrollmentScreen', style: AppTextStyles.headerName.copyWith(color: Colors.red)),
-            SizedBox(height: 8),
-            Text(provider.errorMessage!, textAlign: TextAlign.center, style: AppTextStyles.activitySubtitle),
-            SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => provider.refreshData(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(200, 45),
-              ),
-              child: Text('Try Again'),
-            ),
-          ],
-        ),
-      ),
+    return NoConnectionScreen(
+      message: 'Error loading enrollment details. ${provider.errorMessage}',
+      onRetry: () => provider.refreshData(context),
     );
   }
 

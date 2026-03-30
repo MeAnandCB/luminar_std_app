@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/gallery_details_screen/views/gallery_detail_screen.dart';
 import 'package:luminar_std/presentation/gallery_screen/controller/gallery_screen_controller.dart';
+import 'package:luminar_std/presentation/widgets/status_screens.dart';
 import 'package:luminar_std/presentation/gallery_screen/views/widgets/gallery_card.dart';
 import 'package:luminar_std/repository/gallery_screen/models/gellery_res_model.dart';
 import 'package:provider/provider.dart';
@@ -84,23 +85,19 @@ class _GalleryScreenState extends State<GalleryScreen> {
       body: Consumer<GalleryProvider>(
         builder: (context, provider, child) {
           if (provider.error != null && provider.galleries.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error: ${provider.error}',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _refresh,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+            return NoConnectionScreen(
+              message: 'Could not load videos. ${provider.error}',
+              onRetry: _refresh,
+            );
+          }
+
+          if (!provider.isLoading && provider.galleries.isEmpty) {
+            return EmptyStateScreen(
+              title: 'No Videos Found',
+              message: 'Check back later for new recordings or materials.',
+              icon: Icons.video_library_outlined,
+              onTap: _refresh,
+              buttonLabel: 'Refresh Folder',
             );
           }
 

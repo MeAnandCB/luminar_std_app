@@ -3,6 +3,7 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:luminar_std/presentation/chat_screen/chat_screen.dart';
+import 'package:luminar_std/presentation/widgets/status_screens.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/chat.dart';
 import 'package:provider/provider.dart';
 
@@ -419,98 +420,30 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
 
     if (provider.error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.wifi_off_rounded,
-                size: 48,
-                color: Colors.grey.shade400,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Could not load chats',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                provider.error!,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => provider.loadChats(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 12,
-                  ),
-                ),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+      return NoConnectionScreen(
+        message: 'Could not load your chats. ${provider.error}',
+        onRetry: () => provider.loadChats(),
       );
     }
 
     final chats = _filteredChats(provider.chats); // ← apply search filter
 
     if (provider.chats.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.chat_bubble_outline_rounded,
-              size: 48,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No chats yet',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ],
-        ),
+      return EmptyStateScreen(
+        title: 'No Chats Yet',
+        message: 'Start a conversation with your peers or mentors.',
+        icon: Icons.chat_bubble_outline_rounded,
+        onTap: () => provider.loadChats(),
+        buttonLabel: 'Refresh Chats',
       );
     }
 
     // Empty search results state
     if (chats.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 44,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No chats match "$_searchQuery"',
-              style: TextStyle(fontSize: 15, color: Colors.grey.shade500),
-            ),
-          ],
-        ),
+      return EmptyStateScreen(
+        title: 'No Matches',
+        message: 'We couldn\'t find any chats matching "$_searchQuery".',
+        icon: Icons.search_off_rounded,
       );
     }
 

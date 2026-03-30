@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
+import 'package:luminar_std/presentation/widgets/status_screens.dart';
 
 void main() {
   runApp(const NotificationApp());
@@ -268,26 +269,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
             // Notifications List
             Expanded(
               child: _allNotifications.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          SizedBox(height: 24),
-                          Text(
-                            'No Notifications',
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                          ),
-                          SizedBox(height: 12),
-                          Text('You\'re all caught up!', style: AppTextStyles.bodyText),
-                        ],
-                      ),
+                  ? EmptyStateScreen(
+                      title: 'No Notifications',
+                      message: "You're all caught up! Check back later for updates.",
+                      icon: Icons.notifications_none_rounded,
                     )
                   : ListView.builder(
                       padding: EdgeInsets.symmetric(horizontal: 20),
