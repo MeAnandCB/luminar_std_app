@@ -65,6 +65,8 @@ class AttendanceService {
       'student_id': studentId,
     };
 
+    print('  [markAttendance] Payload: $payload');
+
     debugPrint('─── Attendance Request ─────────────────');
     debugPrint('  POST       : $uri');
     debugPrint('  Token      : Bearer $token');

@@ -305,10 +305,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "CURRENT ENROLLMENT",
-            style: AppTextStyles.courseCardLabel,
-          ),
+          Text("CURRENT ENROLLMENT", style: AppTextStyles.courseCardLabel),
           SizedBox(height: 8),
           Text(
             courseName,
@@ -317,12 +314,19 @@ class _StudentDashboardState extends State<StudentDashboard> {
             overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildCourseInfoItem("Batch", batchName),
-              _buildCourseInfoItem("Starts", _formatDate(startDate)),
-              _buildCourseInfoItem("Mode", attendanceMode),
+              SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildCourseInfoItem("Starts", _formatDate(startDate)),
+                  _buildCourseInfoItem("Mode", attendanceMode),
+                ],
+              ),
             ],
           ),
           SizedBox(height: 20),
@@ -369,10 +373,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         );
                       },
                 child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     gradient: AppColors.successGradient,
                     borderRadius: BorderRadius.circular(10),
@@ -464,10 +465,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
               // Optional status badge if available
               if (status.isNotEmpty)
                 Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: _getStatusColor(status).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -499,12 +497,19 @@ class _StudentDashboardState extends State<StudentDashboard> {
           SizedBox(height: 12),
 
           // Course details in row (keeping your layout)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildCourseInfoItem("Batch", batchName),
-              _buildCourseInfoItem("Starts", _formatDate(startDate)),
-              _buildCourseInfoItem("Mode", attendanceMode),
+              SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildCourseInfoItem("Starts", _formatDate(startDate)),
+                  _buildCourseInfoItem("Mode", attendanceMode),
+                ],
+              ),
             ],
           ),
 
@@ -576,10 +581,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         );
                       },
                 child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     gradient: AppColors.successGradient,
                     borderRadius: BorderRadius.circular(10),
@@ -720,7 +722,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.courseCardLabel),
+        Text(label, maxLines: 2, style: AppTextStyles.courseCardLabel),
         Text(value, style: AppTextStyles.courseCardValue),
       ],
     );
