@@ -1,26 +1,36 @@
 class AppEndpoints {
   // Auth
   static const String login = '/api/auth/student/login/';
-  static const String forgotPasswordSendOtp = '/api/auth/forgot-password/send-otp/';
-  static const String forgotPasswordVerifyOtp = '/api/auth/forgot-password/verify-otp/';
-  static const String forgotPasswordResetPassword = '/api/auth/forgot-password/reset-password/';
-  static const String forgotPasswordResendOtp = '/api/auth/forgot-password/resend-otp/';
+  static const String forgotPasswordSendOtp =
+      '/api/auth/forgot-password/send-otp/';
+  static const String forgotPasswordVerifyOtp =
+      '/api/auth/forgot-password/verify-otp/';
+  static const String forgotPasswordResetPassword =
+      '/api/auth/forgot-password/reset-password/';
+  static const String forgotPasswordResendOtp =
+      '/api/auth/forgot-password/resend-otp/';
 
   // Student Portal / Dashboard / Profile
   static const String dashboard = '/api/student_portal/dashboard/';
   static const String profile = '/api/student_portal/profile/';
-  static const String liveClassEnrollments = '/api/student_portal/enrollments/for-class/';
-  static const String liveClassUrl = '/api/student_portal/enrollments/for-class/url/';
-  static const String studentPortalEnrollments = '/api/student_portal/enrollments/';
-  static const String enrollmentDetail = '/api/enrollment/'; // Suffix with {uid}/
+  static const String liveClassEnrollments =
+      '/api/student_portal/enrollments/for-class/';
+  static const String liveClassUrl =
+      '/api/student_portal/enrollments/for-class/url/';
+  static const String studentPortalEnrollments =
+      '/api/student_portal/enrollments/';
+  static const String enrollmentDetail =
+      '/api/enrollment/'; // Suffix with {uid}/
 
   // Profile (Legacy/Update)
-  static const String profileUpdate = '/api/student/profile/'; // Suffix with {id}/update/
+  static const String profileUpdate =
+      '/api/student/profile/'; // Suffix with {id}/update/
 
   // Academic & Misc
   static const String qualifications = '/api/public/lead/qualifications/';
   static const String specializations = '/api/specializations/list/';
-  static const String pincode = '/api/postal-pincode/'; // Suffix with {pincode}/
+  static const String pincode =
+      '/api/postal-pincode/'; // Suffix with {pincode}/
   static const String galleries = '/api/galleries/';
   static const String folders = '/api/folders/';
   static const String videos = '/api/videos/';
@@ -33,21 +43,33 @@ class AppEndpoints {
   static const String emiPreview = '/api/student-enrollment/emi-preview/';
 
   // Razorpay / Payments
-  static const String razorpayFull = '/api/student-payments/full/'; // Suffix with {id}/
+  static const String razorpayFull =
+      '/api/student-payments/full/'; // Suffix with {id}/
   static const String razorpayEmi = '/api/payments/emi/'; // Suffix with {id}/
 
   // Chat
   static const String chats = '/api/chats/';
-  static const String chatMessages = '/api/chats/'; // Suffix with {chatUid}/messages/
-  static const String sendMessage = '/api/chats/'; // Suffix with {chatUid}/messages/send/
-  static const String editMessage = '/api/chats/'; // Suffix with {chatUid}/messages/{messageUid}/edit/
-  static const String deleteMessage = '/api/chats/'; // Suffix with {chatUid}/messages/{messageUid}/delete/
-  static const String reactions = '/api/chats/'; // Suffix with {chatUid}/messages/{messageUid}/reactions/
-  static const String markRead = '/api/chats/'; // Suffix with {chatUid}/messages/mark-read/
+  static const String chatMessages =
+      '/api/chats/'; // Suffix with {chatUid}/messages/
+  static const String sendMessage =
+      '/api/chats/'; // Suffix with {chatUid}/messages/send/
+  static const String editMessage =
+      '/api/chats/'; // Suffix with {chatUid}/messages/{messageUid}/edit/
+  static const String deleteMessage =
+      '/api/chats/'; // Suffix with {chatUid}/messages/{messageUid}/delete/
+  static const String reactions =
+      '/api/chats/'; // Suffix with {chatUid}/messages/{messageUid}/reactions/
+  static const String markRead =
+      '/api/chats/'; // Suffix with {chatUid}/messages/mark-read/
   static const String bulkMessage = '/api/chats/messages/bulk/';
+
+  // attandance
+
+  static const String attandance = '/api/attendance/qr-scan/';
 }
 
 class GlobalLinks {
   static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
-  static const String websocketUrl = 'wss://api.crm.dev.luminartechnohub.com/ws/';
+  static const String websocketUrl =
+      'wss://api.crm.dev.luminartechnohub.com/ws/';
 }

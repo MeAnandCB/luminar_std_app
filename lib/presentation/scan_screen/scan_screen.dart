@@ -2,14 +2,17 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
-import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
+
+import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 // NOTE: Adjust these import paths to match your project structure
-import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
+import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // QR Payload Model
@@ -43,7 +46,8 @@ class QRPayload {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AttendanceService {
-  static const String _base = 'https://api.crm.dev.luminartechnohub.com';
+  static const String _base =
+      GlobalLinks.baseUrl; // Ensure this is defined in your GlobalLinks
 
   static Future<Map<String, dynamic>> markAttendance({
     required String batchId,
@@ -51,7 +55,9 @@ class AttendanceService {
     required String studentId,
   }) async {
     final String? token = await AppUtils.getAccessKey();
-    final uri = Uri.parse('$_base/api/attendance/qr-scan/');
+    final uri = Uri.parse(
+      '$_base${AppEndpoints.attandance}',
+    ); // Ensure this endpoint is defined
 
     final payload = {
       'batch_id': batchId,
@@ -100,7 +106,7 @@ class AttendanceService {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QR Scanner Screen  (single full screen — no bottom nav)
+// QR Scanner Screen (using DashboardController)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class QRScannerScreen extends StatefulWidget {
@@ -119,9 +125,9 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   bool _isFlashOn = false;
   String _statusText = 'Loading your enrollment data...';
 
-  EnrollmentResponse? _enrollmentData;
-  bool _enrollmentLoaded = false;
-  bool _enrollmentError = false;
+  Dashboard? _dashboardData;
+  bool _dashboardLoaded = false;
+  bool _dashboardError = false;
 
   @override
   void initState() {
@@ -132,15 +138,15 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       facing: CameraFacing.back,
       torchEnabled: false,
     );
-    // Camera stays paused until enrollments are loaded
+    // Camera stays paused until dashboard data is loaded
     _controller.stop();
-    _loadEnrollments();
+    _loadDashboardData();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed &&
-        _enrollmentLoaded &&
+        _dashboardLoaded &&
         !_detected &&
         !_isLoading) {
       _controller.start();
@@ -157,105 +163,60 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     super.dispose();
   }
 
-  // ── Step 1: Load enrollments, then start camera ───────────────────────────
+  // ── Step 1: Load dashboard data, then start camera ───────────────────────────
 
-  Future<void> _loadEnrollments() async {
+  Future<void> _loadDashboardData() async {
     setState(() {
-      _enrollmentError = false;
-      _enrollmentLoaded = false;
+      _dashboardError = false;
+      _dashboardLoaded = false;
       _statusText = 'Loading your enrollment data...';
     });
 
     try {
-      final provider = Provider.of<EnrollmentProvider>(context, listen: false);
+      final dashboardController = Provider.of<DashboardController>(
+        context,
+        listen: false,
+      );
 
-      if (!provider.hasData) {
-        await provider.fetchEnrollData(context: context, showLoading: false);
+      // Fetch dashboard data if not already loaded
+      if (dashboardController.dashboard == null) {
+        await dashboardController.getDashboardData(context: context);
       }
 
       if (!mounted) return;
 
-      if (provider.hasError || provider.enrollmentData == null) {
+      if (dashboardController.error != null ||
+          dashboardController.dashboard == null) {
         setState(() {
-          _enrollmentError = true;
+          _dashboardError = true;
           _statusText = 'Could not load enrollment data.';
         });
         return;
       }
 
-      _enrollmentData = provider.enrollmentData;
-      _enrollmentLoaded = true;
+      _dashboardData = dashboardController.dashboard;
+      _dashboardLoaded = true;
 
-      debugPrint('─── Enrollments Response Body ──────────');
-      debugPrint(
-        jsonEncode({
-          'status': _enrollmentData!.status,
-          'summary': {
-            'total_enrollments': _enrollmentData!.summary.totalEnrollments,
-            'active_enrollments': _enrollmentData!.summary.activeEnrollments,
-            'completed_enrollments':
-                _enrollmentData!.summary.completedEnrollments,
-            'demo_enrollments': _enrollmentData!.summary.demoEnrollments,
-            'total_fees_paid': _enrollmentData!.summary.totalFeesPaid,
-            'total_fees_pending': _enrollmentData!.summary.totalFeesPending,
-          },
-          'enrollments': _enrollmentData!.enrollments
-              .map(
-                (e) => {
-                  'uid': e.uid,
-                  'enrollment_number': e.enrollmentNumber,
-                  'enrollment_date': e.enrollmentDate.toIso8601String(),
-                  'source': e.source,
-                  'special_notes': e.specialNotes,
-                  'tags': e.tags,
-                  'status': {
-                    'name': e.status.name,
-                    'value': e.status.value,
-                    'color': e.status.color,
-                  },
-                  'batch': {
-                    'uid': e.batch.uid,
-                    'batch_name': e.batch.batchName,
-                    'start_date': e.batch.startDate.toIso8601String(),
-                    'end_date': e.batch.endDate.toIso8601String(),
-                    'time': e.batch.time,
-                    'status': e.batch.status,
-                  },
-                  'course': {
-                    'course_name': e.course.courseName,
-                    'duration': e.course.duration,
-                  },
-                  'attendance_mode': {
-                    'name': e.attendanceMode.name,
-                    'value': e.attendanceMode.value,
-                  },
-                  'payment_info': {
-                    'gross_amount': e.paymentInfo.grossAmount,
-                    'net_amount': e.paymentInfo.netAmount,
-                    'amount_paid': e.paymentInfo.amountPaid,
-                    'pending_amount': e.paymentInfo.pendingAmount,
-                    'is_fully_paid': e.paymentInfo.isFullyPaid,
-                  },
-                  'progress': {
-                    'attendance_percentage': e.progress.attendancePercentage,
-                    'completion_percentage': e.progress.completionPercentage,
-                    'final_grade': e.progress.finalGrade,
-                    'certificate_issued': e.progress.certificateIssued,
-                  },
-                },
-              )
-              .toList(),
-        }),
-      );
-      debugPrint('────────────────────────────────────────');
+      // Log enrollment data for debugging
+      final enrollments = _dashboardData?.enrollmentDetails?.enrollments ?? [];
+      debugPrint('─── Dashboard Enrollments ─────────────────');
+      debugPrint('  Total Enrollments: ${enrollments.length}');
+      for (var i = 0; i < enrollments.length; i++) {
+        final e = enrollments[i];
+        debugPrint('  [${i + 1}] ${e.batchInfo?.batchName}');
+        debugPrint('      - Enrollment UID: ${e.basicInfo?.uid}');
+        debugPrint('      - Batch UID: ${e.batchInfo?.uid}');
+        debugPrint('      - Status: ${e.status?.name}');
+      }
+      debugPrint('────────────────────────────────────────────');
 
       setState(() => _statusText = 'Align QR code within the frame');
       _controller.start();
     } catch (e) {
-      debugPrint('  [_loadEnrollments] Error: $e');
+      debugPrint('  [_loadDashboardData] Error: $e');
       if (!mounted) return;
       setState(() {
-        _enrollmentError = true;
+        _dashboardError = true;
         _statusText = 'Could not load enrollment data.';
       });
     }
@@ -264,7 +225,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   // ── Step 2: QR detected — fires exactly once ──────────────────────────────
 
   void _onDetect(BarcodeCapture capture) {
-    if (_detected || _isLoading || !_enrollmentLoaded) return;
+    if (_detected || _isLoading || !_dashboardLoaded) return;
 
     for (final Barcode barcode in capture.barcodes) {
       final String? raw = barcode.rawValue;
@@ -298,17 +259,19 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   }
 
   // ── Step 3: Validate batchId against enrollments ──────────────────────────
+  // ── Step 3: Validate batchId against enrollments ──────────────────────────
 
   void _validateAndSubmit(QRPayload payload) {
     debugPrint('─── Batch Validation ───────────────────');
     debugPrint('  QR Batch ID : ${payload.batchId}');
 
-    final enrollments = _enrollmentData?.enrollments ?? [];
+    final enrollments = _dashboardData?.enrollmentDetails?.enrollments ?? [];
     Enrollment? matched;
 
     for (final e in enrollments) {
-      debugPrint('  Checking    : ${e.batch.uid}');
-      if (e.batch.uid == payload.batchId) {
+      final batchUid = e.batchInfo?.uid;
+      debugPrint('  Checking    : $batchUid');
+      if (batchUid == payload.batchId) {
         matched = e;
         break;
       }
@@ -326,14 +289,29 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       return;
     }
 
-    debugPrint('  Result      : ✅ Matched → ${matched.batch.batchName}');
+    // Get student ID from student_details.basic_info.student_id
+    final studentId =
+        _dashboardData?.studentDetails?.basicInfo?.studentId ?? '';
+
+    debugPrint('  Result      : ✅ Matched → ${matched.batchInfo?.batchName}');
+    debugPrint('  Student ID  : $studentId (from student_details)');
+    debugPrint('  Enrollment UID: ${matched.basicInfo?.uid}');
     debugPrint('────────────────────────────────────────');
 
+    if (studentId.isEmpty) {
+      _showResult(
+        success: false,
+        title: 'Error',
+        message: 'Could not retrieve student information.',
+      );
+      return;
+    }
+
     _callAttendanceApi(
-      batchId: matched.batch.uid,
+      batchId: matched.batchInfo?.uid ?? payload.batchId,
       sessionId: payload.startTime,
-      studentId: matched.uid, // enrollment uid as student_id
-      batchName: matched.batch.batchName,
+      studentId: studentId, // Now using LUM2026082 format student ID
+      batchName: matched.batchInfo?.batchName ?? 'Unknown Batch',
     );
   }
 
@@ -467,15 +445,15 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                   _CircleBtn(
                     icon: _isFlashOn ? Icons.flash_on : Icons.flash_off,
                     active: _isFlashOn,
-                    onTap: _enrollmentLoaded ? _toggleFlash : () {},
+                    onTap: _dashboardLoaded ? _toggleFlash : () {},
                   ),
                 ],
               ),
             ),
           ),
 
-          // Full-screen loading overlay (enrollment fetch OR API call)
-          if (_isLoading || (!_enrollmentLoaded && !_enrollmentError))
+          // Full-screen loading overlay (dashboard fetch OR API call)
+          if (_isLoading || (!_dashboardLoaded && !_dashboardError))
             Container(
               color: Colors.black,
               child: Center(
@@ -498,8 +476,8 @@ class _QRScannerScreenState extends State<QRScannerScreen>
               ),
             ),
 
-          // Enrollment error state
-          if (_enrollmentError)
+          // Dashboard error state
+          if (_dashboardError)
             Container(
               color: Colors.black87,
               child: Center(
@@ -523,7 +501,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
-                      onPressed: _loadEnrollments,
+                      onPressed: _loadDashboardData,
                       icon: const Icon(Icons.refresh),
                       label: const Text('Retry'),
                       style: ElevatedButton.styleFrom(
@@ -544,7 +522,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
             ),
 
           // Bottom status hint
-          if (!_isLoading && !_enrollmentError)
+          if (!_isLoading && !_dashboardError)
             Positioned(
               bottom: 60,
               left: 0,
@@ -552,7 +530,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
               child: Column(
                 children: [
                   Icon(
-                    _enrollmentLoaded
+                    _dashboardLoaded
                         ? Icons.qr_code_scanner
                         : Icons.hourglass_top_rounded,
                     color: const Color(0xFF00C2A8),
@@ -574,7 +552,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Scan Overlay
+// Scan Overlay (same as before)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ScanOverlay extends StatelessWidget {
@@ -661,7 +639,7 @@ class _OverlayPainter extends CustomPainter {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Circle Button
+// Circle Button (same as before)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _CircleBtn extends StatelessWidget {
@@ -691,7 +669,7 @@ class _CircleBtn extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Result Dialog
+// Result Dialog (same as before)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ResultDialog extends StatelessWidget {
