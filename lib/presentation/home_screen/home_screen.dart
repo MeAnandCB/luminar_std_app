@@ -32,13 +32,19 @@ class _StudentDashboardState extends State<StudentDashboard> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      final dashboardProvider = Provider.of<DashboardController>(context, listen: false);
+      final dashboardProvider = Provider.of<DashboardController>(
+        context,
+        listen: false,
+      );
       await dashboardProvider.getDashboardData(context: context);
       await dashboardProvider.getNactetStatus();
       _loadUserName();
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
+      _enrollmentProvider = Provider.of<EnrollmentProvider>(
+        context,
+        listen: false,
+      );
       _loadData();
     });
   }
@@ -101,9 +107,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Icon(Icons.error_outline, size: 60, color: AppColors.error),
+                        Icon(
+                          Icons.error_outline,
+                          size: 60,
+                          color: AppColors.error,
+                        ),
                         SizedBox(height: 16),
-                        Text('Error loading dashboard', style: AppTextStyles.headerName.copyWith(color: Colors.red)),
+                        Text(
+                          'Error loading dashboard',
+                          style: AppTextStyles.headerName.copyWith(
+                            color: Colors.red,
+                          ),
+                        ),
                         SizedBox(height: 8),
                         Text(
                           dashboardProvider.error!,
@@ -113,7 +128,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: () {
-                            dashboardProvider.refreshDashboard(context: context);
+                            dashboardProvider.refreshDashboard(
+                              context: context,
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
@@ -131,8 +148,20 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      HeaderWidget(enrolldata: provider, studentName: studentName, provider: dashboardProvider),
-                      StatusCard(status: dashboard?.studentDetails?.statusInfo?.currentStatus?.name ?? 'Active'),
+                      HeaderWidget(
+                        enrolldata: provider,
+                        studentName: studentName,
+                        provider: dashboardProvider,
+                      ),
+                      StatusCard(
+                        status:
+                            dashboard
+                                ?.studentDetails
+                                ?.statusInfo
+                                ?.currentStatus
+                                ?.name ??
+                            'Active',
+                      ),
 
                       SizedBox(height: 20),
                       Center(child: _buildSectionTitle("Course Details")),
@@ -141,22 +170,30 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       if (dashboard != null) ...[
                         _buildCourseCard(dashboard, provider),
                         if (dashboardProvider.shouldShowNactetBanner) ...[
-                          Center(child: _buildSectionTitle("NACTET Registration")),
+                          Center(
+                            child: _buildSectionTitle("NACTET Registration"),
+                          ),
                           SizedBox(height: 20),
                           NactetBanner(
                             pendingCount: dashboardProvider.pendingNactetCount,
                             onFormTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const NactetRegistrationScreen()),
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const NactetRegistrationScreen(),
+                                ),
                               );
                             },
                           ),
                           SizedBox(height: 20),
-                        ] else if (dashboardProvider.nactetStatusReason != null) ...[
+                        ] else if (dashboardProvider.nactetStatusReason !=
+                            null) ...[
                           Center(child: _buildSectionTitle("NACTET Status")),
                           SizedBox(height: 20),
-                          _buildNactetStatusCard(dashboardProvider.nactetStatusReason!),
+                          _buildNactetStatusCard(
+                            dashboardProvider.nactetStatusReason!,
+                          ),
                           SizedBox(height: 20),
                         ],
 
@@ -187,7 +224,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
       return Container(
         width: double.infinity,
         padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -227,7 +267,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     height: 6,
                     margin: EdgeInsets.only(right: 4),
                     decoration: BoxDecoration(
-                      color: index == 0 ? AppColors.primary : AppColors.primary.withOpacity(0.3),
+                      color: index == 0
+                          ? AppColors.primary
+                          : AppColors.primary.withOpacity(0.3),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -254,7 +296,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   // Original single enrollment card design (exactly as you had it)
-  Widget _buildSingleEnrollmentCard(enrollment, EnrollmentProvider provider, int index) {
+  Widget _buildSingleEnrollmentCard(
+    enrollment,
+    EnrollmentProvider provider,
+    int index,
+  ) {
     final enrollmentData = provider.enrollmentData;
     if (enrollmentData == null) return const SizedBox.shrink();
 
@@ -262,7 +308,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
     if (index >= enrollments.length) return const SizedBox.shrink();
 
     final courseName =
-        enrollment?.courseInfo?.courseName ?? enrollment?.courseDetails?.toString() ?? 'No Course Enrolled';
+        enrollment?.courseInfo?.courseName ??
+        enrollment?.courseDetails?.toString() ??
+        'No Course Enrolled';
 
     final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
 
@@ -273,20 +321,28 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text("CURRENT ENROLLMENT", style: AppTextStyles.courseCardLabel),
           SizedBox(height: 8),
-          Text(courseName, style: AppTextStyles.courseCardTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
-          SizedBox(height: 10),
+          Text(
+            courseName,
+            style: AppTextStyles.courseCardTitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildCourseInfoItem("Batch", batchName),
-              SizedBox(height: 8),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -296,15 +352,20 @@ class _StudentDashboardState extends State<StudentDashboard> {
               ),
             ],
           ),
-          SizedBox(height: 20),
+
           LinearProgressIndicator(
             minHeight: 8,
             value: progress / 100,
             backgroundColor: AppColors.whiteWithOpacity20,
-            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.textWhite),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              AppColors.textWhite,
+            ),
           ),
           SizedBox(height: 6),
-          Text('Progress: ${progress}%', style: AppTextStyles.courseCardProgress),
+          Text(
+            'Progress: ${progress}%',
+            style: AppTextStyles.courseCardProgress,
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -317,14 +378,20 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => EnrollmentDetailsScreen(index: index, backbuttonValue: true),
+                            builder: (context) => EnrollmentDetailsScreen(
+                              index: index,
+                              backbuttonValue: true,
+                            ),
                           ),
                         );
                       }
                     : () {
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (context) => BottomNavScreen(initialIndex: 3)),
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                BottomNavScreen(initialIndex: 3),
+                          ),
                           (route) => false,
                         );
                       },
@@ -333,14 +400,27 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   decoration: BoxDecoration(
                     gradient: AppColors.successGradient,
                     borderRadius: BorderRadius.circular(10),
-                    boxShadow: [BoxShadow(color: AppColors.shadowSuccess, blurRadius: 8, offset: const Offset(0, 2))],
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.shadowSuccess,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle_rounded, size: 12, color: AppColors.textWhite),
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 12,
+                        color: AppColors.textWhite,
+                      ),
                       SizedBox(width: 4),
-                      Text('Continue Learning', style: AppTextStyles.courseCardButton),
+                      Text(
+                        'Continue Learning',
+                        style: AppTextStyles.courseCardButton,
+                      ),
                     ],
                   ),
                 ),
@@ -353,11 +433,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   // Multiple enrollment card design (keeping your original styling)
-  Widget _buildEnrollmentCard(dynamic enrollment, int index, EnrollmentProvider enrollments) {
+  Widget _buildEnrollmentCard(
+    dynamic enrollment,
+    int index,
+    EnrollmentProvider enrollments,
+  ) {
     // Show enrollments
 
     final courseName =
-        enrollment?.courseInfo?.courseName ?? enrollment?.courseDetails?.toString() ?? 'No Course Enrolled';
+        enrollment?.courseInfo?.courseName ??
+        enrollment?.courseDetails?.toString() ??
+        'No Course Enrolled';
 
     final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
 
@@ -366,13 +452,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final progress = enrollment?.academicProgress?.completionPercentage ?? 0;
 
     // Get enrollment status if available
-    final status = enrollments.enrollmentDataRes?.enrollments[index].status.value ?? "";
+    final status =
+        enrollments.enrollmentDataRes?.enrollments[index].status.value ?? "";
 
     return Container(
       width: 300, // Fixed width for horizontal scrolling
       margin: EdgeInsets.only(right: 16),
       padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -382,10 +472,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
             children: [
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: AppColors.whiteWithOpacity20, borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(
+                  color: AppColors.whiteWithOpacity20,
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Text(
                   '#${index + 1}',
-                  style: TextStyle(color: AppColors.textWhite, fontSize: 10, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: AppColors.textWhite,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               // Optional status badge if available
@@ -398,13 +495,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   ),
                   child: Text(
                     status.replaceAll('_', ' ').toUpperCase(),
-                    style: TextStyle(color: _getStatusColor(status), fontSize: 8, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: _getStatusColor(status),
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
             ],
           ),
-
-          SizedBox(height: 12),
 
           // Keep your original course title styling
           Text(
@@ -416,15 +515,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
             overflow: TextOverflow.ellipsis,
           ),
 
-          SizedBox(height: 12),
-
           // Course details in row (keeping your layout)
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildCourseInfoItem("Batch", batchName),
-              SizedBox(height: 8),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -445,10 +542,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 minHeight: 6,
                 value: progress / 100,
                 backgroundColor: AppColors.whiteWithOpacity20,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.textWhite),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.textWhite,
+                ),
               ),
               SizedBox(height: 4),
-              Text('Progress: ${progress}%', style: AppTextStyles.courseCardProgress.copyWith(fontSize: 12)),
+              Text(
+                'Progress: ${progress}%',
+                style: AppTextStyles.courseCardProgress.copyWith(fontSize: 12),
+              ),
             ],
           ),
 
@@ -458,21 +560,42 @@ class _StudentDashboardState extends State<StudentDashboard> {
             children: [
               InkWell(
                 onTap:
-                    (enrollments.enrollmentDataRes?.enrollments[index].status.value == "admission_fee_paid" ||
-                        enrollments.enrollmentDataRes?.enrollments[index].status.value == "not_set" ||
-                        enrollments.enrollmentDataRes?.enrollments[index].status.value == "demo_expired")
+                    (enrollments
+                                .enrollmentDataRes
+                                ?.enrollments[index]
+                                .status
+                                .value ==
+                            "admission_fee_paid" ||
+                        enrollments
+                                .enrollmentDataRes
+                                ?.enrollments[index]
+                                .status
+                                .value ==
+                            "not_set" ||
+                        enrollments
+                                .enrollmentDataRes
+                                ?.enrollments[index]
+                                .status
+                                .value ==
+                            "demo_expired")
                     ? () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => EnrollmentDetailsScreen(index: index, backbuttonValue: true),
+                            builder: (context) => EnrollmentDetailsScreen(
+                              index: index,
+                              backbuttonValue: true,
+                            ),
                           ),
                         );
                       }
                     : () {
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (context) => BottomNavScreen(initialIndex: 3)),
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                BottomNavScreen(initialIndex: 3),
+                          ),
                           (route) => false,
                         );
                       },
@@ -481,14 +604,27 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   decoration: BoxDecoration(
                     gradient: AppColors.successGradient,
                     borderRadius: BorderRadius.circular(10),
-                    boxShadow: [BoxShadow(color: AppColors.shadowSuccess, blurRadius: 8, offset: const Offset(0, 2))],
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.shadowSuccess,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle_rounded, size: 12, color: AppColors.textWhite),
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 12,
+                        color: AppColors.textWhite,
+                      ),
                       SizedBox(width: 4),
-                      Text('Continue Learning', style: AppTextStyles.courseCardButton),
+                      Text(
+                        'Continue Learning',
+                        style: AppTextStyles.courseCardButton,
+                      ),
                     ],
                   ),
                 ),
@@ -541,7 +677,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
               Icons.account_balance_wallet,
               AppColors.statsBlue,
             ),
-            _buildStatCard("Paid", _formatCurrency(financial?.totalFeesPaid), Icons.check_circle, AppColors.statsGreen),
+            _buildStatCard(
+              "Paid",
+              _formatCurrency(financial?.totalFeesPaid),
+              Icons.check_circle,
+              AppColors.statsGreen,
+            ),
             _buildStatCard(
               "Pending",
               _formatCurrency(financial?.totalFeesPending),
@@ -560,13 +701,24 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -605,8 +757,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
     if (activities.isEmpty) {
       return Container(
         padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(12)),
-        child: Center(child: Text('No recent activities', style: AppTextStyles.activitySubtitle)),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            'No recent activities',
+            style: AppTextStyles.activitySubtitle,
+          ),
+        ),
       );
     }
 
@@ -614,7 +774,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: activities.length > 4 ? 4 : activities.length,
-      separatorBuilder: (context, index) => Divider(color: AppColors.borderColor.withOpacity(0.5)),
+      separatorBuilder: (context, index) =>
+          Divider(color: AppColors.borderColor.withOpacity(0.5)),
       itemBuilder: (context, index) {
         final item = activities[index];
 
@@ -645,13 +806,25 @@ class _StudentDashboardState extends State<StudentDashboard> {
         }
 
         return Container(
-          decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: getColorForPriority(item.priority?.toString()).withOpacity(0.1),
-              child: Icon(getIconForType(item.type), color: getColorForPriority(item.priority?.toString()), size: 20),
+              backgroundColor: getColorForPriority(
+                item.priority?.toString(),
+              ).withOpacity(0.1),
+              child: Icon(
+                getIconForType(item.type),
+                color: getColorForPriority(item.priority?.toString()),
+                size: 20,
+              ),
             ),
-            title: Text(item.title ?? 'Activity', style: AppTextStyles.activityTitle.copyWith(fontSize: 14)),
+            title: Text(
+              item.title ?? 'Activity',
+              style: AppTextStyles.activityTitle.copyWith(fontSize: 14),
+            ),
             subtitle: Text(
               item.description ?? '',
               style: AppTextStyles.activitySubtitle.copyWith(fontSize: 12),
@@ -665,9 +838,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 if (item.amount != null)
                   Text(
                     _formatCurrency(item.amount),
-                    style: AppTextStyles.statValue.copyWith(fontSize: 12, color: AppColors.statsGreen),
+                    style: AppTextStyles.statValue.copyWith(
+                      fontSize: 12,
+                      color: AppColors.statsGreen,
+                    ),
                   ),
-                Text(_formatDateForActivity(item.date), style: AppTextStyles.activityTime),
+                Text(
+                  _formatDateForActivity(item.date),
+                  style: AppTextStyles.activityTime,
+                ),
               ],
             ),
           ),
@@ -701,13 +880,22 @@ class _StudentDashboardState extends State<StudentDashboard> {
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderColor.withOpacity(0.5)),
-        boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 15, offset: const Offset(0, 8))],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.info.withOpacity(0.12), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: AppColors.info.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
             child: Icon(Icons.info_rounded, color: AppColors.info, size: 24),
           ),
           const SizedBox(width: 16),
@@ -717,12 +905,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
               children: [
                 Text(
                   'NACTET Update',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   reason,
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),

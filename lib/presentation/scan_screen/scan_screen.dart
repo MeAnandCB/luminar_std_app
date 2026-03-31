@@ -23,22 +23,30 @@ class QRPayload {
   final String startTime;
   final String endTime;
   final int timestamp;
+  final String? sessionId; // Made optional
 
   QRPayload({
     required this.batchId,
     required this.startTime,
     required this.endTime,
     required this.timestamp,
+    this.sessionId, // Optional field
   });
 
-  factory QRPayload.fromJson(Map<String, dynamic> json) => QRPayload(
-    batchId: json['batchId']?.toString() ?? '',
-    startTime: json['startTime']?.toString() ?? '',
-    endTime: json['endTime']?.toString() ?? '',
-    timestamp: json['timestamp'] is int
-        ? json['timestamp']
-        : int.tryParse(json['timestamp']?.toString() ?? '0') ?? 0,
-  );
+  factory QRPayload.fromJson(Map<String, dynamic> json) {
+    // Print the raw JSON data
+    print('📱 [QRScanner] Getting data: $json');
+
+    return QRPayload(
+      batchId: json['batchId']?.toString() ?? '',
+      startTime: json['startTime']?.toString() ?? '',
+      endTime: json['endTime']?.toString() ?? '',
+      timestamp: json['timestamp'] is int
+          ? json['timestamp']
+          : int.tryParse(json['timestamp']?.toString() ?? '0') ?? 0,
+      sessionId: json['sessionId']?.toString(), // Optional, may be null
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,7 +73,8 @@ class AttendanceService {
       'student_id': studentId,
     };
 
-    print('  [markAttendance] Payload: $payload');
+    print('📱 [markAttendance] Payload: $payload');
+    print('📱 [markAttendance] Response: Waiting...');
 
     debugPrint('─── Attendance Request ─────────────────');
     debugPrint('  POST       : $uri');
@@ -84,6 +93,9 @@ class AttendanceService {
       },
       body: jsonEncode(payload),
     );
+
+    print('📱 [markAttendance] Status: ${response.statusCode}');
+    print('📱 [markAttendance] Response: ${response.body}');
 
     debugPrint('─── Attendance Response ────────────────');
     debugPrint('  Status  : ${response.statusCode}');
@@ -244,9 +256,20 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       debugPrint('═══════════════════════════════════════');
       developer.log(raw, name: 'QRScanner');
 
+      // Print to console as requested
+      print('📱 [QRScanner] Raw QR Data: $raw');
+
       try {
         final json = jsonDecode(raw) as Map<String, dynamic>;
         final payload = QRPayload.fromJson(json);
+
+        // Print sessionId status
+        if (payload.sessionId != null && payload.sessionId!.isNotEmpty) {
+          print('📱 [QRScanner] Session ID found: ${payload.sessionId}');
+        } else {
+          print('📱 [QRScanner] No session ID in QR code');
+        }
+
         _validateAndSubmit(payload);
       } catch (_) {
         _showResult(
@@ -261,11 +284,17 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   }
 
   // ── Step 3: Validate batchId against enrollments ──────────────────────────
-  // ── Step 3: Validate batchId against enrollments ──────────────────────────
 
   void _validateAndSubmit(QRPayload payload) {
     debugPrint('─── Batch Validation ───────────────────');
     debugPrint('  QR Batch ID : ${payload.batchId}');
+
+    // Print sessionId status in validation
+    if (payload.sessionId != null && payload.sessionId!.isNotEmpty) {
+      debugPrint('  QR Session ID : ${payload.sessionId}');
+    } else {
+      debugPrint('  QR Session ID : Not provided');
+    }
 
     final enrollments = _dashboardData?.enrollmentDetails?.enrollments ?? [];
     Enrollment? matched;
@@ -309,10 +338,24 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       return;
     }
 
+    // Determine which session ID to use
+    // If QR has sessionId, use that; otherwise use startTime as fallback
+    final sessionIdToUse =
+        (payload.sessionId != null && payload.sessionId!.isNotEmpty)
+        ? payload.sessionId!
+        : payload.startTime;
+
+    print('📱 [QRScanner] Using session ID: $sessionIdToUse');
+    if (payload.sessionId == null || payload.sessionId!.isEmpty) {
+      print(
+        '📱 [QRScanner] Using startTime as session ID since no sessionId provided',
+      );
+    }
+
     _callAttendanceApi(
       batchId: matched.batchInfo?.uid ?? payload.batchId,
-      sessionId: payload.startTime,
-      studentId: studentId, // Now using LUM2026082 format student ID
+      sessionId: sessionIdToUse,
+      studentId: studentId,
       batchName: matched.batchInfo?.batchName ?? 'Unknown Batch',
     );
   }
