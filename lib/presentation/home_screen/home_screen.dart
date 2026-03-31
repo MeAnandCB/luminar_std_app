@@ -313,13 +313,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          SizedBox(height: 10),
+
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildCourseInfoItem("Batch", batchName),
-              SizedBox(height: 8),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -329,7 +329,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
               ),
             ],
           ),
-          SizedBox(height: 20),
+
           LinearProgressIndicator(
             minHeight: 8,
             value: progress / 100,
@@ -482,8 +482,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
             ],
           ),
 
-          SizedBox(height: 12),
-
           // Keep your original course title styling
           Text(
             courseName,
@@ -494,15 +492,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
             overflow: TextOverflow.ellipsis,
           ),
 
-          SizedBox(height: 12),
-
           // Course details in row (keeping your layout)
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildCourseInfoItem("Batch", batchName),
-              SizedBox(height: 8),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

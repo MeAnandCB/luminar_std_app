@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "805620757740",
+    "project_id": "luminar-crm",
+    "storage_bucket": "luminar-crm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:805620757740:android:2eeb60b287b857aa6de1c9",
+        "android_client_info": {
+          "package_name": "com.luminar.studentapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMavM4clvYxjA7bcOGVTpGA9MJp83FC6I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

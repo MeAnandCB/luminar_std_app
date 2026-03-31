@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
@@ -12,8 +14,8 @@ import 'package:luminar_std/presentation/live_class/controller/live_class_contro
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/complete_your_profile/controller/complete_profile_controller.dart';
 import 'package:luminar_std/presentation/splash_screen/splash_screen.dart';
+import 'package:luminar_std/repository/FCM/fcm_service.dart';
 import 'package:luminar_std/repository/attandance_screen/service.dart';
-
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
@@ -28,6 +30,14 @@ Future<void> requestPermissions() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Safe Firebase init
+  try {
+    await Firebase.initializeApp();
+    LoggerUtils.info('✅ Firebase initialized', tag: 'Main');
+  } catch (e) {
+    LoggerUtils.error('❌ Firebase init failed: $e', tag: 'Main');
+  }
 
   await requestPermissions();
 
@@ -49,6 +59,14 @@ void main() async {
     LoggerUtils.error('Error loading token in main: $e', tag: 'Main');
   }
 
+  // Safe FCM init
+  try {
+    await FCMService().initialize();
+    LoggerUtils.info('✅ FCM initialized', tag: 'Main');
+  } catch (e) {
+    LoggerUtils.error('❌ FCM init failed: $e', tag: 'Main');
+  }
+
   runApp(
     MultiProvider(
       providers: [
@@ -68,13 +86,13 @@ void main() async {
         ChangeNotifierProvider(create: (_) => CompleteProfileController()),
         ChangeNotifierProvider(create: (_) => EnrollmentProvider()),
 
-        // Attendance Service (Provider but not ChangeNotifier)
+        // Attendance Service
         Provider<AttendanceService>(create: (_) => AttendanceService()),
         ChangeNotifierProvider(create: (_) => GalleryProvider()),
         ChangeNotifierProvider(create: (_) => FolderBrowserProvider()),
         ChangeNotifierProvider(create: (_) => LiveClassController()),
 
-        // Existing ChatProvider from your codebase
+        // Chat Provider
         ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: const MyApp(),
