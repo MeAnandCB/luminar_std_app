@@ -1,7 +1,5 @@
 import Flutter
 import UIKit
-import FirebaseCore
-import FirebaseMessaging
 import UserNotifications
 
 @main
@@ -10,8 +8,6 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    FirebaseApp.configure()
-    
     UNUserNotificationCenter.current().delegate = self
     let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
     UNUserNotificationCenter.current().requestAuthorization(

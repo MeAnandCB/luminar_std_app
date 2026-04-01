@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
+import 'package:luminar_std/firebase_options.dart';
 import 'package:luminar_std/presentation/attandance_screen/controller/attandance_controller.dart';
 import 'package:luminar_std/presentation/auth_screens/forgot_password/controller/forgot_password.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/controller/bottom_nav_controller.dart';
@@ -38,7 +39,7 @@ void main() async {
 
   // Safe Firebase init
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     LoggerUtils.info('✅ Firebase initialized', tag: 'Main');
   } catch (e) {
     LoggerUtils.error('❌ Firebase init failed: $e', tag: 'Main');
@@ -50,15 +51,9 @@ void main() async {
   String? accessToken;
   try {
     accessToken = await AppUtils.getAccessKey();
-    LoggerUtils.info(
-      'Token loaded in main: ${accessToken != null ? 'Yes' : 'No'}',
-      tag: 'Main',
-    );
+    LoggerUtils.info('Token loaded in main: ${accessToken != null ? 'Yes' : 'No'}', tag: 'Main');
     if (accessToken != null) {
-      LoggerUtils.info(
-        'Token preview: ${accessToken.substring(0, 10)}...',
-        tag: 'Main',
-      );
+      LoggerUtils.info('Token preview: ${accessToken.substring(0, 10)}...', tag: 'Main');
     }
   } catch (e) {
     LoggerUtils.error('Error loading token in main: $e', tag: 'Main');
@@ -164,10 +159,7 @@ class _MyAppState extends State<MyApp> {
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle),
                 child: Icon(Icons.wifi_off_rounded, size: 48, color: Colors.red.shade400),
               ),
               const SizedBox(height: 20),
