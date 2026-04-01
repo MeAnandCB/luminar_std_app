@@ -24,6 +24,11 @@ class AttendanceProvider extends ChangeNotifier {
   int _currentPage = 1;
   bool _hasMore = false;
 
+  // Filters
+  DateTime? _startDate;
+  DateTime? _endDate;
+  String _statusFilter = 'All';
+
   // Getters
   bool get isLoadingDashboard => _isLoadingDashboard;
   bool get isLoadingAttendance => _isLoadingAttendance;
@@ -33,8 +38,23 @@ class AttendanceProvider extends ChangeNotifier {
   EnrollmentBatch? get selectedBatch => _selectedBatch;
   BatchSession? get selectedSession => _selectedSession;
   AttendanceResponse? get attendanceData => _attendanceData;
-  List<AttendanceRecord> get allRecords => _allRecords;
   bool get hasMore => _hasMore;
+  DateTime? get startDate => _startDate;
+  DateTime? get endDate => _endDate;
+  String get statusFilter => _statusFilter;
+
+  bool get hasActiveFilters =>
+      _startDate != null || _endDate != null || _statusFilter != 'All';
+
+  /// Records after client-side status filter is applied.
+  List<AttendanceRecord> get allRecords {
+    if (_statusFilter == 'All') return _allRecords;
+    return _allRecords
+        .where(
+          (r) => r.status.toLowerCase() == _statusFilter.toLowerCase(),
+        )
+        .toList();
+  }
 
   Future<void> loadDashboard() async {
     _isLoadingDashboard = true;
@@ -90,6 +110,34 @@ class AttendanceProvider extends ChangeNotifier {
     await loadAttendance();
   }
 
+  /// Apply date + status filters and reload from page 1.
+  Future<void> applyFilters({
+    DateTime? startDate,
+    DateTime? endDate,
+    String statusFilter = 'All',
+  }) async {
+    _startDate = startDate;
+    _endDate = endDate;
+    _statusFilter = statusFilter;
+    _allRecords = [];
+    _attendanceData = null;
+    _currentPage = 1;
+    notifyListeners();
+    await loadAttendance();
+  }
+
+  /// Clear all filters and reload.
+  Future<void> clearFilters() async {
+    _startDate = null;
+    _endDate = null;
+    _statusFilter = 'All';
+    _allRecords = [];
+    _attendanceData = null;
+    _currentPage = 1;
+    notifyListeners();
+    await loadAttendance();
+  }
+
   Future<void> loadAttendance() async {
     if (_selectedBatch == null) return;
 
@@ -100,6 +148,12 @@ class AttendanceProvider extends ChangeNotifier {
     final response = await _service.getBatchAttendance(
       batchId: _selectedBatch!.uid,
       sessionId: _selectedSession?.uid,
+      startDate: _startDate != null
+          ? '${_startDate!.year}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.day.toString().padLeft(2, '0')}'
+          : null,
+      endDate: _endDate != null
+          ? '${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}'
+          : null,
       page: 1,
     );
 
@@ -126,11 +180,19 @@ class AttendanceProvider extends ChangeNotifier {
     final response = await _service.getBatchAttendance(
       batchId: _selectedBatch!.uid,
       sessionId: _selectedSession?.uid,
+      startDate: _startDate != null
+          ? '${_startDate!.year}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.day.toString().padLeft(2, '0')}'
+          : null,
+      endDate: _endDate != null
+          ? '${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}'
+          : null,
       page: nextPage,
     );
 
     if (response.success && response.data != null) {
-      _allRecords.addAll(response.data!.results as Iterable<AttendanceRecord>);
+      _allRecords.addAll(
+        response.data!.results as Iterable<AttendanceRecord>,
+      );
       _currentPage = nextPage;
       _hasMore = response.data!.next != null;
     }

@@ -16,6 +16,20 @@ class AttendanceScreen extends StatefulWidget {
 class _AttendanceScreenState extends State<AttendanceScreen> {
   final ScrollController _scrollController = ScrollController();
 
+  // Filter state (local — committed to provider on Apply)
+  bool _filterExpanded = false;
+  DateTime? _tempStartDate;
+  DateTime? _tempEndDate;
+  String _tempStatus = 'All';
+
+  static const List<String> _statusOptions = [
+    'All',
+    'online',
+    'offline',
+    'recording',
+    'absent',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +83,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'dd/mm/yyyy';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  String _statusLabel(String status) {
+    if (status == 'All') return 'All Status';
+    return status[0].toUpperCase() + status.substring(1);
+  }
+
   String _formatTimestamp(String timestamp) {
     try {
       final dt = DateTime.parse(timestamp).toLocal();
@@ -116,6 +140,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                       .isNotEmpty)
                                     _buildSessionSelector(provider),
                                 ],
+                                _buildFilterPanel(provider),
                                 if (provider.attendanceData != null)
                                   _buildStatsSection(
                                     provider.attendanceData!.summary,
@@ -203,6 +228,344 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
+  // ─── Filter panel ────────────────────────────────────────────────────────
+
+  Widget _buildFilterPanel(AttendanceProvider provider) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // ── Header row (always visible) ──
+          InkWell(
+            onTap: () => setState(() => _filterExpanded = !_filterExpanded),
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              child: Row(
+                children: [
+                  Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Filters',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (provider.hasActiveFilters) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Active',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  Icon(
+                    _filterExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.textSecondary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // ── Expandable body ──
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 250),
+            crossFadeState: _filterExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Divider(color: AppColors.borderColor, height: 1),
+                  const SizedBox(height: 16),
+                  // Start Date
+                  Text(
+                    'Start Date',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildDateField(
+                    value: _tempStartDate,
+                    hint: 'dd/mm/yyyy',
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _tempStartDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now(),
+                        builder: (ctx, child) =>
+                            _themedDatePicker(ctx, child!),
+                      );
+                      if (picked != null) {
+                        setState(() => _tempStartDate = picked);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  // End Date
+                  Text(
+                    'End Date',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildDateField(
+                    value: _tempEndDate,
+                    hint: 'dd/mm/yyyy',
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _tempEndDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now(),
+                        builder: (ctx, child) =>
+                            _themedDatePicker(ctx, child!),
+                      );
+                      if (picked != null) {
+                        setState(() => _tempEndDate = picked);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  // Status
+                  Text(
+                    'Status',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderColor),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _tempStatus,
+                        isExpanded: true,
+                        dropdownColor: AppColors.cardBackground,
+                        icon: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.textSecondary,
+                        ),
+                        items: _statusOptions.map((s) {
+                          return DropdownMenuItem(
+                            value: s,
+                            child: Row(
+                              children: [
+                                if (s != 'All') ...[
+                                  Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: _getStatusColor(s),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Text(
+                                  _statusLabel(s),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: s == 'All'
+                                        ? AppColors.textSecondary
+                                        : _getStatusColor(s),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _tempStatus = val);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() => _filterExpanded = false);
+                            provider.applyFilters(
+                              startDate: _tempStartDate,
+                              endDate: _tempEndDate,
+                              statusFilter: _tempStatus,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Apply Filters',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              _tempStartDate = null;
+                              _tempEndDate = null;
+                              _tempStatus = 'All';
+                              _filterExpanded = false;
+                            });
+                            provider.clearFilters();
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.textSecondary,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            side: BorderSide(color: AppColors.borderColor),
+                          ),
+                          child: Text(
+                            'Clear',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateField({
+    required DateTime? value,
+    required String hint,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderColor),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                _formatDate(value),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: value == null
+                      ? AppColors.textHint
+                      : AppColors.textPrimary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.calendar_today_rounded,
+              size: 18,
+              color: AppColors.textSecondary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _themedDatePicker(BuildContext ctx, Widget child) {
+    return Theme(
+      data: Theme.of(ctx).copyWith(
+        colorScheme: AppColors.isDark
+            ? ColorScheme.dark(
+                primary: AppColors.primary,
+                onPrimary: Colors.white,
+                surface: AppColors.cardBackground,
+                onSurface: AppColors.textPrimary,
+              )
+            : ColorScheme.light(
+                primary: AppColors.primary,
+                onPrimary: Colors.white,
+                surface: AppColors.cardBackground,
+                onSurface: AppColors.textPrimary,
+              ),
+      ),
+      child: child,
+    );
+  }
+
   // ─── Batch selector ───────────────────────────────────────────────────────
 
   Widget _buildBatchSelector(AttendanceProvider provider) {
@@ -227,8 +590,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: DropdownButtonHideUnderline(
-              child: DropdownButton<EnrollmentBatch>(
-                value: provider.selectedBatch,
+              child: DropdownButton<String>(
+                value: provider.selectedBatch?.uid,
                 isExpanded: true,
                 icon: Icon(Icons.expand_more_rounded, color: AppColors.primary),
                 dropdownColor: AppColors.cardBackground,
@@ -242,8 +605,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   style: TextStyle(color: AppColors.textHint, fontSize: 14),
                 ),
                 items: provider.batches.map((batch) {
-                  return DropdownMenuItem<EnrollmentBatch>(
-                    value: batch,
+                  return DropdownMenuItem<String>(
+                    value: batch.uid,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -269,8 +632,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                   );
                 }).toList(),
-                onChanged: (batch) {
-                  if (batch != null) provider.selectBatch(batch);
+                onChanged: (uid) {
+                  if (uid == null) return;
+                  final batch = provider.batches.firstWhere(
+                    (b) => b.uid == uid,
+                  );
+                  provider.selectBatch(batch);
                 },
               ),
             ),
@@ -306,8 +673,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: DropdownButtonHideUnderline(
-              child: DropdownButton<BatchSession?>(
-                value: provider.selectedSession,
+              child: DropdownButton<String?>(
+                value: provider.selectedSession?.uid,
                 isExpanded: true,
                 icon: Icon(
                   Icons.expand_more_rounded,
@@ -324,7 +691,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   style: TextStyle(color: AppColors.textHint, fontSize: 14),
                 ),
                 items: [
-                  DropdownMenuItem<BatchSession?>(
+                  DropdownMenuItem<String?>(
                     value: null,
                     child: Text(
                       'All Sessions',
@@ -335,8 +702,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                   ),
                   ...sessions.map(
-                    (s) => DropdownMenuItem<BatchSession?>(
-                      value: s,
+                    (s) => DropdownMenuItem<String?>(
+                      value: s.uid,
                       child: Text(
                         s.name,
                         style: TextStyle(
@@ -348,7 +715,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                   ),
                 ],
-                onChanged: (session) => provider.selectSession(session),
+                onChanged: (uid) {
+                  final session = uid == null
+                      ? null
+                      : sessions.firstWhere((s) => s.uid == uid);
+                  provider.selectSession(session);
+                },
               ),
             ),
           ),
