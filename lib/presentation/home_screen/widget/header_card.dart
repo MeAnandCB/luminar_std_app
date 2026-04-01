@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/notification_screen/notification_screen.dart';
 import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
+import 'package:provider/provider.dart';
 
 class HeaderWidget extends StatelessWidget {
   final String studentName;
@@ -34,7 +36,7 @@ class HeaderWidget extends StatelessWidget {
           child: Row(children: [_buildProfileAvatar(context), const SizedBox(width: 12), _buildUserInfo(context)]),
         ),
 
-        Row(children: [_buildNotificationIcon(context)]),
+        Row(children: [_buildThemeToggle(context), const SizedBox(width: 4), _buildNotificationIcon(context)]),
       ],
     );
   }
@@ -120,6 +122,28 @@ class HeaderWidget extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildThemeToggle(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
+    return GestureDetector(
+      onTap: () => themeProvider.toggleTheme(),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.primary.withValues(alpha: 0.15)
+              : AppColors.primary.withValues(alpha: 0.08),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+          color: AppColors.primary,
+          size: 20,
+        ),
+      ),
     );
   }
 

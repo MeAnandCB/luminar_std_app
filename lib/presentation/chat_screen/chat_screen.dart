@@ -165,6 +165,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       }
     });
 
+    _messageController.addListener(() => setState(() {}));
+
     _webSocketService =
         widget.webSocketService ??
         WebSocketService(
@@ -3773,9 +3775,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
       final isLast = i == mains.length - 1;
       if (!isLast && _needsSeparator(mains[i + 1], message)) {
-        items.add(_buildDateSeparator(_dateSeparatorLabel(message.createdAt)));
+        // Separator sits above the newer message visually (reverse list),
+        // so label should reflect the older group's date.
+        items.add(_buildDateSeparator(_dateSeparatorLabel(mains[i + 1].createdAt)));
       }
       if (isLast) {
+        // Oldest message — separator at the very top uses its own date.
         items.add(_buildDateSeparator(_dateSeparatorLabel(message.createdAt)));
       }
     }

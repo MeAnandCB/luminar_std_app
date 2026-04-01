@@ -49,14 +49,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     String? vLink = widget.video.videoLink;
     String? eCode = widget.video.embedCode;
 
-    debugPrint('[Video] Sources — Source: $vSource | Url: $vUrl | Link: $vLink | Embed: $eCode');
+    debugPrint(
+      '[Video] Sources — Source: $vSource | Url: $vUrl | Link: $vLink | Embed: $eCode',
+    );
 
     // Priority: videoSource > videoUrl > videoLink > embedCode
-    _videoId = _tryExtractIdFrom(vSource) ??
-               _tryExtractIdFrom(vUrl) ??
-               _tryExtractIdFrom(vLink) ??
-               _tryExtractIdFrom(eCode) ??
-               '';
+    _videoId =
+        _tryExtractIdFrom(vSource) ??
+        _tryExtractIdFrom(vUrl) ??
+        _tryExtractIdFrom(vLink) ??
+        _tryExtractIdFrom(eCode) ??
+        '';
 
     debugPrint('[Video] Final extracted ID: "$_videoId"');
   }
@@ -69,17 +72,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (id != null && id.length == 11) return id;
 
     // 2. If it's already an 11-char ID
-    if (source.length == 11 && RegExp(r'^[a-zA-Z0-9_-]{11}$').hasMatch(source)) {
+    if (source.length == 11 &&
+        RegExp(r'^[a-zA-Z0-9_-]{11}$').hasMatch(source)) {
       return source;
     }
 
     // 3. Fallback for Shorts if convertUrlToId missed it
     if (source.contains('/shorts/')) {
-        final regExp = RegExp(r'shorts\/([a-zA-Z0-9_-]{11})');
-        final match = regExp.firstMatch(source);
-        if (match != null && match.groupCount >= 1) {
-            return match.group(1);
-        }
+      final regExp = RegExp(r'shorts\/([a-zA-Z0-9_-]{11})');
+      final match = regExp.firstMatch(source);
+      if (match != null && match.groupCount >= 1) {
+        return match.group(1);
+      }
     }
 
     return null;
@@ -267,10 +271,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                 foregroundColor: Colors.white,
                 title: Text(
                   widget.video.title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -279,12 +280,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                   onPressed: () => Navigator.pop(context),
                 ),
                 elevation: 0,
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.info_outline_rounded),
-                    onPressed: _showVideoInfo,
-                  ),
-                ],
               ),
         body: SafeArea(
           top: !_isFullScreen,
@@ -358,8 +353,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                         },
                       ),
               ),
-              // Video Details Section (shown only when not in fullscreen)
-              if (!_isFullScreen && _videoId.isNotEmpty) _buildVideoDetails(),
             ],
           ),
         ),
@@ -420,149 +413,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildVideoDetails() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Title
-          Text(
-            widget.video.title,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Like Button and Meta info row
-          Row(
-            children: [
-              // Like Button
-              _buildLikeButton(),
-              const SizedBox(width: 12),
-              // Meta chips
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildMetaChip(
-                        Icons.person_outline_rounded,
-                        widget.video.uploadedByName,
-                      ),
-                      const SizedBox(width: 8),
-                      if (widget.video.duration != null)
-                        _buildMetaChip(
-                          Icons.access_time_rounded,
-                          _formatDuration(widget.video.duration!),
-                        ),
-                      const SizedBox(width: 8),
-                      if (widget.video.fileSize != null)
-                        _buildMetaChip(
-                          Icons.storage_rounded,
-                          _formatFileSize(widget.video.fileSize!),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Description
-          if (widget.video.description.isNotEmpty) ...[
-            const Text(
-              'Description',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              widget.video.description,
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          // Additional info
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.info_outline_rounded,
-                      color: Colors.white70,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Video Information',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Gallery: ${widget.video.gallery}',
-                  style: TextStyle(color: Colors.white54, fontSize: 11),
-                ),
-                if (widget.video.folder != null &&
-                    widget.video.folder!.isNotEmpty)
-                  Text(
-                    'Folder: ${widget.video.folder}',
-                    style: TextStyle(color: Colors.white54, fontSize: 11),
-                  ),
-                Text(
-                  'Uploaded: ${_formatDate(widget.video.createdAt)}',
-                  style: TextStyle(color: Colors.white54, fontSize: 11),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Video ID: $_videoId',
-                  style: TextStyle(color: Colors.white54, fontSize: 10),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
       ),
     );
   }
@@ -630,10 +480,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         children: [
           Icon(icon, color: Colors.white70, size: 12),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(color: Colors.white70, fontSize: 11),
-          ),
+          Text(label, style: TextStyle(color: Colors.white70, fontSize: 11)),
         ],
       ),
     );
@@ -677,72 +524,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     } else {
       return 'Just now';
     }
-  }
-
-  void _showVideoInfo() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text(
-          'Video Information',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Title: ${widget.video.title}',
-              style: TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Uploaded by: ${widget.video.uploadedByName}',
-              style: TextStyle(color: Colors.white70),
-            ),
-            if (widget.video.duration != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Duration: ${_formatDuration(widget.video.duration!)}',
-                style: TextStyle(color: Colors.white70),
-              ),
-            ],
-            if (widget.video.fileSize != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'File Size: ${_formatFileSize(widget.video.fileSize!)}',
-                style: TextStyle(color: Colors.white70),
-              ),
-            ],
-            const SizedBox(height: 8),
-            Text(
-              'Uploaded: ${_formatDate(widget.video.createdAt)}',
-              style: TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Video ID: $_videoId',
-              style: TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Likes: $_likeCount',
-              style: TextStyle(color: Colors.white70),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Close',
-              style: TextStyle(color: Color(0xFF6C5CE7)),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showVideoEndedDialog() {

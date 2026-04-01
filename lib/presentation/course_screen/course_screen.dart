@@ -222,11 +222,7 @@ class _CourseScreenState extends State<CourseScreen>
                 ),
               ],
             ),
-            child: Icon(
-              Icons.school_rounded,
-              color: AppColors.white,
-              size: 24,
-            ),
+            child: Icon(Icons.school_rounded, color: AppColors.white, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -244,7 +240,10 @@ class _CourseScreenState extends State<CourseScreen>
                 const SizedBox(height: 4),
                 Text(
                   widget.courseName,
-                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -426,9 +425,12 @@ class _CourseScreenState extends State<CourseScreen>
                   _formatDate(widget.startDate),
                   AppColors.statsBlue,
                 ),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(height: 1),
+                  child: Divider(
+                    height: 1,
+                    color: AppColors.borderColor.withOpacity(0.5),
+                  ),
                 ),
                 _buildInfoRow(
                   Icons.access_time_rounded,
@@ -436,9 +438,12 @@ class _CourseScreenState extends State<CourseScreen>
                   _formatTimeDetailed(widget.schedule),
                   AppColors.statsOrange,
                 ),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(height: 1),
+                  child: Divider(
+                    height: 1,
+                    color: AppColors.borderColor.withOpacity(0.5),
+                  ),
                 ),
                 _buildInfoRow(
                   _getModeIcon(widget.attendanceMode),
@@ -448,7 +453,10 @@ class _CourseScreenState extends State<CourseScreen>
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(height: 1, color: AppColors.borderColor.withOpacity(0.5)),
+                  child: Divider(
+                    height: 1,
+                    color: AppColors.borderColor.withOpacity(0.5),
+                  ),
                 ),
                 _buildInfoRow(
                   Icons.group_rounded,
@@ -547,7 +555,7 @@ class _CourseScreenState extends State<CourseScreen>
                   ),
                 ),
                 child: Text(
-                  '${widget.discount}% Discount',
+                  '₹${widget.discount} Discount',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textWhite,
@@ -615,11 +623,10 @@ class _CourseScreenState extends State<CourseScreen>
                 ),
               ),
               Text(
-                '${widget.paymentCompleted}% Completed',
+                '${widget.paymentCompleted} Rupees Paid',
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textWhite,
-                  fontWeight: FontWeight.w600,
+                  color: AppColors.white.withOpacity(0.8),
                 ),
               ),
             ],
@@ -645,7 +652,10 @@ class _CourseScreenState extends State<CourseScreen>
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(fontSize: 11, color: AppColors.white.withOpacity(0.8)),
+          style: TextStyle(
+            fontSize: 11,
+            color: AppColors.white.withOpacity(0.8),
+          ),
         ),
       ],
     );
@@ -659,7 +669,9 @@ class _CourseScreenState extends State<CourseScreen>
         shape: BoxShape.circle,
         color: isActive ? AppColors.statsGreen : AppColors.surface,
         border: Border.all(
-          color: isActive ? AppColors.statsGreen.withOpacity(0.3) : AppColors.borderColor,
+          color: isActive
+              ? AppColors.statsGreen.withOpacity(0.3)
+              : AppColors.borderColor,
           width: 2,
         ),
         boxShadow: isActive
@@ -675,7 +687,9 @@ class _CourseScreenState extends State<CourseScreen>
       child: Center(
         child: Icon(
           isActive ? Icons.check_rounded : Icons.circle_rounded,
-          color: isActive ? AppColors.white : AppColors.textSecondary.withOpacity(0.5),
+          color: isActive
+              ? AppColors.white
+              : AppColors.textSecondary.withOpacity(0.5),
           size: isActive ? 16 : 8,
         ),
       ),

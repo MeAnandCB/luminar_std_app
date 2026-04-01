@@ -88,7 +88,11 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
           children: [
             Text(
               widget.galleryName,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
             if (widget.galleryDescription.isNotEmpty)
               Text(
@@ -378,7 +382,10 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                 ),
                 child: Text(
                   folder.description!,
-                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -420,13 +427,11 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF6366F1).withOpacity(0.8),
-                    const Color(0xFF8B5CF6).withOpacity(0.8),
-                  ],
+                image: DecorationImage(
+                  image: NetworkImage(
+                    "https://www.intermedia-solutions.de/wp-content/uploads/video-thumbnail-01.jpg",
+                  ),
+                  fit: BoxFit.cover,
                 ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
@@ -488,7 +493,10 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                     if (video.description.isNotEmpty)
                       Text(
                         video.description,
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),

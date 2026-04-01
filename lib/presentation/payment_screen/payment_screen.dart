@@ -1,6 +1,8 @@
 // lib/main.dart - Updated to show single enrollment details
 
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
@@ -9,6 +11,10 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/repository/payment_screen/model.dart';
 import 'package:luminar_std/repository/payment_screen/service.dart';
 import 'package:luminar_std/repository/razorpay/model/emi_res_model.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
@@ -258,7 +264,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
             child: const Center(child: Icon(Icons.school, color: AppColors.primary, size: 20)),
           ),
           const SizedBox(width: 12),
@@ -304,7 +310,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AppColors.statsOrange.withOpacity(0.7)),
+            Icon(Icons.error_outline, size: 64, color: AppColors.statsOrange.withValues(alpha: 0.7)),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
@@ -338,7 +344,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.payment, size: 64, color: AppColors.textSecondary.withOpacity(0.5)),
+            Icon(Icons.payment, size: 64, color: AppColors.textSecondary.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
             Text('No payment data available', style: TextStyle(fontSize: 16, color: AppColors.textSecondary)),
           ],
@@ -419,7 +425,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
           decoration: BoxDecoration(
             color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: color.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,7 +484,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: (isOverdue ? Colors.red : Colors.purple).withOpacity(0.3),
+                  color: (isOverdue ? Colors.red : Colors.purple).withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -500,7 +506,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -515,7 +521,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
                       ],
@@ -523,9 +529,9 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -565,11 +571,11 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.event, size: 12, color: Colors.white.withOpacity(0.7)),
+                            Icon(Icons.event, size: 12, color: Colors.white.withValues(alpha: 0.7)),
                             const SizedBox(width: 4),
                             Text(
                               DateFormat('dd MMMM, yyyy').format(nextDueDate),
-                              style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.9)),
+                              style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.9)),
                             ),
                           ],
                         ),
@@ -581,7 +587,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
-                            BoxShadow(color: Colors.white.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5)),
+                            BoxShadow(color: Colors.white.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 5)),
                           ],
                         ),
                         child: Material(
@@ -622,7 +628,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
             child: Container(
               width: 100,
               height: 100,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.1)),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.1)),
             ),
           ),
           Positioned(
@@ -631,7 +637,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
             child: Container(
               width: 150,
               height: 150,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.05)),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.05)),
             ),
           ),
         ],
@@ -646,7 +652,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
         child: Center(
           child: Column(
             children: [
-              Icon(Icons.history, size: 32, color: AppColors.textSecondary.withOpacity(0.5)),
+              Icon(Icons.history, size: 32, color: AppColors.textSecondary.withValues(alpha: 0.5)),
               const SizedBox(height: 8),
               Text('No transactions found', style: TextStyle(color: AppColors.textSecondary)),
             ],
@@ -668,103 +674,123 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
         final amount = _getNumericAmount(txn.amount);
         final status = _mapTransactionStatus(txn.status);
 
-        return InkWell(
-          onTap: () {},
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.borderColor, width: 1),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: status == TransactionStatus.completed
-                        ? AppColors.statsGreen.withOpacity(0.1)
-                        : status == TransactionStatus.failed
-                        ? AppColors.error.withOpacity(0.1)
-                        : AppColors.statsOrange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    status == TransactionStatus.completed
-                        ? Icons.check_circle
-                        : status == TransactionStatus.failed
-                        ? Icons.cancel
-                        : Icons.pending,
-                    size: 16,
-                    color: status == TransactionStatus.completed
-                        ? Colors.green[600]
-                        : status == TransactionStatus.failed
-                        ? Colors.red[600]
-                        : Colors.orange[600],
-                  ),
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderColor, width: 1),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: status == TransactionStatus.completed
+                      ? AppColors.statsGreen.withValues(alpha: 0.1)
+                      : status == TransactionStatus.failed
+                      ? AppColors.error.withValues(alpha: 0.1)
+                      : AppColors.statsOrange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Payment', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${dateFormat.format(txn.paymentDate ?? DateTime.now())} • ${txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'Unknown'}',
-                        style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
+                child: Icon(
+                  status == TransactionStatus.completed
+                      ? Icons.check_circle
+                      : status == TransactionStatus.failed
+                      ? Icons.cancel
+                      : Icons.pending,
+                  size: 16,
+                  color: status == TransactionStatus.completed
+                      ? Colors.green[600]
+                      : status == TransactionStatus.failed
+                      ? Colors.red[600]
+                      : Colors.orange[600],
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text('Payment', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+                    const SizedBox(height: 2),
                     Text(
-                      currencyFormat.format(amount),
+                      '${dateFormat.format(txn.paymentDate ?? DateTime.now())} • ${txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'Unknown'}',
+                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    currencyFormat.format(amount),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: status == TransactionStatus.completed
+                          ? Colors.green[600]
+                          : status == TransactionStatus.failed
+                          ? Colors.red[600]
+                          : Colors.orange[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: status == TransactionStatus.completed
+                          ? AppColors.statsGreen.withValues(alpha: 0.1)
+                          : status == TransactionStatus.failed
+                          ? AppColors.error.withValues(alpha: 0.1)
+                          : AppColors.statsOrange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      status == TransactionStatus.completed
+                          ? 'Success'
+                          : status == TransactionStatus.failed
+                          ? 'Failed'
+                          : 'Pending',
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w500,
                         color: status == TransactionStatus.completed
-                            ? Colors.green[600]
+                            ? AppColors.statsGreen
                             : status == TransactionStatus.failed
-                            ? Colors.red[600]
-                            : Colors.orange[600],
+                            ? AppColors.error
+                            : AppColors.statsOrange,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: status == TransactionStatus.completed
-                            ? AppColors.statsGreen.withOpacity(0.1)
-                            : status == TransactionStatus.failed
-                            ? AppColors.error.withOpacity(0.1)
-                            : AppColors.statsOrange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        status == TransactionStatus.completed
-                            ? 'Success'
-                            : status == TransactionStatus.failed
-                            ? 'Failed'
-                            : 'Pending',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
-                          color: status == TransactionStatus.completed
-                              ? AppColors.statsGreen
-                              : status == TransactionStatus.failed
-                              ? AppColors.error
-                              : AppColors.statsOrange,
+                  ),
+                  if (status == TransactionStatus.completed) ...[
+                    const SizedBox(height: 4),
+                    GestureDetector(
+                      onTap: () => _downloadReceipt(txn),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.download_rounded, size: 12, color: AppColors.primary),
+                            const SizedBox(width: 3),
+                            Text(
+                              'Receipt',
+                              style: TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.w600),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ),
         );
       },
@@ -778,7 +804,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
         child: Center(
           child: Column(
             children: [
-              Icon(Icons.schedule, size: 32, color: AppColors.textSecondary.withOpacity(0.5)),
+              Icon(Icons.schedule, size: 32, color: AppColors.textSecondary.withValues(alpha: 0.5)),
               const SizedBox(height: 8),
               Text('No EMI schedule available', style: TextStyle(color: AppColors.textSecondary)),
             ],
@@ -820,9 +846,9 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                 color: !isEnabled
                     ? AppColors.borderColor
                     : emiStatus == EmiStatus.overdue
-                    ? AppColors.error.withOpacity(0.3)
+                    ? AppColors.error.withValues(alpha: 0.3)
                     : emiStatus == EmiStatus.paid
-                    ? AppColors.statsGreen.withOpacity(0.3)
+                    ? AppColors.statsGreen.withValues(alpha: 0.3)
                     : AppColors.borderColor,
                 width: 1,
               ),
@@ -836,10 +862,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                     color: !isEnabled
                         ? AppColors.surface
                         : emiStatus == EmiStatus.paid
-                        ? AppColors.statsGreen.withOpacity(0.1)
+                        ? AppColors.statsGreen.withValues(alpha: 0.1)
                         : emiStatus == EmiStatus.overdue
-                        ? AppColors.error.withOpacity(0.1)
-                        : AppColors.primary.withOpacity(0.1),
+                        ? AppColors.error.withValues(alpha: 0.1)
+                        : AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -851,7 +877,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                           : Icons.payment,
                       size: 16,
                       color: !isEnabled
-                          ? AppColors.textSecondary.withOpacity(0.5)
+                          ? AppColors.textSecondary.withValues(alpha: 0.5)
                           : emiStatus == EmiStatus.paid
                           ? AppColors.statsGreen
                           : emiStatus == EmiStatus.overdue
@@ -870,13 +896,13 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: isEnabled ? AppColors.textPrimary : AppColors.textSecondary.withOpacity(0.5),
+                          color: isEnabled ? AppColors.textPrimary : AppColors.textSecondary.withValues(alpha: 0.5),
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Due: ${dateFormat.format(emi.dueDate ?? DateTime.now())}',
-                        style: TextStyle(fontSize: 11, color: isEnabled ? AppColors.textSecondary : AppColors.textSecondary.withOpacity(0.3)),
+                        style: TextStyle(fontSize: 11, color: isEnabled ? AppColors.textSecondary : AppColors.textSecondary.withValues(alpha: 0.3)),
                       ),
                     ],
                   ),
@@ -890,7 +916,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: !isEnabled
-                            ? AppColors.textSecondary.withOpacity(0.3)
+                            ? AppColors.textSecondary.withValues(alpha: 0.3)
                             : emiStatus == EmiStatus.overdue
                             ? AppColors.error
                             : emiStatus == EmiStatus.paid
@@ -906,7 +932,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                           if (emiStatus == EmiStatus.overdue && isEnabled)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(color: AppColors.error.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                              decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
                               child: Text(
                                 'Overdue',
                                 style: TextStyle(fontSize: 8, color: AppColors.error, fontWeight: FontWeight.w500),
@@ -916,14 +942,14 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: isEnabled ? AppColors.statsOrange.withOpacity(0.1) : AppColors.surface,
+                                color: isEnabled ? AppColors.statsOrange.withValues(alpha: 0.1) : AppColors.surface,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 !isEnabled ? 'Locked' : 'Pending',
                                 style: TextStyle(
                                   fontSize: 8,
-                                  color: isEnabled ? AppColors.statsOrange : AppColors.textSecondary.withOpacity(0.5),
+                                  color: isEnabled ? AppColors.statsOrange : AppColors.textSecondary.withValues(alpha: 0.5),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -932,7 +958,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: isEnabled ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
+                              color: isEnabled ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -940,7 +966,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w600,
-                                color: isEnabled ? AppColors.primary : AppColors.textSecondary.withOpacity(0.5),
+                                color: isEnabled ? AppColors.primary : AppColors.textSecondary.withValues(alpha: 0.5),
                               ),
                             ),
                           ),
@@ -984,7 +1010,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                       child: const Icon(Icons.school, color: AppColors.primary, size: 24),
                     ),
                     const SizedBox(width: 16),
@@ -1007,7 +1033,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: isOverdue ? AppColors.error.withOpacity(0.1) : AppColors.statsGreen.withOpacity(0.1),
+                        color: isOverdue ? AppColors.error.withValues(alpha: 0.1) : AppColors.statsGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -1099,7 +1125,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
+              boxShadow: [BoxShadow(color: Colors.grey.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 5))],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1110,7 +1136,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                     Text('Progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
                       child: Text(
                         '${progress.toStringAsFixed(1)}%',
                         style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
@@ -1154,7 +1180,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                   tilePadding: const EdgeInsets.all(16),
                   leading: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: AppColors.statsOrange.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: AppColors.statsOrange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
                     child: Icon(Icons.schedule, color: AppColors.statsOrange, size: 18),
                   ),
                   title: Text('EMI Schedule', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
@@ -1190,7 +1216,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                 tilePadding: const EdgeInsets.all(16),
                 leading: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
                   child: Icon(Icons.history, color: AppColors.primary, size: 18),
                 ),
                 title: Text('Payment History', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
@@ -1214,6 +1240,178 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
           ),
 
           const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _downloadReceipt(PaymentTransaction txn) async {
+    try {
+      final data = _paymentData;
+      final dateFormat = DateFormat('dd/MM/yyyy');
+      final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // ── Header ──
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.all(20),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColor.fromHex('6C5CE7'),
+                    borderRadius: pw.BorderRadius.circular(12),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'LUMINAR TECHNOHUB',
+                        style: pw.TextStyle(
+                          fontSize: 22,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        'Payment Receipt',
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 24),
+
+                // ── Receipt Info ──
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'Receipt No: ${txn.transactionId ?? txn.uid ?? 'N/A'}',
+                      style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
+                    ),
+                    pw.Text(
+                      'Date: ${dateFormat.format(txn.paymentDate ?? DateTime.now())}',
+                      style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 16),
+                pw.Divider(color: PdfColors.grey300),
+                pw.SizedBox(height: 16),
+
+                // ── Student Details ──
+                pw.Text(
+                  'Student Details',
+                  style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 10),
+                _pdfRow('Student Name', data?.studentName ?? 'N/A'),
+                _pdfRow('Student ID', data?.studentId ?? 'N/A'),
+                _pdfRow('Course', data?.batch?.courseName ?? 'N/A'),
+                _pdfRow('Batch', data?.batch?.batchName ?? 'N/A'),
+                pw.SizedBox(height: 16),
+                pw.Divider(color: PdfColors.grey300),
+                pw.SizedBox(height: 16),
+
+                // ── Payment Details ──
+                pw.Text(
+                  'Payment Details',
+                  style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 10),
+                _pdfRow('Amount Paid', currencyFormat.format(_getNumericAmount(txn.amount))),
+                _pdfRow('Payment Method', txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'N/A'),
+                _pdfRow('Status', txn.status?.toUpperCase() ?? 'N/A'),
+                if ((txn.transactionId ?? '').isNotEmpty)
+                  _pdfRow('Transaction ID', txn.transactionId!),
+                pw.SizedBox(height: 16),
+                pw.Divider(color: PdfColors.grey300),
+                pw.SizedBox(height: 16),
+
+                // ── Fee Summary ──
+                pw.Text(
+                  'Fee Summary',
+                  style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 10),
+                _pdfRow('Total Course Fee', currencyFormat.format(_getNumericAmount(data?.originalCourseFees))),
+                _pdfRow('Total Paid', currencyFormat.format(_getNumericAmount(data?.totalAmountPaid))),
+                _pdfRow('Balance Due', currencyFormat.format(_getNumericAmount(data?.totalPendingAmount))),
+                pw.SizedBox(height: 32),
+
+                // ── Footer ──
+                pw.Center(
+                  child: pw.Text(
+                    'This is a computer-generated receipt and does not require a signature.',
+                    style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      final bytes = await pdf.save();
+      final dir = await getApplicationDocumentsDirectory();
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final file = File('${dir.path}/receipt_$timestamp.pdf');
+      await file.writeAsBytes(bytes);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 18),
+                const SizedBox(width: 10),
+                const Expanded(child: Text('Receipt saved successfully')),
+                TextButton(
+                  onPressed: () => OpenFilex.open(file.path),
+                  child: const Text('OPEN', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.statsGreen,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download receipt: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  pw.Widget _pdfRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 6),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
+          pw.Text(value, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
         ],
       ),
     );

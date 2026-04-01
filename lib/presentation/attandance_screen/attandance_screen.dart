@@ -96,6 +96,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
+  /// Converts API date string "YYYY-MM-DD" → "DD-MM-YYYY"
+  String _formatRecordDate(String date) {
+    try {
+      final parts = date.split('-');
+      if (parts.length == 3) return '${parts[2]}-${parts[1]}-${parts[0]}';
+    } catch (_) {}
+    return date;
+  }
+
   String _formatDate(DateTime? date) {
     if (date == null) return 'dd/mm/yyyy';
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
@@ -604,10 +613,52 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: provider.sessions.length,
+            itemCount: provider.sessions.length +
+                (provider.selectedSession != null ? 1 : 0),
             separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (context, i) {
-              final session = provider.sessions[i];
+              // First item when a session is active: deselect chip
+              if (provider.selectedSession != null && i == 0) {
+                return GestureDetector(
+                  onTap: () => provider.selectSession(null),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.close_rounded,
+                          size: 14,
+                          color: AppColors.error,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'All',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              final sessionIndex =
+                  provider.selectedSession != null ? i - 1 : i;
+              final session = provider.sessions[sessionIndex];
               final isSelected =
                   provider.selectedSession?.uid == session.uid;
               return GestureDetector(
@@ -1028,7 +1079,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  record.date,
+                  _formatRecordDate(record.date),
                   style: AppTextStyles.activityTitle.copyWith(fontSize: 15),
                 ),
                 const SizedBox(height: 3),

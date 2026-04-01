@@ -111,8 +111,12 @@ class AttendanceProvider extends ChangeNotifier {
   }
 
   Future<void> selectSession(BatchSession? session) async {
-    if (_selectedSession?.uid == session?.uid) {
-      // Tap same chip again → deselect (show all)
+    if (session == null) {
+      // Explicit deselect (× chip tapped)
+      if (_selectedSession == null) return;
+      _selectedSession = null;
+    } else if (_selectedSession?.uid == session.uid) {
+      // Tap same chip again → deselect
       _selectedSession = null;
     } else {
       _selectedSession = session;

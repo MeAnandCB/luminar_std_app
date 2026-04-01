@@ -7,7 +7,8 @@ class VideoCard extends StatelessWidget {
   final VideoModel video;
   final VoidCallback onWatch;
 
-  const VideoCard({Key? key, required this.video, required this.onWatch}) : super(key: key);
+  const VideoCard({Key? key, required this.video, required this.onWatch})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +21,12 @@ class VideoCard extends StatelessWidget {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: AppColors.shadowLight, spreadRadius: 1, blurRadius: 8, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: AppColors.shadowLight,
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Material(
@@ -50,19 +56,30 @@ class VideoCard extends StatelessWidget {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          Icon(Icons.play_circle_filled, size: 30, color: AppColors.primary.withOpacity(0.8)),
+                          Icon(
+                            Icons.play_circle_filled,
+                            size: 30,
+                            color: AppColors.primary.withOpacity(0.8),
+                          ),
                           Positioned(
                             bottom: 4,
                             right: 4,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.black.withOpacity(0.6),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 durationText,
-                                style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ),
@@ -78,7 +95,11 @@ class VideoCard extends StatelessWidget {
                         children: [
                           Text(
                             video.title,
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -86,7 +107,10 @@ class VideoCard extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               video.description,
-                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -105,14 +129,25 @@ class VideoCard extends StatelessWidget {
                     // Uploader info with verified badge
                     Container(
                       padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(color: AppColors.statsGreen.withOpacity(0.1), shape: BoxShape.circle),
-                      child: Icon(Icons.check_circle_rounded, size: 18, color: AppColors.statsGreen),
+                      decoration: BoxDecoration(
+                        color: AppColors.statsGreen.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.check_circle_rounded,
+                        size: 18,
+                        color: AppColors.statsGreen,
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         video.uploadedByName,
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -120,16 +155,30 @@ class VideoCard extends StatelessWidget {
 
                     // Date
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.calendar_today_rounded, size: 12, color: AppColors.textSecondary),
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 12,
+                            color: AppColors.textSecondary,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             _formatDate(video.createdAt),
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -143,7 +192,13 @@ class VideoCard extends StatelessWidget {
                 Container(
                   height: 1,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [Colors.transparent, AppColors.borderColor, Colors.transparent]),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        AppColors.borderColor,
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
                 ),
 
@@ -179,7 +234,11 @@ class VideoCard extends StatelessWidget {
             gradient: AppColors.primaryGradient,
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
-              BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4)),
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
           child: Row(
@@ -189,7 +248,11 @@ class VideoCard extends StatelessWidget {
               SizedBox(width: 4),
               Text(
                 'Watch',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.white),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.white,
+                ),
               ),
             ],
           ),
@@ -199,7 +262,20 @@ class VideoCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final now = DateTime.now();
     final difference = now.difference(date).inDays;
 
