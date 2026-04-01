@@ -8,19 +8,13 @@ import 'package:luminar_std/main.dart';
 /// Top-level background FCM handler
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  LoggerUtils.info(
-    'Background FCM: ${message.notification?.title}',
-    tag: 'FCM',
-  );
+  LoggerUtils.info('Background FCM: ${message.notification?.title}', tag: 'FCM');
 }
 
 /// Top-level local notification background tap handler
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse response) {
-  LoggerUtils.info(
-    'Background notification tapped: ${response.payload}',
-    tag: 'FCM',
-  );
+  LoggerUtils.info('Background notification tapped: ${response.payload}', tag: 'FCM');
 }
 
 class FCMService {
@@ -30,8 +24,7 @@ class FCMService {
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
-  final FlutterLocalNotificationsPlugin _localNotifications =
-      FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'luminar_high_importance_channel',
@@ -53,6 +46,11 @@ class FCMService {
       // TODO: Send updated token to your backend
     });
 
+    // Added for iOS foreground support
+    if (Platform.isIOS) {
+      await _messaging.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
+    }
+
     _handleForegroundMessages();
     _handleBackgroundToOpenMessages();
     await _handleTerminatedStateMessage();
@@ -71,37 +69,26 @@ class FCMService {
       sound: true,
     );
 
-    LoggerUtils.info(
-      'FCM Permission: ${settings.authorizationStatus}',
-      tag: 'FCM',
-    );
+    LoggerUtils.info('FCM Permission: ${settings.authorizationStatus}', tag: 'FCM');
   }
 
   // ─── Local Notifications Setup ────────────────────────────────────────────
 
   Future<void> _initLocalNotifications() async {
-    const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const DarwinInitializationSettings iosSettings =
-        DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
-        );
-
-    const InitializationSettings initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
+    const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
     );
+
+    const InitializationSettings initSettings = InitializationSettings(android: androidSettings, iOS: iosSettings);
 
     await _localNotifications.initialize(
       settings: initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        LoggerUtils.info(
-          'Notification tapped: ${response.payload}',
-          tag: 'FCM',
-        );
+        LoggerUtils.info('Notification tapped: ${response.payload}', tag: 'FCM');
         _handleNotificationNavigation(response.payload);
       },
       onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
@@ -109,9 +96,7 @@ class FCMService {
 
     // Create Android high-importance channel
     await _localNotifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(_channel);
   }
 
@@ -143,10 +128,7 @@ class FCMService {
 
   void _handleForegroundMessages() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      LoggerUtils.info(
-        'Foreground FCM: ${message.notification?.title}',
-        tag: 'FCM',
-      );
+      LoggerUtils.info('Foreground FCM: ${message.notification?.title}', tag: 'FCM');
       final notification = message.notification;
       if (notification != null) {
         _showLocalNotification(
@@ -161,10 +143,7 @@ class FCMService {
 
   void _handleBackgroundToOpenMessages() {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      LoggerUtils.info(
-        'FCM opened from background: ${message.data}',
-        tag: 'FCM',
-      );
+      LoggerUtils.info('FCM opened from background: ${message.data}', tag: 'FCM');
       _handleNotificationNavigation(message.data['route'] as String?);
     });
   }
@@ -172,10 +151,7 @@ class FCMService {
   Future<void> _handleTerminatedStateMessage() async {
     final RemoteMessage? initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      LoggerUtils.info(
-        'FCM opened from terminated: ${initialMessage.data}',
-        tag: 'FCM',
-      );
+      LoggerUtils.info('FCM opened from terminated: ${initialMessage.data}', tag: 'FCM');
       await Future.delayed(const Duration(seconds: 1));
       _handleNotificationNavigation(initialMessage.data['route'] as String?);
     }
@@ -202,11 +178,7 @@ class FCMService {
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
+        iOS: const DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
       ),
       payload: payload,
     );
@@ -225,10 +197,7 @@ class FCMService {
         navigatorKey.currentState?.pushNamed('/chat');
         break;
       default:
-        navigatorKey.currentState?.pushNamedAndRemoveUntil(
-          '/home',
-          (route) => false,
-        );
+        navigatorKey.currentState?.pushNamedAndRemoveUntil('/home', (route) => false);
     }
   }
 }
