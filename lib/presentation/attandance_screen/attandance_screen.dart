@@ -7,7 +7,16 @@ import 'package:luminar_std/repository/attandance_screen/new_model.dart';
 import 'package:provider/provider.dart';
 
 class AttendanceScreen extends StatefulWidget {
-  const AttendanceScreen({super.key});
+  const AttendanceScreen({
+    super.key,
+    required this.batchId,
+    required this.batchName,
+    this.courseName = '',
+  });
+
+  final String batchId;
+  final String batchName;
+  final String courseName;
 
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
@@ -35,7 +44,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AttendanceProvider>().loadDashboard();
+      context.read<AttendanceProvider>().initWithBatch(
+        batchId: widget.batchId,
+        batchName: widget.batchName,
+        courseName: widget.courseName,
+      );
     });
   }
 
@@ -116,17 +129,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           children: [
             _buildHeader(context),
             Expanded(
-              child: provider.isLoadingDashboard
-                  ? _buildFullLoadingState()
-                  : provider.error != null && provider.batches.isEmpty
+              child: provider.error != null && provider.allRecords.isEmpty
                   ? _buildErrorState(
                       provider.error!,
-                      () => provider.loadDashboard(),
+                      () => provider.initWithBatch(
+                        batchId: widget.batchId,
+                        batchName: widget.batchName,
+                        courseName: widget.courseName,
+                      ),
                     )
                   : RefreshIndicator(
                       color: AppColors.primary,
                       backgroundColor: AppColors.cardBackground,
-                      onRefresh: () => provider.loadDashboard(),
+                      onRefresh: () => provider.initWithBatch(
+                        batchId: widget.batchId,
+                        batchName: widget.batchName,
+                        courseName: widget.courseName,
+                      ),
                       child: CustomScrollView(
                         controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -134,12 +153,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           SliverToBoxAdapter(
                             child: Column(
                               children: [
-                                if (provider.batches.isNotEmpty) ...[
-                                  _buildBatchSelector(provider),
-                                  if ((provider.selectedBatch?.sessions ?? [])
-                                      .isNotEmpty)
-                                    _buildSessionSelector(provider),
-                                ],
+                                _buildBatchInfoCard(),
+                                if (provider.sessions.isNotEmpty)
+                                  _buildSessionChips(provider),
                                 _buildFilterPanel(provider),
                                 if (provider.attendanceData != null)
                                   _buildStatsSection(
@@ -566,95 +582,87 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  // ─── Batch selector ───────────────────────────────────────────────────────
+  // ─── Session chips ────────────────────────────────────────────────────────
 
-  Widget _buildBatchSelector(AttendanceProvider provider) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.school_rounded, color: AppColors.primary, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: provider.selectedBatch?.uid,
-                isExpanded: true,
-                icon: Icon(Icons.expand_more_rounded, color: AppColors.primary),
-                dropdownColor: AppColors.cardBackground,
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-                hint: Text(
-                  'Select Batch',
-                  style: TextStyle(color: AppColors.textHint, fontSize: 14),
-                ),
-                items: provider.batches.map((batch) {
-                  return DropdownMenuItem<String>(
-                    value: batch.uid,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          batch.batchName,
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          batch.courseName,
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (uid) {
-                  if (uid == null) return;
-                  final batch = provider.batches.firstWhere(
-                    (b) => b.uid == uid,
-                  );
-                  provider.selectBatch(batch);
-                },
-              ),
+  Widget _buildSessionChips(AttendanceProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+          child: Text(
+            'Sessions',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
             ),
           ),
-        ],
-      ),
+        ),
+        SizedBox(
+          height: 38,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: provider.sessions.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, i) {
+              final session = provider.sessions[i];
+              final isSelected =
+                  provider.selectedSession?.uid == session.uid;
+              return GestureDetector(
+                onTap: () => provider.selectSession(session),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.cardBackground,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.borderColor,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: Text(
+                    session.name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  // ─── Session selector ─────────────────────────────────────────────────────
+  // ─── Batch info card (read-only, passed from previous screen) ────────────
 
-  Widget _buildSessionSelector(AttendanceProvider provider) {
-    final sessions = provider.selectedBatch?.sessions ?? [];
-
+  Widget _buildBatchInfoCard() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
@@ -669,59 +677,40 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.layers_rounded, color: AppColors.statsBlue, size: 20),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.school_rounded, color: AppColors.primary, size: 22),
+          ),
+          const SizedBox(width: 14),
           Expanded(
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String?>(
-                value: provider.selectedSession?.uid,
-                isExpanded: true,
-                icon: Icon(
-                  Icons.expand_more_rounded,
-                  color: AppColors.statsBlue,
-                ),
-                dropdownColor: AppColors.cardBackground,
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-                hint: Text(
-                  'All Sessions',
-                  style: TextStyle(color: AppColors.textHint, fontSize: 14),
-                ),
-                items: [
-                  DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text(
-                      'All Sessions',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.batchName,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
                   ),
-                  ...sessions.map(
-                    (s) => DropdownMenuItem<String?>(
-                      value: s.uid,
-                      child: Text(
-                        s.name,
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 14,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (widget.courseName.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    widget.courseName,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
-                onChanged: (uid) {
-                  final session = uid == null
-                      ? null
-                      : sessions.firstWhere((s) => s.uid == uid);
-                  provider.selectSession(session);
-                },
-              ),
+              ],
             ),
           ),
         ],
@@ -1097,19 +1086,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   // ─── Loading / empty / error states ──────────────────────────────────────
-
-  Widget _buildFullLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: AppColors.primary),
-          const SizedBox(height: 16),
-          Text('Loading attendance…', style: AppTextStyles.bodyText2),
-        ],
-      ),
-    );
-  }
 
   Widget _buildAttendanceLoadingState() {
     return Padding(

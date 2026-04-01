@@ -56,53 +56,67 @@ class AttendanceProvider extends ChangeNotifier {
         .toList();
   }
 
-  Future<void> loadDashboard() async {
-    _isLoadingDashboard = true;
-    _error = null;
+  // Sessions for the current batch (populated from dashboard)
+  List<BatchSession> _sessions = [];
+  List<BatchSession> get sessions => _sessions;
+
+  /// Called once from the screen with the batch info passed from the previous screen.
+  Future<void> initWithBatch({
+    required String batchId,
+    required String batchName,
+    String courseName = '',
+  }) async {
+    // No-op if already loaded for the same batch.
+    if (_selectedBatch?.uid == batchId && _attendanceData != null) return;
+
+    _selectedBatch = EnrollmentBatch(
+      uid: batchId,
+      batchName: batchName,
+      startDate: '',
+      endDate: '',
+      courseName: courseName,
+      sessions: [],
+    );
+    _sessions = [];
+    _selectedSession = null;
+    _allRecords = [];
+    _attendanceData = null;
+    _currentPage = 1;
+    _startDate = null;
+    _endDate = null;
+    _statusFilter = 'All';
     notifyListeners();
 
-    final response = await _service.getDashboard();
+    // Load sessions and attendance in parallel
+    await Future.wait([loadAttendance(), _loadSessions(batchId)]);
+  }
 
+  /// Fetches sessions for the current batch from the dashboard API.
+  Future<void> _loadSessions(String batchId) async {
+    final response = await _service.getDashboard();
     if (response.success && response.data != null) {
       final dashboard = response.data!['dashboard'] as Map<String, dynamic>?;
       final enrollments =
           dashboard?['enrollment_details']?['enrollments'] as List<dynamic>? ??
           [];
-
-      _batches = enrollments
-          .map((e) => EnrollmentBatch.fromJson(e as Map<String, dynamic>))
-          .where((b) => b.uid.isNotEmpty)
-          .toList();
-
-      if (_batches.isNotEmpty) {
-        _selectedBatch = _batches.first;
-        _isLoadingDashboard = false;
-        notifyListeners();
-        await loadAttendance();
-        return;
+      for (final e in enrollments) {
+        final batch = EnrollmentBatch.fromJson(e as Map<String, dynamic>);
+        if (batch.uid == batchId) {
+          _sessions = batch.sessions;
+          notifyListeners();
+          return;
+        }
       }
-    } else {
-      _error = response.message ?? 'Failed to load dashboard';
     }
-
-    _isLoadingDashboard = false;
-    notifyListeners();
-  }
-
-  Future<void> selectBatch(EnrollmentBatch batch) async {
-    if (_selectedBatch?.uid == batch.uid) return;
-    _selectedBatch = batch;
-    _selectedSession = null;
-    _allRecords = [];
-    _attendanceData = null;
-    _currentPage = 1;
-    notifyListeners();
-    await loadAttendance();
   }
 
   Future<void> selectSession(BatchSession? session) async {
-    if (_selectedSession?.uid == session?.uid) return;
-    _selectedSession = session;
+    if (_selectedSession?.uid == session?.uid) {
+      // Tap same chip again → deselect (show all)
+      _selectedSession = null;
+    } else {
+      _selectedSession = session;
+    }
     _allRecords = [];
     _attendanceData = null;
     _currentPage = 1;
