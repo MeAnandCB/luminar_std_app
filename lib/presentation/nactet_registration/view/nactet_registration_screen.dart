@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/nactet_registration/controller/nactet_registration_controller.dart';
@@ -1035,7 +1036,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                 } else if (controller.errorMessage != null) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(controller.errorMessage!), backgroundColor: Colors.red),
+                      SnackBar(content: Text(AppUtils.friendlyError(controller.errorMessage!)), backgroundColor: Colors.red),
                     );
                   }
                 }

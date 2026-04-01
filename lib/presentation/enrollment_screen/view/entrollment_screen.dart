@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
@@ -340,7 +341,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
 
   Widget _buildErrorWidget(EnrollmentProvider provider) {
     return NoConnectionScreen(
-      message: 'Error loading enrollment details. ${provider.errorMessage}',
+      message: AppUtils.friendlyError(provider.errorMessage ?? ''),
       onRetry: () => provider.refreshData(context),
     );
   }

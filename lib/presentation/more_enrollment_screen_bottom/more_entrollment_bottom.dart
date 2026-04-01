@@ -473,14 +473,14 @@ class _EnrollmentPage extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 12),
-              _FeatureCard(
-                feature: _kFeatures[2],
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => DemoScreen()),
-                ),
-              ),
+              // SizedBox(height: 12),
+              // _FeatureCard(
+              //   feature: _kFeatures[2],
+              //   onTap: () => Navigator.push(
+              //     context,
+              //     MaterialPageRoute(builder: (_) => DemoScreen()),
+              //   ),
+              // ),
               SizedBox(height: 12),
               _FeatureCard(
                 feature: _kFeatures[2],

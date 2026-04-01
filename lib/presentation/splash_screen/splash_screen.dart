@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:luminar_std/core/theme/app_colors.dart'; // Updated import
 import 'package:luminar_std/core/theme/app_text_styles.dart'; // Updated import
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -74,6 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Navigate to next screen after 3 seconds
     Timer(const Duration(milliseconds: 3200), () {
+      AppUtils.appReady = true;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),

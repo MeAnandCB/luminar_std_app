@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
@@ -153,7 +154,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                                 if (context.mounted) {
                                   LoggerUtils.error(e.toString(), tag: 'ProfileCompletion');
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
+                                    SnackBar(content: Text(AppUtils.friendlyError(e.toString())), backgroundColor: Colors.red),
                                   );
                                 }
                               }

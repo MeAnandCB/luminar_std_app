@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
@@ -318,7 +319,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     if (editController.error != null)
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        child: Text(editController.error!, style: TextStyle(color: Colors.red)),
+                        child: Text(AppUtils.friendlyError(editController.error!), style: TextStyle(color: Colors.red)),
                       ),
 
                     Padding(

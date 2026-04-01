@@ -1,5 +1,6 @@
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/live_class/controller/live_class_controller.dart';
@@ -213,7 +214,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
               children: [
                 Icon(Icons.error_outline_rounded, color: AppColors.textWhite),
                 const SizedBox(width: 12),
-                Expanded(child: Text('Failed to load class: ${e.toString()}')),
+                Expanded(child: Text(AppUtils.friendlyError(e.toString()))),
               ],
             ),
             behavior: SnackBarBehavior.floating,

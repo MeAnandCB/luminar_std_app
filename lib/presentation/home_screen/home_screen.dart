@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
 import 'package:luminar_std/presentation/home_screen/widget/natet_certificate.dart';
@@ -103,41 +104,42 @@ class _StudentDashboardState extends State<StudentDashboard> {
               : dashboardProvider.error != null
               ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.all(32.0),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.error_outline,
-                          size: 60,
+                          AppUtils.friendlyError(dashboardProvider.error!).contains('internet')
+                              ? Icons.wifi_off_rounded
+                              : Icons.error_outline_rounded,
+                          size: 72,
                           color: AppColors.error,
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         Text(
-                          'Error loading dashboard',
-                          style: AppTextStyles.headerName.copyWith(
-                            color: Colors.red,
-                          ),
+                          AppUtils.friendlyError(dashboardProvider.error!).contains('internet')
+                              ? 'No Internet Connection'
+                              : 'Something Went Wrong',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.headerName.copyWith(fontSize: 18),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         Text(
-                          dashboardProvider.error!,
+                          AppUtils.friendlyError(dashboardProvider.error!),
                           textAlign: TextAlign.center,
                           style: AppTextStyles.activitySubtitle,
                         ),
-                        SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () {
-                            dashboardProvider.refreshDashboard(
-                              context: context,
-                            );
-                          },
+                        const SizedBox(height: 28),
+                        ElevatedButton.icon(
+                          onPressed: () => dashboardProvider.refreshDashboard(context: context),
+                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          label: const Text('Try Again'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.white,
-                            minimumSize: const Size(200, 45),
+                            minimumSize: const Size(180, 46),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: Text('Try Again'),
                         ),
                       ],
                     ),

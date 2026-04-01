@@ -1,8 +1,10 @@
 // lib/main.dart - Updated to show single enrollment details
 
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
@@ -118,6 +120,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       final detailsResponse = await PaymentScreenService().fetchEnrollmentDetails(targetEnrollmentId, accessKey);
 
       if (detailsResponse.success && detailsResponse.data != null && mounted) {
+        _savePaymentNotifications(detailsResponse.data!);
         setState(() {
           _paymentData = detailsResponse.data;
         });
@@ -156,6 +159,21 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     if (status.toLowerCase() == 'paid') return EmiStatus.paid;
     if (isOverdue) return EmiStatus.overdue;
     return EmiStatus.pending;
+  }
+
+  Future<void> _savePaymentNotifications(EnrollmentDetailResponse data) async {
+    final prefs = await SharedPreferences.getInstance();
+    final installments = data.emiInstallments ?? [];
+    final emiData = installments.map((e) => {
+      'uid': e.uid ?? '',
+      'number': e.installmentNumber?.toInt() ?? 0,
+      'due_date': e.dueDate?.toIso8601String() ?? '',
+      'total': e.totalAmount?.toDouble() ?? 0.0,
+      'pending': e.pendingAmount?.toDouble() ?? 0.0,
+      'status': e.status ?? 'pending',
+      'is_overdue': e.isOverdue ?? false,
+    }).toList();
+    await prefs.setString('payment_emi_data', jsonEncode({'installments': emiData}));
   }
 
   String _getFormattedAmount(dynamic amount) {
@@ -380,7 +398,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(provider.errorMessage ?? 'Failed to get payment details'),
+            content: Text(AppUtils.friendlyError(provider.errorMessage ?? 'Failed to get payment details')),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),

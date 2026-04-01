@@ -2,6 +2,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/course_screen/course_screen.dart';
@@ -109,47 +110,52 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
 
           // Handle error state
           if (provider.hasError) {
+            final friendly = AppUtils.friendlyError(provider.errorMessage ?? '');
+            final isNetwork = friendly.contains('internet');
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 80,
-                    color: AppColors.error.withOpacity(0.7),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Oops! Something went wrong',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isNetwork ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
+                      size: 72,
+                      color: AppColors.error,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    provider.errorMessage ?? 'Failed to load enrollments',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _loadData,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                    const SizedBox(height: 16),
+                    Text(
+                      isNetwork ? 'No Internet Connection' : 'Something Went Wrong',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    child: const Text('Try Again'),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      friendly,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: _loadData,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text('Try Again'),
+                    ),
+                  ],
+                ),
               ),
             );
           }

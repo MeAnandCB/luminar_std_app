@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
@@ -80,7 +81,7 @@ class EnrollmentProvider extends ChangeNotifier {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(AppUtils.friendlyError(e.toString())),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),

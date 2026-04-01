@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'package:luminar_std/core/utils/logger_utils.dart';
@@ -104,8 +107,94 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _dialogShowing = false;
+  StreamSubscription? _connectivitySub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initial check after first frame so navigatorKey is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final results = await Connectivity().checkConnectivity();
+      if (results.every((r) => r == ConnectivityResult.none)) {
+        _showNoInternetDialog();
+      }
+    });
+    // Listen for changes
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+      final offline = results.every((r) => r == ConnectivityResult.none);
+      if (offline && !_dialogShowing) {
+        _showNoInternetDialog();
+      } else if (!offline && _dialogShowing) {
+        _dismissDialog();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySub?.cancel();
+    super.dispose();
+  }
+
+  void _showNoInternetDialog() {
+    if (!AppUtils.appReady) return;
+    final ctx = navigatorKey.currentContext;
+    if (ctx == null) return;
+    _dialogShowing = true;
+    showDialog(
+      context: ctx,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.wifi_off_rounded, size: 48, color: Colors.red.shade400),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'No Internet Connection',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Please check your Wi-Fi or mobile data.\nThe app will continue automatically once you\'re back online.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.5),
+              ),
+              const SizedBox(height: 4),
+            ],
+          ),
+        ),
+      ),
+    ).then((_) {
+      _dialogShowing = false;
+    });
+  }
+
+  void _dismissDialog() {
+    navigatorKey.currentState?.pop();
+  }
 
   @override
   Widget build(BuildContext context) {

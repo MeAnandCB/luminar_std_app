@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/widgets/status_screens.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const NotificationApp());
@@ -39,119 +42,81 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  // Sample notification data
-  final List<NotificationItem> _allNotifications = [
-    NotificationItem(
-      id: '1',
-      title: 'New Class Recording Available',
-      message: 'ASP.NET MVC with Angular - Session 5 recording has been uploaded',
-      time: '5 minutes ago',
-      type: NotificationType.classes,
-      isRead: false,
-      icon: Icons.video_library_rounded,
-      color: AppColors.primary,
-      actionUrl: '/videos',
-    ),
-    NotificationItem(
-      id: '2',
-      title: 'Payment Successful',
-      message: 'Your payment of ₹27,000 has been received. Transaction ID: TXN202603031708568186',
-      time: '2 hours ago',
-      type: NotificationType.payments,
-      isRead: false,
-      icon: Icons.payment_rounded,
-      color: AppColors.statsGreen,
-      actionUrl: '/payments',
-    ),
-    NotificationItem(
-      id: '3',
-      title: 'Live Class Starting Soon',
-      message: 'ASP.NET MVC with Angular - Session 6 starts in 15 minutes',
-      time: '15 minutes ago',
-      type: NotificationType.classes,
-      isRead: true,
-      icon: Icons.video_camera_front_rounded,
-      color: Color(0xFFFF7675),
-      actionUrl: '/live-class',
-    ),
-    NotificationItem(
-      id: '4',
-      title: 'Attendance Marked',
-      message: 'Your attendance for ASP.NET MVC class on Mar 4, 2026 has been marked',
-      time: '1 day ago',
-      type: NotificationType.classes,
-      isRead: true,
-      icon: Icons.calendar_month_outlined,
-      color: AppColors.primary,
-      actionUrl: '/attendance',
-    ),
-    NotificationItem(
-      id: '5',
-      title: 'Important Announcement',
-      message: 'Institute will remain closed on Mar 8, 2026 due to maintenance',
-      time: '2 days ago',
-      type: NotificationType.announcements,
-      isRead: false,
-      icon: Icons.campaign_rounded,
-      color: AppColors.statsOrange,
-      actionUrl: '/announcements',
-    ),
-    NotificationItem(
-      id: '6',
-      title: 'New Course Material Added',
-      message: 'Additional resources for Angular module have been added',
-      time: '3 days ago',
-      type: NotificationType.classes,
-      isRead: true,
-      icon: Icons.menu_book_rounded,
-      color: AppColors.primary,
-      actionUrl: '/videos',
-    ),
-    NotificationItem(
-      id: '7',
-      title: 'Fee Reminder',
-      message: 'Your next installment of ₹5,000 is due on Mar 15, 2026',
-      time: '3 days ago',
-      type: NotificationType.payments,
-      isRead: false,
-      icon: Icons.currency_rupee_rounded,
-      color: AppColors.statsGreen,
-      actionUrl: '/payments',
-    ),
-    NotificationItem(
-      id: '8',
-      title: 'Placement Drive Update',
-      message: 'New job opportunities posted for final year students',
-      time: '4 days ago',
-      type: NotificationType.announcements,
-      isRead: true,
-      icon: Icons.work_rounded,
-      color: AppColors.statsOrange,
-      actionUrl: '/placement',
-    ),
-    NotificationItem(
-      id: '9',
-      title: 'Assignment Deadline',
-      message: 'Angular assignment submission deadline is tomorrow',
-      time: '5 days ago',
-      type: NotificationType.classes,
-      isRead: true,
-      icon: Icons.assignment_rounded,
-      color: Color(0xFFFF7675),
-      actionUrl: '/assignments',
-    ),
-    NotificationItem(
-      id: '10',
-      title: 'Profile Update Required',
-      message: 'Please update your profile information for placement',
-      time: '1 week ago',
-      type: NotificationType.announcements,
-      isRead: true,
-      icon: Icons.person_rounded,
-      color: AppColors.primary,
-      actionUrl: '/profile',
-    ),
-  ];
+  final List<NotificationItem> _allNotifications = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPaymentNotifications();
+  }
+
+  Future<void> _loadPaymentNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('payment_emi_data');
+    if (raw == null) return;
+
+    final data = jsonDecode(raw) as Map<String, dynamic>;
+    final installments = (data['installments'] as List<dynamic>?) ?? [];
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final fmt = DateFormat('dd MMM yyyy');
+
+    final List<NotificationItem> paymentNotifs = [];
+
+    for (final emi in installments) {
+      final status = (emi['status'] as String? ?? '').toLowerCase();
+      if (status == 'paid') continue;
+
+      final dueDateStr = emi['due_date'] as String? ?? '';
+      if (dueDateStr.isEmpty) continue;
+      final dueDate = DateTime.tryParse(dueDateStr);
+      if (dueDate == null) continue;
+
+      final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
+      final daysUntil = dueDay.difference(today).inDays;
+      final isOverdue = emi['is_overdue'] as bool? ?? false;
+      final number = emi['number'] as int? ?? 0;
+      final amount = (emi['pending'] as num? ?? 0).toDouble();
+      final uid = emi['uid'] as String? ?? '';
+      final dateStr = fmt.format(dueDate);
+
+      if (isOverdue || status == 'overdue' || daysUntil < 0) {
+        paymentNotifs.add(NotificationItem(
+          id: 'payment_overdue_$uid',
+          title: 'Payment Overdue',
+          message: 'Installment #$number of ₹${amount.toStringAsFixed(0)} was due on $dateStr. Please pay immediately.',
+          time: 'Overdue',
+          type: NotificationType.payments,
+          isRead: false,
+          icon: Icons.warning_rounded,
+          color: const Color(0xFFFF7675),
+          actionUrl: '/payments',
+        ));
+      } else if (daysUntil <= 2) {
+        final whenStr = daysUntil == 0 ? 'today' : daysUntil == 1 ? 'tomorrow' : 'in 2 days';
+        paymentNotifs.add(NotificationItem(
+          id: 'payment_due_$uid',
+          title: 'Payment Due Soon',
+          message: 'Installment #$number of ₹${amount.toStringAsFixed(0)} is due $whenStr ($dateStr).',
+          time: 'Due $whenStr',
+          type: NotificationType.payments,
+          isRead: false,
+          icon: Icons.schedule_rounded,
+          color: AppColors.statsOrange,
+          actionUrl: '/payments',
+        ));
+      }
+    }
+
+    if (paymentNotifs.isNotEmpty && mounted) {
+      setState(() {
+        _allNotifications.removeWhere(
+          (n) => n.id.startsWith('payment_due_') || n.id.startsWith('payment_overdue_'),
+        );
+        _allNotifications.insertAll(0, paymentNotifs);
+      });
+    }
+  }
 
   int get _unreadCount => _allNotifications.where((n) => !n.isRead).length;
 
@@ -164,31 +129,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
     });
   }
 
-  void _clearAll() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Clear All Notifications'),
-        content: Text('Are you sure you want to clear all notifications?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _allNotifications.clear();
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('All notifications cleared'), behavior: SnackBarBehavior.floating),
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: Text('Clear'),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +150,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   bottomRight: Radius.circular(36),
                 ),
                 boxShadow: [
-                  BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8)),
+                  BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
                 ],
               ),
               child: Row(
@@ -334,9 +274,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
             color: AppColors.white,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
-              BoxShadow(color: notification.color.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 5)),
+              BoxShadow(color: notification.color.withValues(alpha: 0.08), blurRadius: 15, offset: const Offset(0, 5)),
             ],
-            border: !notification.isRead ? Border.all(color: notification.color.withOpacity(0.3), width: 1) : null,
+            border: !notification.isRead ? Border.all(color: notification.color.withValues(alpha: 0.3), width: 1) : null,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,7 +286,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [notification.color.withOpacity(0.2), notification.color.withOpacity(0.1)],
+                    colors: [notification.color.withValues(alpha: 0.2), notification.color.withValues(alpha: 0.1)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -397,7 +337,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: notification.color.withOpacity(0.1),
+                            color: notification.color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -434,7 +374,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [notification.color, notification.color.withOpacity(0.8)],
+                  colors: [notification.color, notification.color.withValues(alpha: 0.8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -521,7 +461,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         foregroundColor: notification.color,
                         padding: EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        side: BorderSide(color: notification.color.withOpacity(0.3)),
+                        side: BorderSide(color: notification.color.withValues(alpha: 0.3)),
                       ),
                       child: Text('Close'),
                     ),

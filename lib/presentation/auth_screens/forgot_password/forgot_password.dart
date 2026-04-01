@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/auth_screens/forgot_password/controller/forgot_password.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -148,7 +149,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(controller.errorMessage ?? 'Failed to send OTP'),
+          content: Text(AppUtils.friendlyError(controller.errorMessage ?? 'Failed to send OTP')),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
@@ -194,7 +195,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(controller.errorMessage ?? 'Invalid OTP'),
+          content: Text(AppUtils.friendlyError(controller.errorMessage ?? 'Invalid OTP')),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
@@ -228,7 +229,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(controller.errorMessage ?? 'Failed to resend OTP'),
+          content: Text(AppUtils.friendlyError(controller.errorMessage ?? 'Failed to resend OTP')),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
@@ -278,7 +279,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(controller.errorMessage ?? 'Failed to reset password'),
+          content: Text(AppUtils.friendlyError(controller.errorMessage ?? 'Failed to reset password')),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: Colors.red,
