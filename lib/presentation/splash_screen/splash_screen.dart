@@ -75,6 +75,11 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Navigate to next screen after 3 seconds
     Timer(const Duration(milliseconds: 3200), () {
+      if (AppUtils.isDeepLinking) {
+        debugPrint('[SplashScreen] Deep-link in progress — skipping auto-navigation');
+        AppUtils.appReady = true;
+        return;
+      }
       AppUtils.appReady = true;
       Navigator.pushReplacement(
         context,

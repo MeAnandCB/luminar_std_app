@@ -118,6 +118,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     // Initial check after first frame so navigatorKey is ready
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // 2. Connectivity check
       final results = await Connectivity().checkConnectivity();
       if (results.every((r) => r == ConnectivityResult.none)) {
         _showNoInternetDialog();

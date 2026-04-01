@@ -10,6 +10,7 @@ import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_scre
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollments.dart';
 import 'package:luminar_std/presentation/more_enrollment_screen_bottom/more_entrollment_bottom.dart';
 import 'package:luminar_std/presentation/scan_screen/scan_screen.dart';
+import 'package:luminar_std/repository/FCM/fcm_service.dart';
 import 'package:provider/provider.dart';
 
 class BottomNavScreen extends StatefulWidget {
@@ -21,8 +22,7 @@ class BottomNavScreen extends StatefulWidget {
   State<BottomNavScreen> createState() => _BottomNavScreenState();
 }
 
-class _BottomNavScreenState extends State<BottomNavScreen>
-    with SingleTickerProviderStateMixin {
+class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProviderStateMixin {
   late EnrollmentProvider enrollmentProvider;
   late int _currentIndex;
 
@@ -33,6 +33,8 @@ class _BottomNavScreenState extends State<BottomNavScreen>
   @override
   void initState() {
     super.initState();
+    // 1. Handle terminated state FCM deep-linking
+    FCMService().handleInitialMessage();
     _currentIndex = widget.initialIndex;
 
     _fabController = AnimationController(
@@ -47,10 +49,7 @@ class _BottomNavScreenState extends State<BottomNavScreen>
     ).animate(CurvedAnimation(parent: _fabController, curve: Curves.easeInOut));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      enrollmentProvider = Provider.of<EnrollmentProvider>(
-        context,
-        listen: false,
-      );
+      enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
       _loadData();
     });
   }
@@ -70,33 +69,20 @@ class _BottomNavScreenState extends State<BottomNavScreen>
     await _fabController.forward();
     await _fabController.reverse();
     if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const QRScannerScreen()),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const QRScannerScreen()));
   }
 
   List<Widget> _buildPages(EnrollmentProvider provider) {
     if (provider.enrollmentDataRes == null) {
-      return [
-        StudentDashboard(),
-        EnrollmentScreen(),
-        ChatListScreen(),
-        MoreEnrollmentScreen(),
-      ];
+      return [StudentDashboard(), EnrollmentScreen(), ChatListScreen(), MoreEnrollmentScreen()];
     }
 
     final status = provider.enrollmentDataRes!.enrollments[0].status.value;
-    final isPaymentPending =
-        status == 'not_set' ||
-        status == 'demo_expired' ||
-        status == 'admission_fee_paid';
+    final isPaymentPending = status == 'not_set' || status == 'demo_expired' || status == 'admission_fee_paid';
 
     return [
       StudentDashboard(),
-      isPaymentPending
-          ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false)
-          : EnrollmentScreen(),
+      isPaymentPending ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false) : EnrollmentScreen(),
       ChatListScreen(),
       MoreEnrollmentScreen(),
     ];
@@ -108,10 +94,7 @@ class _BottomNavScreenState extends State<BottomNavScreen>
     context.watch<ThemeProvider>();
 
     if (provider.enrollmentDataRes != null) {
-      LoggerUtils.debug(
-        provider.enrollmentDataRes!.enrollments.length.toString(),
-        tag: 'BottomNav',
-      );
+      LoggerUtils.debug(provider.enrollmentDataRes!.enrollments.length.toString(), tag: 'BottomNav');
     }
 
     final pages = _buildPages(provider);
@@ -133,10 +116,7 @@ class _BottomNavScreenState extends State<BottomNavScreen>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
-                colors: [
-                  AppColors.primary.withOpacity(0.95),
-                  AppColors.primary,
-                ],
+                colors: [AppColors.primary.withOpacity(0.95), AppColors.primary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -156,11 +136,7 @@ class _BottomNavScreenState extends State<BottomNavScreen>
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.qr_code_scanner_rounded,
-              color: Colors.white,
-              size: 26,
-            ),
+            child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 26),
           ),
         ),
       ),
@@ -177,13 +153,7 @@ class _BottomNavScreenState extends State<BottomNavScreen>
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, -4))],
       ),
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -194,10 +164,7 @@ class _BottomNavScreenState extends State<BottomNavScreen>
               top: 0,
               left: 0,
               right: 0,
-              child: Container(
-                height: 0.5,
-                color: AppColors.borderColor.withOpacity(0.4),
-              ),
+              child: Container(height: 0.5, color: AppColors.borderColor.withOpacity(0.4)),
             ),
 
             // Nav row with notch gap in center
@@ -252,9 +219,7 @@ class _BottomNavScreenState extends State<BottomNavScreen>
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withOpacity(0.10)
-              : Colors.transparent,
+          color: isSelected ? AppColors.primary.withOpacity(0.10) : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -263,8 +228,7 @@ class _BottomNavScreenState extends State<BottomNavScreen>
           children: [
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 180),
-              transitionBuilder: (child, animation) =>
-                  ScaleTransition(scale: animation, child: child),
+              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
               child: Icon(
                 icon,
                 key: ValueKey(isSelected),

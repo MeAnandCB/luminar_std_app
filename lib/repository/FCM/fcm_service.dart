@@ -1,14 +1,17 @@
+import 'dart:convert';
 import 'dart:io';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/main.dart';
+import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
+import 'package:luminar_std/core/utils/app_utils.dart';
+import 'package:provider/provider.dart';
 
 /// Top-level background FCM handler
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  LoggerUtils.info('Background FCM: ${message.notification?.title}', tag: 'FCM');
+  LoggerUtils.info('Background FCM: ${message.notification?.title} | Data: ${message.data}', tag: 'FCM');
 }
 
 /// Top-level local notification background tap handler
@@ -33,9 +36,16 @@ class FCMService {
     importance: Importance.high,
   );
 
+  bool _isInitialized = false;
+
   // ─── Public Init ──────────────────────────────────────────────────────────
 
   Future<void> initialize() async {
+    if (_isInitialized) {
+      LoggerUtils.info('FCM already initialized, skipping.', tag: 'FCM');
+      return;
+    }
+
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     await _requestPermission();
     await _initLocalNotifications();
@@ -46,14 +56,21 @@ class FCMService {
       // TODO: Send updated token to your backend
     });
 
-    // Added for iOS foreground support
+    // Handle iOS foreground behavior:
+    // We set alert/sound to false here because we manually show a local notification
+    // via _handleForegroundMessages. This prevents the "double notification" issue on iOS.
     if (Platform.isIOS) {
-      await _messaging.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
+      await _messaging.setForegroundNotificationPresentationOptions(
+        alert: false,
+        badge: true,
+        sound: false,
+      );
     }
 
     _handleForegroundMessages();
     _handleBackgroundToOpenMessages();
-    await _handleTerminatedStateMessage();
+
+    _isInitialized = true;
   }
 
   // ─── Permission ───────────────────────────────────────────────────────────
@@ -89,7 +106,16 @@ class FCMService {
       settings: initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         LoggerUtils.info('Notification tapped: ${response.payload}', tag: 'FCM');
-        _handleNotificationNavigation(response.payload);
+        try {
+          if (response.payload != null) {
+            final Map<String, dynamic> data = jsonDecode(response.payload!);
+            _handleNotificationNavigation(data);
+          }
+        } catch (e) {
+          LoggerUtils.error('Error parsing notification payload: $e', tag: 'FCM');
+          // Fallback for old simple string routes
+          _handleNotificationNavigation({'route': response.payload});
+        }
       },
       onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
@@ -128,14 +154,14 @@ class FCMService {
 
   void _handleForegroundMessages() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      LoggerUtils.info('Foreground FCM: ${message.notification?.title}', tag: 'FCM');
       final notification = message.notification;
+      LoggerUtils.info('Foreground FCM: ${notification?.title} | Data: ${message.data}', tag: 'FCM');
       if (notification != null) {
         _showLocalNotification(
           id: message.hashCode,
           title: notification.title ?? 'Luminar',
           body: notification.body ?? '',
-          payload: message.data.toString(),
+          payload: jsonEncode(message.data),
         );
       }
     });
@@ -143,17 +169,19 @@ class FCMService {
 
   void _handleBackgroundToOpenMessages() {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      LoggerUtils.info('FCM opened from background: ${message.data}', tag: 'FCM');
-      _handleNotificationNavigation(message.data['route'] as String?);
+      LoggerUtils.info('FCM opened from background | Data: ${message.data}', tag: 'FCM');
+      AppUtils.isDeepLinking = true;
+      _handleNotificationNavigation(message.data);
     });
   }
 
-  Future<void> _handleTerminatedStateMessage() async {
+  Future<void> handleInitialMessage() async {
     final RemoteMessage? initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      LoggerUtils.info('FCM opened from terminated: ${initialMessage.data}', tag: 'FCM');
+      LoggerUtils.info('FCM opened from terminated | Data: ${initialMessage.data}', tag: 'FCM');
+      AppUtils.isDeepLinking = true;
       await Future.delayed(const Duration(seconds: 1));
-      _handleNotificationNavigation(initialMessage.data['route'] as String?);
+      _handleNotificationNavigation(initialMessage.data);
     }
   }
 
@@ -186,7 +214,30 @@ class FCMService {
 
   // ─── Navigation ───────────────────────────────────────────────────────────
 
-  void _handleNotificationNavigation(String? route) {
+  void _handleNotificationNavigation(Map<String, dynamic> data) {
+    final type = data['type'] as String?;
+    final route = data['route'] as String?;
+
+    LoggerUtils.info('Handling notification navigation: type=$type, route=$route', tag: 'FCM');
+
+    // ─── Special Type: chat_message ──────────────────────────────────────────
+    if (type == 'chat_message') {
+      final chatUid = data['chat_uid'] as String?;
+      if (chatUid != null) {
+        final context = navigatorKey.currentContext;
+        if (context != null) {
+          Provider.of<ChatProvider>(context, listen: false).navigateToChat(chatUid);
+        } else {
+          LoggerUtils.warning('Cannot navigate to chat: context is null', tag: 'FCM');
+          AppUtils.isDeepLinking = false;
+        }
+      } else {
+        AppUtils.isDeepLinking = false;
+      }
+      return;
+    }
+
+    // ─── Route-based navigation (existing logic) ──────────────────────────────
     if (route == null) return;
 
     switch (route) {
