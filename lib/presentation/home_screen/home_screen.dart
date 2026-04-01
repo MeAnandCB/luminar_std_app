@@ -146,7 +146,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   ),
                 )
               : SingleChildScrollView(
-                  padding: EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -155,6 +158,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         studentName: studentName,
                         provider: dashboardProvider,
                       ),
+                      const SizedBox(height: 12),
                       StatusCard(
                         status:
                             dashboard
@@ -164,18 +168,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                 ?.name ??
                             'Active',
                       ),
-
-                      SizedBox(height: 20),
-                      Center(child: _buildSectionTitle("Course Details")),
-
-                      SizedBox(height: 10),
+                      const SizedBox(height: 28),
+                      _buildSectionHeading(
+                        'My Courses',
+                        'Your active enrollments',
+                      ),
+                      const SizedBox(height: 14),
                       if (dashboard != null) ...[
                         _buildCourseCard(dashboard, provider),
                         if (dashboardProvider.shouldShowNactetBanner) ...[
-                          Center(
-                            child: _buildSectionTitle("NACTET Registration"),
+                          const SizedBox(height: 28),
+                          _buildSectionHeading(
+                            'NACTET Registration',
+                            'Complete your registration below',
                           ),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 14),
                           NactetBanner(
                             pendingCount: dashboardProvider.pendingNactetCount,
                             onFormTap: () {
@@ -188,26 +195,30 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               );
                             },
                           ),
-                          SizedBox(height: 20),
                         ] else if (dashboardProvider.nactetStatusReason !=
                             null) ...[
-                          Center(child: _buildSectionTitle("NACTET Status")),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 28),
+                          _buildSectionHeading('NACTET Status', null),
+                          const SizedBox(height: 14),
                           _buildNactetStatusCard(
                             dashboardProvider.nactetStatusReason!,
                           ),
-                          SizedBox(height: 20),
                         ],
-
+                        const SizedBox(height: 28),
+                        _buildSectionHeading(
+                          'Financial Overview',
+                          'Fees & payment summary',
+                        ),
+                        const SizedBox(height: 14),
                         _buildQuickStatsGrid(dashboard),
-
-                        SizedBox(height: 10),
-
+                        const SizedBox(height: 28),
+                        _buildSectionHeading(
+                          'Latest Updates',
+                          'News & announcements',
+                        ),
+                        const SizedBox(height: 14),
                         const AdvancedInstaCarousel(),
-                        SizedBox(height: 24),
-                        // _buildSectionTitle("Recent Activities"),
-                        // SizedBox(height: 12),
-                        // _buildActivityList(dashboard),
+                        const SizedBox(height: 32),
                       ],
                     ],
                   ),
@@ -283,7 +294,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
         // Horizontal scrollable list of enrollment cards
         SizedBox(
-          height: 280, // Fixed height for horizontal list
+          height: 330, // Fixed height for horizontal list
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: enrollmentsList.length,
@@ -297,7 +308,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  // Original single enrollment card design (exactly as you had it)
+  // Single enrollment card — modern redesign
   Widget _buildSingleEnrollmentCard(
     enrollment,
     EnrollmentProvider provider,
@@ -315,323 +326,583 @@ class _StudentDashboardState extends State<StudentDashboard> {
         'No Course Enrolled';
 
     final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
-
     final startDate = enrollment?.batchInfo?.startDate;
     final attendanceMode = enrollment?.attendanceMode?.name ?? 'Hybrid';
+    final attendanceModeValue = enrollment?.attendanceMode?.value ?? '';
     final progress = enrollment?.academicProgress?.completionPercentage ?? 0;
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF5548D9), Color(0xFF6C5CE7), Color(0xFF9C8FFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          stops: [0.0, 0.5, 1.0],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.45),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text("CURRENT ENROLLMENT", style: AppTextStyles.courseCardLabel),
-          SizedBox(height: 8),
-          Text(
-            courseName,
-            style: AppTextStyles.courseCardTitle,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          // Decorative background shapes
+          Positioned(
+            top: -30,
+            right: -25,
+            child: _buildDecorCircle(130, 0.08),
           ),
-
-          Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildCourseInfoItem("Batch", batchName),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildCourseInfoItem("Starts", _formatDate(startDate)),
-                  _buildCourseInfoItem("Mode", attendanceMode),
-                ],
-              ),
-            ],
+          Positioned(
+            bottom: -40,
+            left: -35,
+            child: _buildDecorCircle(170, 0.06),
           ),
-
-          LinearProgressIndicator(
-            minHeight: 8,
-            value: progress / 100,
-            backgroundColor: AppColors.whiteWithOpacity20,
-            valueColor: const AlwaysStoppedAnimation<Color>(
-              AppColors.textWhite,
-            ),
+          Positioned(
+            top: 65,
+            right: 75,
+            child: _buildDecorCircle(55, 0.07),
           ),
-          SizedBox(height: 6),
-          Text(
-            'Progress: ${progress}%',
-            style: AppTextStyles.courseCardProgress,
+          Positioned(
+            bottom: 35,
+            right: 25,
+            child: _buildDecorCircle(38, 0.05),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              InkWell(
-                onTap:
-                    (enrollments[index].status.value == "admission_fee_paid" ||
-                        enrollments[index].status.value == "not_set" ||
-                        enrollments[index].status.value == "demo_expired")
-                    ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EnrollmentDetailsScreen(
-                              index: index,
-                              backbuttonValue: true,
+          // Main content
+          Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top row: label + mode badge
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildLabelChip('CURRENT ENROLLMENT'),
+                    _buildModeBadge(attendanceModeValue, attendanceMode),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                // Course icon + name
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.school_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        courseName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w800,
+                          height: 1.25,
+                          letterSpacing: -0.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Info chips
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _buildCardInfoChip(Icons.group_rounded, batchName),
+                    _buildCardInfoChip(
+                      Icons.calendar_today_rounded,
+                      _formatDate(startDate),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                // Divider
+                Container(
+                  height: 1,
+                  color: Colors.white.withValues(alpha: 0.15),
+                ),
+                const SizedBox(height: 14),
+                // Progress row: label + bar + percentage badge
+                Row(
+                  children: [
+                    Text(
+                      'Progress',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          minHeight: 7,
+                          value: progress / 100,
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$progress%',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Bottom row: remaining chip + action button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.timer_rounded,
+                            size: 12,
+                            color: Colors.white.withValues(alpha: 0.8),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${100 - progress}% remaining',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        );
-                      }
-                    : () {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                BottomNavScreen(initialIndex: 3),
-                          ),
-                          (route) => false,
-                        );
-                      },
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.successGradient,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadowSuccess,
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.check_circle_rounded,
-                        size: 12,
-                        color: AppColors.textWhite,
+                    ),
+                    InkWell(
+                      onTap:
+                          (enrollments[index].status.value ==
+                                  "admission_fee_paid" ||
+                              enrollments[index].status.value == "not_set" ||
+                              enrollments[index].status.value == "demo_expired")
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EnrollmentDetailsScreen(
+                                    index: index,
+                                    backbuttonValue: true,
+                                  ),
+                                ),
+                              );
+                            }
+                          : () {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      BottomNavScreen(initialIndex: 3),
+                                ),
+                                (route) => false,
+                              );
+                            },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 12,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Continue',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 15,
+                              color: AppColors.primary,
+                            ),
+                          ],
+                        ),
                       ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Continue Learning',
-                        style: AppTextStyles.courseCardButton,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  // Multiple enrollment card design (keeping your original styling)
+  // Multiple enrollment card — modern redesign with index-based gradients
   Widget _buildEnrollmentCard(
     dynamic enrollment,
     int index,
     EnrollmentProvider enrollments,
   ) {
-    // Show enrollments
-
     final courseName =
         enrollment?.courseInfo?.courseName ??
         enrollment?.courseDetails?.toString() ??
         'No Course Enrolled';
 
     final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
-
     final startDate = enrollment?.batchInfo?.startDate;
     final attendanceMode = enrollment?.attendanceMode?.name ?? 'Hybrid';
+    final attendanceModeValue = enrollment?.attendanceMode?.value ?? '';
     final progress = enrollment?.academicProgress?.completionPercentage ?? 0;
 
-    // Get enrollment status if available
     final status =
         enrollments.enrollmentDataRes?.enrollments[index].status.value ?? "";
+    final statusName =
+        enrollments.enrollmentDataRes?.enrollments[index].status.name ?? "";
+
+    // Index-based gradient palette
+    const gradientSets = [
+      [Color(0xFF5548D9), Color(0xFF8B7BF2)],
+      [Color(0xFF0870C7), Color(0xFF3A9BD5)],
+      [Color(0xFF00967A), Color(0xFF00C9A7)],
+      [Color(0xFFB83280), Color(0xFFE91E8C)],
+    ];
+    final colors = gradientSets[index % gradientSets.length];
 
     return Container(
-      width: 300, // Fixed width for horizontal scrolling
-      margin: EdgeInsets.only(right: 16),
-      padding: EdgeInsets.all(20),
+      width: 300,
+      margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: colors[0].withValues(alpha: 0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Enrollment number indicator (subtle, not changing your design much)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.whiteWithOpacity20,
-                  borderRadius: BorderRadius.circular(12),
+          Positioned(top: -25, right: -20, child: _buildDecorCircle(110, 0.08)),
+          Positioned(
+            bottom: -30,
+            left: -25,
+            child: _buildDecorCircle(140, 0.06),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top row: # badge + status
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '#${index + 1}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (statusName.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _getStatusColor(status),
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              statusName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
-                child: Text(
-                  '#${index + 1}',
-                  style: TextStyle(
-                    color: AppColors.textWhite,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                  ),
+                const SizedBox(height: 14),
+                // Course icon + name
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.school_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        courseName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              // Optional status badge if available
-              if (status.isNotEmpty)
+                const SizedBox(height: 12),
+                // Info chips
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _buildCardInfoChip(Icons.group_rounded, batchName),
+                    _buildCardInfoChip(
+                      Icons.calendar_today_rounded,
+                      _formatDate(startDate),
+                    ),
+                    _buildModeBadge(attendanceModeValue, attendanceMode),
+                  ],
+                ),
+                const Spacer(),
+                // Divider
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(status).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    status.replaceAll('_', ' ').toUpperCase(),
-                    style: TextStyle(
-                      color: _getStatusColor(status),
-                      fontSize: 8,
-                      fontWeight: FontWeight.w600,
+                  height: 1,
+                  color: Colors.white.withValues(alpha: 0.15),
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                // Progress
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Progress',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$progress%',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: LinearProgressIndicator(
+                    minHeight: 6,
+                    value: progress / 100,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Colors.white,
                     ),
                   ),
                 ),
-            ],
-          ),
-
-          // Keep your original course title styling
-          Text(
-            courseName,
-            style: AppTextStyles.courseCardTitle.copyWith(
-              fontSize: 16, // Slightly smaller for multiple cards
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-
-          // Course details in row (keeping your layout)
-          Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildCourseInfoItem("Batch", batchName),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildCourseInfoItem("Starts", _formatDate(startDate)),
-                  _buildCourseInfoItem("Mode", attendanceMode),
-                ],
-              ),
-            ],
-          ),
-
-          const Spacer(),
-
-          // Progress section (keeping your styling)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              LinearProgressIndicator(
-                minHeight: 6,
-                value: progress / 100,
-                backgroundColor: AppColors.whiteWithOpacity20,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  AppColors.textWhite,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Progress: ${progress}%',
-                style: AppTextStyles.courseCardProgress.copyWith(fontSize: 12),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              InkWell(
-                onTap:
-                    (enrollments
-                                .enrollmentDataRes
-                                ?.enrollments[index]
-                                .status
-                                .value ==
-                            "admission_fee_paid" ||
-                        enrollments
-                                .enrollmentDataRes
-                                ?.enrollments[index]
-                                .status
-                                .value ==
-                            "not_set" ||
-                        enrollments
-                                .enrollmentDataRes
-                                ?.enrollments[index]
-                                .status
-                                .value ==
-                            "demo_expired")
-                    ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EnrollmentDetailsScreen(
-                              index: index,
-                              backbuttonValue: true,
+                const SizedBox(height: 14),
+                // Action button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    InkWell(
+                      onTap:
+                          (enrollments
+                                      .enrollmentDataRes
+                                      ?.enrollments[index]
+                                      .status
+                                      .value ==
+                                  "admission_fee_paid" ||
+                              enrollments
+                                      .enrollmentDataRes
+                                      ?.enrollments[index]
+                                      .status
+                                      .value ==
+                                  "not_set" ||
+                              enrollments
+                                      .enrollmentDataRes
+                                      ?.enrollments[index]
+                                      .status
+                                      .value ==
+                                  "demo_expired")
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EnrollmentDetailsScreen(
+                                    index: index,
+                                    backbuttonValue: true,
+                                  ),
+                                ),
+                              );
+                            }
+                          : () {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      BottomNavScreen(initialIndex: 3),
+                                ),
+                                (route) => false,
+                              );
+                            },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
-                          ),
-                        );
-                      }
-                    : () {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                BottomNavScreen(initialIndex: 3),
-                          ),
-                          (route) => false,
-                        );
-                      },
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.successGradient,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadowSuccess,
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Continue',
+                              style: TextStyle(
+                                color: colors[0],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 13,
+                              color: colors[0],
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.check_circle_rounded,
-                        size: 12,
-                        color: AppColors.textWhite,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Continue Learning',
-                        style: AppTextStyles.courseCardButton,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -654,6 +925,104 @@ class _StudentDashboardState extends State<StudentDashboard> {
         return AppColors.error;
       default:
         return AppColors.textSecondary;
+    }
+  }
+
+  // ============== CARD HELPER WIDGETS ==============
+
+  Widget _buildDecorCircle(double size, double opacity) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: opacity),
+      ),
+    );
+  }
+
+  Widget _buildLabelChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.9),
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModeBadge(String modeValue, String modeName) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_getAttendanceModeIcon(modeValue), size: 11, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            modeName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardInfoChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.8)),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getAttendanceModeIcon(String value) {
+    switch (value) {
+      case 'online':
+        return Icons.computer_rounded;
+      case 'offline':
+        return Icons.location_on_rounded;
+      case 'hybrid':
+        return Icons.sync_alt_rounded;
+      case 'recording':
+        return Icons.video_library_rounded;
+      default:
+        return Icons.school_rounded;
     }
   }
 
@@ -749,8 +1118,46 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(title, style: AppTextStyles.sectionTitle);
+  Widget _buildSectionHeading(String title, [String? subtitle]) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 4,
+          height: subtitle != null ? 42 : 26,
+          decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.3,
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _buildActivityList(Dashboard dashboard) {
