@@ -1,77 +1,28 @@
-// lib/screens/attendance/attendance_screen.dart
-
-import 'package:luminar_std/core/utils/logger_utils.dart';
-
 import 'package:flutter/material.dart';
-import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
-import 'package:luminar_std/repository/attandance_screen/model.dart';
-import 'package:luminar_std/repository/attandance_screen/service.dart';
+import 'package:luminar_std/presentation/attandance_screen/controller/attandance_controller.dart';
+import 'package:luminar_std/repository/attandance_screen/new_model.dart';
 import 'package:provider/provider.dart';
 
 class AttendanceScreen extends StatefulWidget {
-  final String batchId;
-  final String? batchName;
-  final String? courseName;
-
-  const AttendanceScreen({super.key, required this.batchId, this.batchName, this.courseName});
+  const AttendanceScreen({super.key});
 
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
 }
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
-  final AttendanceService _attendanceService = AttendanceService();
-
-  // Filter states
-  DateTime? _startDate;
-  DateTime? _endDate;
-  String _selectedStatus = 'All Status';
-
-  // Temporary filter states for dialog
-  DateTime? _tempStartDate;
-  DateTime? _tempEndDate;
-  String _tempSelectedStatus = 'All Status';
-
-  // Available status options
-  final List<String> _statusOptions = ['All Status', 'Online', 'Offline', 'Recording', 'Absent'];
-
-  // API Data
-  List<AttendanceRecord> _attendanceRecords = [];
-  Summary _summary = Summary(
-    totalDays: 0,
-    online: 0,
-    offline: 0,
-    recording: 0,
-    absent: 0,
-    onlinePercentage: 0,
-    offlinePercentage: 0,
-    recordingPercentage: 0,
-    absentPercentage: 0,
-  );
-
-  String _studentId = '';
-  String _batchId = '';
-  String _message = '';
-
-  // Pagination
-  int _currentPage = 1;
-  int _totalPages = 1;
-  int _totalRecords = 0;
-  bool _isLoading = true;
-  bool _isLoadingMore = false;
-  String? _errorMessage;
-
-  // Scroll controller for pagination
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _loadAttendanceData();
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AttendanceProvider>().loadDashboard();
+    });
   }
 
   @override
@@ -82,104 +33,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      _loadNextPage();
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      context.read<AttendanceProvider>().loadMore();
     }
-  }
-
-  Future<void> _loadAttendanceData({int page = 1}) async {
-    if (page == 1) {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
-    } else {
-      setState(() {
-        _isLoadingMore = true;
-      });
-    }
-
-    try {
-      final response = await _attendanceService.getBatchAttendance(
-        batchId: widget.batchId,
-        startDate: _startDate?.toIso8601String().split('T')[0],
-        endDate: _endDate?.toIso8601String().split('T')[0],
-        page: page,
-        pageSize: 10,
-      );
-
-      if (mounted) {
-        if (response.success && response.data != null) {
-          final data = response.data!;
-          setState(() {
-            if (page == 1) {
-              _attendanceRecords = data.results;
-            } else {
-              _attendanceRecords.addAll(data.results);
-            }
-
-            _summary = data.summary;
-            _studentId = data.studentId;
-            _batchId = data.batchId;
-
-            _currentPage = data.currentPage;
-            _totalPages = data.totalPages > 0 ? data.totalPages : 1;
-            _totalRecords = data.count;
-
-            _isLoading = false;
-            _isLoadingMore = false;
-          });
-        } else {
-          setState(() {
-            _errorMessage = response.message;
-            _isLoading = false;
-            _isLoadingMore = false;
-          });
-          if (response.statusCode == 401) {
-            await AppUtils.clearUserSession();
-            if (context.mounted) AppUtils.navigateToLogin(context);
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = e.toString();
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-      }
-    }
-  }
-
-  void _loadNextPage() {
-    if (_currentPage < _totalPages && !_isLoadingMore) {
-      _loadAttendanceData(page: _currentPage + 1);
-    }
-  }
-
-  void _applyFilters() {
-    setState(() {
-      _attendanceRecords.clear();
-      _currentPage = 1;
-    });
-    _loadAttendanceData(page: 1);
-  }
-
-  void _clearFilters() {
-    setState(() {
-      _startDate = null;
-      _endDate = null;
-      _selectedStatus = 'All Status';
-      _attendanceRecords.clear();
-      _currentPage = 1;
-    });
-    _loadAttendanceData(page: 1);
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'dd/mm/yyyy';
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
   Color _getStatusColor(String status) {
@@ -197,421 +54,302 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
-  String _getStatusDisplay(String status) {
+  IconData _getStatusIcon(String status) {
     switch (status.toLowerCase()) {
       case 'online':
-        return 'Online';
+        return Icons.wifi_rounded;
       case 'offline':
-        return 'Offline';
+        return Icons.wifi_off_rounded;
       case 'recording':
-        return 'Recording';
+        return Icons.videocam_rounded;
       case 'absent':
-        return 'Absent';
+        return Icons.person_off_rounded;
       default:
-        return status;
+        return Icons.help_outline_rounded;
     }
   }
 
-  void _showFilterDialog() {
-    _tempStartDate = _startDate;
-    _tempEndDate = _endDate;
-    _tempSelectedStatus = _selectedStatus;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              backgroundColor: Colors.transparent,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 30, offset: const Offset(0, 10))],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Filter Attendance', style: AppTextStyles.heading2),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: Icon(Icons.close_rounded, color: AppColors.textSecondary),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Date Range Section
-                    Text('Date Range', style: AppTextStyles.statLabel),
-                    const SizedBox(height: 12),
-
-                    // Start Date
-                    InkWell(
-                      onTap: () async {
-                        final DateTime? picked = await showDatePicker(
-                          context: context,
-                          initialDate: _tempStartDate ?? DateTime.now(),
-                          firstDate: DateTime(2026, 1, 1),
-                          lastDate: DateTime(2026, 12, 31),
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: AppColors.isDark
-                                    ? ColorScheme.dark(
-                                        primary: AppColors.primary,
-                                        onPrimary: AppColors.textWhite,
-                                        surface: AppColors.cardBackground,
-                                        onSurface: AppColors.textPrimary,
-                                      )
-                                    : ColorScheme.light(
-                                        primary: AppColors.primary,
-                                        onPrimary: AppColors.textWhite,
-                                        surface: AppColors.cardBackground,
-                                        onSurface: AppColors.textPrimary,
-                                      ),
-                              ),
-                              child: child!,
-                            );
-                          },
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _tempStartDate = picked;
-                          });
-                        }
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderColor.withOpacity(0.5)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: 18),
-                            const SizedBox(width: 12),
-                            Text(
-                              _tempStartDate == null ? 'Start Date' : 'From: ${_formatDate(_tempStartDate)}',
-                              style: TextStyle(
-                                color: _tempStartDate == null ? AppColors.textHint : AppColors.textPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // End Date
-                    InkWell(
-                      onTap: () async {
-                        final DateTime? picked = await showDatePicker(
-                          context: context,
-                          initialDate: _tempEndDate ?? DateTime.now(),
-                          firstDate: DateTime(2026, 1, 1),
-                          lastDate: DateTime(2026, 12, 31),
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: AppColors.isDark
-                                    ? ColorScheme.dark(
-                                        primary: AppColors.primary,
-                                        onPrimary: AppColors.textWhite,
-                                        surface: AppColors.cardBackground,
-                                        onSurface: AppColors.textPrimary,
-                                      )
-                                    : ColorScheme.light(
-                                        primary: AppColors.primary,
-                                        onPrimary: AppColors.textWhite,
-                                        surface: AppColors.cardBackground,
-                                        onSurface: AppColors.textPrimary,
-                                      ),
-                              ),
-                              child: child!,
-                            );
-                          },
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _tempEndDate = picked;
-                          });
-                        }
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderColor.withOpacity(0.5)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: 18),
-                            const SizedBox(width: 12),
-                            Text(
-                              _tempEndDate == null ? 'End Date' : 'To: ${_formatDate(_tempEndDate)}',
-                              style: TextStyle(
-                                color: _tempEndDate == null ? AppColors.textHint : AppColors.textPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Status Dropdown
-                    Text('Status', style: AppTextStyles.statLabel),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.borderColor.withOpacity(0.5)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _tempSelectedStatus,
-                          isExpanded: true,
-                          icon: Icon(Icons.arrow_drop_down_rounded, color: AppColors.primary),
-                          items: _statusOptions.map((status) {
-                            return DropdownMenuItem(
-                              value: status,
-                              child: Row(
-                                children: [
-                                  if (status != 'All Status')
-                                    Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: BoxDecoration(color: _getStatusColor(status), shape: BoxShape.circle),
-                                    ),
-                                  if (status != 'All Status') const SizedBox(width: 8),
-                                  Text(
-                                    status,
-                                    style: TextStyle(
-                                      color: status == 'All Status' ? AppColors.textSecondary : _getStatusColor(status),
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _tempSelectedStatus = value!;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Action Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              setState(() {
-                                _tempStartDate = null;
-                                _tempEndDate = null;
-                                _tempSelectedStatus = 'All Status';
-                              });
-                            },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primary,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
-                            ),
-                            child: const Text('Clear'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _startDate = _tempStartDate;
-                                _endDate = _tempEndDate;
-                                _selectedStatus = _tempSelectedStatus;
-                              });
-                              Navigator.pop(context);
-                              _applyFilters();
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('Filters applied successfully'),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: AppColors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            ),
-                            child: const Text('Apply'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
+  String _formatTimestamp(String timestamp) {
+    try {
+      final dt = DateTime.parse(timestamp).toLocal();
+      final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+      final amPm = dt.hour >= 12 ? 'PM' : 'AM';
+      return '${hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} $amPm';
+    } catch (_) {
+      return timestamp;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    LoggerUtils.debug("${widget.batchId}", tag: 'Attendance');
-    // Subscribe to theme changes
-    context.watch<ThemeProvider>();
+    context.watch<ThemeProvider>(); // rebuild on every theme change
+    final provider = context.watch<AttendanceProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _errorMessage != null
-            ? _buildErrorWidget()
-            : RefreshIndicator(
-                onRefresh: () => _loadAttendanceData(page: 1),
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    // Header Section
-                    SliverToBoxAdapter(
-                      child: Column(
-                        children: [
-                          _buildHeader(),
-                          _buildCourseInfoCard(),
-                          _buildLegendSection(),
-                          _buildStatsGrid(),
-                          const SizedBox(height: 20),
-                          _buildFilterButton(),
-                          if (_startDate != null || _endDate != null || _selectedStatus != 'All Status')
-                            _buildActiveFilters(),
-                          const SizedBox(height: 8),
-                          _buildResultsCount(),
-                          const SizedBox(height: 8),
-                          if (_message.isNotEmpty && _attendanceRecords.isEmpty) _buildNoRecordsMessage(),
+        child: Column(
+          children: [
+            _buildHeader(context),
+            Expanded(
+              child: provider.isLoadingDashboard
+                  ? _buildFullLoadingState()
+                  : provider.error != null && provider.batches.isEmpty
+                  ? _buildErrorState(
+                      provider.error!,
+                      () => provider.loadDashboard(),
+                    )
+                  : RefreshIndicator(
+                      color: AppColors.primary,
+                      backgroundColor: AppColors.cardBackground,
+                      onRefresh: () => provider.loadDashboard(),
+                      child: CustomScrollView(
+                        controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Column(
+                              children: [
+                                if (provider.batches.isNotEmpty) ...[
+                                  _buildBatchSelector(provider),
+                                  if ((provider.selectedBatch?.sessions ?? [])
+                                      .isNotEmpty)
+                                    _buildSessionSelector(provider),
+                                ],
+                                if (provider.attendanceData != null)
+                                  _buildStatsSection(
+                                    provider.attendanceData!.summary,
+                                  ),
+                                _buildLegend(),
+                                _buildRecordsHeader(provider),
+                              ],
+                            ),
+                          ),
+                          if (provider.isLoadingAttendance)
+                            SliverToBoxAdapter(
+                              child: _buildAttendanceLoadingState(),
+                            )
+                          else if (provider.allRecords.isEmpty)
+                            SliverToBoxAdapter(child: _buildEmptyState())
+                          else
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  if (index < provider.allRecords.length) {
+                                    return _buildAttendanceItem(
+                                      provider.allRecords[index],
+                                    );
+                                  }
+                                  return _buildLoadMoreIndicator();
+                                },
+                                childCount:
+                                    provider.allRecords.length +
+                                    (provider.hasMore ? 1 : 0),
+                              ),
+                            ),
+                          const SliverToBoxAdapter(child: SizedBox(height: 24)),
                         ],
                       ),
                     ),
-
-                    // Attendance Records List
-                    if (_attendanceRecords.isNotEmpty)
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          if (index < _attendanceRecords.length) {
-                            return _buildAttendanceItem(_attendanceRecords[index]);
-                          } else if (index == _attendanceRecords.length) {
-                            return _buildLoadingMoreIndicator();
-                          }
-                          return null;
-                        }, childCount: _attendanceRecords.length + (_isLoadingMore ? 1 : 0)),
-                      )
-                    else if (_attendanceRecords.isEmpty && !_isLoading)
-                      SliverToBoxAdapter(child: _buildEmptyState()),
-
-                    // Bottom padding
-                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  ],
-                ),
-              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
+  // ─── Header ──────────────────────────────────────────────────────────────
+
+  Widget _buildHeader(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 4)),
-              ],
-            ),
-            child: IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primary, size: 20),
+          // Back button
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.scaffoldBackground,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(child: Text('Attendance & Recordings', style: AppTextStyles.heading2.copyWith(fontSize: 22))),
+          const SizedBox(width: 14),
+          Expanded(child: Text('Attendance', style: AppTextStyles.heading2)),
+
+          // Dark / Light mode toggle
         ],
       ),
     );
   }
 
-  Widget _buildCourseInfoCard() {
+  // ─── Batch selector ───────────────────────────────────────────────────────
+
+  Widget _buildBatchSelector(AttendanceProvider provider) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 15, offset: const Offset(0, 5))],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.primary.withOpacity(0.2), AppColors.primaryLight.withOpacity(0.1)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(Icons.code_rounded, color: AppColors.primary, size: 28),
-          ),
-          const SizedBox(width: 16),
+          Icon(Icons.school_rounded, color: AppColors.primary, size: 20),
+          const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.batchName ?? 'Course Name', style: AppTextStyles.activityTitle),
-                const SizedBox(height: 4),
-                Text('Student ID: $_studentId', style: AppTextStyles.activitySubtitle),
-                if (_batchId.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    'Batch: ${_batchId.substring(0, 8)}...',
-                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<EnrollmentBatch>(
+                value: provider.selectedBatch,
+                isExpanded: true,
+                icon: Icon(Icons.expand_more_rounded, color: AppColors.primary),
+                dropdownColor: AppColors.cardBackground,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
+                hint: Text(
+                  'Select Batch',
+                  style: TextStyle(color: AppColors.textHint, fontSize: 14),
+                ),
+                items: provider.batches.map((batch) {
+                  return DropdownMenuItem<EnrollmentBatch>(
+                    value: batch,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          batch.batchName,
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          batch.courseName,
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (batch) {
+                  if (batch != null) provider.selectBatch(batch);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Session selector ─────────────────────────────────────────────────────
+
+  Widget _buildSessionSelector(AttendanceProvider provider) {
+    final sessions = provider.selectedBatch?.sessions ?? [];
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.layers_rounded, color: AppColors.statsBlue, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<BatchSession?>(
+                value: provider.selectedSession,
+                isExpanded: true,
+                icon: Icon(
+                  Icons.expand_more_rounded,
+                  color: AppColors.statsBlue,
+                ),
+                dropdownColor: AppColors.cardBackground,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
+                hint: Text(
+                  'All Sessions',
+                  style: TextStyle(color: AppColors.textHint, fontSize: 14),
+                ),
+                items: [
+                  DropdownMenuItem<BatchSession?>(
+                    value: null,
+                    child: Text(
+                      'All Sessions',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  ...sessions.map(
+                    (s) => DropdownMenuItem<BatchSession?>(
+                      value: s,
+                      child: Text(
+                        s.name,
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
                 ],
-              ],
+                onChanged: (session) => provider.selectSession(session),
+              ),
             ),
           ),
         ],
@@ -619,14 +357,203 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Widget _buildLegendSection() {
+  // ─── Stats section ────────────────────────────────────────────────────────
+
+  Widget _buildStatsSection(AttendanceSummary summary) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.bar_chart_rounded,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Attendance Summary',
+                style: AppTextStyles.sectionTitle.copyWith(fontSize: 15),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildStatChip(
+                'Total',
+                summary.totalDays,
+                AppColors.primary,
+                Icons.calendar_today_rounded,
+              ),
+              const SizedBox(width: 10),
+              _buildStatChip(
+                'Online',
+                summary.online,
+                AppColors.statsGreen,
+                Icons.wifi_rounded,
+              ),
+              const SizedBox(width: 10),
+              _buildStatChip(
+                'Offline',
+                summary.offline,
+                AppColors.textSecondary,
+                Icons.wifi_off_rounded,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _buildStatChip(
+                'Recording',
+                summary.recording,
+                AppColors.statsOrange,
+                Icons.videocam_rounded,
+              ),
+              const SizedBox(width: 10),
+              _buildStatChip(
+                'Absent',
+                summary.absent,
+                AppColors.error,
+                Icons.person_off_rounded,
+              ),
+              const SizedBox(width: 10),
+              _buildStatChip(
+                'Present',
+                summary.totalDays - summary.absent,
+                AppColors.statsBlue,
+                Icons.check_circle_rounded,
+              ),
+            ],
+          ),
+          if (summary.totalDays > 0) ...[
+            const SizedBox(height: 16),
+            _buildAttendanceBar(summary),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatChip(String label, int value, Color color, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 6),
+            Text(
+              '$value',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttendanceBar(AttendanceSummary summary) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Attendance Rate',
+          style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            height: 8,
+            child: Row(
+              children: [
+                if (summary.online > 0)
+                  Flexible(
+                    flex: summary.online,
+                    child: Container(color: AppColors.statsGreen),
+                  ),
+                if (summary.offline > 0)
+                  Flexible(
+                    flex: summary.offline,
+                    child: Container(color: AppColors.textSecondary),
+                  ),
+                if (summary.recording > 0)
+                  Flexible(
+                    flex: summary.recording,
+                    child: Container(color: AppColors.statsOrange),
+                  ),
+                if (summary.absent > 0)
+                  Flexible(
+                    flex: summary.absent,
+                    child: Container(color: AppColors.error),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '${(100 - summary.absentPercentage).toStringAsFixed(1)}% present rate',
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.statsGreen,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Legend ───────────────────────────────────────────────────────────────
+
+  Widget _buildLegend() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -644,311 +571,152 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return Row(
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: 10,
+          height: 10,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 6),
         Text(
           label,
-          style: AppTextStyles.caption.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildStatsGrid() {
-    int present = _summary.totalDays - _summary.absent;
+  // ─── Records list ─────────────────────────────────────────────────────────
+
+  Widget _buildRecordsHeader(AttendanceProvider provider) {
+    if (provider.allRecords.isEmpty && !provider.isLoadingAttendance) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 3,
-        mainAxisSpacing: 4,
-        crossAxisSpacing: 4,
-        childAspectRatio: 1.1,
-        children: [
-          _buildStatCard('Total', _summary.totalDays.toString(), AppColors.primary, Icons.people_rounded),
-          _buildStatCard('Online', _summary.online.toString(), AppColors.statsGreen, Icons.wifi_rounded),
-          _buildStatCard('Offline', _summary.offline.toString(), AppColors.textSecondary, Icons.wifi_off_rounded),
-          _buildStatCard('Recording', _summary.recording.toString(), AppColors.statsOrange, Icons.videocam_rounded),
-          _buildStatCard('Absent', _summary.absent.toString(), AppColors.error, Icons.person_off_rounded),
-          _buildStatCard('Present', present.toString(), AppColors.primary, Icons.check_circle_rounded),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String label, String value, Color color, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: color.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: color),
-          ),
-          const SizedBox(height: 2),
-          Text(label, style: AppTextStyles.caption),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 54,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
-                ],
-              ),
-              child: ElevatedButton(
-                onPressed: _showFilterDialog,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: AppColors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.filter_list_rounded),
-                    const SizedBox(width: 8),
-                    const Text('Filter Attendance', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          if (_startDate != null || _endDate != null || _selectedStatus != 'All Status')
-            Padding(
-              padding: const EdgeInsets.only(left: 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 4)),
-                  ],
-                ),
-                child: IconButton(
-                  onPressed: _clearFilters,
-                  icon: Icon(Icons.close_rounded, color: AppColors.error),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActiveFilters() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Active Filters:',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (_startDate != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(20)),
-                    child: Text('From: ${_formatDate(_startDate)}', style: TextStyle(fontSize: 12, color: AppColors.textPrimary)),
-                  ),
-                if (_endDate != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(20)),
-                    child: Text('To: ${_formatDate(_endDate)}', style: TextStyle(fontSize: 12, color: AppColors.textPrimary)),
-                  ),
-                if (_selectedStatus != 'All Status')
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(_selectedStatus).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(color: _getStatusColor(_selectedStatus), shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(_selectedStatus, style: TextStyle(fontSize: 12, color: _getStatusColor(_selectedStatus))),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultsCount() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            '$_totalRecords Attendance Records',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary),
+            '${provider.attendanceData?.count ?? 0} Records',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
           ),
-          if (_totalPages > 1)
+          if (provider.attendanceData != null &&
+              provider.attendanceData!.totalPages > 1)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                'Page $_currentPage of $_totalPages',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                'Page ${provider.attendanceData!.currentPage}'
+                ' of ${provider.attendanceData!.totalPages}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildNoRecordsMessage() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.statsOrange.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.statsOrange.withOpacity(0.3)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.info_outline, color: AppColors.statsOrange),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                _message,
-                style: TextStyle(color: AppColors.statsOrange, fontWeight: FontWeight.w500),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
 
   Widget _buildAttendanceItem(AttendanceRecord record) {
+    final statusColor = _getStatusColor(record.status);
+    final statusIcon = _getStatusIcon(record.status);
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: statusColor.withValues(alpha: 0.15)),
         boxShadow: [
-          BoxShadow(color: _getStatusColor(record.status).withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: statusColor.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
-              color: _getStatusColor(record.status).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
+              color: statusColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Center(
-              child: Text(
-                '${record.date.day}',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: _getStatusColor(record.status)),
-              ),
-            ),
+            child: Icon(statusIcon, color: statusColor, size: 22),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(record.status, style: AppTextStyles.activityTitle.copyWith(color: _getStatusColor(record.status))),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.access_time_rounded, size: 14, color: AppColors.textSecondary),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${record.timestamp.hour.toString().padLeft(2, '0')}:${record.timestamp.minute.toString().padLeft(2, '0')}',
-                      style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        '${record.date.day}/${record.date.month}/${record.date.year}',
-                        style: AppTextStyles.caption,
-                      ),
-                    ),
-                  ],
+                Text(
+                  record.date,
+                  style: AppTextStyles.activityTitle.copyWith(fontSize: 15),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Row(
                   children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(color: _getStatusColor(record.status), shape: BoxShape.circle),
+                    Icon(
+                      Icons.access_time_rounded,
+                      size: 13,
+                      color: AppColors.textHint,
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        'Reason: ${record.reason}',
-                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-                        maxLines: 1,
+                        _formatTimestamp(record.timestamp),
+                        style: AppTextStyles.activityTime,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
+                if (record.reason.isNotEmpty &&
+                    record.reason != 'No Remark') ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    record.reason,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              record.statusDisplay,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: statusColor,
+              ),
             ),
           ),
         ],
@@ -956,31 +724,68 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-      padding: const EdgeInsets.all(40),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 20, offset: const Offset(0, 5))],
+  // ─── Loading / empty / error states ──────────────────────────────────────
+
+  Widget _buildFullLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: AppColors.primary),
+          const SizedBox(height: 16),
+          Text('Loading attendance…', style: AppTextStyles.bodyText2),
+        ],
       ),
+    );
+  }
+
+  Widget _buildAttendanceLoadingState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primary,
+          strokeWidth: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreIndicator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primary,
+          strokeWidth: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.all(40),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: 48),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.event_busy_rounded,
+              size: 48,
+              color: AppColors.primary.withValues(alpha: 0.5),
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+          Text('No Records Found', style: AppTextStyles.activityTitle),
+          const SizedBox(height: 8),
           Text(
-            'No Attendance Records',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            _message.isNotEmpty ? _message : 'No attendance records found for this batch.',
-            style: AppTextStyles.bodyText,
+            'No attendance records available for the selected batch and session.',
+            style: AppTextStyles.activitySubtitle,
             textAlign: TextAlign.center,
           ),
         ],
@@ -988,38 +793,48 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Widget _buildLoadingMoreIndicator() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: const Center(child: CircularProgressIndicator()),
-    );
-  }
-
-  Widget _buildErrorWidget() {
+  Widget _buildErrorState(String error, VoidCallback onRetry) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AppColors.error),
-            const SizedBox(height: 16),
-            Text('Failed to load attendance', style: Theme.of(context).textTheme.titleLarge),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: AppColors.error,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text('Something went wrong', style: AppTextStyles.activityTitle),
             const SizedBox(height: 8),
             Text(
-              _errorMessage ?? 'Unknown error occurred',
+              error,
+              style: AppTextStyles.activitySubtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => _loadAttendanceData(page: 1),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Retry'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ],

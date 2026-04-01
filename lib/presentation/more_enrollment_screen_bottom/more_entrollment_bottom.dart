@@ -454,13 +454,7 @@ class _EnrollmentPage extends StatelessWidget {
                 feature: _kFeatures[0],
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => AttendanceScreen(
-                      batchId: batchId,
-                      courseName: batchName,
-                      batchName: courseName,
-                    ),
-                  ),
+                  MaterialPageRoute(builder: (_) => AttendanceScreen()),
                 ),
               ),
               SizedBox(height: 12),

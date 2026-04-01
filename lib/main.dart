@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
+import 'package:luminar_std/presentation/attandance_screen/controller/attandance_controller.dart';
 import 'package:luminar_std/presentation/auth_screens/forgot_password/controller/forgot_password.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/controller/bottom_nav_controller.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
@@ -88,7 +89,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => EnrollmentProvider()),
 
         // Attendance Service
-        Provider<AttendanceService>(create: (_) => AttendanceService()),
+        Provider<AttendanceService1>(create: (_) => AttendanceService1()),
         ChangeNotifierProvider(create: (_) => GalleryProvider()),
         ChangeNotifierProvider(create: (_) => FolderBrowserProvider()),
         ChangeNotifierProvider(create: (_) => LiveClassController()),
@@ -96,6 +97,7 @@ void main() async {
         // Chat Provider
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => NactetRegistrationController()),
+        ChangeNotifierProvider(create: (_) => AttendanceProvider()),
       ],
       child: const MyApp(),
     ),
