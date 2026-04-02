@@ -4441,10 +4441,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    context.watch<ThemeProvider>(); // Rebuild when theme changes
+    context.watch<ThemeProvider>();
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      resizeToAvoidBottomInset: !_showEmojiPicker,
+      // We set this to false to prevent the background image from shrinking
+      // when the keyboard appears. We handle the padding manually below.
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: AppColors.cardBackground,
         elevation: 0.5,
@@ -4477,37 +4481,43 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       ),
       body: Stack(
         children: [
-          Container(
-            height: double.infinity,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("assets/chatbg.png"),
-                fit: BoxFit.fitHeight,
+          // Background image stays full-screen even when keyboard is up
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage("assets/chatbg.png"),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
-          Column(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    if (_showEmojiPicker)
-                      setState(() => _showEmojiPicker = false);
-                  },
-                  child: _buildMessageArea(),
-                ),
-              ),
-              if (_isUploading)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
+          // Content column pivots up based on keyboard height
+          Padding(
+            padding: EdgeInsets.only(bottom: _showEmojiPicker ? 250 : keyboardHeight),
+            child: Column(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      if (_showEmojiPicker) {
+                        setState(() => _showEmojiPicker = false);
+                      }
+                    },
+                    child: _buildMessageArea(),
                   ),
-                  child: _buildUploadProgressOverlay(),
                 ),
-              _buildInputBar(),
-            ],
+                if (_isUploading)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    child: _buildUploadProgressOverlay(),
+                  ),
+                _buildInputBar(),
+              ],
+            ),
           ),
         ],
       ),

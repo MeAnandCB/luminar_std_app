@@ -2,6 +2,8 @@ PODS:
   - audioplayers_darwin (0.0.1):
     - Flutter
     - FlutterMacOS
+  - connectivity_plus (0.0.1):
+    - Flutter
   - device_info_plus (0.0.1):
     - Flutter
   - DKImagePickerController/Core (4.3.9):
@@ -129,6 +131,8 @@ PODS:
     - Flutter
   - permission_handler_apple (9.3.0):
     - Flutter
+  - printing (1.0.0):
+    - Flutter
   - PromisesObjC (2.4.0)
   - razorpay-core-pod (1.0.6)
   - razorpay-pod (1.5.3):
@@ -165,6 +169,7 @@ PODS:
 
 DEPENDENCIES:
   - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
+  - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - emoji_picker_flutter (from `.symlinks/plugins/emoji_picker_flutter/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
@@ -179,6 +184,7 @@ DEPENDENCIES:
   - open_filex (from `.symlinks/plugins/open_filex/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - printing (from `.symlinks/plugins/printing/ios`)
   - razorpay_flutter (from `.symlinks/plugins/razorpay_flutter/ios`)
   - record_ios (from `.symlinks/plugins/record_ios/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
@@ -212,6 +218,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   audioplayers_darwin:
     :path: ".symlinks/plugins/audioplayers_darwin/darwin"
+  connectivity_plus:
+    :path: ".symlinks/plugins/connectivity_plus/ios"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
   emoji_picker_flutter:
@@ -240,6 +248,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/package_info_plus/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
+  printing:
+    :path: ".symlinks/plugins/printing/ios"
   razorpay_flutter:
     :path: ".symlinks/plugins/razorpay_flutter/ios"
   record_ios:
@@ -263,6 +273,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   audioplayers_darwin: 835ced6edd4c9fc8ebb0a7cc9e294a91d99917d5
+  connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
@@ -288,6 +299,7 @@ SPEC CHECKSUMS:
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
+  printing: 54ff03f28fe9ba3aa93358afb80a8595a071dd07
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   razorpay-core-pod: 6da5fb4ed280279d665507fdb50e213d793a5fe2
   razorpay-pod: 4385cf844aa29389313b741e20c72fe668970d49

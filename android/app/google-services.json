@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:805620757740:android:f755eca4b593f62f6de1c9",
+        "android_client_info": {
+          "package_name": "com.luminar.crmmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMavM4clvYxjA7bcOGVTpGA9MJp83FC6I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:805620757740:android:2eeb60b287b857aa6de1c9",
         "android_client_info": {
           "package_name": "com.luminar.studentapp"

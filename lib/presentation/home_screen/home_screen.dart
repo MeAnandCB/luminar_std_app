@@ -602,7 +602,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.88);
+    _pageController = PageController(viewportFraction: 1.0);
     _pageController.addListener(_onScroll);
   }
 
@@ -640,7 +640,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
       children: [
         // ── Card PageView ─────────────────────────────────────
         SizedBox(
-          height: 230,
+          height: 310,
           child: PageView.builder(
             controller: _pageController,
             scrollDirection: Axis.horizontal,
@@ -666,13 +666,13 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
                     ),
                   );
                 },
-                child: _buildCreditCard(context, index),
+                child: _buildEnrollmentCard(context, index),
               );
             },
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
 
         // ── Bottom row: count + dots + swipe hint ─────────────
         Padding(
@@ -751,36 +751,32 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
   }
 
   // ════════════════════════════════════════════════════════════
-  //  Credit Card
+  //  Enrollment Card  (premium redesign)
   // ════════════════════════════════════════════════════════════
 
-  Widget _buildCreditCard(BuildContext context, int index) {
+  Widget _buildEnrollmentCard(BuildContext context, int index) {
     final enrollment = widget.enrollments[index];
     final provider = widget.provider;
 
     const cardPalettes = [
       [
-        Color(0xFF4834D4),
+        Color(0xFF3D1FA3),
         Color(0xFF6C5CE7),
-        Color(0xFFA29BFE),
+        Color(0xFF9B8FFF),
       ], // Luminar Purple
       [Color(0xFF0A3D62), Color(0xFF1565C0), Color(0xFF42A5F5)], // Royal Blue
       [Color(0xFF004D40), Color(0xFF00796B), Color(0xFF26A69A)], // Teal
-      [Color(0xFF4A148C), Color(0xFF6A1B9A), Color(0xFFAB47BC)], // Violet
-      [Color(0xFF880E4F), Color(0xFFC2185B), Color(0xFFEC407A)], // Rose
+      [Color(0xFF4A148C), Color(0xFF7B1FA2), Color(0xFFAB47BC)], // Violet
+      [Color(0xFF7B1A1A), Color(0xFFC62828), Color(0xFFEF5350)], // Crimson
     ];
     final palette = cardPalettes[index % cardPalettes.length];
+    final accentColor = palette[2];
 
     final courseName =
         enrollment?.courseInfo?.courseName ?? 'No Course Enrolled';
     final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
     final startDate = enrollment?.batchInfo?.startDate;
-    final progress =
-        (enrollment?.academicProgress?.completionPercentage ?? 0) as int;
     final enrollCount = provider.enrollmentDataRes?.enrollments.length ?? 0;
-    final enrollNum = enrollCount > index
-        ? provider.enrollmentDataRes!.enrollments[index].enrollmentNumber
-        : null;
     final status = enrollCount > index
         ? provider.enrollmentDataRes!.enrollments[index].status
         : null;
@@ -791,38 +787,36 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
 
     final ripple = _getRipple(index);
 
+    void navigate() {
+      ripple.forward(from: 0);
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (!mounted) return;
+        if (isNavigatable) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  EnrollmentDetailsScreen(index: index, backbuttonValue: true),
+            ),
+          );
+        } else {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => BottomNavScreen(initialIndex: 3)),
+            (route) => false,
+          );
+        }
+      });
+    }
+
     return GestureDetector(
-      onTap: () {
-        ripple.forward(from: 0);
-        Future.delayed(const Duration(milliseconds: 250), () {
-          if (!mounted) return;
-          if (isNavigatable) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => EnrollmentDetailsScreen(
-                  index: index,
-                  backbuttonValue: true,
-                ),
-              ),
-            );
-          } else {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BottomNavScreen(initialIndex: 3),
-              ),
-              (route) => false,
-            );
-          }
-        });
-      },
+      onTap: navigate,
       child: AnimatedBuilder(
         animation: ripple,
         builder: (_, child) =>
-            Transform.scale(scale: 1.0 - ripple.value * 0.018, child: child),
+            Transform.scale(scale: 1.0 - ripple.value * 0.016, child: child),
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: palette,
@@ -832,10 +826,10 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: palette[0].withValues(alpha: 0.5),
+                color: palette[0].withValues(alpha: 0.45),
                 blurRadius: 28,
-                spreadRadius: -6,
-                offset: const Offset(0, 16),
+                spreadRadius: -4,
+                offset: const Offset(0, 14),
               ),
             ],
           ),
@@ -843,156 +837,262 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
             borderRadius: BorderRadius.circular(24),
             child: Stack(
               children: [
-                // ── Decorative orbs ──────────────────────────
-                Positioned(top: -55, right: -40, child: _orb(190, 0.10)),
-                Positioned(bottom: -60, left: -45, child: _orb(200, 0.07)),
-                Positioned(top: 30, right: 110, child: _orb(60, 0.08)),
-                // Subtle grid lines (card texture)
-                Positioned.fill(child: _cardTexture()),
+                // ── Decorative blobs ──────────────────────────
+                Positioned(
+                  top: -40,
+                  right: -40,
+                  child: Container(
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.07),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -50,
+                  left: -30,
+                  child: Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.05),
+                    ),
+                  ),
+                ),
 
-                // ── Content ───────────────────────────────────
+                // ── Main content ──────────────────────────────
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 18, 22, 14),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Row 1 — Chip  +  "LUMINAR"  +  NFC
+                      // ── Header: logo + brand + status ────────
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Expanded(
-                            child: Text(
-                              'LUMINAR',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.55),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 3.0,
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: Image.network(
+                                'https://d3eqn3hw2x95rk.cloudfront.net/seo/og_images/logo_without_divide_page-0001.jpg',
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  Icons.school_rounded,
+                                  color: palette[0],
+                                  size: 24,
+                                ),
                               ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'LUMINAR',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 2.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  'Training Institute',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (status != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.18),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 5,
+                                    height: 5,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    status.name.toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // ── Gradient divider ──────────────────────
+                      Container(
+                        height: 1,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white.withValues(alpha: 0.0),
+                              Colors.white.withValues(alpha: 0.25),
+                              Colors.white.withValues(alpha: 0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // ── Course row ────────────────────────────
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.menu_book_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'COURSE',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.55),
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  courseName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.3,
+                                    letterSpacing: -0.2,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 14),
 
-                      // Row 3 — Course name (2 lines, auto-wraps)
-                      Text(
-                        courseName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.2,
-                          height: 1.25,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      // ── Batch + Start date ────────────────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _cardInfoTile(
+                              icon: Icons.group_outlined,
+                              label: 'BATCH',
+                              value: batchName,
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 38,
+                            margin: const EdgeInsets.symmetric(horizontal: 14),
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
+                          Expanded(
+                            child: _cardInfoTile(
+                              icon: Icons.calendar_month_outlined,
+                              label: 'STARTS',
+                              value: startDate != null
+                                  ? '${_monthName(startDate.month)} ${startDate.year}'
+                                  : 'N/A',
+                            ),
+                          ),
+                        ],
                       ),
 
-                      SizedBox(height: 20), // Row 4 — Batch | Start date | Logo
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          // Batch — flex so it gets as much space as it needs
-                          Expanded(
-                            flex: 5,
-                            child: _infoCol('BATCH', batchName, maxLines: 2),
+                      const SizedBox(height: 16),
+
+                      // ── Continue button ───────────────────────
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: navigate,
+                          icon: const Icon(
+                            Icons.play_circle_outline_rounded,
+                            size: 17,
                           ),
-                          const SizedBox(width: 12),
-                          // Start date — fixed size
-                          _infoCol(
-                            'STARTS',
-                            startDate != null
-                                ? '${startDate.month.toString().padLeft(2, '0')}/${startDate.year}'
-                                : 'N/A',
+                          label: const Text('Continue Learning'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: palette[0],
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                            ),
                           ),
-                          const Spacer(),
-                          // Luminar logo circle
-                          _logoWidget(),
-                        ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-
-                // ── Progress bar at very bottom ───────────────
-                Positioned(
-                  bottom: 20,
-                  left: 0,
-                  right: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: 10, bottom: 2),
-                          child: Text(
-                            '$progress%',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.55),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        LinearProgressIndicator(
-                          minHeight: 6,
-                          value: progress / 100,
-                          backgroundColor: Colors.white.withValues(alpha: 0.15),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // ── Status badge ──────────────────────────────
-                if (status != null)
-                  Positioned(
-                    top: 14,
-                    right: 14,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.25),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 5,
-                            height: 5,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            status.name.toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -1003,61 +1103,72 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
 
   // ── Helpers ───────────────────────────────────────────────
 
-  Widget _orb(double size, double opacity) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: Colors.white.withValues(alpha: opacity),
-    ),
-  );
-
-  /// Subtle dot-grid texture overlay
-  Widget _cardTexture() => CustomPaint(painter: _DotGridPainter());
-
-  Widget _infoCol(String label, String value, {int maxLines = 1}) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Text(
-        label,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.55),
-          fontSize: 8,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.0,
+  Widget _cardInfoTile({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.13),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.white, size: 13),
         ),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        value,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          height: 1.3,
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.55),
+                  fontSize: 8,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-      ),
-    ],
-  );
+      ],
+    );
+  }
 
-  Widget _logoWidget() => Container(
-    width: 36,
-    height: 36,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: Colors.white.withValues(alpha: 0.15),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1),
-      image: const DecorationImage(
-        image: NetworkImage(
-          'https://d3eqn3hw2x95rk.cloudfront.net/seo/og_images/logo_without_divide_page-0001.jpg',
-        ),
-        fit: BoxFit.cover,
-      ),
-    ),
-  );
+  String _monthName(int month) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return months[(month - 1).clamp(0, 11)];
+  }
 }
 
 // ── CustomPainters ────────────────────────────────────────────
@@ -1106,21 +1217,3 @@ class _ChipPainter extends CustomPainter {
 }
 
 /// Subtle dot-grid texture for card background
-class _DotGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.04)
-      ..style = PaintingStyle.fill;
-
-    const spacing = 18.0;
-    for (double x = 0; x < size.width; x += spacing) {
-      for (double y = 0; y < size.height; y += spacing) {
-        canvas.drawCircle(Offset(x, y), 1.2, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter _) => false;
-}

@@ -11,6 +11,10 @@ class AppUtils {
   /// The internet dialog is suppressed until this is true.
   static bool appReady = false;
 
+  /// Globally tracks if a deep-link navigation is currently being handled.
+  /// Used to suppress automatic home-screen redirects during app resumption.
+  static bool isDeepLinking = false;
+
   static Future<String?> getAccessKey() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('access_token');

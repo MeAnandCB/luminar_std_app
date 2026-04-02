@@ -76,12 +76,14 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     // Ring 1 (fast inner ring)
-    _ring1Scale = Tween<double>(begin: 0.9, end: 2.0).animate(
-      CurvedAnimation(parent: _ringCtrl, curve: Curves.easeOut),
-    );
-    _ring1Opacity = Tween<double>(begin: 0.7, end: 0.0).animate(
-      CurvedAnimation(parent: _ringCtrl, curve: Curves.easeOut),
-    );
+    _ring1Scale = Tween<double>(
+      begin: 0.9,
+      end: 2.0,
+    ).animate(CurvedAnimation(parent: _ringCtrl, curve: Curves.easeOut));
+    _ring1Opacity = Tween<double>(
+      begin: 0.7,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _ringCtrl, curve: Curves.easeOut));
 
     // Ring 2 (slower outer ring, delayed)
     _ring2Scale = Tween<double>(begin: 0.9, end: 2.8).animate(
@@ -104,17 +106,15 @@ class _SplashScreenState extends State<SplashScreen>
         curve: const Interval(0.42, 0.72, curve: Curves.easeOut),
       ),
     );
-    _titleSlide = Tween<Offset>(
-      begin: const Offset(0, 0.45),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _mainCtrl,
-        curve: const Interval(0.42, 0.72, curve: Curves.easeOut),
-      ),
-    );
+    _titleSlide = Tween<Offset>(begin: const Offset(0, 0.45), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _mainCtrl,
+            curve: const Interval(0.42, 0.72, curve: Curves.easeOut),
+          ),
+        );
 
-    // Tagline
+    // Tagline pill
     _taglineFade = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _mainCtrl,
@@ -141,6 +141,13 @@ class _SplashScreenState extends State<SplashScreen>
     // Navigate to login with fade transition
     Timer(const Duration(milliseconds: 3500), () {
       if (!mounted) return;
+      if (AppUtils.isDeepLinking) {
+        debugPrint(
+          '[SplashScreen] Deep-link in progress — skipping auto-navigation',
+        );
+        AppUtils.appReady = true;
+        return;
+      }
       AppUtils.appReady = true;
       Navigator.pushReplacement(
         context,
@@ -468,10 +475,7 @@ class _SplashScreenState extends State<SplashScreen>
                               child: Container(
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: [
-                                      Colors.white,
-                                      Color(0xFFD0CAFF),
-                                    ],
+                                    colors: [Colors.white, Color(0xFFD0CAFF)],
                                   ),
                                   borderRadius: BorderRadius.circular(2),
                                   boxShadow: [

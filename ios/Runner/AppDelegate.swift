@@ -5,13 +5,11 @@ import FirebaseMessaging
 import UserNotifications
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, MessagingDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    FirebaseApp.configure()
-    
     UNUserNotificationCenter.current().delegate = self
     let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
     UNUserNotificationCenter.current().requestAuthorization(
@@ -19,6 +17,7 @@ import UserNotifications
       completionHandler: { _, _ in }
     )
     application.registerForRemoteNotifications()
+    Messaging.messaging().delegate = self
     
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

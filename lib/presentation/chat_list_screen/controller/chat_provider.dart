@@ -7,6 +7,8 @@ import 'package:luminar_std/repository/chat_list_screen/models/message.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/user.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/api_service.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/websocket_service.dart';
+import 'package:luminar_std/main.dart';
+import 'package:luminar_std/presentation/chat_screen/chat_screen.dart';
 import 'package:luminar_std/repository/shared_pref.dart';
 
 class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
@@ -55,6 +57,10 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      if (AppUtils.isDeepLinking) {
+        debugPrint('[ChatProvider] Skipping auto-refresh on resume: Deep-link in progress');
+        return;
+      }
       debugPrint('[ChatProvider] App resumed — ensuring WebSocket connectivity');
       _ensureConnectivity();
     } else if (state == AppLifecycleState.paused) {
@@ -78,6 +84,59 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// for the chat the user is currently reading.
   void setActiveChat(String? chatUid) {
     _activeChatUid = chatUid;
+  }
+
+  /// Navigates to a specific chat by its UID.
+  /// Handles refreshing the chat list if the chat is not found locally.
+  Future<void> navigateToChat(String chatUid) async {
+    if (_activeChatUid == chatUid) {
+      debugPrint('[ChatProvider] Already in chat: $chatUid. Skipping navigation.');
+      return;
+    }
+
+    if (_apiService == null || _currentUser == null) await init();
+
+    Chat? chat;
+    try {
+      chat = _chats.firstWhere((c) => c.uid == chatUid);
+    } catch (_) {
+      // If not found in current list, refresh first
+      await loadChats(showLoading: false);
+      try {
+        chat = _chats.firstWhere((c) => c.uid == chatUid);
+      } catch (_) {
+        debugPrint('[ChatProvider] Chat not found after refresh: $chatUid');
+      }
+    }
+
+    if (chat != null && navigatorKey.currentState != null) {
+      // Ensure we are initialized
+      if (_currentUser == null || _webSocketService == null || _apiService == null) {
+        debugPrint('[ChatProvider] Cannot navigate: dependecies missing');
+        return;
+      }
+
+      // Mark as read optimistically
+      markChatAsRead(chat);
+      setActiveChat(chat.uid);
+
+      navigatorKey.currentState!.push(
+        MaterialPageRoute(
+          builder: (context) => ChatScreen(
+            chat: chat!,
+            currentUser: _currentUser!,
+            websocketUrl: _webSocketService!.url,
+            apiService: _apiService!,
+            webSocketService: _webSocketService,
+          ),
+        ),
+      ).then((_) {
+        setActiveChat(null);
+        AppUtils.isDeepLinking = false; // Reset global flag
+      });
+    } else {
+      AppUtils.isDeepLinking = false; // Reset if navigation couldn't happen
+    }
   }
 
   Future<void> init() async {
