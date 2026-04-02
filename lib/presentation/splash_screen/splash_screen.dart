@@ -121,15 +121,13 @@ class _SplashScreenState extends State<SplashScreen>
         curve: const Interval(0.68, 1.0, curve: Curves.easeOut),
       ),
     );
-    _taglineSlide = Tween<Offset>(
-      begin: const Offset(0, 0.6),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _mainCtrl,
-        curve: const Interval(0.68, 1.0, curve: Curves.easeOut),
-      ),
-    );
+    _taglineSlide = Tween<Offset>(begin: const Offset(0, 0.6), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _mainCtrl,
+            curve: const Interval(0.68, 1.0, curve: Curves.easeOut),
+          ),
+        );
 
     _mainCtrl.forward();
 
@@ -379,14 +377,17 @@ class _SplashScreenState extends State<SplashScreen>
                     child: FadeTransition(
                       opacity: _titleFade,
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
-                            'LUMINAR',
+                            'LUMINAR TECHNOLAB',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 36,
+                              fontSize: 22,
                               fontWeight: FontWeight.w900,
                               color: Colors.white,
-                              letterSpacing: 10,
+
                               shadows: [
                                 Shadow(
                                   color: Colors.black.withValues(alpha: 0.25),
@@ -396,14 +397,15 @@ class _SplashScreenState extends State<SplashScreen>
                               ],
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
                           Text(
-                            'TRAINING INSTITUTE',
+                            "Kerala's No.1 Software Training Institute",
+                            textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
                               color: Colors.white.withValues(alpha: 0.65),
-                              letterSpacing: 5,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ],
@@ -433,13 +435,13 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                         child: Text(
                           'Empowering Futures Through Technology',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12.5,
                             color: Colors.white.withValues(alpha: 0.88),
                             fontWeight: FontWeight.w500,
                             letterSpacing: 0.2,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),

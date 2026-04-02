@@ -38,7 +38,8 @@ class PaymentScreen extends StatefulWidget {
   State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
-class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProviderStateMixin {
+class _PaymentScreenState extends State<PaymentScreen>
+    with SingleTickerProviderStateMixin {
   EnrollmentDetailResponse? _paymentData; // Single enrollment data
   bool _isLoading = true;
   String? _errorMessage;
@@ -65,7 +66,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     });
 
     try {
-      final controller = Provider.of<DashboardController>(context, listen: false);
+      final controller = Provider.of<DashboardController>(
+        context,
+        listen: false,
+      );
 
       await controller.getDashboardData(context: context);
 
@@ -117,7 +121,8 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     }
 
     try {
-      final detailsResponse = await PaymentScreenService().fetchEnrollmentDetails(targetEnrollmentId, accessKey);
+      final detailsResponse = await PaymentScreenService()
+          .fetchEnrollmentDetails(targetEnrollmentId, accessKey);
 
       if (detailsResponse.success && detailsResponse.data != null && mounted) {
         _savePaymentNotifications(detailsResponse.data!);
@@ -127,7 +132,8 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       } else {
         if (mounted) {
           setState(() {
-            _errorMessage = detailsResponse.message ?? 'Failed to load enrollment details';
+            _errorMessage =
+                detailsResponse.message ?? 'Failed to load enrollment details';
           });
         }
       }
@@ -164,16 +170,23 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
   Future<void> _savePaymentNotifications(EnrollmentDetailResponse data) async {
     final prefs = await SharedPreferences.getInstance();
     final installments = data.emiInstallments ?? [];
-    final emiData = installments.map((e) => {
-      'uid': e.uid ?? '',
-      'number': e.installmentNumber?.toInt() ?? 0,
-      'due_date': e.dueDate?.toIso8601String() ?? '',
-      'total': e.totalAmount?.toDouble() ?? 0.0,
-      'pending': e.pendingAmount?.toDouble() ?? 0.0,
-      'status': e.status ?? 'pending',
-      'is_overdue': e.isOverdue ?? false,
-    }).toList();
-    await prefs.setString('payment_emi_data', jsonEncode({'installments': emiData}));
+    final emiData = installments
+        .map(
+          (e) => {
+            'uid': e.uid ?? '',
+            'number': e.installmentNumber?.toInt() ?? 0,
+            'due_date': e.dueDate?.toIso8601String() ?? '',
+            'total': e.totalAmount?.toDouble() ?? 0.0,
+            'pending': e.pendingAmount?.toDouble() ?? 0.0,
+            'status': e.status ?? 'pending',
+            'is_overdue': e.isOverdue ?? false,
+          },
+        )
+        .toList();
+    await prefs.setString(
+      'payment_emi_data',
+      jsonEncode({'installments': emiData}),
+    );
   }
 
   String _getFormattedAmount(dynamic amount) {
@@ -217,46 +230,31 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
             decoration: BoxDecoration(
               color: AppColors.cardBackground,
               shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 8, offset: const Offset(0, 2))],
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadowLight,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: Icon(Icons.arrow_back, color: AppColors.textPrimary, size: 18),
+            child: Icon(
+              Icons.arrow_back,
+              color: AppColors.textPrimary,
+              size: 18,
+            ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Payments',
-          style: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 8, offset: const Offset(0, 2))],
-              ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(Icons.notifications_none, color: AppColors.textPrimary, size: 18),
-                  if (!_isLoading && _paymentData != null)
-                    Positioned(
-                      top: -2,
-                      right: -2,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(color: AppColors.statsOrange, shape: BoxShape.circle),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: _buildBody(),
     );
@@ -275,15 +273,26 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: const Center(child: Icon(Icons.school, color: AppColors.primary, size: 20)),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Icon(Icons.school, color: AppColors.primary, size: 20),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -293,14 +302,21 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
               children: [
                 Text(
                   data.batch?.courseName ?? 'Unknown Course',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   data.batch?.batchName ?? 'Unknown Batch',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -311,7 +327,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
             Container(
               width: 10,
               height: 10,
-              decoration: BoxDecoration(color: isOverdue ? AppColors.error : AppColors.statsOrange, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: isOverdue ? AppColors.error : AppColors.statsOrange,
+                shape: BoxShape.circle,
+              ),
             ),
         ],
       ),
@@ -320,7 +339,11 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.purple)));
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
+        ),
+      );
     }
 
     if (_errorMessage != null) {
@@ -328,7 +351,11 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AppColors.statsOrange.withValues(alpha: 0.7)),
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppColors.statsOrange.withValues(alpha: 0.7),
+            ),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
@@ -347,8 +374,13 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.purple,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('Retry'),
             ),
@@ -362,9 +394,16 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.payment, size: 64, color: AppColors.textSecondary.withValues(alpha: 0.5)),
+            Icon(
+              Icons.payment,
+              size: 64,
+              color: AppColors.textSecondary.withValues(alpha: 0.5),
+            ),
             const SizedBox(height: 16),
-            Text('No payment data available', style: TextStyle(fontSize: 16, color: AppColors.textSecondary)),
+            Text(
+              'No payment data available',
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+            ),
           ],
         ),
       );
@@ -386,7 +425,8 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.purple)),
+      builder: (context) =>
+          const Center(child: CircularProgressIndicator(color: Colors.purple)),
     );
 
     try {
@@ -398,7 +438,11 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppUtils.friendlyError(provider.errorMessage ?? 'Failed to get payment details')),
+            content: Text(
+              AppUtils.friendlyError(
+                provider.errorMessage ?? 'Failed to get payment details',
+              ),
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -407,7 +451,11 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     } catch (e) {
       if (mounted) Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating),
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -418,10 +466,17 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          ),
           Text(
             value,
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: statusColor ?? AppColors.textPrimary),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: statusColor ?? AppColors.textPrimary,
+            ),
           ),
         ],
       ),
@@ -443,18 +498,31 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
           decoration: BoxDecoration(
             color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(icon, size: 20, color: color),
               const SizedBox(height: 12),
-              Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              Text(
+                label,
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
               ),
             ],
           ),
@@ -472,7 +540,9 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     DateTime nextDueDate = DateTime.now();
 
     if (data.emiInstallments != null && data.emiInstallments!.isNotEmpty) {
-      final pendingEmis = data.emiInstallments!.where((e) => e.status?.toLowerCase() != 'paid').toList();
+      final pendingEmis = data.emiInstallments!
+          .where((e) => e.status?.toLowerCase() != 'paid')
+          .toList();
       if (pendingEmis.isNotEmpty) {
         pendingEmis.sort((a, b) {
           if (a.dueDate == null) return 1;
@@ -496,13 +566,23 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: isOverdue
-                    ? [Colors.red[400]!, Colors.orange[400]!, Colors.yellow[400]!]
-                    : const [Color(0xFF4158D0), Color(0xFFC850C0), Color(0xFFFFCC70)],
+                    ? [
+                        Colors.red[400]!,
+                        Colors.orange[400]!,
+                        Colors.yellow[400]!,
+                      ]
+                    : const [
+                        Color(0xFF4158D0),
+                        Color(0xFFC850C0),
+                        Color(0xFFFFCC70),
+                      ],
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: (isOverdue ? Colors.red : Colors.purple).withValues(alpha: 0.3),
+                  color: (isOverdue ? Colors.red : Colors.purple).withValues(
+                    alpha: 0.3,
+                  ),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -528,7 +608,9 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
-                            isOverdue ? Icons.warning_amber : Icons.calendar_today,
+                            isOverdue
+                                ? Icons.warning_amber
+                                : Icons.calendar_today,
                             color: Colors.white,
                             size: 14,
                           ),
@@ -545,11 +627,16 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -558,7 +645,11 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                           const SizedBox(width: 4),
                           Text(
                             data.paymentType?.toUpperCase() ?? 'N/A',
-                            style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
@@ -589,11 +680,18 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.event, size: 12, color: Colors.white.withValues(alpha: 0.7)),
+                            Icon(
+                              Icons.event,
+                              size: 12,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               DateFormat('dd MMMM, yyyy').format(nextDueDate),
-                              style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.9)),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
                             ),
                           ],
                         ),
@@ -605,7 +703,11 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
-                            BoxShadow(color: Colors.white.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 5)),
+                            BoxShadow(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
                           ],
                         ),
                         child: Material(
@@ -614,8 +716,14 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                             onTap: () => _handlePayment(nextDueEmi!),
                             borderRadius: BorderRadius.circular(16),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -628,7 +736,11 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const Icon(Icons.arrow_forward, size: 16, color: Color(0xFF4158D0)),
+                                  const Icon(
+                                    Icons.arrow_forward,
+                                    size: 16,
+                                    color: Color(0xFF4158D0),
+                                  ),
                                 ],
                               ),
                             ),
@@ -646,7 +758,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
             child: Container(
               width: 100,
               height: 100,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.1)),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
             ),
           ),
           Positioned(
@@ -655,7 +770,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
             child: Container(
               width: 150,
               height: 150,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.05)),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
+              ),
             ),
           ),
         ],
@@ -663,16 +781,26 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildPaymentHistoryList(BuildContext context, List<PaymentTransaction>? transactions) {
+  Widget _buildPaymentHistoryList(
+    BuildContext context,
+    List<PaymentTransaction>? transactions,
+  ) {
     if (transactions == null || transactions.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Center(
           child: Column(
             children: [
-              Icon(Icons.history, size: 32, color: AppColors.textSecondary.withValues(alpha: 0.5)),
+              Icon(
+                Icons.history,
+                size: 32,
+                color: AppColors.textSecondary.withValues(alpha: 0.5),
+              ),
               const SizedBox(height: 8),
-              Text('No transactions found', style: TextStyle(color: AppColors.textSecondary)),
+              Text(
+                'No transactions found',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ],
           ),
         ),
@@ -730,11 +858,21 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Payment', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+                    Text(
+                      'Payment',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       '${dateFormat.format(txn.paymentDate ?? DateTime.now())} • ${txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'Unknown'}',
-                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -756,7 +894,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: status == TransactionStatus.completed
                           ? AppColors.statsGreen.withValues(alpha: 0.1)
@@ -787,7 +928,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                     GestureDetector(
                       onTap: () => _downloadReceipt(txn),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -795,11 +939,19 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.download_rounded, size: 12, color: AppColors.primary),
+                            Icon(
+                              Icons.download_rounded,
+                              size: 12,
+                              color: AppColors.primary,
+                            ),
                             const SizedBox(width: 3),
                             Text(
                               'Receipt',
-                              style: TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         ),
@@ -815,16 +967,26 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildEmiScheduleList(BuildContext context, List<EmiInstallment>? schedule) {
+  Widget _buildEmiScheduleList(
+    BuildContext context,
+    List<EmiInstallment>? schedule,
+  ) {
     if (schedule == null || schedule.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Center(
           child: Column(
             children: [
-              Icon(Icons.schedule, size: 32, color: AppColors.textSecondary.withValues(alpha: 0.5)),
+              Icon(
+                Icons.schedule,
+                size: 32,
+                color: AppColors.textSecondary.withValues(alpha: 0.5),
+              ),
               const SizedBox(height: 8),
-              Text('No EMI schedule available', style: TextStyle(color: AppColors.textSecondary)),
+              Text(
+                'No EMI schedule available',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ],
           ),
         ),
@@ -836,7 +998,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
 
     // Sort by installment number
     final sortedSchedule = List<EmiInstallment>.from(schedule)
-      ..sort((a, b) => (a.installmentNumber ?? 0).compareTo(b.installmentNumber ?? 0));
+      ..sort(
+        (a, b) =>
+            (a.installmentNumber ?? 0).compareTo(b.installmentNumber ?? 0),
+      );
 
     return ListView.separated(
       shrinkWrap: true,
@@ -846,7 +1011,9 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       itemBuilder: (context, index) {
         final emi = sortedSchedule[index];
         final emiStatus = _mapEmiStatus(emi.status, emi.isOverdue ?? false);
-        final isEnabled = index == 0 || sortedSchedule[index - 1].status?.toLowerCase() == 'paid';
+        final isEnabled =
+            index == 0 ||
+            sortedSchedule[index - 1].status?.toLowerCase() == 'paid';
 
         return InkWell(
           onTap: isEnabled && emiStatus != EmiStatus.paid
@@ -914,13 +1081,20 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: isEnabled ? AppColors.textPrimary : AppColors.textSecondary.withValues(alpha: 0.5),
+                          color: isEnabled
+                              ? AppColors.textPrimary
+                              : AppColors.textSecondary.withValues(alpha: 0.5),
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Due: ${dateFormat.format(emi.dueDate ?? DateTime.now())}',
-                        style: TextStyle(fontSize: 11, color: isEnabled ? AppColors.textSecondary : AppColors.textSecondary.withValues(alpha: 0.3)),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isEnabled
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondary.withValues(alpha: 0.3),
+                        ),
                       ),
                     ],
                   ),
@@ -949,34 +1123,60 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         children: [
                           if (emiStatus == EmiStatus.overdue && isEnabled)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
                               child: Text(
                                 'Overdue',
-                                style: TextStyle(fontSize: 8, color: AppColors.error, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  color: AppColors.error,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           if (emiStatus == EmiStatus.pending || !isEnabled)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: isEnabled ? AppColors.statsOrange.withValues(alpha: 0.1) : AppColors.surface,
+                                color: isEnabled
+                                    ? AppColors.statsOrange.withValues(
+                                        alpha: 0.1,
+                                      )
+                                    : AppColors.surface,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 !isEnabled ? 'Locked' : 'Pending',
                                 style: TextStyle(
                                   fontSize: 8,
-                                  color: isEnabled ? AppColors.statsOrange : AppColors.textSecondary.withValues(alpha: 0.5),
+                                  color: isEnabled
+                                      ? AppColors.statsOrange
+                                      : AppColors.textSecondary.withValues(
+                                          alpha: 0.5,
+                                        ),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
                           const SizedBox(width: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: isEnabled ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
+                              color: isEnabled
+                                  ? AppColors.primary.withValues(alpha: 0.1)
+                                  : AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -984,7 +1184,11 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w600,
-                                color: isEnabled ? AppColors.primary : AppColors.textSecondary.withValues(alpha: 0.5),
+                                color: isEnabled
+                                    ? AppColors.primary
+                                    : AppColors.textSecondary.withValues(
+                                        alpha: 0.5,
+                                      ),
                               ),
                             ),
                           ),
@@ -1019,7 +1223,13 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
             decoration: BoxDecoration(
               color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 15, offset: const Offset(0, 5))],
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadowLight,
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1028,8 +1238,15 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                      child: const Icon(Icons.school, color: AppColors.primary, size: 24),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.school,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -1038,27 +1255,41 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                         children: [
                           Text(
                             data.batch?.courseName ?? 'Unknown Course',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             data.batch?.batchName ?? 'Unknown Batch',
-                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
-                        color: isOverdue ? AppColors.error.withValues(alpha: 0.1) : AppColors.statsGreen.withValues(alpha: 0.1),
+                        color: isOverdue
+                            ? AppColors.error.withValues(alpha: 0.1)
+                            : AppColors.statsGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         isOverdue ? 'Overdue' : 'Active',
                         style: TextStyle(
                           fontSize: 11,
-                          color: isOverdue ? AppColors.error : AppColors.statsGreen,
+                          color: isOverdue
+                              ? AppColors.error
+                              : AppColors.statsGreen,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1071,13 +1302,33 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
+                      Icon(
+                        Icons.person_outline,
+                        size: 14,
+                        color: AppColors.textSecondary,
+                      ),
                       const SizedBox(width: 4),
-                      Text(data.studentName ?? '', style: TextStyle(fontSize: 13, color: AppColors.textPrimary)),
+                      Text(
+                        data.studentName ?? '',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                       const SizedBox(width: 16),
-                      Icon(Icons.badge_outlined, size: 14, color: AppColors.textSecondary),
+                      Icon(
+                        Icons.badge_outlined,
+                        size: 14,
+                        color: AppColors.textSecondary,
+                      ),
                       const SizedBox(width: 4),
-                      Text(data.studentId ?? '', style: TextStyle(fontSize: 13, color: AppColors.textPrimary)),
+                      Text(
+                        data.studentId ?? '',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -1085,7 +1336,9 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
             ),
           ),
           const SizedBox(height: 16),
-          data.paymentTypeDisplay == "Full Amount" ? SizedBox() : _buildAttractiveNextDueCard(data),
+          data.paymentTypeDisplay == "Full Amount"
+              ? SizedBox()
+              : _buildAttractiveNextDueCard(data),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1143,7 +1396,13 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.grey.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 5))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withValues(alpha: 0.05),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1151,13 +1410,30 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                    Text(
+                      'Progress',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                       child: Text(
                         '${progress.toStringAsFixed(1)}%',
-                        style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -1168,14 +1444,19 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                   child: LinearProgressIndicator(
                     value: (progress / 100).clamp(0.0, 1.0),
                     backgroundColor: AppColors.surface,
-                    valueColor: AlwaysStoppedAnimation<Color>(isOverdue ? AppColors.error : AppColors.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isOverdue ? AppColors.error : AppColors.primary,
+                    ),
                     minHeight: 8,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '₹${NumberFormat('#,##0').format(paidAmount)} of ₹${NumberFormat('#,##0').format(totalFee)}',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -1189,32 +1470,65 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
-                  BoxShadow(color: AppColors.shadowLight, blurRadius: 15, offset: const Offset(0, 5)),
+                  BoxShadow(
+                    color: AppColors.shadowLight,
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
                 ],
               ),
               child: Theme(
-                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   tilePadding: const EdgeInsets.all(16),
                   leading: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: AppColors.statsOrange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                    child: Icon(Icons.schedule, color: AppColors.statsOrange, size: 18),
+                    decoration: BoxDecoration(
+                      color: AppColors.statsOrange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.schedule,
+                      color: AppColors.statsOrange,
+                      size: 18,
+                    ),
                   ),
-                  title: Text('EMI Schedule', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  title: Text(
+                    'EMI Schedule',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                   subtitle: Text(
                     '${data.emiInstallments?.where((e) => e.status?.toLowerCase() != 'paid').length ?? 0} pending',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   trailing: Container(
                     padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
-                    child: Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: _buildEmiScheduleList(context, data.emiInstallments),
+                      child: _buildEmiScheduleList(
+                        context,
+                        data.emiInstallments,
+                      ),
                     ),
                   ],
                 ),
@@ -1226,31 +1540,66 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
             decoration: BoxDecoration(
               color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 15, offset: const Offset(0, 5))],
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadowLight,
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
             child: Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 tilePadding: const EdgeInsets.all(16),
                 leading: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                  child: Icon(Icons.history, color: AppColors.primary, size: 18),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.history,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
                 ),
-                title: Text('Payment History', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                title: Text(
+                  'Payment History',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 subtitle: Text(
                   '${data.paymentTransactions?.length ?? 0} transactions',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 trailing: Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
-                  child: Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    size: 16,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: _buildPaymentHistoryList(context, data.paymentTransactions),
+                    child: _buildPaymentHistoryList(
+                      context,
+                      data.paymentTransactions,
+                    ),
                   ),
                 ],
               ),
@@ -1267,7 +1616,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
     try {
       final data = _paymentData;
       final dateFormat = DateFormat('dd/MM/yyyy');
-      final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+      final currencyFormat = NumberFormat.currency(
+        locale: 'en_IN',
+        symbol: '₹',
+      );
 
       final pdf = pw.Document();
 
@@ -1317,11 +1669,17 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                   children: [
                     pw.Text(
                       'Receipt No: ${txn.transactionId ?? txn.uid ?? 'N/A'}',
-                      style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
+                      style: pw.TextStyle(
+                        fontSize: 11,
+                        color: PdfColors.grey700,
+                      ),
                     ),
                     pw.Text(
                       'Date: ${dateFormat.format(txn.paymentDate ?? DateTime.now())}',
-                      style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
+                      style: pw.TextStyle(
+                        fontSize: 11,
+                        color: PdfColors.grey700,
+                      ),
                     ),
                   ],
                 ),
@@ -1332,7 +1690,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                 // ── Student Details ──
                 pw.Text(
                   'Student Details',
-                  style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+                  style: pw.TextStyle(
+                    fontSize: 13,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
                 ),
                 pw.SizedBox(height: 10),
                 _pdfRow('Student Name', data?.studentName ?? 'N/A'),
@@ -1346,11 +1707,20 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                 // ── Payment Details ──
                 pw.Text(
                   'Payment Details',
-                  style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+                  style: pw.TextStyle(
+                    fontSize: 13,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
                 ),
                 pw.SizedBox(height: 10),
-                _pdfRow('Amount Paid', currencyFormat.format(_getNumericAmount(txn.amount))),
-                _pdfRow('Payment Method', txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'N/A'),
+                _pdfRow(
+                  'Amount Paid',
+                  currencyFormat.format(_getNumericAmount(txn.amount)),
+                ),
+                _pdfRow(
+                  'Payment Method',
+                  txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'N/A',
+                ),
                 _pdfRow('Status', txn.status?.toUpperCase() ?? 'N/A'),
                 if ((txn.transactionId ?? '').isNotEmpty)
                   _pdfRow('Transaction ID', txn.transactionId!),
@@ -1361,12 +1731,30 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                 // ── Fee Summary ──
                 pw.Text(
                   'Fee Summary',
-                  style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+                  style: pw.TextStyle(
+                    fontSize: 13,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
                 ),
                 pw.SizedBox(height: 10),
-                _pdfRow('Total Course Fee', currencyFormat.format(_getNumericAmount(data?.originalCourseFees))),
-                _pdfRow('Total Paid', currencyFormat.format(_getNumericAmount(data?.totalAmountPaid))),
-                _pdfRow('Balance Due', currencyFormat.format(_getNumericAmount(data?.totalPendingAmount))),
+                _pdfRow(
+                  'Total Course Fee',
+                  currencyFormat.format(
+                    _getNumericAmount(data?.originalCourseFees),
+                  ),
+                ),
+                _pdfRow(
+                  'Total Paid',
+                  currencyFormat.format(
+                    _getNumericAmount(data?.totalAmountPaid),
+                  ),
+                ),
+                _pdfRow(
+                  'Balance Due',
+                  currencyFormat.format(
+                    _getNumericAmount(data?.totalPendingAmount),
+                  ),
+                ),
                 pw.SizedBox(height: 32),
 
                 // ── Footer ──
@@ -1399,7 +1787,13 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                 const Expanded(child: Text('Receipt saved successfully')),
                 TextButton(
                   onPressed: () => OpenFilex.open(file.path),
-                  child: const Text('OPEN', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'OPEN',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1428,19 +1822,33 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(label, style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
-          pw.Text(value, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+          pw.Text(
+            label,
+            style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
+          ),
+          pw.Text(
+            value,
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+          ),
         ],
       ),
     );
   }
 
   void handlePaymentErrorResponse(PaymentFailureResponse response) {
-    showAlertDialog(context, "Payment Failed", "Code: ${response.code}\nDescription: ${response.message}");
+    showAlertDialog(
+      context,
+      "Payment Failed",
+      "Code: ${response.code}\nDescription: ${response.message}",
+    );
   }
 
   void handlePaymentSuccessResponse(PaymentSuccessResponse response) {
-    showAlertDialog(context, "Payment Successful", "Payment ID: ${response.paymentId}");
+    showAlertDialog(
+      context,
+      "Payment Successful",
+      "Payment ID: ${response.paymentId}",
+    );
     // Refresh data after successful payment with a small delay to allow backend to update
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
@@ -1450,7 +1858,11 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
   }
 
   void handleExternalWalletSelected(ExternalWalletResponse response) {
-    showAlertDialog(context, "External Wallet Selected", "${response.walletName}");
+    showAlertDialog(
+      context,
+      "External Wallet Selected",
+      "${response.walletName}",
+    );
   }
 
   void showAlertDialog(BuildContext context, String title, String message) {
@@ -1462,7 +1874,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
         TextButton(
           child: Text(
             "OK",
-            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -1485,7 +1900,10 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       'description': details.description,
       'retry': {'enabled': true, 'max_count': 1},
       'send_sms_hash': true,
-      'prefill': {'contact': details.prefill?.contact, 'email': details.prefill?.email},
+      'prefill': {
+        'contact': details.prefill?.contact,
+        'email': details.prefill?.email,
+      },
       'external': {
         'wallets': ['paytm'],
       },
