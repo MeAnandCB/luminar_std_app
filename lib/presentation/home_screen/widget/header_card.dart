@@ -16,27 +16,49 @@ class HeaderWidget extends StatelessWidget {
   final DashboardController provider;
   final EnrollmentProvider enrolldata;
 
-  const HeaderWidget({super.key, required this.studentName, required this.provider, required this.enrolldata});
+  const HeaderWidget({
+    super.key,
+    required this.studentName,
+    required this.provider,
+    required this.enrolldata,
+  });
 
   String _getFirstLetter() {
     return studentName.isNotEmpty ? studentName[0].toUpperCase() : '?';
   }
 
   bool _shouldShowAvatarImage() {
-    return studentName != 'Guest' && studentName != 'Loading...' && studentName.isNotEmpty;
+    return studentName != 'Guest' &&
+        studentName != 'Loading...' &&
+        studentName.isNotEmpty;
   }
 
   @override
   Widget build(BuildContext context) {
-    LoggerUtils.debug('🖼️ Building header with name: "$studentName"', tag: 'Dashboard');
+    LoggerUtils.debug(
+      '🖼️ Building header with name: "$studentName"',
+      tag: 'Dashboard',
+    );
 
     return Row(
       children: [
         Expanded(
-          child: Row(children: [_buildProfileAvatar(context), const SizedBox(width: 12), _buildUserInfo(context)]),
+          child: Row(
+            children: [
+              _buildProfileAvatar(context),
+              const SizedBox(width: 12),
+              _buildUserInfo(context),
+            ],
+          ),
         ),
 
-        Row(children: [_buildThemeToggle(context), const SizedBox(width: 4), _buildNotificationIcon(context)]),
+        Row(
+          children: [
+            _buildThemeToggle(context),
+            const SizedBox(width: 4),
+            _buildNotificationIcon(context),
+          ],
+        ),
       ],
     );
   }
@@ -47,8 +69,15 @@ class HeaderWidget extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                ProfileScreen(course: enrolldata.enrollmentDataRes?.enrollments[0].course.courseName ?? ""),
+            builder: (context) => ProfileScreen(
+              course:
+                  enrolldata
+                      .enrollmentDataRes
+                      ?.enrollments[0]
+                      .course
+                      .courseName ??
+                  "",
+            ),
           ),
         );
       },
@@ -60,17 +89,28 @@ class HeaderWidget extends StatelessWidget {
             child: ClipOval(
               child: _shouldShowAvatarImage()
                   ? CachedNetworkImage(
-                      imageUrl: provider.dashboard?.studentDetails?.basicInfo?.profilePicture ?? "",
+                      imageUrl:
+                          provider
+                              .dashboard
+                              ?.studentDetails
+                              ?.basicInfo
+                              ?.profilePicture ??
+                          "",
                       width: 46,
                       height: 46,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => const CircularProgressIndicator(strokeWidth: 2),
+                      placeholder: (context, url) =>
+                          const CircularProgressIndicator(strokeWidth: 2),
                       errorWidget: (context, url, error) => Container(
                         color: AppColors.primary,
                         child: Center(
                           child: Text(
                             _getFirstLetter(),
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.white),
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -82,7 +122,11 @@ class HeaderWidget extends StatelessWidget {
                       child: Center(
                         child: Text(
                           _getFirstLetter(),
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.white),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -91,7 +135,12 @@ class HeaderWidget extends StatelessWidget {
           Positioned(
             right: 2,
             top: 2,
-            child: AvatarGlow(child: CircleAvatar(radius: 6, backgroundColor: AppColors.statsGreen)),
+            child: AvatarGlow(
+              child: CircleAvatar(
+                radius: 6,
+                backgroundColor: AppColors.statsGreen,
+              ),
+            ),
           ),
         ],
       ),
@@ -102,9 +151,14 @@ class HeaderWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Welcome Back", maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.headerName),
+        Text(
+          "Welcome Back",
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.headerName,
+        ),
         SizedBox(
-          width: MediaQuery.sizeOf(context).width * .50,
+          width: MediaQuery.sizeOf(context).width * .40,
           child: Text(
             studentName.toUpperCase(),
             maxLines: 1,
@@ -113,7 +167,7 @@ class HeaderWidget extends StatelessWidget {
           ),
         ),
         SizedBox(
-          width: MediaQuery.sizeOf(context).width * .50,
+          width: MediaQuery.sizeOf(context).width * .40,
           child: Text(
             provider.dashboard?.studentDetails?.basicInfo?.studentId ?? "",
             maxLines: 1,
@@ -148,11 +202,15 @@ class HeaderWidget extends StatelessWidget {
   }
 
   Widget _buildNotificationIcon(BuildContext context) {
-    final unreadCount = provider.dashboard?.notificationsSummary?.summary?.unreadCount;
+    final unreadCount =
+        provider.dashboard?.notificationsSummary?.summary?.unreadCount;
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationScreen()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationScreen()),
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(8),
@@ -163,18 +221,32 @@ class HeaderWidget extends StatelessWidget {
             backgroundColor: Colors.transparent,
             child: Stack(
               children: [
-                Icon(Icons.notifications_active_outlined, color: AppColors.notificationIcon, size: 20),
+                Icon(
+                  Icons.notifications_active_outlined,
+                  color: AppColors.notificationIcon,
+                  size: 20,
+                ),
                 if (unreadCount != null && unreadCount > 0)
                   Positioned(
                     right: 0,
                     top: 0,
                     child: Container(
                       padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(6)),
-                      constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 12,
+                        minHeight: 12,
+                      ),
                       child: Text(
                         '$unreadCount',
-                        style: TextStyle(color: AppColors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: AppColors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),

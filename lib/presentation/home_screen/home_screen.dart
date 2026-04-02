@@ -640,7 +640,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
       children: [
         // ── Card PageView ─────────────────────────────────────
         SizedBox(
-          height: 310,
+          height: 320,
           child: PageView.builder(
             controller: _pageController,
             scrollDirection: Axis.horizontal,
@@ -872,6 +872,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
                     children: [
                       // ── Header: logo + brand + status ────────
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
                             width: 44,
@@ -900,31 +901,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'LUMINAR',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 2.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 1),
-                                Text(
-                                  'Training Institute',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.6),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+
                           if (status != null)
                             Container(
                               padding: const EdgeInsets.symmetric(
