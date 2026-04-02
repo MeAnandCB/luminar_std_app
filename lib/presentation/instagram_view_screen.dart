@@ -40,7 +40,7 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
     if (!mounted) return;
     // Don't re-fetch if we already have images
     if (images.isNotEmpty) return;
-    
+
     setState(() => isLoading = true);
     await fetchInstagramImages(reset: true);
     if (!mounted) return;
@@ -65,7 +65,10 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
 
       if (response.statusCode == 200) {
         // Parse in a background isolate
-        final parsedData = await compute(_parseInstagramResponse, response.body);
+        final parsedData = await compute(
+          _parseInstagramResponse,
+          response.body,
+        );
         final List<String> newImages = parsedData['images'];
         final String? next = parsedData['nextUrl'];
 
@@ -80,14 +83,19 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
 
         // Pre-cache images in a non-blocking way
         for (String url in newImages) {
-          precacheImage(CachedNetworkImageProvider(url), context).catchError((e) {
-             debugPrint("Error pre-caching image: $e");
+          precacheImage(CachedNetworkImageProvider(url), context).catchError((
+            e,
+          ) {
+            debugPrint("Error pre-caching image: $e");
           });
         }
 
         nextUrl = next;
 
-        LoggerUtils.info("Loaded ${newImages.length} images. Total: ${images.length}", tag: 'Instagram');
+        LoggerUtils.info(
+          "Loaded ${newImages.length} images. Total: ${images.length}",
+          tag: 'Instagram',
+        );
       }
     } catch (e) {
       LoggerUtils.error("Error fetching images: $e", tag: 'Instagram');
@@ -107,14 +115,19 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
 
       if (response.statusCode == 200) {
         // Parse in a background isolate
-        final parsedData = await compute(_parseInstagramResponse, response.body);
+        final parsedData = await compute(
+          _parseInstagramResponse,
+          response.body,
+        );
         preloadedImages = parsedData['images'];
 
         // Pre-cache these images in a non-blocking way
         for (String url in preloadedImages) {
           if (mounted) {
-            precacheImage(CachedNetworkImageProvider(url), context).catchError((e) {
-               debugPrint("Error pre-caching preloaded image: $e");
+            precacheImage(CachedNetworkImageProvider(url), context).catchError((
+              e,
+            ) {
+              debugPrint("Error pre-caching preloaded image: $e");
             });
           }
         }
@@ -174,13 +187,6 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
 
     return Column(
       children: [
-        Center(
-          child: Text(
-            "Our Success Stories",
-            style: AppTextStyles.activitySubtitle,
-          ),
-        ),
-
         const SizedBox(height: 10),
         CarouselSlider(
           options: CarouselOptions(
@@ -219,37 +225,6 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
               ),
             );
           }).toList(),
-        ),
-
-        // Status indicator
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '${images.length} images',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              if (isLoadingMore)
-                const Padding(
-                  padding: EdgeInsets.only(left: 8.0),
-                  child: SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                    ),
-                  ),
-                ),
-              if (nextUrl == null && !isLoadingMore)
-                const Padding(
-                  padding: EdgeInsets.only(left: 8.0),
-                  child: Icon(Icons.done_all, size: 16, color: Colors.green),
-                ),
-            ],
-          ),
         ),
       ],
     );
@@ -310,8 +285,5 @@ Map<String, dynamic> _parseInstagramResponse(String responseBody) {
     next = data["paging"]["next"];
   }
 
-  return {
-    'images': images,
-    'nextUrl': next,
-  };
+  return {'images': images, 'nextUrl': next};
 }

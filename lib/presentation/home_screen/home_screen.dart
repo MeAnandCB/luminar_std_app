@@ -109,7 +109,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          AppUtils.friendlyError(dashboardProvider.error!).contains('internet')
+                          AppUtils.friendlyError(
+                                dashboardProvider.error!,
+                              ).contains('internet')
                               ? Icons.wifi_off_rounded
                               : Icons.error_outline_rounded,
                           size: 72,
@@ -117,11 +119,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          AppUtils.friendlyError(dashboardProvider.error!).contains('internet')
+                          AppUtils.friendlyError(
+                                dashboardProvider.error!,
+                              ).contains('internet')
                               ? 'No Internet Connection'
                               : 'Something Went Wrong',
                           textAlign: TextAlign.center,
-                          style: AppTextStyles.headerName.copyWith(fontSize: 18),
+                          style: AppTextStyles.headerName.copyWith(
+                            fontSize: 18,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         Text(
@@ -131,14 +137,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         ),
                         const SizedBox(height: 28),
                         ElevatedButton.icon(
-                          onPressed: () => dashboardProvider.refreshDashboard(context: context),
+                          onPressed: () => dashboardProvider.refreshDashboard(
+                            context: context,
+                          ),
                           icon: const Icon(Icons.refresh_rounded, size: 18),
                           label: const Text('Try Again'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.white,
                             minimumSize: const Size(180, 46),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ],
@@ -228,7 +238,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  // ============== COURSE CARD SECTION WITH MULTIPLE ENROLLMENTS ==============
+  // ============== COURSE CARD SECTION ==============
 
   Widget _buildCourseCard(Dashboard dashboard, EnrollmentProvider enrollments) {
     final enrollmentsList = dashboard.enrollmentDetails?.enrollments ?? [];
@@ -236,794 +246,27 @@ class _StudentDashboardState extends State<StudentDashboard> {
     if (enrollmentsList.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
           gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("CURRENT ENROLLMENT", style: AppTextStyles.courseCardLabel),
-            SizedBox(height: 8),
+            Text('CURRENT ENROLLMENT', style: AppTextStyles.courseCardLabel),
+            const SizedBox(height: 8),
             Text('No Course Enrolled', style: AppTextStyles.courseCardTitle),
           ],
         ),
       );
     }
 
-    // If only one enrollment, show single card (original design)
-    if (enrollmentsList.length == 1) {
-      final enrollment = enrollmentsList.first;
-      return _buildSingleEnrollmentCard(enrollment, enrollments, 0);
-    }
-
-    // Multiple enrollments - show horizontal scrollable list
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.only(left: 4, bottom: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "YOUR ENROLLMENTS (${enrollmentsList.length})",
-                style: AppTextStyles.sectionTitle.copyWith(fontSize: 16),
-              ),
-              // Scroll indicator dots
-              Row(
-                children: List.generate(
-                  enrollmentsList.length > 3 ? 3 : enrollmentsList.length,
-                  (index) => Container(
-                    width: 6,
-                    height: 6,
-                    margin: EdgeInsets.only(right: 4),
-                    decoration: BoxDecoration(
-                      color: index == 0
-                          ? AppColors.primary
-                          : AppColors.primary.withOpacity(0.3),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Horizontal scrollable list of enrollment cards
-        SizedBox(
-          height: 330, // Fixed height for horizontal list
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: enrollmentsList.length,
-            itemBuilder: (context, index) {
-              final enrollment = enrollmentsList[index];
-              return _buildEnrollmentCard(enrollment, index, enrollments);
-            },
-          ),
-        ),
-      ],
+    return _EnrollmentCardStack(
+      enrollments: enrollmentsList,
+      provider: enrollments,
+      studentName: _displayName,
     );
-  }
-
-  // Single enrollment card — modern redesign
-  Widget _buildSingleEnrollmentCard(
-    enrollment,
-    EnrollmentProvider provider,
-    int index,
-  ) {
-    final enrollmentData = provider.enrollmentData;
-    if (enrollmentData == null) return const SizedBox.shrink();
-
-    final enrollments = enrollmentData.enrollments;
-    if (index >= enrollments.length) return const SizedBox.shrink();
-
-    final courseName =
-        enrollment?.courseInfo?.courseName ??
-        enrollment?.courseDetails?.toString() ??
-        'No Course Enrolled';
-
-    final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
-    final startDate = enrollment?.batchInfo?.startDate;
-    final attendanceMode = enrollment?.attendanceMode?.name ?? 'Hybrid';
-    final attendanceModeValue = enrollment?.attendanceMode?.value ?? '';
-    final progress = enrollment?.academicProgress?.completionPercentage ?? 0;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF5548D9), Color(0xFF6C5CE7), Color(0xFF9C8FFF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          stops: [0.0, 0.5, 1.0],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.45),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Decorative background shapes
-          Positioned(
-            top: -30,
-            right: -25,
-            child: _buildDecorCircle(130, 0.08),
-          ),
-          Positioned(
-            bottom: -40,
-            left: -35,
-            child: _buildDecorCircle(170, 0.06),
-          ),
-          Positioned(
-            top: 65,
-            right: 75,
-            child: _buildDecorCircle(55, 0.07),
-          ),
-          Positioned(
-            bottom: 35,
-            right: 25,
-            child: _buildDecorCircle(38, 0.05),
-          ),
-          // Main content
-          Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top row: label + mode badge
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildLabelChip('CURRENT ENROLLMENT'),
-                    _buildModeBadge(attendanceModeValue, attendanceMode),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                // Course icon + name
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.school_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        courseName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 19,
-                          fontWeight: FontWeight.w800,
-                          height: 1.25,
-                          letterSpacing: -0.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Info chips
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    _buildCardInfoChip(Icons.group_rounded, batchName),
-                    _buildCardInfoChip(
-                      Icons.calendar_today_rounded,
-                      _formatDate(startDate),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                // Divider
-                Container(
-                  height: 1,
-                  color: Colors.white.withValues(alpha: 0.15),
-                ),
-                const SizedBox(height: 14),
-                // Progress row: label + bar + percentage badge
-                Row(
-                  children: [
-                    Text(
-                      'Progress',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                          minHeight: 7,
-                          value: progress / 100,
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '$progress%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Bottom row: remaining chip + action button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.timer_rounded,
-                            size: 12,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${100 - progress}% remaining',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    InkWell(
-                      onTap:
-                          (enrollments[index].status.value ==
-                                  "admission_fee_paid" ||
-                              enrollments[index].status.value == "not_set" ||
-                              enrollments[index].status.value == "demo_expired")
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EnrollmentDetailsScreen(
-                                    index: index,
-                                    backbuttonValue: true,
-                                  ),
-                                ),
-                              );
-                            }
-                          : () {
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      BottomNavScreen(initialIndex: 3),
-                                ),
-                                (route) => false,
-                              );
-                            },
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 12,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Continue',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 15,
-                              color: AppColors.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Multiple enrollment card — modern redesign with index-based gradients
-  Widget _buildEnrollmentCard(
-    dynamic enrollment,
-    int index,
-    EnrollmentProvider enrollments,
-  ) {
-    final courseName =
-        enrollment?.courseInfo?.courseName ??
-        enrollment?.courseDetails?.toString() ??
-        'No Course Enrolled';
-
-    final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
-    final startDate = enrollment?.batchInfo?.startDate;
-    final attendanceMode = enrollment?.attendanceMode?.name ?? 'Hybrid';
-    final attendanceModeValue = enrollment?.attendanceMode?.value ?? '';
-    final progress = enrollment?.academicProgress?.completionPercentage ?? 0;
-
-    final status =
-        enrollments.enrollmentDataRes?.enrollments[index].status.value ?? "";
-    final statusName =
-        enrollments.enrollmentDataRes?.enrollments[index].status.name ?? "";
-
-    // Index-based gradient palette
-    const gradientSets = [
-      [Color(0xFF5548D9), Color(0xFF8B7BF2)],
-      [Color(0xFF0870C7), Color(0xFF3A9BD5)],
-      [Color(0xFF00967A), Color(0xFF00C9A7)],
-      [Color(0xFFB83280), Color(0xFFE91E8C)],
-    ];
-    final colors = gradientSets[index % gradientSets.length];
-
-    return Container(
-      width: 300,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: colors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: colors[0].withValues(alpha: 0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(top: -25, right: -20, child: _buildDecorCircle(110, 0.08)),
-          Positioned(
-            bottom: -30,
-            left: -25,
-            child: _buildDecorCircle(140, 0.06),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top row: # badge + status
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '#${index + 1}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    if (statusName.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _getStatusColor(status),
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              statusName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                // Course icon + name
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(
-                        Icons.school_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        courseName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Info chips
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    _buildCardInfoChip(Icons.group_rounded, batchName),
-                    _buildCardInfoChip(
-                      Icons.calendar_today_rounded,
-                      _formatDate(startDate),
-                    ),
-                    _buildModeBadge(attendanceModeValue, attendanceMode),
-                  ],
-                ),
-                const Spacer(),
-                // Divider
-                Container(
-                  height: 1,
-                  color: Colors.white.withValues(alpha: 0.15),
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                // Progress
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Progress',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '$progress%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(5),
-                  child: LinearProgressIndicator(
-                    minHeight: 6,
-                    value: progress / 100,
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                // Action button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    InkWell(
-                      onTap:
-                          (enrollments
-                                      .enrollmentDataRes
-                                      ?.enrollments[index]
-                                      .status
-                                      .value ==
-                                  "admission_fee_paid" ||
-                              enrollments
-                                      .enrollmentDataRes
-                                      ?.enrollments[index]
-                                      .status
-                                      .value ==
-                                  "not_set" ||
-                              enrollments
-                                      .enrollmentDataRes
-                                      ?.enrollments[index]
-                                      .status
-                                      .value ==
-                                  "demo_expired")
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EnrollmentDetailsScreen(
-                                    index: index,
-                                    backbuttonValue: true,
-                                  ),
-                                ),
-                              );
-                            }
-                          : () {
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      BottomNavScreen(initialIndex: 3),
-                                ),
-                                (route) => false,
-                              );
-                            },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Continue',
-                              style: TextStyle(
-                                color: colors[0],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 13,
-                              color: colors[0],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Helper method for status colors
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'active':
-      case 'admission_fee_paid':
-        return AppColors.statsGreen;
-      case 'pending':
-      case 'not_set':
-        return AppColors.statsOrange;
-      case 'completed':
-        return AppColors.statsBlue;
-      case 'expired':
-      case 'demo_expired':
-        return AppColors.error;
-      default:
-        return AppColors.textSecondary;
-    }
-  }
-
-  // ============== CARD HELPER WIDGETS ==============
-
-  Widget _buildDecorCircle(double size, double opacity) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: opacity),
-      ),
-    );
-  }
-
-  Widget _buildLabelChip(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.9),
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModeBadge(String modeValue, String modeName) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_getAttendanceModeIcon(modeValue), size: 11, color: Colors.white),
-          const SizedBox(width: 4),
-          Text(
-            modeName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardInfoChip(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.8)),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  IconData _getAttendanceModeIcon(String value) {
-    switch (value) {
-      case 'online':
-        return Icons.computer_rounded;
-      case 'offline':
-        return Icons.location_on_rounded;
-      case 'hybrid':
-        return Icons.sync_alt_rounded;
-      case 'recording':
-        return Icons.video_library_rounded;
-      default:
-        return Icons.school_rounded;
-    }
   }
 
   // ============== EXISTING METHODS (KEPT EXACTLY AS THEY WERE) ==============
@@ -1105,16 +348,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildCourseInfoItem(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, maxLines: 2, style: AppTextStyles.courseCardLabel),
-        Text(value, style: AppTextStyles.courseCardValue),
-      ],
     );
   }
 
@@ -1337,4 +570,557 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
     );
   }
+}
+
+// ============================================================
+//  Horizontal Swipe Credit-Card Enrollment Widget
+// ============================================================
+
+class _EnrollmentCardStack extends StatefulWidget {
+  final List enrollments;
+  final EnrollmentProvider provider;
+  final String studentName;
+
+  const _EnrollmentCardStack({
+    required this.enrollments,
+    required this.provider,
+    required this.studentName,
+  });
+
+  @override
+  State<_EnrollmentCardStack> createState() => _EnrollmentCardStackState();
+}
+
+class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
+    with TickerProviderStateMixin {
+  late final PageController _pageController;
+  int _currentPage = 0;
+
+  // Per-card tap ripple controllers
+  final Map<int, AnimationController> _rippleControllers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.88);
+    _pageController.addListener(_onScroll);
+  }
+
+  AnimationController _getRipple(int index) {
+    return _rippleControllers.putIfAbsent(
+      index,
+      () => AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 400),
+      ),
+    );
+  }
+
+  void _onScroll() {
+    final newPage = _pageController.page?.round() ?? 0;
+    if (newPage != _currentPage && mounted) {
+      setState(() => _currentPage = newPage);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.removeListener(_onScroll);
+    _pageController.dispose();
+    for (final c in _rippleControllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Card PageView ─────────────────────────────────────
+        SizedBox(
+          height: 230,
+          child: PageView.builder(
+            controller: _pageController,
+            scrollDirection: Axis.horizontal,
+            itemCount: widget.enrollments.length,
+            physics: const BouncingScrollPhysics(),
+            itemBuilder: (context, index) {
+              return AnimatedBuilder(
+                animation: _pageController,
+                builder: (ctx, child) {
+                  double offset = 0.0;
+                  if (_pageController.position.haveDimensions) {
+                    offset = _pageController.page! - index;
+                  }
+                  // Active card full size; side cards shrink + drop
+                  final scale = (1.0 - offset.abs() * 0.06).clamp(0.88, 1.0);
+                  final translateY = offset.abs() * 12;
+                  return Transform.scale(
+                    scale: scale,
+                    alignment: Alignment.center,
+                    child: Transform.translate(
+                      offset: Offset(0, translateY),
+                      child: child,
+                    ),
+                  );
+                },
+                child: _buildCreditCard(context, index),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // ── Bottom row: count + dots + swipe hint ─────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Card counter
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_currentPage + 1} of ${widget.enrollments.length}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+
+              // Animated pill dots
+              if (widget.enrollments.length > 1)
+                Row(
+                  children: List.generate(
+                    widget.enrollments.length.clamp(0, 6),
+                    (i) {
+                      final isActive = i == _currentPage;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: isActive ? 22 : 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? AppColors.primary
+                              : AppColors.primary.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+              // Swipe hint
+              Row(
+                children: [
+                  Icon(
+                    Icons.swipe_rounded,
+                    size: 14,
+                    color: AppColors.textHint,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'swipe',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textHint,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  Credit Card
+  // ════════════════════════════════════════════════════════════
+
+  Widget _buildCreditCard(BuildContext context, int index) {
+    final enrollment = widget.enrollments[index];
+    final provider = widget.provider;
+
+    const cardPalettes = [
+      [
+        Color(0xFF4834D4),
+        Color(0xFF6C5CE7),
+        Color(0xFFA29BFE),
+      ], // Luminar Purple
+      [Color(0xFF0A3D62), Color(0xFF1565C0), Color(0xFF42A5F5)], // Royal Blue
+      [Color(0xFF004D40), Color(0xFF00796B), Color(0xFF26A69A)], // Teal
+      [Color(0xFF4A148C), Color(0xFF6A1B9A), Color(0xFFAB47BC)], // Violet
+      [Color(0xFF880E4F), Color(0xFFC2185B), Color(0xFFEC407A)], // Rose
+    ];
+    final palette = cardPalettes[index % cardPalettes.length];
+
+    final courseName =
+        enrollment?.courseInfo?.courseName ?? 'No Course Enrolled';
+    final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
+    final startDate = enrollment?.batchInfo?.startDate;
+    final progress =
+        (enrollment?.academicProgress?.completionPercentage ?? 0) as int;
+    final enrollCount = provider.enrollmentDataRes?.enrollments.length ?? 0;
+    final enrollNum = enrollCount > index
+        ? provider.enrollmentDataRes!.enrollments[index].enrollmentNumber
+        : null;
+    final status = enrollCount > index
+        ? provider.enrollmentDataRes!.enrollments[index].status
+        : null;
+    final isNavigatable =
+        status?.value == 'admission_fee_paid' ||
+        status?.value == 'not_set' ||
+        status?.value == 'demo_expired';
+
+    final ripple = _getRipple(index);
+
+    return GestureDetector(
+      onTap: () {
+        ripple.forward(from: 0);
+        Future.delayed(const Duration(milliseconds: 250), () {
+          if (!mounted) return;
+          if (isNavigatable) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => EnrollmentDetailsScreen(
+                  index: index,
+                  backbuttonValue: true,
+                ),
+              ),
+            );
+          } else {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BottomNavScreen(initialIndex: 3),
+              ),
+              (route) => false,
+            );
+          }
+        });
+      },
+      child: AnimatedBuilder(
+        animation: ripple,
+        builder: (_, child) =>
+            Transform.scale(scale: 1.0 - ripple.value * 0.018, child: child),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: palette,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: palette[0].withValues(alpha: 0.5),
+                blurRadius: 28,
+                spreadRadius: -6,
+                offset: const Offset(0, 16),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              children: [
+                // ── Decorative orbs ──────────────────────────
+                Positioned(top: -55, right: -40, child: _orb(190, 0.10)),
+                Positioned(bottom: -60, left: -45, child: _orb(200, 0.07)),
+                Positioned(top: 30, right: 110, child: _orb(60, 0.08)),
+                // Subtle grid lines (card texture)
+                Positioned.fill(child: _cardTexture()),
+
+                // ── Content ───────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(22, 18, 22, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Row 1 — Chip  +  "LUMINAR"  +  NFC
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'LUMINAR',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.55),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 3.0,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // Row 3 — Course name (2 lines, auto-wraps)
+                      Text(
+                        courseName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                          height: 1.25,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      SizedBox(height: 20), // Row 4 — Batch | Start date | Logo
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          // Batch — flex so it gets as much space as it needs
+                          Expanded(
+                            flex: 5,
+                            child: _infoCol('BATCH', batchName, maxLines: 2),
+                          ),
+                          const SizedBox(width: 12),
+                          // Start date — fixed size
+                          _infoCol(
+                            'STARTS',
+                            startDate != null
+                                ? '${startDate.month.toString().padLeft(2, '0')}/${startDate.year}'
+                                : 'N/A',
+                          ),
+                          const Spacer(),
+                          // Luminar logo circle
+                          _logoWidget(),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Progress bar at very bottom ───────────────
+                Positioned(
+                  bottom: 20,
+                  left: 0,
+                  right: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 10, bottom: 2),
+                          child: Text(
+                            '$progress%',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.55),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        LinearProgressIndicator(
+                          minHeight: 6,
+                          value: progress / 100,
+                          backgroundColor: Colors.white.withValues(alpha: 0.15),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // ── Status badge ──────────────────────────────
+                if (status != null)
+                  Positioned(
+                    top: 14,
+                    right: 14,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 5,
+                            height: 5,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            status.name.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Helpers ───────────────────────────────────────────────
+
+  Widget _orb(double size, double opacity) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withValues(alpha: opacity),
+    ),
+  );
+
+  /// Subtle dot-grid texture overlay
+  Widget _cardTexture() => CustomPaint(painter: _DotGridPainter());
+
+  Widget _infoCol(String label, String value, {int maxLines = 1}) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        label,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.55),
+          fontSize: 8,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.0,
+        ),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        value,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          height: 1.3,
+        ),
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+      ),
+    ],
+  );
+
+  Widget _logoWidget() => Container(
+    width: 36,
+    height: 36,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withValues(alpha: 0.15),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1),
+      image: const DecorationImage(
+        image: NetworkImage(
+          'https://d3eqn3hw2x95rk.cloudfront.net/seo/og_images/logo_without_divide_page-0001.jpg',
+        ),
+        fit: BoxFit.cover,
+      ),
+    ),
+  );
+}
+
+// ── CustomPainters ────────────────────────────────────────────
+
+/// Gold chip circuit lines
+class _ChipPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFC09000).withValues(alpha: 0.5)
+      ..strokeWidth = 0.7
+      ..style = PaintingStyle.stroke;
+
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final rRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(cx, cy),
+        width: size.width * 0.82,
+        height: size.height * 0.78,
+      ),
+      const Radius.circular(3),
+    );
+    canvas.drawRRect(rRect, paint);
+    // Vertical centre line
+    canvas.drawLine(
+      Offset(cx, cy - size.height * 0.39),
+      Offset(cx, cy + size.height * 0.39),
+      paint,
+    );
+    // Two horizontal lines
+    canvas.drawLine(
+      Offset(cx - size.width * 0.35, cy - size.height * 0.12),
+      Offset(cx + size.width * 0.35, cy - size.height * 0.12),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(cx - size.width * 0.35, cy + size.height * 0.12),
+      Offset(cx + size.width * 0.35, cy + size.height * 0.12),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter _) => false;
+}
+
+/// Subtle dot-grid texture for card background
+class _DotGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.04)
+      ..style = PaintingStyle.fill;
+
+    const spacing = 18.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 1.2, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter _) => false;
 }
