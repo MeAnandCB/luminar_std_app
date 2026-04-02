@@ -29,6 +29,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:luminar_std/presentation/widgets/status_screens.dart';
 
 class ChatScreen extends StatefulWidget {
   final Chat chat;
@@ -3739,30 +3740,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Error: $_error',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.red),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _loadMessages,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
+      return NoConnectionScreen(
+        title: 'Could Not Load Messages',
+        message: 'Something went wrong while loading this chat.\nCheck your connection and try again.',
+        buttonLabel: 'Retry',
+        onRetry: _loadMessages,
       );
     }
     if (_messages.isEmpty) {
-      return Center(
-        child: Text(
-          'No messages yet. Say hello! 👋',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
-        ),
+      return EmptyStateScreen(
+        title: 'No Messages Yet',
+        message: 'Be the first to say something!\nSend a message to start the conversation.',
+        icon: Icons.chat_bubble_outline_rounded,
       );
     }
 
