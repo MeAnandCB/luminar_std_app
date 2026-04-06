@@ -269,7 +269,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                                           ),
                                           SizedBox(height: 8),
                                           Text(
-                                            snapshot.error.toString(),
+                                            'Something went wrong. Please try again.',
                                             style: TextStyle(fontSize: 12, color: Colors.red),
                                             textAlign: TextAlign.center,
                                           ),
@@ -1399,7 +1399,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                               Navigator.pop(context); // Dismiss loading
                               ScaffoldMessenger.of(
                                 context,
-                              ).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+                              ).showSnackBar(const SnackBar(content: Text('Something went wrong. Please try again.'), backgroundColor: Colors.red));
                             }
                           },
                           style: ElevatedButton.styleFrom(

@@ -88,7 +88,7 @@ class ForgotPasswordController extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = 'Unable to send OTP. Please check your connection and try again.';
       _isLoading = false;
       notifyListeners();
       LoggerUtils.error('❌ Error sending OTP: $e', tag: 'ForgotPassword');
@@ -128,7 +128,7 @@ class ForgotPasswordController extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = 'Unable to verify OTP. Please check your connection and try again.';
       _isLoading = false;
       notifyListeners();
       LoggerUtils.error('❌ Error verifying OTP: $e', tag: 'ForgotPassword');
@@ -197,7 +197,7 @@ class ForgotPasswordController extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = 'Unable to reset password. Please check your connection and try again.';
       _isLoading = false;
       notifyListeners();
       LoggerUtils.error('❌ Error resetting password: $e', tag: 'ForgotPassword');

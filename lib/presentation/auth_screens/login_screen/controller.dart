@@ -101,7 +101,7 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = 'Login failed. Please check your connection and try again.';
       _isLoading = false;
       notifyListeners();
       LoggerUtils.error('🔥 Error during login - $e', tag: 'Auth');

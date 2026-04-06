@@ -896,7 +896,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _showErrorSnackbar('Could not open file picker');
     } catch (e) {
       debugPrint('[Picker] _pickByExtensions error: $e');
-      _showErrorSnackbar('Failed to pick file: $e');
+      _showErrorSnackbar('Could not pick file. Please try again.');
     } finally {
       if (mounted) setState(() => _isPicking = false);
     }
@@ -935,7 +935,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _showErrorSnackbar('Could not open file picker');
     } catch (e) {
       debugPrint('[Picker] _pickAnyFile error: $e');
-      _showErrorSnackbar('Failed to pick file: $e');
+      _showErrorSnackbar('Could not pick file. Please try again.');
     } finally {
       if (mounted) setState(() => _isPicking = false);
     }
@@ -1740,7 +1740,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         }
       });
     } catch (e) {
-      _showErrorSnackbar('Failed to delete: $e');
+      _showErrorSnackbar('Could not delete message. Please try again.');
     }
   }
 
@@ -2120,7 +2120,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _webSocketService.broadcastLocalMessage(actual);
     } catch (e) {
       setState(() => _messages.removeWhere((m) => m.uid == optimistic.uid));
-      _showErrorSnackbar('Failed to send: $e');
+      _showErrorSnackbar('Failed to send message. Please try again.');
     }
   }
 
@@ -2862,7 +2862,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     } catch (e, stack) {
       debugPrint('[Download] ✗ Error: $e');
       debugPrint('[Download] Stack: $stack');
-      if (mounted) _showErrorSnackbar('Download failed: ${e.toString()}');
+      if (mounted) _showErrorSnackbar('Download failed. Please try again.');
     } finally {
       if (mounted) {
         setState(() {

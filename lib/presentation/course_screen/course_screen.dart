@@ -314,7 +314,7 @@ class _CourseScreenState extends State<CourseScreen>
           Expanded(
             child: _buildEnhancedStatItem(
               'Payment',
-              '${widget.paymentCompleted}%',
+              '₹${widget.paymentCompleted}',
               Icons.payments_rounded,
               AppColors.statsPurple,
               widget.paymentCompleted / 100,

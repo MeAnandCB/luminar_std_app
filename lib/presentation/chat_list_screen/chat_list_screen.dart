@@ -421,7 +421,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
     if (provider.error != null) {
       return NoConnectionScreen(
-        message: 'Could not load your chats. ${provider.error}',
+        message: 'Could not load your chats.',
         onRetry: () => provider.loadChats(),
       );
     }

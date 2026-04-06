@@ -355,8 +355,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         initialDate: _tempStartDate ?? DateTime.now(),
                         firstDate: DateTime(2020),
                         lastDate: DateTime.now(),
-                        builder: (ctx, child) =>
-                            _themedDatePicker(ctx, child!),
+                        builder: (ctx, child) => _themedDatePicker(ctx, child!),
                       );
                       if (picked != null) {
                         setState(() => _tempStartDate = picked);
@@ -383,8 +382,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         initialDate: _tempEndDate ?? DateTime.now(),
                         firstDate: DateTime(2020),
                         lastDate: DateTime.now(),
-                        builder: (ctx, child) =>
-                            _themedDatePicker(ctx, child!),
+                        builder: (ctx, child) => _themedDatePicker(ctx, child!),
                       );
                       if (picked != null) {
                         setState(() => _tempEndDate = picked);
@@ -613,7 +611,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: provider.sessions.length +
+            itemCount:
+                provider.sessions.length +
                 (provider.selectedSession != null ? 1 : 0),
             separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (context, i) {
@@ -656,11 +655,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                 );
               }
-              final sessionIndex =
-                  provider.selectedSession != null ? i - 1 : i;
+              final sessionIndex = provider.selectedSession != null ? i - 1 : i;
               final session = provider.sessions[sessionIndex];
-              final isSelected =
-                  provider.selectedSession?.uid == session.uid;
+              final isSelected = provider.selectedSession?.uid == session.uid;
               return GestureDetector(
                 onTap: () => provider.selectSession(session),
                 child: AnimatedContainer(
@@ -694,9 +691,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.textPrimary,
+                      color: isSelected ? Colors.white : AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -734,7 +729,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.school_rounded, color: AppColors.primary, size: 22),
+            child: Icon(
+              Icons.school_rounded,
+              color: AppColors.primary,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1214,11 +1213,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             const SizedBox(height: 20),
             Text('Something went wrong', style: AppTextStyles.activityTitle),
             const SizedBox(height: 8),
-            Text(
-              error,
-              style: AppTextStyles.activitySubtitle,
-              textAlign: TextAlign.center,
-            ),
+
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: onRetry,
