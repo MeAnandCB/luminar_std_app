@@ -16,6 +16,7 @@ class CourseScreen extends StatefulWidget {
     required this.enrollmentId,
     required this.startDate,
     required this.schedule,
+    required this.batchTime,
     required this.attendanceMode,
     required this.progress,
     required this.attendance,
@@ -32,6 +33,7 @@ class CourseScreen extends StatefulWidget {
   final String enrollmentId;
   final String startDate;
   final String schedule;
+  final String batchTime;
   final String attendanceMode;
   final int progress;
   final String attendance;
@@ -464,6 +466,19 @@ class _CourseScreenState extends State<CourseScreen>
                   widget.batchName,
                   AppColors.statsPurple,
                 ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(
+                    height: 1,
+                    color: AppColors.borderColor.withOpacity(0.5),
+                  ),
+                ),
+                _buildInfoRow(
+                  Icons.schedule_rounded,
+                  'Batch Timing',
+                  _formatBatchTime(widget.batchTime),
+                  AppColors.statsGreen,
+                ),
               ],
             ),
           ),
@@ -771,6 +786,36 @@ class _CourseScreenState extends State<CourseScreen>
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (Match m) => '${m[1]},',
     );
+  }
+
+  String _formatBatchTime(String time) {
+    if (time.isEmpty) return 'Not specified';
+    try {
+      // Handle range format like "09:00-11:00" or "09:00 - 11:00"
+      final rangeSeparator = RegExp(r'\s*-\s*');
+      final parts = time.split(rangeSeparator);
+      if (parts.length == 2) {
+        final start = _parseTimeTo12h(parts[0].trim());
+        final end = _parseTimeTo12h(parts[1].trim());
+        return '$start - $end';
+      }
+      return _parseTimeTo12h(time.trim());
+    } catch (e) {
+      return time;
+    }
+  }
+
+  String _parseTimeTo12h(String time) {
+    final normalized = time.replaceAll('.', ':');
+    final parts = normalized.split(':');
+    if (parts.length >= 2) {
+      final hour = int.parse(parts[0]);
+      final minute = parts[1].padLeft(2, '0');
+      final period = hour >= 12 ? 'PM' : 'AM';
+      final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+      return '$displayHour:$minute $period';
+    }
+    return time;
   }
 
   String _formatTimeDetailed(String time) {

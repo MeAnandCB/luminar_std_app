@@ -252,6 +252,7 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                                         .startDate
                                         .toString(),
                                     schedule: enrollments[index].batch.time,
+                                    batchTime: enrollments[index].batch.time,
                                     attendanceMode:
                                         enrollments[index].attendanceMode.name,
                                     progress: enrollments[index]

@@ -20,12 +20,11 @@ class AppEndpoints {
   static const String studentPortalEnrollments =
       '/api/student_portal/enrollments/';
   static const String enrollmentDetail =
-      '/api/enrollment/'; // Suffix with {uid}/
+      '/api/enrollment/'; //     Suffix with {uid}/
 
   // Profile (Legacy/Update)
   static const String profileUpdate =
-      '/api/student/profile/'; // Suffix with {id}/update/
-
+      '/api/student/profile/'; // Suffix with {id}/update/.
   // Academic & Misc
   static const String qualifications = '/api/public/lead/qualifications/';
   static const String specializations = '/api/specializations/list/';
@@ -69,7 +68,8 @@ class AppEndpoints {
 
   // NACTET Certificates
   static const String certificatesCreate = '/api/certificates/create/';
-  static const String certificatesCheckDisplay = '/api/certificates/check-display/';
+  static const String certificatesCheckDisplay =
+      '/api/certificates/check-display/';
 }
 
 class GlobalLinks {

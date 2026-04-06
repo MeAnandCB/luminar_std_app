@@ -640,7 +640,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
       children: [
         // ── Card PageView ─────────────────────────────────────
         SizedBox(
-          height: 320,
+          height: 345,
           child: PageView.builder(
             controller: _pageController,
             scrollDirection: Axis.horizontal,
@@ -776,6 +776,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
         enrollment?.courseInfo?.courseName ?? 'No Course Enrolled';
     final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
     final startDate = enrollment?.batchInfo?.startDate;
+    final batchTime = enrollment?.batchInfo?.time ?? '';
     final enrollCount = provider.enrollmentDataRes?.enrollments.length ?? 0;
     final status = enrollCount > index
         ? provider.enrollmentDataRes!.enrollments[index].status
@@ -960,7 +961,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
 
                       const SizedBox(height: 14),
 
-                      // ── Course row ────────────────────────────
+                      // ── Course ───────────────────────────────
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1009,24 +1010,20 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
                         ],
                       ),
 
+                      const SizedBox(height: 10),
+
+                      // ── Batch (full width) ────────────────────
+                      _cardInfoTile(
+                        icon: Icons.group_outlined,
+                        label: 'BATCH',
+                        value: batchName,
+                      ),
+
                       const SizedBox(height: 14),
 
-                      // ── Batch + Start date ────────────────────
+                      // ── Starts | Timing ──────────────────────
                       Row(
                         children: [
-                          Expanded(
-                            child: _cardInfoTile(
-                              icon: Icons.group_outlined,
-                              label: 'BATCH',
-                              value: batchName,
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            height: 38,
-                            margin: const EdgeInsets.symmetric(horizontal: 14),
-                            color: Colors.white.withValues(alpha: 0.2),
-                          ),
                           Expanded(
                             child: _cardInfoTile(
                               icon: Icons.calendar_month_outlined,
@@ -1036,6 +1033,21 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
                                   : 'N/A',
                             ),
                           ),
+                          if (batchTime.isNotEmpty) ...[
+                            Container(
+                              width: 1,
+                              height: 38,
+                              margin: const EdgeInsets.symmetric(horizontal: 14),
+                              color: Colors.white.withValues(alpha: 0.2),
+                            ),
+                            Expanded(
+                              child: _cardInfoTile(
+                                icon: Icons.schedule_rounded,
+                                label: 'TIMING',
+                                value: _formatBatchTime(batchTime),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
 
@@ -1128,6 +1140,8 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
       ],
     );
   }
+
+  String _formatBatchTime(String time) => time;
 
   String _monthName(int month) {
     const months = [

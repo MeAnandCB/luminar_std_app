@@ -5,6 +5,32 @@ import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
 
+String _formatBatchTime(String time) {
+  if (time.isEmpty) return 'N/A';
+  try {
+    final parts = time.split(RegExp(r'\s*-\s*'));
+    if (parts.length == 2) {
+      return '${_to12h(parts[0].trim())} - ${_to12h(parts[1].trim())}';
+    }
+    return _to12h(time.trim());
+  } catch (_) {
+    return time;
+  }
+}
+
+String _to12h(String t) {
+  final normalized = t.replaceAll('.', ':');
+  final parts = normalized.split(':');
+  if (parts.length >= 2) {
+    final h = int.parse(parts[0]);
+    final m = parts[1].padLeft(2, '0');
+    final period = h >= 12 ? 'PM' : 'AM';
+    final display = h > 12 ? h - 12 : (h == 0 ? 12 : h);
+    return '$display:$m $period';
+  }
+  return t;
+}
+
 class EnrollmentCard extends StatelessWidget {
   final Enrollment enrollment;
   final int index;
@@ -327,6 +353,47 @@ class EnrollmentCard extends StatelessWidget {
                                   color: AppColors.textSecondary,
                                 ),
                               ),
+                              if (enrollment.batch.time.isNotEmpty) ...[
+                                const SizedBox(height: 10),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 7,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.statsOrange.withOpacity(
+                                      0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        "Batch Time :",
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Icon(
+                                        Icons.schedule_rounded,
+                                        size: 11,
+                                        color: AppColors.statsOrange,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _formatBatchTime(enrollment.batch.time),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.statsOrange,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
