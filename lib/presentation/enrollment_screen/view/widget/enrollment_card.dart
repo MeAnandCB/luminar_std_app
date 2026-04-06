@@ -25,16 +25,19 @@ class EnrollmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
     final dateFormat = DateFormat('dd MMM yyyy');
-    LoggerUtils.debug(enrollment.progress.completionPercentage.toString(), tag: 'Enrollment');
+    LoggerUtils.debug(
+      enrollment.progress.completionPercentage.toString(),
+      tag: 'Enrollment',
+    );
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            spreadRadius: 0,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadowLight,
+              spreadRadius: 0,
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -105,10 +108,7 @@ class EnrollmentCard extends StatelessWidget {
                               const SizedBox(height: 2),
                               Text(
                                 enrollment.enrollmentNumber,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                style: TextStyle(fontSize: 12),
                               ),
                             ],
                           ),
@@ -123,7 +123,7 @@ class EnrollmentCard extends StatelessWidget {
                             color: getStatusColor(
                               enrollment.status.color,
                             ).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: getStatusColor(
                                 enrollment.status.color,

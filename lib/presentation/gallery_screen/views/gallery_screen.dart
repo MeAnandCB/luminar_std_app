@@ -86,7 +86,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         builder: (context, provider, child) {
           if (provider.error != null && provider.galleries.isEmpty) {
             return NoConnectionScreen(
-              message: 'Could not load videos. ${provider.error}',
+              message: 'Could not load videos. ',
               onRetry: _refresh,
             );
           }

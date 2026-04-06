@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:luminar_std/presentation/test_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
@@ -83,7 +84,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to load payment data: $e';
+          _errorMessage = 'Unable to load payment data. Please try again.';
           _isLoading = false;
         });
       }
@@ -141,7 +142,8 @@ class _PaymentScreenState extends State<PaymentScreen>
       debugPrint('Error fetching details for $targetEnrollmentId: $e');
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error loading details: $e';
+          _errorMessage =
+              'Unable to load enrollment details. Please try again.';
         });
       }
     }
@@ -347,46 +349,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     }
 
     if (_errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColors.statsOrange.withValues(alpha: 0.7),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _errorMessage!,
-              style: TextStyle(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _isLoading = true;
-                  _errorMessage = null;
-                });
-                _initializeData();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
+      return NoInternetScreen();
     }
 
     if (_paymentData == null) {
@@ -452,7 +415,7 @@ class _PaymentScreenState extends State<PaymentScreen>
       if (mounted) Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $e'),
+          content: const Text('Something went wrong. Please try again.'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1807,7 +1770,9 @@ class _PaymentScreenState extends State<PaymentScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to download receipt: $e'),
+            content: const Text(
+              'Failed to download receipt. Please try again.',
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),

@@ -311,7 +311,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error downloading: $e'),
+            content: const Text('Download failed. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );
