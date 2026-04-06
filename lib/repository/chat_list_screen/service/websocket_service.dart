@@ -14,18 +14,12 @@ class WebSocketService {
 
   final Map<int, bool> userOnlineStatus = {};
 
-  final StreamController<Message> _messageController =
-      StreamController<Message>.broadcast();
-  final StreamController<Message> _localMessageController =
-      StreamController<Message>.broadcast();
-  final StreamController<Map<String, dynamic>> _statusController =
-      StreamController<Map<String, dynamic>>.broadcast();
-  final StreamController<String> _errorController =
-      StreamController<String>.broadcast();
-  final StreamController<Map<String, dynamic>> _deleteController =
-      StreamController<Map<String, dynamic>>.broadcast();
-  final StreamController<Map<String, dynamic>> _reactionController =
-      StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Message> _messageController = StreamController<Message>.broadcast();
+  final StreamController<Message> _localMessageController = StreamController<Message>.broadcast();
+  final StreamController<Map<String, dynamic>> _statusController = StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<String> _errorController = StreamController<String>.broadcast();
+  final StreamController<Map<String, dynamic>> _deleteController = StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _reactionController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Message> get messageStream => _messageController.stream;
   Stream<Message> get localMessageStream => _localMessageController.stream;
@@ -40,14 +34,9 @@ class WebSocketService {
   Function(String)? onError;
   Function(int userId, bool isOnline)? onUserStatusUpdate;
   Function(String chatUid, String messageUid)? onMessageDeleted;
-  Function(String chatUid, String messageUid, String emoji, int userId)?
-  onReaction;
+  Function(String chatUid, String messageUid, String emoji, int userId)? onReaction;
 
-  WebSocketService({
-    required this.url,
-    required this.currentUser,
-    required this.apiService,
-  });
+  WebSocketService({required this.url, required this.currentUser, required this.apiService});
 
   bool _isDisposed = false;
 
@@ -102,20 +91,12 @@ class WebSocketService {
     _reactionController.close();
   }
 
-  Future<Message> sendMessage(
-    String content, {
-    String? replyTo,
-    String? chatUid,
-  }) async {
+  Future<Message> sendMessage(String content, {String? replyTo, String? chatUid}) async {
     if (content.trim().isEmpty) throw Exception('Content is empty');
     final targetUid = chatUid ?? '';
     if (targetUid.isEmpty) throw Exception('No chat UID');
 
-    final response = await apiService.sendMessage(
-      chatUid: targetUid,
-      content: content,
-      replyTo: replyTo,
-    );
+    final response = await apiService.sendMessage(chatUid: targetUid, content: content, replyTo: replyTo);
 
     if (response.success && response.data != null) {
       return response.data!;
@@ -144,11 +125,7 @@ class WebSocketService {
     }
   }
 
-  Future<void> sendReaction(
-    String chatUid,
-    String messageUid,
-    String emoji,
-  ) async {
+  Future<void> sendReaction(String chatUid, String messageUid, String emoji) async {
     final response = await apiService.sendReaction(chatUid, messageUid, emoji);
 
     if (response.success) {
@@ -190,10 +167,7 @@ class WebSocketService {
         final chatUid = data['chat_uid']?.toString();
         final messageUid = data['message_uid']?.toString();
         if (chatUid != null && messageUid != null) {
-          _deleteController.add({
-            'chat_uid': chatUid,
-            'message_uid': messageUid,
-          });
+          _deleteController.add({'chat_uid': chatUid, 'message_uid': messageUid});
           onMessageDeleted?.call(chatUid, messageUid);
         }
         return;
@@ -208,12 +182,7 @@ class WebSocketService {
           'user_name': data['user_name'],
           'created_at': data['created_at'],
         });
-        onReaction?.call(
-          data['chat_uid'],
-          data['message_uid'],
-          data['emoji'],
-          data['user_id'],
-        );
+        onReaction?.call(data['chat_uid'], data['message_uid'], data['emoji'], data['user_id']);
         return;
       }
 
@@ -234,8 +203,7 @@ class WebSocketService {
             final messageData = data['data'] ?? data;
             if (messageData is Map<String, dynamic>) {
               try {
-                if (!messageData.containsKey('chat') &&
-                    messageData.containsKey('chat_uid')) {
+                if (!messageData.containsKey('chat') && messageData.containsKey('chat_uid')) {
                   messageData['chat'] = messageData['chat_uid'];
                 }
                 final receivedMessage = Message.fromJson(messageData);
@@ -254,15 +222,11 @@ class WebSocketService {
 
             void processItem(Map<String, dynamic> statusData) {
               dynamic userIdRaw = statusData['user_id'] ?? statusData['id'];
-              if (userIdRaw == null &&
-                  statusData.containsKey('user') &&
-                  statusData['user'] is Map) {
+              if (userIdRaw == null && statusData.containsKey('user') && statusData['user'] is Map) {
                 userIdRaw = statusData['user']['id'];
               }
 
-              final isOnlineRaw = statusData['online'] ??
-                  statusData['is_online'] ??
-                  statusData['status'];
+              final isOnlineRaw = statusData['online'] ?? statusData['is_online'] ?? statusData['status'];
 
               int? userId;
               if (userIdRaw is int)
@@ -305,11 +269,7 @@ class WebSocketService {
 
   void updateUserStatus(bool isOnline) {
     if (_channel != null && currentUser.id != 0) {
-      final statusMessage = jsonEncode({
-        'action': 'presence',
-        'user_id': currentUser.id,
-        'online': isOnline,
-      });
+      final statusMessage = jsonEncode({'action': 'presence', 'user_id': currentUser.id, 'online': isOnline});
       _channel!.sink.add(statusMessage);
     }
   }

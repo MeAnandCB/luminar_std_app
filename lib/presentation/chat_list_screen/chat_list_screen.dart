@@ -360,14 +360,40 @@ class _ChatListScreenState extends State<ChatListScreen> {
   String _buildPreviewText(Chat chat) {
     final preview = chat.lastMessagePreview;
     if (preview == null) return '';
+
+    final type = preview['message_type']?.toString() ?? 'text';
     final content = preview['content'] as String? ?? '';
     final sender = preview['sender'] as String? ?? '';
+    final isDeleted = preview['is_deleted'] == true;
+
+    if (isDeleted) return 'Message deleted';
+
+    String displayContent = content;
+
+    // Replace filenames with user-friendly descriptions for media
+    if (type != 'text') {
+      switch (type) {
+        case 'image':
+          displayContent = '📷 Photo';
+          break;
+        case 'audio':
+          displayContent = '🎤 Voice message';
+          break;
+        case 'video':
+          displayContent = '🎬 Video';
+          break;
+        case 'file':
+          displayContent = '📎 File';
+          break;
+      }
+    }
+
     final isGroupOrBatch =
         chat.chatType == ChatType.group || chat.chatType == ChatType.batch;
-    if (isGroupOrBatch && sender.isNotEmpty && content.isNotEmpty) {
-      return '$sender: $content';
+    if (isGroupOrBatch && sender.isNotEmpty) {
+      return '$sender: $displayContent';
     }
-    return content;
+    return displayContent;
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────

@@ -89,7 +89,9 @@ class ProfileEditController extends ChangeNotifier {
     specializationController.text = a?.specialization ?? '';
     cgpaController.text = a?.cgpa?.toString() ?? '';
     _selectedAdmissionDate = a?.admissionDate;
-    admissionDateController.text = _selectedAdmissionDate != null ? DateFormat('yyyy-MM-dd').format(_selectedAdmissionDate!) : '';
+    admissionDateController.text = _selectedAdmissionDate != null
+        ? DateFormat('yyyy-MM-dd').format(_selectedAdmissionDate!)
+        : '';
     _anyArrears = a?.anyArrears ?? false;
     _selectedStudentType = a?.studentOrWorkingProfessional?.toLowerCase() ?? 'student';
 
@@ -112,7 +114,7 @@ class ProfileEditController extends ChangeNotifier {
   void updateDob(DateTime date) {
     _selectedDob = date;
     dobController.text = DateFormat('yyyy-MM-dd').format(date);
-    
+
     // Calculate Age
     final now = DateTime.now();
     int age = now.year - date.year;
@@ -131,10 +133,7 @@ class ProfileEditController extends ChangeNotifier {
 
   Future<void> pickProfileImage() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 70,
-      );
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
       if (image != null) {
         _profilePicPath = image.path;
         notifyListeners();
@@ -165,7 +164,11 @@ class ProfileEditController extends ChangeNotifier {
 
       // Only add editable fields (excluding name, email, phone)
       addIfChanged('whatsapp_number', whatsappController.text, p?.whatsappNumber);
-      addIfChanged('date_of_birth', dobController.text, p?.dateOfBirth != null ? DateFormat('yyyy-MM-dd').format(p!.dateOfBirth!) : null);
+      addIfChanged(
+        'date_of_birth',
+        dobController.text,
+        p?.dateOfBirth != null ? DateFormat('yyyy-MM-dd').format(p!.dateOfBirth!) : null,
+      );
       addIfChanged('age', int.tryParse(ageController.text), p?.age);
 
       addIfChanged('qualification', qualificationController.text, a?.qualification?.name);
@@ -173,9 +176,17 @@ class ProfileEditController extends ChangeNotifier {
       addIfChanged('pass_out_year', int.tryParse(passoutYearController.text), a?.passOutYear);
       addIfChanged('specialization', specializationController.text, a?.specialization);
       addIfChanged('cgpa', double.tryParse(cgpaController.text), a?.cgpa);
-      addIfChanged('admission_date', admissionDateController.text, a?.admissionDate != null ? DateFormat('yyyy-MM-dd').format(a!.admissionDate!) : null);
+      addIfChanged(
+        'admission_date',
+        admissionDateController.text,
+        a?.admissionDate != null ? DateFormat('yyyy-MM-dd').format(a!.admissionDate!) : null,
+      );
       addIfChanged('any_arrears', _anyArrears, a?.anyArrears);
-      addIfChanged('student_or_working_professional', _selectedStudentType, a?.studentOrWorkingProfessional?.toLowerCase());
+      addIfChanged(
+        'student_or_working_professional',
+        _selectedStudentType,
+        a?.studentOrWorkingProfessional?.toLowerCase(),
+      );
 
       addIfChanged('address', addressController.text, c?.address);
       addIfChanged('district', districtController.text, c?.district);

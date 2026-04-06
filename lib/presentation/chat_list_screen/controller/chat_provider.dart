@@ -120,20 +120,22 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
       markChatAsRead(chat);
       setActiveChat(chat.uid);
 
-      navigatorKey.currentState!.push(
-        MaterialPageRoute(
-          builder: (context) => ChatScreen(
-            chat: chat!,
-            currentUser: _currentUser!,
-            websocketUrl: _webSocketService!.url,
-            apiService: _apiService!,
-            webSocketService: _webSocketService,
-          ),
-        ),
-      ).then((_) {
-        setActiveChat(null);
-        AppUtils.isDeepLinking = false; // Reset global flag
-      });
+      navigatorKey.currentState!
+          .push(
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(
+                chat: chat!,
+                currentUser: _currentUser!,
+                websocketUrl: _webSocketService!.url,
+                apiService: _apiService!,
+                webSocketService: _webSocketService,
+              ),
+            ),
+          )
+          .then((_) {
+            setActiveChat(null);
+            AppUtils.isDeepLinking = false; // Reset global flag
+          });
     } else {
       AppUtils.isDeepLinking = false; // Reset if navigation couldn't happen
     }
@@ -366,7 +368,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       try {
         final response = await _apiService!.fetchChats();
-        
+
         // If session expired (401 or status: "expired"), stop polling immediately
         if (response.statusCode == 401 || (response.data is Map && (response.data as Map)['status'] == 'expired')) {
           debugPrint('[ChatProvider] Session expired during poll — stopping timer');
