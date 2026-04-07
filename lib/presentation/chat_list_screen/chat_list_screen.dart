@@ -476,10 +476,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
     return RefreshIndicator(
       color: const Color(0xFF7B9FD4),
       onRefresh: () => provider.loadChats(),
-      child: ListView.builder(
+      child: ListView.separated(
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: chats.length,
         itemBuilder: (context, index) => _buildChatTile(chats[index], provider),
+        separatorBuilder: (context, index) => const Divider(
+          height: 1,
+          endIndent: 16,
+          color: Color.fromARGB(255, 236, 236, 236),
+        ),
       ),
     );
   }
@@ -512,10 +517,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       Expanded(
                         child: Text(
                           chat.name,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 13,
                             fontWeight: hasUnread
                                 ? FontWeight.w700
                                 : FontWeight.w600,
@@ -523,10 +528,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           ),
                         ),
                       ),
-                      if (chat.chatType != ChatType.individual) ...[
-                        const SizedBox(width: 6),
-                        _buildTypeBadge(chat),
-                      ],
+                      // if (chat.chatType != ChatType.individual) ...[
+                      //   const SizedBox(width: 6),
+                      //   _buildTypeBadge(chat),
+                      // ],
                     ],
                   ),
                   const SizedBox(height: 3),

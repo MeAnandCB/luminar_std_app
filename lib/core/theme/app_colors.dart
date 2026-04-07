@@ -18,15 +18,21 @@ class AppColors {
   static const Color primaryLighter = Color(0xFFA29BFE);
 
   // Background / Surface
-  static Color get scaffoldBackground => _isDark ? const Color(0xFF0F172A) : const Color(0xFFF8F9FF);
-  static Color get cardBackground => _isDark ? const Color(0xFF1E293B) : Colors.white;
-  static Color get surface => _isDark ? const Color(0xFF1E293B) : const Color(0xFFF5F5F5);
-  static Color get borderColor => _isDark ? const Color(0xFF334155) : const Color(0xFFE0E0E0);
-  static Color get avatarBackground => _isDark ? const Color(0xFF334155) : const Color(0xFFE0E0E0);
+  static Color get scaffoldBackground =>
+      _isDark ? const Color(0xFF0F172A) : const Color(0xFFF8F9FF);
+  static Color get cardBackground =>
+      _isDark ? const Color(0xFF1E293B) : Colors.white;
+  static Color get surface =>
+      _isDark ? const Color(0xFF1E293B) : const Color(0xFFF5F5F5);
+  static Color get borderColor =>
+      _isDark ? const Color(0xFF334155) : const Color(0xFFE0E0E0);
+  static Color get avatarBackground =>
+      _isDark ? const Color(0xFF334155) : const Color(0xFFE0E0E0);
 
   // Status Colors
   static const Color statusActive = Color(0xFF00B894);
-  static Color get statusActiveBackground => _isDark ? const Color(0xFF064E3B) : const Color(0xFFE8F5E9);
+  static Color get statusActiveBackground =>
+      _isDark ? const Color(0xFF064E3B) : const Color(0xFFE8F5E9);
 
   // Stats Colors
   static const Color statsBlue = Color(0xFF0984E3);
@@ -35,9 +41,12 @@ class AppColors {
   static const Color statsPurple = Color(0xFF6C5CE7);
 
   // Text Colors
-  static Color get textPrimary => _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF2D3436);
-  static Color get textSecondary => _isDark ? const Color(0xFF94A3B8) : const Color(0xFF636E72);
-  static Color get textHint => _isDark ? const Color(0xFF64748B) : const Color(0xFFB2BEC3);
+  static Color get textPrimary =>
+      _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF2D3436);
+  static Color get textSecondary =>
+      _isDark ? const Color(0xFF94A3B8) : const Color(0xFF636E72);
+  static Color get textHint =>
+      _isDark ? const Color(0xFF64748B) : const Color(0xFFB2BEC3);
   static const Color textWhite = Colors.white;
   static const Color textWhite70 = Colors.white70;
 
@@ -53,14 +62,20 @@ class AppColors {
     end: Alignment.bottomRight,
   );
 
-  static const List<Color> splashGradient = [Color(0xFF6C5CE7), Color(0xFF8B7BF2), Color(0xFFA29BFE)];
+  static const List<Color> splashGradient = [
+    Color(0xFF6C5CE7),
+    Color(0xFF8B7BF2),
+    Color(0xFFA29BFE),
+  ];
 
   static Color get info => const Color(0xFF0984E3);
   static Color get notificationGlow => const Color(0xFF6C5CE7);
-  static Color get notificationIcon => _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF2D3436);
+  static Color get notificationIcon =>
+      _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF2D3436);
 
   // Shadows
-  static Color get shadowLight => _isDark ? Colors.black26 : const Color(0x1A000000);
+  static Color get shadowLight =>
+      _isDark ? Colors.black26 : const Color(0x1A000000);
   static const Color shadowSuccess = Color(0x4D00B09B);
 
   // Success Gradient
@@ -71,9 +86,11 @@ class AppColors {
   );
 
   // Bottom Navigation Bar Colors
-  static Color get bottomNavBackground => _isDark ? const Color(0xFF1E293B) : Colors.white;
+  static Color get bottomNavBackground =>
+      _isDark ? const Color(0xFF1E293B) : Colors.white;
   static const Color bottomNavSelected = Color(0xFF6C5CE7);
-  static Color get bottomNavUnselected => _isDark ? const Color(0xFF64748B) : const Color(0xFFB2BEC3);
+  static Color get bottomNavUnselected =>
+      _isDark ? const Color(0xFF64748B) : const Color(0xFFB2BEC3);
 
   // White Variants (methods to maintain compatibility)
   static Color get whiteWithOpacity10 => white.withOpacity(0.1);
@@ -113,4 +130,6 @@ class AppColors {
   static const Color darkTextSecondary = Color(0xFF94A3B8);
   static const Color darkBorderColor = Color(0xFF334155);
   static const Color darkSurface = Color(0xFF1E293B);
+
+  static Color? get divider => null;
 }

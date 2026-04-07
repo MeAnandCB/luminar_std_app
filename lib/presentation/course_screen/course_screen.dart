@@ -427,19 +427,19 @@ class _CourseScreenState extends State<CourseScreen>
                   _formatDate(widget.startDate),
                   AppColors.statsBlue,
                 ),
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(
-                    height: 1,
-                    color: AppColors.borderColor.withOpacity(0.5),
-                  ),
-                ),
-                _buildInfoRow(
-                  Icons.access_time_rounded,
-                  'Schedule',
-                  _formatTimeDetailed(widget.schedule),
-                  AppColors.statsOrange,
-                ),
+                // Padding(
+                //   padding: EdgeInsets.symmetric(vertical: 8),
+                //   child: Divider(
+                //     height: 1,
+                //     color: AppColors.borderColor.withOpacity(0.5),
+                //   ),
+                // ),
+                // _buildInfoRow(
+                //   Icons.access_time_rounded,
+                //   'Schedule',
+                //   _formatTimeDetailed(widget.schedule),
+                //   AppColors.statsOrange,
+                // ),
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
                   child: Divider(

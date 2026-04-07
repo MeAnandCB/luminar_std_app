@@ -665,10 +665,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         maxDuration: const Duration(minutes: 10),
       );
       if (picked == null) return;
-      final file = await _resolvePickedFile(
-        PlatformFile(path: picked.path, name: pathLib.basename(picked.path), size: 0),
-      );
-      if (file == null) {
+      final file = File(picked.path);
+      if (!await file.exists()) {
         _showErrorSnackbar('Could not read video file.');
         return;
       }
@@ -678,6 +676,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _showErrorSnackbar('Could not record video');
     } catch (e) {
       debugPrint('[Camera] video error: $e');
+      if (mounted) _showErrorSnackbar('Could not record video');
     } finally {
       if (mounted) setState(() => _isPicking = false);
     }
