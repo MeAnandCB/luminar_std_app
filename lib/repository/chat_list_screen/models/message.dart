@@ -3,7 +3,7 @@ import 'user.dart';
 
 class Message {
   final String uid;
-  final int chatId;
+  final String chatId;
   final User sender;
   final String messageType; // 'text' | 'image' | 'video' | 'file' | 'audio'
   final String content;
@@ -105,7 +105,7 @@ class Message {
 
     return Message(
       uid: json['uid']?.toString() ?? '',
-      chatId: _parseInt(json['chat']) ?? 0,
+      chatId: (json['chat_uid'] ?? json['chat'])?.toString() ?? '',
       sender: User.fromJson(json['sender'] as Map<String, dynamic>),
       messageType: json['message_type']?.toString() ?? 'text',
       content: json['content']?.toString() ?? '',
@@ -152,7 +152,7 @@ class Message {
 
   Message copyWith({
     String? uid,
-    int? chatId,
+    String? chatId,
     User? sender,
     String? messageType,
     String? content,

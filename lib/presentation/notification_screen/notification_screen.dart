@@ -81,37 +81,49 @@ class _NotificationScreenState extends State<NotificationScreen> {
       final dateStr = fmt.format(dueDate);
 
       if (isOverdue || status == 'overdue' || daysUntil < 0) {
-        paymentNotifs.add(NotificationItem(
-          id: 'payment_overdue_$uid',
-          title: 'Payment Overdue',
-          message: 'Installment #$number of ₹${amount.toStringAsFixed(0)} was due on $dateStr. Please pay immediately.',
-          time: 'Overdue',
-          type: NotificationType.payments,
-          isRead: false,
-          icon: Icons.warning_rounded,
-          color: const Color(0xFFFF7675),
-          actionUrl: '/payments',
-        ));
+        paymentNotifs.add(
+          NotificationItem(
+            id: 'payment_overdue_$uid',
+            title: 'Payment Overdue',
+            message:
+                'Installment #$number of ₹${amount.toStringAsFixed(0)} was due on $dateStr. Please pay immediately.',
+            time: 'Overdue',
+            type: NotificationType.payments,
+            isRead: false,
+            icon: Icons.warning_rounded,
+            color: const Color(0xFFFF7675),
+            actionUrl: '/payments',
+          ),
+        );
       } else if (daysUntil <= 2) {
-        final whenStr = daysUntil == 0 ? 'today' : daysUntil == 1 ? 'tomorrow' : 'in 2 days';
-        paymentNotifs.add(NotificationItem(
-          id: 'payment_due_$uid',
-          title: 'Payment Due Soon',
-          message: 'Installment #$number of ₹${amount.toStringAsFixed(0)} is due $whenStr ($dateStr).',
-          time: 'Due $whenStr',
-          type: NotificationType.payments,
-          isRead: false,
-          icon: Icons.schedule_rounded,
-          color: AppColors.statsOrange,
-          actionUrl: '/payments',
-        ));
+        final whenStr = daysUntil == 0
+            ? 'today'
+            : daysUntil == 1
+            ? 'tomorrow'
+            : 'in 2 days';
+        paymentNotifs.add(
+          NotificationItem(
+            id: 'payment_due_$uid',
+            title: 'Payment Due Soon',
+            message:
+                'Installment #$number of ₹${amount.toStringAsFixed(0)} is due $whenStr ($dateStr).',
+            time: 'Due $whenStr',
+            type: NotificationType.payments,
+            isRead: false,
+            icon: Icons.schedule_rounded,
+            color: AppColors.statsOrange,
+            actionUrl: '/payments',
+          ),
+        );
       }
     }
 
     if (paymentNotifs.isNotEmpty && mounted) {
       setState(() {
         _allNotifications.removeWhere(
-          (n) => n.id.startsWith('payment_due_') || n.id.startsWith('payment_overdue_'),
+          (n) =>
+              n.id.startsWith('payment_due_') ||
+              n.id.startsWith('payment_overdue_'),
         );
         _allNotifications.insertAll(0, paymentNotifs);
       });
@@ -128,7 +140,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
       }
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +161,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   bottomRight: Radius.circular(36),
                 ),
                 boxShadow: [
-                  BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
                 ],
               ),
               child: Row(
@@ -166,14 +181,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         ),
                         child: IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.white, size: 20),
+                          icon: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: AppColors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                       SizedBox(width: 16),
                       Text(
                         'Notifications',
                         style: TextStyle(
-                          fontSize: 28,
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: AppColors.white,
                           letterSpacing: -0.5,
@@ -183,7 +202,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   ),
                   if (_unreadCount > 0)
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.whiteWithOpacity20,
                         borderRadius: BorderRadius.circular(30),
@@ -191,11 +213,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.circle_rounded, color: Color(0xFFFF7675), size: 8),
+                          Icon(
+                            Icons.circle_rounded,
+                            color: Color(0xFFFF7675),
+                            size: 8,
+                          ),
                           SizedBox(width: 6),
                           Text(
                             '$_unreadCount New',
-                            style: TextStyle(color: AppColors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              color: AppColors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
@@ -211,7 +241,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
               child: _allNotifications.isEmpty
                   ? EmptyStateScreen(
                       title: 'No Notifications',
-                      message: "You're all caught up! Check back later for updates.",
+                      message:
+                          "You're all caught up! Check back later for updates.",
                       icon: Icons.notifications_none_rounded,
                     )
                   : ListView.builder(
@@ -237,8 +268,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
         alignment: Alignment.centerRight,
         padding: EdgeInsets.only(right: 20),
         margin: EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(color: Color(0xFFFF7675), borderRadius: BorderRadius.circular(24)),
-        child: Icon(Icons.delete_outline_rounded, color: AppColors.white, size: 30),
+        decoration: BoxDecoration(
+          color: Color(0xFFFF7675),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Icon(
+          Icons.delete_outline_rounded,
+          color: AppColors.white,
+          size: 30,
+        ),
       ),
       onDismissed: (direction) {
         setState(() {
@@ -274,9 +312,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
             color: AppColors.white,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
-              BoxShadow(color: notification.color.withValues(alpha: 0.08), blurRadius: 15, offset: const Offset(0, 5)),
+              BoxShadow(
+                color: notification.color.withValues(alpha: 0.08),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              ),
             ],
-            border: !notification.isRead ? Border.all(color: notification.color.withValues(alpha: 0.3), width: 1) : null,
+            border: !notification.isRead
+                ? Border.all(
+                    color: notification.color.withValues(alpha: 0.3),
+                    width: 1,
+                  )
+                : null,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,13 +333,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [notification.color.withValues(alpha: 0.2), notification.color.withValues(alpha: 0.1)],
+                    colors: [
+                      notification.color.withValues(alpha: 0.2),
+                      notification.color.withValues(alpha: 0.1),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(notification.icon, color: notification.color, size: 24),
+                child: Icon(
+                  notification.icon,
+                  color: notification.color,
+                  size: 24,
+                ),
               ),
               SizedBox(width: 16),
               // Content
@@ -307,7 +361,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             notification.title,
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: notification.isRead ? FontWeight.w600 : FontWeight.w700,
+                              fontWeight: notification.isRead
+                                  ? FontWeight.w600
+                                  : FontWeight.w700,
                               color: AppColors.textPrimary,
                             ),
                           ),
@@ -316,7 +372,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           Container(
                             width: 10,
                             height: 10,
-                            decoration: BoxDecoration(color: notification.color, shape: BoxShape.circle),
+                            decoration: BoxDecoration(
+                              color: notification.color,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                       ],
                     ),
@@ -330,19 +389,30 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.access_time_rounded, size: 12, color: AppColors.textHint),
+                        Icon(
+                          Icons.access_time_rounded,
+                          size: 12,
+                          color: AppColors.textHint,
+                        ),
                         SizedBox(width: 4),
                         Text(notification.time, style: AppTextStyles.caption),
                         const Spacer(),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: notification.color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             _getTypeLabel(notification.type),
-                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: notification.color),
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: notification.color,
+                            ),
                           ),
                         ),
                       ],
@@ -374,11 +444,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [notification.color, notification.color.withValues(alpha: 0.8)],
+                  colors: [
+                    notification.color,
+                    notification.color.withValues(alpha: 0.8),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
+                ),
               ),
               child: Column(
                 children: [
@@ -395,18 +470,32 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   SizedBox(height: 20),
                   Container(
                     padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: AppColors.whiteWithOpacity20, shape: BoxShape.circle),
-                    child: Icon(notification.icon, color: AppColors.white, size: 40),
+                    decoration: BoxDecoration(
+                      color: AppColors.whiteWithOpacity20,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      notification.icon,
+                      color: AppColors.white,
+                      size: 40,
+                    ),
                   ),
                   SizedBox(height: 16),
                   Text(
                     notification.title,
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.white),
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.white,
+                    ),
                   ),
                   SizedBox(height: 8),
                   Text(
                     notification.time,
-                    style: AppTextStyles.caption.copyWith(color: AppColors.whiteWithOpacity80, fontSize: 14),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.whiteWithOpacity80,
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
@@ -419,33 +508,47 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   children: [
                     Text(
                       'Details',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     SizedBox(height: 12),
                     Text(
                       notification.message,
-                      style: TextStyle(fontSize: 15, color: AppColors.textSecondary, height: 1.5),
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textSecondary,
+                        height: 1.5,
+                      ),
                     ),
                     SizedBox(height: 24),
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.scaffoldBackground,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline_rounded, color: notification.color, size: 20),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Tap to view related content',
-                              style: AppTextStyles.caption.copyWith(fontSize: 13),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    // Container(
+                    //   padding: EdgeInsets.all(16),
+                    //   decoration: BoxDecoration(
+                    //     color: AppColors.scaffoldBackground,
+                    //     borderRadius: BorderRadius.circular(16),
+                    //   ),
+                    //   child: Row(
+                    //     children: [
+                    //       Icon(
+                    //         Icons.info_outline_rounded,
+                    //         color: notification.color,
+                    //         size: 20,
+                    //       ),
+                    //       SizedBox(width: 12),
+                    //       Expanded(
+                    //         child: Text(
+                    //           'Tap to view related content',
+                    //           style: AppTextStyles.caption.copyWith(
+                    //             fontSize: 13,
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -460,34 +563,40 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: notification.color,
                         padding: EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        side: BorderSide(color: notification.color.withValues(alpha: 0.3)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        side: BorderSide(
+                          color: notification.color.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Text('Close'),
                     ),
                   ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        // Navigate to relevant screen
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Opening ${notification.actionUrl}'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: notification.color,
-                        foregroundColor: AppColors.white,
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                      ),
-                      child: Text('View'),
-                    ),
-                  ),
+                  // SizedBox(width: 12),
+                  // Expanded(
+                  //   child: ElevatedButton(
+                  //     onPressed: () {
+                  //       Navigator.pop(context);
+                  //       // Navigate to relevant screen
+                  //       ScaffoldMessenger.of(context).showSnackBar(
+                  //         SnackBar(
+                  //           content: Text('Opening ${notification.actionUrl}'),
+                  //           behavior: SnackBarBehavior.floating,
+                  //         ),
+                  //       );
+                  //     },
+                  //     style: ElevatedButton.styleFrom(
+                  //       backgroundColor: notification.color,
+                  //       foregroundColor: AppColors.white,
+                  //       padding: EdgeInsets.symmetric(vertical: 16),
+                  //       shape: RoundedRectangleBorder(
+                  //         borderRadius: BorderRadius.circular(30),
+                  //       ),
+                  //     ),
+                  //     child: Text('View'),
+                  //   ),
+                  // ),
                 ],
               ),
             ),

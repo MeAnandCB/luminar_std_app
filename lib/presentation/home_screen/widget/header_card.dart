@@ -241,7 +241,7 @@ class HeaderWidget extends StatelessWidget {
                         minHeight: 12,
                       ),
                       child: Text(
-                        '$unreadCount',
+                        '1+',
                         style: TextStyle(
                           color: AppColors.white,
                           fontSize: 8,

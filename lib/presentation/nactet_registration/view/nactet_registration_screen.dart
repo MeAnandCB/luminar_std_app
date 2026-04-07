@@ -5,12 +5,14 @@ import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/nactet_registration/controller/nactet_registration_controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
+import 'package:luminar_std/repository/nactet_registration/model/nactet_check_display_model.dart';
 import 'package:provider/provider.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:intl/intl.dart';
 
 class NactetRegistrationScreen extends StatefulWidget {
-  const NactetRegistrationScreen({super.key});
+  final NactetCheckDisplayEnrollment? nactetEnrollment;
+  const NactetRegistrationScreen({super.key, this.nactetEnrollment});
 
   @override
   State<NactetRegistrationScreen> createState() => _NactetRegistrationScreenState();
@@ -24,17 +26,29 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       final enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final nactetController = Provider.of<NactetRegistrationController>(context, listen: false);
-
-      final currentEnrollment = enrollmentProvider.enrollmentDataRes?.enrollments.isNotEmpty == true 
-          ? enrollmentProvider.enrollmentDataRes!.enrollments.first : null;
       final student = authProvider.studentData?.profile;
 
-      nactetController.init(
-        currentEnrollment, 
-        student?.fullName, 
-        student?.email, 
-        student?.phone,
-      );
+      if (widget.nactetEnrollment != null) {
+        // Came from the multi-enrollment selection sheet
+        nactetController.initFromNactetEnrollment(
+          widget.nactetEnrollment!,
+          student?.fullName,
+          student?.email,
+          student?.phone,
+        );
+      } else {
+        // Default: use first enrollment from EnrollmentProvider
+        final currentEnrollment =
+            enrollmentProvider.enrollmentDataRes?.enrollments.isNotEmpty == true
+                ? enrollmentProvider.enrollmentDataRes!.enrollments.first
+                : null;
+        nactetController.init(
+          currentEnrollment,
+          student?.fullName,
+          student?.email,
+          student?.phone,
+        );
+      }
     });
   }
 
@@ -252,11 +266,24 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
   }
 
   Widget _buildCourseInfoBanner(BuildContext context) {
-    final enrollmentProvider = Provider.of<EnrollmentProvider>(context);
-    final enrollment = enrollmentProvider.enrollmentDataRes?.enrollments.isNotEmpty == true 
-          ? enrollmentProvider.enrollmentDataRes!.enrollments.first : null;
+    // Prefer nactetEnrollment (from selection sheet) over EnrollmentProvider
+    final nactet = widget.nactetEnrollment;
+    final String courseName;
+    final String enrollmentNumber;
 
-    if (enrollment == null) return const SizedBox();
+    if (nactet != null) {
+      courseName = nactet.courseName;
+      enrollmentNumber = nactet.enrollmentNumber;
+    } else {
+      final enrollmentProvider = Provider.of<EnrollmentProvider>(context);
+      final enrollment =
+          enrollmentProvider.enrollmentDataRes?.enrollments.isNotEmpty == true
+              ? enrollmentProvider.enrollmentDataRes!.enrollments.first
+              : null;
+      if (enrollment == null) return const SizedBox();
+      courseName = enrollment.course.courseName;
+      enrollmentNumber = enrollment.enrollmentNumber;
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -272,7 +299,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              enrollment.course.courseName,
+              courseName,
               style: TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
@@ -282,9 +309,9 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             ),
           ),
           Text(
-            enrollment.enrollmentNumber,
+            enrollmentNumber,
             style: TextStyle(
-              color: AppColors.primary.withOpacity(0.7),
+              color: AppColors.primary.withValues(alpha: 0.7),
               fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
@@ -427,15 +454,56 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           _buildHint('JPG or PNG supported'),
           const SizedBox(height: 10),
           _buildFileUploadBox('photo', controller),
+          if (controller.fileSizeError != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.red.withOpacity(0.4)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      controller.fileSizeError!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildStep4(NactetRegistrationController controller) {
-    final enrollmentProvider = Provider.of<EnrollmentProvider>(context);
-    final enrollment = enrollmentProvider.enrollmentDataRes?.enrollments.isNotEmpty == true 
-          ? enrollmentProvider.enrollmentDataRes!.enrollments.first : null;
+    // Prefer nactetEnrollment when navigating from selection sheet
+    final nactet = widget.nactetEnrollment;
+    final String courseName;
+    final String batchName;
+    final String enrollmentNumber;
+
+    if (nactet != null) {
+      courseName = nactet.courseName;
+      batchName = nactet.batchName;
+      enrollmentNumber = nactet.enrollmentNumber;
+    } else {
+      final enrollmentProvider = Provider.of<EnrollmentProvider>(context);
+      final enrollment =
+          enrollmentProvider.enrollmentDataRes?.enrollments.isNotEmpty == true
+              ? enrollmentProvider.enrollmentDataRes!.enrollments.first
+              : null;
+      courseName = enrollment?.course.courseName ?? 'N/A';
+      batchName = enrollment?.batch.batchName ?? 'N/A';
+      enrollmentNumber = enrollment?.enrollmentNumber ?? 'N/A';
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -449,13 +517,9 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             decoration: BoxDecoration(
               color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
               boxShadow: [
-                BoxShadow(
-                  color: AppColors.shadowLight,
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
+                BoxShadow(color: AppColors.shadowLight, blurRadius: 10, offset: const Offset(0, 4)),
               ],
             ),
             child: Column(
@@ -463,37 +527,36 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
               children: [
                 _buildInfoLabel('ENROLLMENT INFO'),
                 const SizedBox(height: 16),
-                _buildReviewRow('Course', enrollment?.course.courseName ?? 'N/A'),
+                _buildReviewRow('Course', courseName),
                 const SizedBox(height: 12),
-                _buildReviewRow('Batch', enrollment?.batch.batchName ?? 'N/A'),
+                _buildReviewRow('Batch', batchName),
                 const SizedBox(height: 12),
-                _buildReviewRow('Enrollment No.', enrollment?.enrollmentNumber ?? 'N/A'),
+                _buildReviewRow('Enrollment No.', enrollmentNumber),
               ],
             ),
           ),
           const SizedBox(height: 30),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Checkbox(
-                value: true, // Will connect to controller
-                onChanged: (v) {},
-                activeColor: AppColors.statusActive,
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'I confirm all information is accurate. I understand the name entered will be printed on my NACTET certificate and cannot be changed later.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textPrimary.withOpacity(0.8),
-                      height: 1.5,
+          GestureDetector(
+            onTap: controller.toggleConfirmation,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Checkbox(
+                  value: controller.confirmationChecked,
+                  onChanged: (_) => controller.toggleConfirmation(),
+                  activeColor: AppColors.statusActive,
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      'I confirm all information is accurate. I understand the name entered will be printed on my NACTET certificate and cannot be changed later.',
+                      style: TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.5),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -1009,7 +1072,16 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
 
           if (controller.currentStep < 3)
             ElevatedButton(
-              onPressed: controller.nextStep,
+              onPressed: () {
+                final error = controller.validateStep(controller.currentStep);
+                if (error != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(error), backgroundColor: Colors.red),
+                  );
+                  return;
+                }
+                controller.nextStep();
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
@@ -1026,6 +1098,13 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           else
             ElevatedButton(
               onPressed: controller.isLoading ? null : () async {
+                final validationError = controller.validateStep(3);
+                if (validationError != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(validationError), backgroundColor: Colors.red),
+                  );
+                  return;
+                }
                 final success = await controller.submit(context);
                 if (success) {
                   if (mounted) {

@@ -223,6 +223,27 @@ class ChatApiService {
     return ApiResponse.success(null, response.statusCode ?? 200);
   }
 
+  // ── Total unread count ─────────────────────────────────────────────────────
+  Future<ApiResponse<int>> fetchUnreadCount() async {
+    final response = await _apiService.get(
+      endpoint: AppEndpoints.chatUnreadCount,
+      token: token,
+    );
+
+    if (response.success) {
+      final data = response.data;
+      int count = 0;
+      if (data is Map<String, dynamic>) {
+        count =
+            (data['total_unread'] ?? data['unread_count'] ?? data['count'] ?? 0) as int;
+      } else if (data is int) {
+        count = data;
+      }
+      return ApiResponse.success(count, response.statusCode ?? 200);
+    }
+    return ApiResponse.error(response.message ?? "Failed to fetch unread count", response.statusCode);
+  }
+
   // ── Mark messages read ─────────────────────────────────────────────────────
   Future<ApiResponse<void>> markMessagesAsRead(String chatUid, List<String> messageUids) async {
     if (messageUids.isEmpty) return ApiResponse.success(null, 200);

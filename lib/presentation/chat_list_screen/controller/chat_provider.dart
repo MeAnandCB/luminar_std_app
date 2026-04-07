@@ -50,6 +50,11 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   ChatApiService? get apiService => _apiService;
   WebSocketService? get webSocketService => _webSocketService;
 
+  /// Total unread message count across all chats.
+  /// Computed directly from the local chats list, which is already protected
+  /// by _locallyReadChats — so this always reflects what the user sees.
+  int get totalUnreadCount => _chats.fold(0, (sum, c) => sum + c.unreadCount);
+
   ChatProvider() {
     WidgetsBinding.instance.addObserver(this);
   }
@@ -295,7 +300,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// [fromSelf] = false → sent by someone else, increment unread unless
   ///                      the user is actively viewing that chat
   void _handleIncomingMessage(Message message, {required bool fromSelf}) {
-    final chatUid = message.chatId.toString();
+    final chatUid = message.chatId;
     final chatIndex = _chats.indexWhere((c) => c.uid == chatUid);
 
     // Build a human-readable preview string
@@ -399,6 +404,10 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
           final serverIsNewer = freshTime != null && (existingTime == null || freshTime.isAfter(existingTime));
 
           if (serverIsNewer) {
+            // If server confirms zero, we can safely lift the local read guard
+            if (freshChat.unreadCount == 0) {
+              _locallyReadChats.remove(freshChat.uid);
+            }
             // Preserve locally-zeroed unread counts
             final unread = _locallyReadChats.contains(freshChat.uid) ? 0 : freshChat.unreadCount;
             _chats[idx] = freshChat.copyWith(unreadCount: unread);
@@ -432,8 +441,13 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       if (response.success && response.data != null) {
         final chats = response.data!;
-        // Apply local read overrides so badge doesn't flash back
+        // Apply local read overrides so badge doesn't flash back.
+        // If server now confirms 0, lift the guard naturally.
         _chats = chats.map((chat) {
+          if (chat.unreadCount == 0) {
+            _locallyReadChats.remove(chat.uid);
+            return chat;
+          }
           if (_locallyReadChats.contains(chat.uid)) {
             return chat.copyWith(unreadCount: 0);
           }
@@ -480,26 +494,22 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
       final response = await _apiService!.fetchMessages(
         chat.uid,
         page: 1,
-        pageSize: 50, // Fetch more to be sure we get unread ones
+        pageSize: 50,
       );
 
       if (response.success && response.data != null) {
         final messages = response.data!;
-        final unreadUids = messages.where((m) => m.sender.id != _currentUser?.id).map((m) => m.uid).toList();
+        final unreadUids = messages
+            .where((m) => m.sender.id != _currentUser?.id)
+            .map((m) => m.uid)
+            .toList();
 
         if (unreadUids.isNotEmpty) {
-          final markRes = await _apiService!.markMessagesAsRead(chat.uid, unreadUids);
-          if (markRes.success) {
-            _locallyReadChats.remove(chat.uid);
-          }
-        } else {
-          // No unread messages found from others, clear local state
-          _locallyReadChats.remove(chat.uid);
+          await _apiService!.markMessagesAsRead(chat.uid, unreadUids);
         }
-      } else {
-        // If fetch fails, we still remove to avoid stuck zero,
-        // but it will be restored on next refresh
-        _locallyReadChats.remove(chat.uid);
+        // NOTE: Do NOT remove from _locallyReadChats here regardless of success/fail.
+        // The poll removes it only when the server confirms unread_count == 0,
+        // preventing the badge from jumping back on the next refresh.
       }
     } catch (e) {
       debugPrint('[ChatProvider] MarkRead Error: $e');

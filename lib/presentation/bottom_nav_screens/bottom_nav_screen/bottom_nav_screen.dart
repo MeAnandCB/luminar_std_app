@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/chat_list_screen/chat_list_screen.dart';
+import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:luminar_std/presentation/home_screen/home_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
@@ -24,6 +25,7 @@ class BottomNavScreen extends StatefulWidget {
 
 class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProviderStateMixin {
   late EnrollmentProvider enrollmentProvider;
+  late ChatProvider chatProvider;
   late int _currentIndex;
 
   // Animation controller for FAB press feedback
@@ -50,6 +52,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
+      chatProvider = Provider.of<ChatProvider>(context, listen: false);
       _loadData();
     });
   }
@@ -62,6 +65,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
 
   Future<void> _loadData() async {
     await enrollmentProvider.fetchEnrollData(context: context);
+    chatProvider.init();
     if (mounted) setState(() {});
   }
 
@@ -91,7 +95,9 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<EnrollmentProvider>(context);
+    final chatProv = context.watch<ChatProvider>();
     context.watch<ThemeProvider>();
+    final unreadCount = chatProv.totalUnreadCount;
 
     if (provider.enrollmentDataRes != null) {
       LoggerUtils.debug(provider.enrollmentDataRes!.enrollments.length.toString(), tag: 'BottomNav');
@@ -142,11 +148,11 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
       ),
 
       // ★ Creative bottom nav — compact, pill highlights, no Divider
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildBottomNav(unreadCount),
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(int unreadCount) {
     return Container(
       // ★ Smaller height than default BottomAppBar
       height: 62,
@@ -193,7 +199,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildNavItem(2, Icons.wechat_rounded, 'Chat'),
+                        _buildNavItem(2, Icons.wechat_rounded, 'Chat', badgeCount: unreadCount),
                         _buildNavItem(3, Icons.menu_rounded, 'More'),
                       ],
                     ),
@@ -208,8 +214,19 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
   }
 
   // ★ Creative nav item — active state gets a pill background + coloured icon
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  Widget _buildNavItem(int index, IconData icon, String label, {int badgeCount = 0}) {
     final isSelected = _currentIndex == index;
+
+    final iconWidget = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 180),
+      transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+      child: Icon(
+        icon,
+        key: ValueKey(isSelected),
+        color: isSelected ? AppColors.primary : AppColors.textHint,
+        size: 22,
+      ),
+    );
 
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
@@ -226,15 +243,34 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
-              child: Icon(
-                icon,
-                key: ValueKey(isSelected),
-                color: isSelected ? AppColors.primary : AppColors.textHint,
-                size: 22,
-              ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                iconWidget,
+                if (badgeCount > 0)
+                  Positioned(
+                    top: -5,
+                    right: -8,
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 16),
+                      height: 16,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        badgeCount > 99 ? '99+' : badgeCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 3),
             AnimatedDefaultTextStyle(

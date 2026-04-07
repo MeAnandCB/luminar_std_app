@@ -404,8 +404,9 @@ class _NoConnectionScreenState extends State<NoConnectionScreen>
     }
     
     await Future.delayed(const Duration(milliseconds: 1800));
+    if (!mounted) return;
     _shakeController.forward();
-    if (mounted) setState(() => _isRetrying = false);
+    setState(() => _isRetrying = false);
   }
 
   @override

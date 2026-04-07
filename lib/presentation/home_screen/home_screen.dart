@@ -15,6 +15,7 @@ import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/instagram_view_screen.dart';
 import 'package:luminar_std/presentation/nactet_registration/view/nactet_registration_screen.dart';
 import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
+import 'package:luminar_std/repository/nactet_registration/model/nactet_check_display_model.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -178,7 +179,31 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                 ?.name ??
                             'Active',
                       ),
-                      const SizedBox(height: 28),
+
+                      if (dashboardProvider.shouldShowNactetBanner) ...[
+                        const SizedBox(height: 28),
+                        _buildSectionHeading(
+                          'NACTET Registration',
+                          'Complete your registration below',
+                        ),
+                        const SizedBox(height: 14),
+                        NactetBanner(
+                          pendingCount: dashboardProvider.pendingNactetCount,
+                          onFormTap: () => _onNactetFormTap(
+                            context,
+                            dashboardProvider.nactetStatus?.enrollments ?? [],
+                          ),
+                        ),
+                      ] else if (dashboardProvider.nactetStatusReason !=
+                          null) ...[
+                        const SizedBox(height: 28),
+                        _buildSectionHeading('NACTET Status', null),
+                        const SizedBox(height: 14),
+                        _buildNactetStatusCard(
+                          dashboardProvider.nactetStatusReason!,
+                        ),
+                      ],
+                      const SizedBox(height: 14),
                       _buildSectionHeading(
                         'My Courses',
                         'Your active enrollments',
@@ -186,34 +211,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       const SizedBox(height: 14),
                       if (dashboard != null) ...[
                         _buildCourseCard(dashboard, provider),
-                        if (dashboardProvider.shouldShowNactetBanner) ...[
-                          const SizedBox(height: 28),
-                          _buildSectionHeading(
-                            'NACTET Registration',
-                            'Complete your registration below',
-                          ),
-                          const SizedBox(height: 14),
-                          NactetBanner(
-                            pendingCount: dashboardProvider.pendingNactetCount,
-                            onFormTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const NactetRegistrationScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                        ] else if (dashboardProvider.nactetStatusReason !=
-                            null) ...[
-                          const SizedBox(height: 28),
-                          _buildSectionHeading('NACTET Status', null),
-                          const SizedBox(height: 14),
-                          _buildNactetStatusCard(
-                            dashboardProvider.nactetStatusReason!,
-                          ),
-                        ],
+
                         const SizedBox(height: 28),
                         _buildSectionHeading(
                           'Financial Overview',
@@ -235,6 +233,37 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 ),
         );
       },
+    );
+  }
+
+  // ============== NACTET FORM NAVIGATION ==============
+
+  void _onNactetFormTap(
+    BuildContext context,
+    List<NactetCheckDisplayEnrollment> enrollments,
+  ) {
+    if (enrollments.length == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              NactetRegistrationScreen(nactetEnrollment: enrollments.first),
+        ),
+      );
+    } else {
+      _showEnrollmentSelectionSheet(context, enrollments);
+    }
+  }
+
+  void _showEnrollmentSelectionSheet(
+    BuildContext context,
+    List<NactetCheckDisplayEnrollment> enrollments,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EnrollmentSelectionSheet(enrollments: enrollments),
     );
   }
 
@@ -1037,7 +1066,9 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
                             Container(
                               width: 1,
                               height: 38,
-                              margin: const EdgeInsets.symmetric(horizontal: 14),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
                               color: Colors.white.withValues(alpha: 0.2),
                             ),
                             Expanded(
@@ -1141,7 +1172,51 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
     );
   }
 
-  String _formatBatchTime(String time) => time;
+  String _formatBatchTime(String time) {
+    if (time.isEmpty) return 'Not specified';
+    try {
+      // Handle range format like "09:00-11:00" or "09:00 - 11:00"
+      final rangeSeparator = RegExp(r'\s*-\s*');
+      final parts = time.split(rangeSeparator);
+      if (parts.length == 2) {
+        final start = _parseTimeTo12h(parts[0].trim());
+        final end = _parseTimeTo12h(parts[1].trim());
+        return '$start - $end';
+      }
+      return _parseTimeTo12h(time.trim());
+    } catch (e) {
+      return time;
+    }
+  }
+
+  String _parseTimeTo12h(String time) {
+    final normalized = time.replaceAll('.', ':');
+    final parts = normalized.split(':');
+    if (parts.length >= 2) {
+      final hour = int.parse(parts[0]);
+      final minute = parts[1].padLeft(2, '0');
+      final period = hour >= 12 ? 'PM' : 'AM';
+      final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+      return '$displayHour:$minute $period';
+    }
+    return time;
+  }
+
+  String _formatTimeDetailed(String time) {
+    try {
+      final parts = time.replaceAll('.', ':').split(':');
+      if (parts.length >= 2) {
+        final hour = int.parse(parts[0]);
+        final minute = parts[1];
+        final period = hour >= 12 ? 'PM' : 'AM';
+        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+        return '$displayHour:$minute $period';
+      }
+      return time;
+    } catch (e) {
+      return time;
+    }
+  }
 
   String _monthName(int month) {
     const months = [
@@ -1208,3 +1283,334 @@ class _ChipPainter extends CustomPainter {
 }
 
 /// Subtle dot-grid texture for card background
+
+// ── NACTET Enrollment Selection Sheet ─────────────────────────────────────────
+
+class _EnrollmentSelectionSheet extends StatelessWidget {
+  final List<NactetCheckDisplayEnrollment> enrollments;
+
+  const _EnrollmentSelectionSheet({required this.enrollments});
+
+  @override
+  Widget build(BuildContext context) {
+    final submitted = enrollments.where((e) => e.hasCertificateData).length;
+    final total = enrollments.length;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // drag handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.borderColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // ── Header ──────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.workspace_premium_rounded,
+                    color: AppColors.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'NACTET Registration ($total Enrollments)',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        'Select an enrollment to begin',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+          Divider(height: 1, color: AppColors.borderColor),
+          const SizedBox(height: 12),
+
+          // ── Overall Progress ─────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Overall Progress',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      '$submitted / $total submitted',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: total > 0 ? submitted / total : 0,
+                    minHeight: 6,
+                    backgroundColor: AppColors.borderColor,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Section label ────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Icon(Icons.layers_rounded, size: 16, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Text(
+                  'SELECT ENROLLMENT',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'You have ${enrollments.where((e) => !e.hasCertificateData).length} enrollment${enrollments.where((e) => !e.hasCertificateData).length == 1 ? '' : 's'} requiring NACTET registration. Select one to fill the form.',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // ── Enrollment cards ─────────────────────────────────────────
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: enrollments.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (ctx, i) {
+              final e = enrollments[i];
+              final done = e.hasCertificateData;
+              return GestureDetector(
+                onTap: done
+                    ? null
+                    : () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                NactetRegistrationScreen(nactetEnrollment: e),
+                          ),
+                        );
+                      },
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.scaffoldBackground,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.borderColor),
+                  ),
+                  child: Row(
+                    children: [
+                      // number badge
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: done
+                              ? Colors.green.withValues(alpha: 0.15)
+                              : AppColors.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: done
+                            ? Icon(
+                                Icons.check_rounded,
+                                color: Colors.green,
+                                size: 18,
+                              )
+                            : Text(
+                                '${i + 1}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primary,
+                                  fontSize: 14,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              e.courseName,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              e.batchName,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Text(
+                                  e.enrollmentNumber,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: done
+                                        ? Colors.green.withValues(alpha: 0.12)
+                                        : AppColors.primary.withValues(
+                                            alpha: 0.10,
+                                          ),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    done ? 'Submitted' : e.statusDisplay,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: done
+                                          ? Colors.green
+                                          : AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!done)
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Close button ─────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                alignment: Alignment.center,
+                child: Text(
+                  'Close',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

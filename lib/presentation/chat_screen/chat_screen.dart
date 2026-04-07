@@ -161,7 +161,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _webSocketService.onConnected = () => _webSocketService.updateUserStatus(true);
 
     _messageSubscription = _webSocketService.messageStream.listen((message) {
-      if (message.chatId.toString() == widget.chat.uid && mounted) {
+      if (message.chatId == widget.chat.uid && mounted) {
         if (message.isDeleted) {
           setState(() {
             final index = _messages.indexWhere((m) => m.uid == message.uid);
@@ -1118,7 +1118,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final optimisticUid = 'upload_${DateTime.now().millisecondsSinceEpoch}';
     final optimistic = Message(
       uid: optimisticUid,
-      chatId: int.tryParse(widget.chat.uid) ?? 0,
+      chatId: widget.chat.uid,
       sender: widget.currentUser,
       messageType: resolvedType,
       content: caption.isNotEmpty ? caption : fileName,
@@ -1807,7 +1807,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     final optimistic = Message(
       uid: DateTime.now().millisecondsSinceEpoch.toString(),
-      chatId: int.tryParse(widget.chat.uid) ?? 0,
+      chatId: widget.chat.uid,
       sender: widget.currentUser,
       messageType: 'text',
       content: content,

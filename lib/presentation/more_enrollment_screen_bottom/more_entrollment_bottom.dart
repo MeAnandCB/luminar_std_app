@@ -5,6 +5,7 @@ import 'package:luminar_std/presentation/enrollment_screen/controller/controller
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/gallery_screen/views/gallery_screen.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/live_class/view/live_class.dart';
 import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
 import 'package:luminar_std/presentation/test_screen.dart';
@@ -371,6 +372,31 @@ class _EnrollmentPage extends StatelessWidget {
   final int index;
   final EnrollmentProvider provider;
 
+  void _showAccessDenied(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.lock_outline_rounded, color: Colors.red.shade400, size: 22),
+            const SizedBox(width: 8),
+            const Text('Access Denied'),
+          ],
+        ),
+        content: const Text(
+          'Your access was denied. Please contact your academic counselor.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final batchId = enrollment.batch?.uid ?? '';
@@ -379,6 +405,16 @@ class _EnrollmentPage extends StatelessWidget {
     final courseName = enrollment.course?.courseName ?? '';
     final mode = enrollment.attendanceMode?.name ?? '';
     final status = enrollment.status?.value ?? '';
+
+    // Check crmAccess from the dashboard for this enrollment
+    final dashCtrl = Provider.of<DashboardController>(context, listen: false);
+    final dashEnrollments =
+        dashCtrl.dashboard?.enrollmentDetails?.enrollments ?? [];
+    final dashEnrollment = dashEnrollments.cast<dynamic>().firstWhere(
+      (e) => (e.basicInfo?.uid ?? '') == enrollId,
+      orElse: () => null,
+    );
+    final bool crmAccess = dashEnrollment?.basicInfo?.crmAccess ?? true;
 
     final bool toEnrollDetails =
         status == 'admission_fee_paid' ||
@@ -452,26 +488,38 @@ class _EnrollmentPage extends StatelessWidget {
             delegate: SliverChildListDelegate([
               _FeatureCard(
                 feature: _kFeatures[0],
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AttendanceScreen(
-                      batchId: batchId,
-                      batchName: batchName,
-                      courseName: courseName,
+                onTap: () {
+                  if (!crmAccess) {
+                    _showAccessDenied(context);
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AttendanceScreen(
+                        batchId: batchId,
+                        batchName: batchName,
+                        courseName: courseName,
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
               SizedBox(height: 12),
               _FeatureCard(
                 feature: _kFeatures[1],
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => GalleryScreen(batchId: batchId),
-                  ),
-                ),
+                onTap: () {
+                  if (!crmAccess) {
+                    _showAccessDenied(context);
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GalleryScreen(batchId: batchId),
+                    ),
+                  );
+                },
               ),
               // SizedBox(height: 12),
               // _FeatureCard(
@@ -484,10 +532,16 @@ class _EnrollmentPage extends StatelessWidget {
               SizedBox(height: 12),
               _FeatureCard(
                 feature: _kFeatures[2],
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => LiveClassScreen()),
-                ),
+                onTap: () {
+                  if (!crmAccess) {
+                    _showAccessDenied(context);
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => LiveClassScreen()),
+                  );
+                },
               ),
               SizedBox(height: 12),
               _FeatureCard(

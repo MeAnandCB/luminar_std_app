@@ -203,7 +203,9 @@ class WebSocketService {
             final messageData = data['data'] ?? data;
             if (messageData is Map<String, dynamic>) {
               try {
-                if (!messageData.containsKey('chat') && messageData.containsKey('chat_uid')) {
+                // Always prefer chat_uid (UUID) so Message.chatId stores the
+                // same string as Chat.uid, enabling correct matching.
+                if (messageData.containsKey('chat_uid')) {
                   messageData['chat'] = messageData['chat_uid'];
                 }
                 final receivedMessage = Message.fromJson(messageData);
