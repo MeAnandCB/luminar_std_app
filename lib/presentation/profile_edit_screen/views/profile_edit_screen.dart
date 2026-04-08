@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/profile_edit_screen/controller/profile_edit_controller.dart';
 import 'package:provider/provider.dart';
+import 'package:country_code_picker/country_code_picker.dart';
 import 'dart:io';
 
 class EditProfileScreen extends StatefulWidget {
@@ -16,6 +18,8 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _initialized = false;
+  String _whatsappCountryCode = '+91';
+  String _parentPhoneCountryCode = '+91';
 
   @override
   void initState() {
@@ -165,10 +169,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           keyboardType: TextInputType.phone,
                           isEditable: false,
                         ),
-                        _buildTextField(
+                        _buildPhoneField(
                           'WhatsApp Number',
                           editController.whatsappController,
-                          keyboardType: TextInputType.phone,
+                          _whatsappCountryCode,
+                          (code) => setState(() => _whatsappCountryCode = code),
                         ),
                         _buildDatePicker('Date of Birth', editController.dobController, () async {
                           final date = await showDatePicker(
@@ -286,10 +291,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         _buildTextField('Preferred Location', editController.preferredLocationController),
                         _buildTextField('Parent/Guardian Name', editController.parentNameController),
-                        _buildTextField(
+                        _buildPhoneField(
                           'Parent/Guardian Phone',
                           editController.parentPhoneController,
-                          keyboardType: TextInputType.phone,
+                          _parentPhoneCountryCode,
+                          (code) => setState(() => _parentPhoneCountryCode = code),
                         ),
                         _buildTextField('How did you hear about us?', editController.hearAboutController),
                       ],
@@ -404,6 +410,69 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           SizedBox(height: 16),
           ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhoneField(
+    String label,
+    TextEditingController controller,
+    String countryCode,
+    ValueChanged<String> onCountryChanged,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppTextStyles.statLabel),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderColor),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border(right: BorderSide(color: AppColors.borderColor)),
+                  ),
+                  child: CountryCodePicker(
+                    onChanged: (code) {
+                      final dial = code.dialCode ?? '+91';
+                      onCountryChanged(dial);
+                      // Prepend country code to controller value
+                      final digits = controller.text.replaceFirst(RegExp(r'^\+\d+\s*'), '');
+                      controller.text = '$dial $digits';
+                    },
+                    initialSelection: 'IN',
+                    favorite: const ['+91', '+1', '+44'],
+                    showCountryOnly: false,
+                    showOnlyCountryWhenClosed: false,
+                    alignLeft: false,
+                    textStyle: TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                  ),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      border: InputBorder.none,
+                      hintText: 'Enter number',
+                      hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

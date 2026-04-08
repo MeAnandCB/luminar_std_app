@@ -58,8 +58,9 @@ class AttendanceService {
     required String batchId,
     required String sessionId,
     required String studentId,
+    String? token,
   }) async {
-    final String? token = await AppUtils.getAccessKey();
+    final String? resolvedToken = token ?? await AppUtils.getAccessKey();
     final uri = Uri.parse(
       '$_base${AppEndpoints.attandance}',
     ); // Ensure this endpoint is defined
@@ -85,7 +86,7 @@ class AttendanceService {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $resolvedToken',
       },
       body: jsonEncode(payload),
     );
@@ -144,6 +145,9 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   bool _dashboardLoaded = false;
   bool _dashboardError = false;
 
+  // Pre-fetched token — avoids storage read on every scan
+  String? _cachedToken;
+
   @override
   void initState() {
     super.initState();
@@ -155,6 +159,8 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     );
     // Camera stays paused until dashboard data is loaded
     _controller.stop();
+    // Pre-fetch token in parallel with dashboard load
+    AppUtils.getAccessKey().then((t) => _cachedToken = t);
     _loadDashboardData();
   }
 
@@ -248,6 +254,8 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       // Stop immediately — single fire guaranteed
       _detected = true;
       _controller.stop();
+      // Show loading right away — no silent gap before API call
+      if (mounted) setState(() { _isLoading = true; _statusText = 'Marking attendance...'; });
 
       developer.log(
         '─── QR Scanned ───\n'
@@ -346,6 +354,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       sessionId: sessionIdToUse,
       studentId: studentId,
       batchName: matched.batchInfo?.batchName ?? 'Unknown Batch',
+      token: _cachedToken,
     );
   }
 
@@ -356,17 +365,17 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     required String sessionId,
     required String studentId,
     required String batchName,
+    String? token,
   }) async {
-    setState(() {
-      _isLoading = true;
-      _statusText = 'Marking attendance...';
-    });
+    // Loading state already set in _onDetect; set again in case called directly
+    if (!_isLoading) setState(() { _isLoading = true; _statusText = 'Marking attendance...'; });
 
     try {
       final result = await AttendanceService.markAttendance(
         batchId: batchId,
         sessionId: sessionId,
         studentId: studentId,
+        token: token,
       );
 
       if (!mounted) return;
@@ -428,10 +437,11 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         title: title,
         message: message,
         onPressed: () {
-          Navigator.pop(context); // close dialog
-          // Reset and restart scanner
+          Navigator.pop(context);
+          // Clear scanned data and restart camera
           setState(() {
             _detected = false;
+            _isLoading = false;
             _statusText = 'Align QR code within the frame';
           });
           _safeStart();
@@ -863,7 +873,7 @@ class _ResultDialog extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                child: Text(success ? 'Great! Done' : 'Try Again'),
+                child: const Text('Close'),
               ),
             ),
           ],

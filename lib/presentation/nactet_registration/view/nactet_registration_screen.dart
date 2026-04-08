@@ -9,6 +9,7 @@ import 'package:luminar_std/repository/nactet_registration/model/nactet_check_di
 import 'package:provider/provider.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:intl/intl.dart';
+import 'package:country_code_picker/country_code_picker.dart';
 
 class NactetRegistrationScreen extends StatefulWidget {
   final NactetCheckDisplayEnrollment? nactetEnrollment;
@@ -19,6 +20,8 @@ class NactetRegistrationScreen extends StatefulWidget {
 }
 
 class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
+  String _mobileCountryCode = '+91';
+
   @override
   void initState() {
     super.initState();
@@ -375,7 +378,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           const SizedBox(height: 20),
           _buildLabel('Mobile No *'),
           const SizedBox(height: 10),
-          _buildTextField(controller.mobileController, '10-digit mobile number', keyboardType: TextInputType.phone),
+          _buildPhoneField(controller),
           const SizedBox(height: 20),
           _buildLabel('Email *'),
           const SizedBox(height: 10),
@@ -603,6 +606,55 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           fontSize: 11,
           color: AppColors.textSecondary,
         ),
+      ),
+    );
+  }
+
+  Widget _buildPhoneField(NactetRegistrationController controller) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.borderColor),
+      ),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              border: Border(right: BorderSide(color: AppColors.borderColor)),
+            ),
+            child: CountryCodePicker(
+              onChanged: (code) {
+                setState(() => _mobileCountryCode = code.dialCode ?? '+91');
+                controller.registrationModel.mobileNumber =
+                    '$_mobileCountryCode${controller.mobileController.text.trim()}';
+              },
+              initialSelection: 'IN',
+              favorite: const ['+91', '+1', '+44'],
+              showCountryOnly: false,
+              showOnlyCountryWhenClosed: false,
+              alignLeft: false,
+              textStyle: TextStyle(color: AppColors.textPrimary, fontSize: 13),
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller.mobileController,
+              keyboardType: TextInputType.phone,
+              onChanged: (value) {
+                controller.registrationModel.mobileNumber =
+                    '$_mobileCountryCode${value.trim()}';
+              },
+              style: TextStyle(fontSize: 13, color: AppColors.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Mobile number',
+                hintStyle: TextStyle(color: AppColors.textHint, fontSize: 13),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

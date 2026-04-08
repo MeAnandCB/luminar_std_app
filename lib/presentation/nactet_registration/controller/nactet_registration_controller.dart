@@ -110,7 +110,7 @@ class NactetRegistrationController extends ChangeNotifier {
         if (dobController.text.trim().isEmpty) return 'Please select your date of birth';
         if (addressController.text.trim().isEmpty) return 'Please enter your permanent address';
         if (mobileController.text.trim().isEmpty) return 'Please enter your mobile number';
-        if (mobileController.text.trim().length != 10) return 'Mobile number must be 10 digits';
+        if (mobileController.text.trim().length < 5) return 'Please enter a valid mobile number';
         if (emailController.text.trim().isEmpty) return 'Please enter your email';
         if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(emailController.text.trim())) {
           return 'Please enter a valid email address';
