@@ -39,7 +39,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         listen: false,
       );
       await dashboardProvider.getDashboardData(context: context);
-      print('🔔 [TEST] unread_exams count: ${dashboardProvider.unreadExamsCount}');
+
       await dashboardProvider.getNactetStatus();
       _loadUserName();
     });
@@ -181,32 +181,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             'Active',
                       ),
 
-                      // ── TEST: unread exams count ──────────────────────────
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.assignment_rounded, color: AppColors.primary, size: 20),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Unread Exams: ${dashboardProvider.unreadExamsCount}',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       // ── END TEST ──────────────────────────────────────────
-
                       if (dashboardProvider.shouldShowNactetBanner) ...[
                         const SizedBox(height: 28),
                         _buildSectionHeading(
@@ -220,14 +195,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             context,
                             dashboardProvider.nactetStatus?.enrollments ?? [],
                           ),
-                        ),
-                      ] else if (dashboardProvider.nactetStatusReason !=
-                          null) ...[
-                        const SizedBox(height: 28),
-                        _buildSectionHeading('NACTET Status', null),
-                        const SizedBox(height: 14),
-                        _buildNactetStatusCard(
-                          dashboardProvider.nactetStatusReason!,
                         ),
                       ],
                       const SizedBox(height: 14),
@@ -570,62 +537,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
     }
   }
 
-  Widget _buildNactetStatusCard(String reason) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderColor.withOpacity(0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.info_rounded, color: AppColors.info, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'NACTET Update',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  reason,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                    height: 1.4,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ============================================================

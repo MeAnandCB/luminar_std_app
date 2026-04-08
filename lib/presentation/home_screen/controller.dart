@@ -32,6 +32,12 @@ class DashboardController extends ChangeNotifier {
     return _nactetStatus!.totalEligibleEnrollments - _nactetStatus!.enrollmentsWithCertificateData;
   }
 
+  bool get isNactetFullySubmitted {
+    if (_nactetStatus == null) return false;
+    return _nactetStatus!.totalEligibleEnrollments > 0 &&
+        _nactetStatus!.enrollmentsWithCertificateData >= _nactetStatus!.totalEligibleEnrollments;
+  }
+
   Future<Dashboard?> getDashboardData({required BuildContext context}) async {
     _isLoading = true;
     _error = null;
