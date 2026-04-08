@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/complete_your_profile/view/complete_your_profile.dart';
@@ -44,6 +45,32 @@ class DashboardController extends ChangeNotifier {
         _dashboard = _dashboardModel?.dashboard;
 
         if (_dashboard != null) {
+          final d = _dashboard!;
+          final student = d.studentDetails?.basicInfo;
+          final enrollments = d.enrollmentDetails?.enrollments ?? [];
+          final financial = d.financialSummary?.overview;
+          final stats = d.quickStats;
+
+          developer.log(
+            '─── Dashboard Data ───\n'
+            '  student        : ${student?.fullName} (${student?.studentId})\n'
+            '  email          : ${student?.email}\n'
+            '  phone          : ${student?.phone}\n'
+            '  profileDone    : ${student?.profileCompleted}\n'
+            '  enrollments    : ${enrollments.length}\n'
+            '${enrollments.asMap().entries.map((e) => '  [${e.key + 1}] ${e.value.batchInfo?.batchName} | batch: ${e.value.batchInfo?.uid} | status: ${e.value.status?.name}').join('\n')}\n'
+            '  totalFeesAmt   : ${financial?.totalFeesAmount}\n'
+            '  totalFeesPaid  : ${financial?.totalFeesPaid}\n'
+            '  totalFeesPend  : ${financial?.totalFeesPending}\n'
+            '  paymentStatus  : ${financial?.paymentStatus}\n'
+            '  payment%       : ${financial?.paymentCompletionPercentage}\n'
+            '  totalCourses   : ${stats?.academic?.totalCourses}\n'
+            '  activeCourses  : ${stats?.academic?.activeCourses}\n'
+            '  completedCrs   : ${stats?.academic?.completedCourses}\n'
+            '  completionRate : ${stats?.academic?.completionRate}',
+            name: 'Dashboard',
+          );
+
           if (_dashboard?.studentDetails?.basicInfo?.profileCompleted != true) {
             Navigator.pushAndRemoveUntil(
               context,
@@ -188,4 +215,10 @@ class DashboardController extends ChangeNotifier {
         _dashboardModel?.dashboard?.financialSummary?.overview;
     return overview?.totalFeesAmount ?? 0;
   }
+
+  // Get unread exams count
+  int get unreadExamsCount =>
+      _dashboard?.quickStats?.unreadExams ??
+      _dashboardModel?.dashboard?.quickStats?.unreadExams ??
+      0;
 }

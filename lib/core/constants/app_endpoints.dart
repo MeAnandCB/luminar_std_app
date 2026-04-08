@@ -66,6 +66,7 @@ class AppEndpoints {
   // attandance
 
   static const String attandance = '/api/attendance/qr-scan/';
+  static const String examSessions = '/api/student_portal/exams/sessions/';
 
   // NACTET Certificates
   static const String certificatesCreate = '/api/certificates/create/';

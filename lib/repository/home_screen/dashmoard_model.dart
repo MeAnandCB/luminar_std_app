@@ -1092,14 +1092,16 @@ class QuickStats {
   Financial? financial;
   Engagement? engagement;
   Alerts? alerts;
+  int? unreadExams;
 
-  QuickStats({this.academic, this.financial, this.engagement, this.alerts});
+  QuickStats({this.academic, this.financial, this.engagement, this.alerts, this.unreadExams});
 
   factory QuickStats.fromJson(Map<String, dynamic> json) => QuickStats(
     academic: json["academic"] == null ? null : Academic.fromJson(json["academic"]),
     financial: json["financial"] == null ? null : Financial.fromJson(json["financial"]),
     engagement: json["engagement"] == null ? null : Engagement.fromJson(json["engagement"]),
     alerts: json["alerts"] == null ? null : Alerts.fromJson(json["alerts"]),
+    unreadExams: json["unread_exams"] is int ? json["unread_exams"] : int.tryParse(json["unread_exams"]?.toString() ?? '0') ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -1107,6 +1109,7 @@ class QuickStats {
     "financial": financial?.toJson(),
     "engagement": engagement?.toJson(),
     "alerts": alerts?.toJson(),
+    "unread_exams": unreadExams,
   };
 }
 

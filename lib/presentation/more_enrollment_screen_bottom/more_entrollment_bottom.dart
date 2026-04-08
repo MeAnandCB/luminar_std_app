@@ -9,6 +9,7 @@ import 'package:luminar_std/presentation/gallery_screen/views/gallery_screen.dar
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/live_class/view/live_class.dart';
 import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
+import 'package:luminar_std/presentation/exam_screen/exam_screen.dart';
 import 'package:luminar_std/presentation/test_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -70,18 +71,19 @@ const _kFeatures = [
     Color(0xFFFBBF24),
   ),
   _Feature(
-    Icons.payment_rounded,
-    'Empty screens',
-    'Track and manage your fee payments',
-    Color(0xFFF59E0B),
-    Color(0xFFFBBF24),
+    Icons.assignment_rounded,
+    'Exams',
+    'View your exam sessions and results',
+    Color(0xFF6C63FF),
+    Color(0xFF9D73FF),
   ),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 class MoreEnrollmentScreen extends StatefulWidget {
-  const MoreEnrollmentScreen({super.key});
+  const MoreEnrollmentScreen({super.key, required this.unreadCount});
+  final int unreadCount;
 
   @override
   State<MoreEnrollmentScreen> createState() => _MoreEnrollmentScreenState();
@@ -176,6 +178,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
         enrollment: enrollments[0],
         index: 0,
         provider: _provider,
+        unreadExams: widget.unreadCount,
       );
     }
 
@@ -188,6 +191,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
           enrollment: enrollments[i],
           index: i,
           provider: _provider,
+          unreadExams: widget.unreadCount,
         ),
       ),
     );
@@ -367,11 +371,13 @@ class _EnrollmentPage extends StatelessWidget {
     required this.enrollment,
     required this.index,
     required this.provider,
+    this.unreadExams = 0,
   });
 
   final dynamic enrollment;
   final int index;
   final EnrollmentProvider provider;
+  final int unreadExams;
 
   void _showAccessDenied(BuildContext context) {
     showDialog(
@@ -380,7 +386,11 @@ class _EnrollmentPage extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.lock_outline_rounded, color: Colors.red.shade400, size: 22),
+            Icon(
+              Icons.lock_outline_rounded,
+              color: Colors.red.shade400,
+              size: 22,
+            ),
             const SizedBox(width: 8),
             const Text('Access Denied'),
           ],
@@ -469,7 +479,7 @@ class _EnrollmentPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    AppConfig.hidePayments ? '3 features' : '4 features',
+                    AppConfig.hidePayments ? '4 features' : '5 features',
                     style: TextStyle(
                       fontSize: 11,
                       color: _kPrimary,
@@ -569,6 +579,15 @@ class _EnrollmentPage extends StatelessWidget {
                         ),
                 ),
               ],
+              SizedBox(height: 12),
+              _FeatureCard(
+                feature: _kFeatures[4],
+                badgeCount: unreadExams,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ExamScreen()),
+                ),
+              ),
             ]),
           ),
         ),
@@ -700,10 +719,11 @@ class _Chip extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _FeatureCard extends StatelessWidget {
-  const _FeatureCard({required this.feature, required this.onTap});
+  const _FeatureCard({required this.feature, required this.onTap, this.badgeCount = 0});
 
   final _Feature feature;
   final VoidCallback onTap;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -731,23 +751,67 @@ class _FeatureCard extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             child: Row(
               children: [
-                // gradient icon box
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [feature.colorA, feature.colorB],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                // gradient icon box with optional glow badge
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [feature.colorA, feature.colorB],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        feature.icon,
+                        color: AppColors.textWhite,
+                        size: 22,
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    feature.icon,
-                    color: AppColors.textWhite,
-                    size: 22,
-                  ),
+                    if (badgeCount > 0)
+                      Positioned(
+                        top: -7,
+                        right: -7,
+                        child: Container(
+                          constraints: const BoxConstraints(minWidth: 20),
+                          height: 20,
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withValues(alpha: 0.55),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                                offset: Offset.zero,
+                              ),
+                              BoxShadow(
+                                color: Colors.red.withValues(alpha: 0.25),
+                                blurRadius: 14,
+                                spreadRadius: 2,
+                                offset: Offset.zero,
+                              ),
+                            ],
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            badgeCount > 99 ? '99+' : badgeCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 SizedBox(width: 14),
                 // title + subtitle – Expanded prevents overflow
@@ -782,7 +846,7 @@ class _FeatureCard extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: feature.colorA.withOpacity(0.1),
+                    color: feature.colorA.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(

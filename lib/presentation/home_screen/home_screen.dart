@@ -39,6 +39,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         listen: false,
       );
       await dashboardProvider.getDashboardData(context: context);
+      print('🔔 [TEST] unread_exams count: ${dashboardProvider.unreadExamsCount}');
       await dashboardProvider.getNactetStatus();
       _loadUserName();
     });
@@ -179,6 +180,32 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                 ?.name ??
                             'Active',
                       ),
+
+                      // ── TEST: unread exams count ──────────────────────────
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.assignment_rounded, color: AppColors.primary, size: 20),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Unread Exams: ${dashboardProvider.unreadExamsCount}',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // ── END TEST ──────────────────────────────────────────
 
                       if (dashboardProvider.shouldShowNactetBanner) ...[
                         const SizedBox(height: 28),

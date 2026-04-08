@@ -6,6 +6,7 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/chat_list_screen/chat_list_screen.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/home_screen/home_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
@@ -65,7 +66,11 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
   }
 
   Future<void> _loadData() async {
-    await enrollmentProvider.fetchEnrollData(context: context);
+    final dashboardController = Provider.of<DashboardController>(context, listen: false);
+    await Future.wait([
+      enrollmentProvider.fetchEnrollData(context: context),
+      dashboardController.getDashboardData(context: context),
+    ]);
     chatProvider.init();
     if (mounted) setState(() {});
   }
@@ -77,9 +82,9 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
     Navigator.push(context, MaterialPageRoute(builder: (context) => const QRScannerScreen()));
   }
 
-  List<Widget> _buildPages(EnrollmentProvider provider) {
+  List<Widget> _buildPages(EnrollmentProvider provider, int unreadExams) {
     if (provider.enrollmentDataRes == null) {
-      return [StudentDashboard(), EnrollmentScreen(), ChatListScreen(), MoreEnrollmentScreen()];
+      return [StudentDashboard(), EnrollmentScreen(), ChatListScreen(), MoreEnrollmentScreen(unreadCount: unreadExams)];
     }
 
     final status = provider.enrollmentDataRes!.enrollments[0].status.value;
@@ -92,7 +97,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
       StudentDashboard(),
       showPaymentScreen ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false) : EnrollmentScreen(),
       ChatListScreen(),
-      MoreEnrollmentScreen(),
+      MoreEnrollmentScreen(unreadCount: unreadExams),
     ];
   }
 
@@ -102,12 +107,13 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
     final chatProv = context.watch<ChatProvider>();
     context.watch<ThemeProvider>();
     final unreadCount = chatProv.totalUnreadCount;
+    final unreadExams = context.select<DashboardController, int>((c) => c.unreadExamsCount);
 
     if (provider.enrollmentDataRes != null) {
       LoggerUtils.debug(provider.enrollmentDataRes!.enrollments.length.toString(), tag: 'BottomNav');
     }
 
-    final pages = _buildPages(provider);
+    final pages = _buildPages(provider, unreadExams);
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -126,20 +132,20 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
-                colors: [AppColors.primary.withOpacity(0.95), AppColors.primary],
+                colors: [AppColors.primary.withValues(alpha:0.95), AppColors.primary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               // Double ring effect
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.45),
+                  color: AppColors.primary.withValues(alpha:0.45),
                   blurRadius: 16,
                   spreadRadius: 0,
                   offset: const Offset(0, 4),
                 ),
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.15),
+                  color: AppColors.primary.withValues(alpha:0.15),
                   blurRadius: 0,
                   spreadRadius: 6,
                   offset: Offset.zero,
@@ -152,18 +158,18 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
       ),
 
       // ★ Creative bottom nav — compact, pill highlights, no Divider
-      bottomNavigationBar: _buildBottomNav(unreadCount),
+      bottomNavigationBar: _buildBottomNav(unreadCount, unreadExams),
     );
   }
 
-  Widget _buildBottomNav(int unreadCount) {
+  Widget _buildBottomNav(int unreadCount, int unreadExams) {
     return Container(
       // ★ Smaller height than default BottomAppBar
       height: 62,
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, -4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.08), blurRadius: 20, offset: const Offset(0, -4))],
       ),
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -174,7 +180,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
               top: 0,
               left: 0,
               right: 0,
-              child: Container(height: 0.5, color: AppColors.borderColor.withOpacity(0.4)),
+              child: Container(height: 0.5, color: AppColors.borderColor.withValues(alpha:0.4)),
             ),
 
             // Nav row with notch gap in center
@@ -204,7 +210,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _buildNavItem(2, Icons.wechat_rounded, 'Chat', badgeCount: unreadCount),
-                        _buildNavItem(3, Icons.menu_rounded, 'More'),
+                        _buildNavItem(3, Icons.menu_rounded, 'More', badgeCount: unreadExams),
                       ],
                     ),
                   ),
@@ -240,7 +246,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.10) : Colors.transparent,
+          color: isSelected ? AppColors.primary.withValues(alpha:0.10) : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
