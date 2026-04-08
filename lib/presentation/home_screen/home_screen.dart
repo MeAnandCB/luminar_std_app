@@ -796,7 +796,13 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
     }
 
     return GestureDetector(
-      onTap: navigate,
+      onTap: () {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => BottomNavScreen(initialIndex: 3)),
+          (route) => false,
+        );
+      },
       child: AnimatedBuilder(
         animation: ripple,
         builder: (_, child) =>
