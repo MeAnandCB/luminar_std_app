@@ -63,18 +63,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     final List<NotificationItem> items = [];
 
-    // Urgent notifications first
+    bool isDuplicate(NotificationItem item) =>
+        items.any((e) => e.id == item.id || (e.title == item.title && e.message == item.message));
+
+    // Urgent notifications first (de-duped)
     for (final raw in summary.urgentNotifications ?? []) {
       final item = _parseRawNotification(raw, urgent: true);
-      if (item != null) items.add(item);
+      if (item != null && !isDuplicate(item)) items.add(item);
     }
 
     // Recent notifications (skip duplicates)
     for (final raw in summary.recentNotifications ?? []) {
       final item = _parseRawNotification(raw, urgent: false);
-      if (item != null && !items.any((e) => e.id == item.id)) {
-        items.add(item);
-      }
+      if (item != null && !isDuplicate(item)) items.add(item);
     }
 
     if (items.isNotEmpty && mounted) {
@@ -103,7 +104,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (message.isEmpty && title == 'Notification') return null;
 
     return NotificationItem(
-      id: id.isEmpty ? 'api_${title.hashCode}' : id,
+      id: id.isEmpty ? 'api_${title.hashCode}_${message.hashCode}' : id,
       title: title,
       message: message,
       time: _formatNotifTime(createdAt),

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
@@ -536,7 +538,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
       return DateFormat('MMM d').format(date);
     }
   }
-
 }
 
 // ============================================================
@@ -607,7 +608,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
       children: [
         // ── Card PageView ─────────────────────────────────────
         SizedBox(
-          height: 345,
+          height: 310,
           child: PageView.builder(
             controller: _pageController,
             scrollDirection: Axis.horizontal,
@@ -723,7 +724,6 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
 
   Widget _buildEnrollmentCard(BuildContext context, int index) {
     final enrollment = widget.enrollments[index];
-    final provider = widget.provider;
 
     const cardPalettes = [
       [
@@ -744,14 +744,13 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
     final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
     final startDate = enrollment?.batchInfo?.startDate;
     final batchTime = enrollment?.batchInfo?.time ?? '';
-    final enrollCount = provider.enrollmentDataRes?.enrollments.length ?? 0;
-    final status = enrollCount > index
-        ? provider.enrollmentDataRes!.enrollments[index].status
-        : null;
+    // Use dashboard status directly — enrollment provider may not have loaded yet on iOS
+    final status = enrollment?.status;
+    final statusValue = status?.value ?? '';
     final isNavigatable =
-        status?.value == 'admission_fee_paid' ||
-        status?.value == 'not_set' ||
-        status?.value == 'demo_expired';
+        statusValue == 'admission_fee_paid' ||
+        statusValue == 'not_set' ||
+        statusValue == 'demo_expired';
 
     final ripple = _getRipple(index);
 
@@ -759,7 +758,26 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
       ripple.forward(from: 0);
       Future.delayed(const Duration(milliseconds: 200), () {
         if (!mounted) return;
-        if (isNavigatable) {
+
+        bool shouldGoToDetails;
+
+        if (Platform.isIOS) {
+          // On iOS re-check from provider at tap time — it is likely loaded by now
+          final providerEnrolls =
+              widget.provider.enrollmentDataRes?.enrollments;
+          final tapStatus =
+              (providerEnrolls != null && providerEnrolls.length > index)
+              ? providerEnrolls[index].status.value
+              : statusValue;
+          shouldGoToDetails =
+              tapStatus == 'admission_fee_paid' ||
+              tapStatus == 'not_set' ||
+              tapStatus == 'demo_expired';
+        } else {
+          shouldGoToDetails = isNavigatable;
+        }
+
+        if (shouldGoToDetails) {
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -896,7 +914,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
                                   ),
                                   const SizedBox(width: 5),
                                   Text(
-                                    status.name.toUpperCase(),
+                                    (status.name ?? '').toUpperCase(),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 8,
@@ -1022,32 +1040,32 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
 
                       const SizedBox(height: 16),
 
-                      // ── Continue button ───────────────────────
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: navigate,
-                          icon: const Icon(
-                            Icons.play_circle_outline_rounded,
-                            size: 17,
-                          ),
-                          label: const Text('Continue Learning'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: palette[0],
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(13),
-                            ),
-                            textStyle: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ),
-                      ),
+                      // // ── Continue button ───────────────────────
+                      // SizedBox(
+                      //   width: double.infinity,
+                      //   child: ElevatedButton.icon(
+                      //     onPressed: navigate,
+                      //     icon: const Icon(
+                      //       Icons.play_circle_outline_rounded,
+                      //       size: 17,
+                      //     ),
+                      //     label: const Text('Continue Learning'),
+                      //     style: ElevatedButton.styleFrom(
+                      //       backgroundColor: Colors.white,
+                      //       foregroundColor: palette[0],
+                      //       elevation: 0,
+                      //       padding: const EdgeInsets.symmetric(vertical: 12),
+                      //       shape: RoundedRectangleBorder(
+                      //         borderRadius: BorderRadius.circular(13),
+                      //       ),
+                      //       textStyle: const TextStyle(
+                      //         fontSize: 13,
+                      //         fontWeight: FontWeight.w700,
+                      //         letterSpacing: 0.2,
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),

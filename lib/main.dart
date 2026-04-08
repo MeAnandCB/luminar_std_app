@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/firebase_options.dart';
 import 'package:luminar_std/presentation/attandance_screen/controller/attandance_controller.dart';
@@ -36,6 +37,12 @@ Future<void> requestPermissions() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Lock app to portrait; video player overrides this when entering fullscreen
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   // Safe Firebase init
   try {
