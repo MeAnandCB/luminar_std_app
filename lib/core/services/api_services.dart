@@ -135,6 +135,44 @@ class ApiService {
     }
   }
 
+  /// Extracts a human-readable error message from a DRF/JSON error body.
+  /// Tries: detail → message → error → non_field_errors → first field error → fallback.
+  String _extractErrorMessage(dynamic json, int statusCode) {
+    if (json is! Map) return 'Something went wrong (${statusCode})';
+
+    // Standard DRF: {"detail": "..."}
+    if (json['detail'] != null) {
+      final d = json['detail'];
+      return d is List ? d.first.toString() : d.toString();
+    }
+
+    // Custom backend: {"message": "..."}
+    if (json['message'] != null) {
+      final m = json['message'];
+      return m is List ? m.first.toString() : m.toString();
+    }
+
+    // Custom backend: {"error": "..."}
+    if (json['error'] != null) {
+      final e = json['error'];
+      return e is List ? e.first.toString() : e.toString();
+    }
+
+    // DRF validation: {"non_field_errors": ["..."]}
+    if (json['non_field_errors'] != null) {
+      final nfe = json['non_field_errors'];
+      return nfe is List ? nfe.first.toString() : nfe.toString();
+    }
+
+    // DRF field-level: {"email": ["..."]} — pick the first field's first message
+    for (final value in json.values) {
+      if (value is List && value.isNotEmpty) return value.first.toString();
+      if (value is String && value.isNotEmpty) return value;
+    }
+
+    return 'Something went wrong ($statusCode)';
+  }
+
   ApiResponse<dynamic> _handleResponse(http.Response response) {
     final statusCode = response.statusCode;
 
@@ -197,7 +235,7 @@ class ApiService {
       if (statusCode >= 200 && statusCode < 300) {
         return ApiResponse.success(jsonData, statusCode);
       } else {
-        return ApiResponse.error(jsonData["message"] ?? jsonData["error"] ?? "Unknown error", statusCode);
+        return ApiResponse.error(_extractErrorMessage(jsonData, statusCode), statusCode);
       }
     } catch (e) {
       // If parsing fails but status code is success, return empty success Map

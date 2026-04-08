@@ -1162,7 +1162,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
                   fontWeight: FontWeight.w600,
                   height: 1.3,
                 ),
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ],

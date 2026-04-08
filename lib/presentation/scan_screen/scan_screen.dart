@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 
+import 'package:luminar_std/presentation/attandance_screen/controller/attandance_controller.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
@@ -34,9 +34,6 @@ class QRPayload {
   });
 
   factory QRPayload.fromJson(Map<String, dynamic> json) {
-    // Print the raw JSON data
-    print('📱 [QRScanner] Getting data: $json');
-
     return QRPayload(
       batchId: json['batchId']?.toString() ?? '',
       startTime: json['startTime']?.toString() ?? '',
@@ -73,16 +70,15 @@ class AttendanceService {
       'student_id': studentId,
     };
 
-    print('📱 [markAttendance] Payload: $payload');
-    print('📱 [markAttendance] Response: Waiting...');
-
-    debugPrint('─── Attendance Request ─────────────────');
-    debugPrint('  POST       : $uri');
-    debugPrint('  Token      : Bearer $token');
-    debugPrint('  batch_id   : $batchId');
-    debugPrint('  session_id : $sessionId');
-    debugPrint('  student_id : $studentId');
-    debugPrint('────────────────────────────────────────');
+    developer.log(
+      '─── Attendance Request ───\n'
+      '  POST       : $uri\n'
+      '  batch_id   : $batchId\n'
+      '  session_id : $sessionId\n'
+      '  student_id : $studentId\n'
+      '  payload    : ${jsonEncode(payload)}',
+      name: 'AttendanceService.request',
+    );
 
     final response = await http.post(
       uri,
@@ -94,26 +90,30 @@ class AttendanceService {
       body: jsonEncode(payload),
     );
 
-    print('📱 [markAttendance] Status: ${response.statusCode}');
-    print('📱 [markAttendance] Response: ${response.body}');
-
-    debugPrint('─── Attendance Response ────────────────');
-    debugPrint('  Status  : ${response.statusCode}');
-    debugPrint('  Body    : ${response.body}');
-    debugPrint('  Headers : ${response.headers}');
-    debugPrint('────────────────────────────────────────');
+    developer.log(
+      '─── Attendance Response ───\n'
+      '  Status  : ${response.statusCode}\n'
+      '  Body    : ${response.body}',
+      name: 'AttendanceService.response',
+      error: (response.statusCode >= 400) ? 'HTTP ${response.statusCode}' : null,
+    );
 
     Map<String, dynamic> data = {};
     try {
       data = jsonDecode(response.body) as Map<String, dynamic>;
     } catch (_) {
-      // non-JSON response
       data = {'raw_body': response.body};
     }
 
+    final httpSuccess = response.statusCode == 200 || response.statusCode == 201;
+    // If the body explicitly has a "success" field, honour it;
+    // otherwise fall back to the HTTP status code.
+    final bodySuccess = data['success'];
+    final isSuccess = bodySuccess is bool ? bodySuccess : httpSuccess;
+
     return {
       'statusCode': response.statusCode,
-      'success': response.statusCode == 200 || response.statusCode == 201,
+      'success': isSuccess,
       ...data,
     };
   }
@@ -138,6 +138,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   bool _isLoading = false;
   bool _isFlashOn = false;
   String _statusText = 'Loading your enrollment data...';
+  double _zoomLevel = 0.0; // 0.0 = min, 1.0 = max
 
   Dashboard? _dashboardData;
   bool _dashboardLoaded = false;
@@ -163,7 +164,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         _dashboardLoaded &&
         !_detected &&
         !_isLoading) {
-      _controller.start();
+      _safeStart();
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
       _controller.stop();
@@ -211,23 +212,22 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       _dashboardData = dashboardController.dashboard;
       _dashboardLoaded = true;
 
-      // Log enrollment data for debugging
       final enrollments = _dashboardData?.enrollmentDetails?.enrollments ?? [];
-      debugPrint('─── Dashboard Enrollments ─────────────────');
-      debugPrint('  Total Enrollments: ${enrollments.length}');
-      for (var i = 0; i < enrollments.length; i++) {
-        final e = enrollments[i];
-        debugPrint('  [${i + 1}] ${e.batchInfo?.batchName}');
-        debugPrint('      - Enrollment UID: ${e.basicInfo?.uid}');
-        debugPrint('      - Batch UID: ${e.batchInfo?.uid}');
-        debugPrint('      - Status: ${e.status?.name}');
-      }
-      debugPrint('────────────────────────────────────────────');
+      developer.log(
+        '─── Dashboard Enrollments (${enrollments.length}) ───\n' +
+            enrollments.asMap().entries.map((e) =>
+              '  [${e.key + 1}] ${e.value.batchInfo?.batchName}\n'
+              '      batchUid     : ${e.value.batchInfo?.uid}\n'
+              '      enrollmentUid: ${e.value.basicInfo?.uid}\n'
+              '      status       : ${e.value.status?.name}'
+            ).join('\n'),
+        name: 'QRScanner.dashboard',
+      );
 
       setState(() => _statusText = 'Align QR code within the frame');
-      _controller.start();
+      _safeStart();
     } catch (e) {
-      debugPrint('  [_loadDashboardData] Error: $e');
+      developer.log('Dashboard load error: $e', name: 'QRScanner.dashboard', error: e);
       if (!mounted) return;
       setState(() {
         _dashboardError = true;
@@ -249,26 +249,26 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       _detected = true;
       _controller.stop();
 
-      debugPrint('═══════════════════════════════════════');
-      debugPrint('  QR SCANNED (single fire)');
-      debugPrint('  Format  : ${barcode.format.name}');
-      debugPrint('  Raw Data: $raw');
-      debugPrint('═══════════════════════════════════════');
-      developer.log(raw, name: 'QRScanner');
-
-      // Print to console as requested
-      print('📱 [QRScanner] Raw QR Data: $raw');
+      developer.log(
+        '─── QR Scanned ───\n'
+        '  Format  : ${barcode.format.name}\n'
+        '  Raw     : $raw',
+        name: 'QRScanner.detect',
+      );
 
       try {
         final json = jsonDecode(raw) as Map<String, dynamic>;
         final payload = QRPayload.fromJson(json);
 
-        // Print sessionId status
-        if (payload.sessionId != null && payload.sessionId!.isNotEmpty) {
-          print('📱 [QRScanner] Session ID found: ${payload.sessionId}');
-        } else {
-          print('📱 [QRScanner] No session ID in QR code');
-        }
+        developer.log(
+          '─── QR Payload Parsed ───\n'
+          '  batchId   : ${payload.batchId}\n'
+          '  sessionId : ${payload.sessionId ?? "(none)"}\n'
+          '  startTime : ${payload.startTime}\n'
+          '  endTime   : ${payload.endTime}\n'
+          '  timestamp : ${payload.timestamp}',
+          name: 'QRScanner.payload',
+        );
 
         _validateAndSubmit(payload);
       } catch (_) {
@@ -286,31 +286,22 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   // ── Step 3: Validate batchId against enrollments ──────────────────────────
 
   void _validateAndSubmit(QRPayload payload) {
-    debugPrint('─── Batch Validation ───────────────────');
-    debugPrint('  QR Batch ID : ${payload.batchId}');
-
-    // Print sessionId status in validation
-    if (payload.sessionId != null && payload.sessionId!.isNotEmpty) {
-      debugPrint('  QR Session ID : ${payload.sessionId}');
-    } else {
-      debugPrint('  QR Session ID : Not provided');
-    }
-
     final enrollments = _dashboardData?.enrollmentDetails?.enrollments ?? [];
     Enrollment? matched;
 
     for (final e in enrollments) {
-      final batchUid = e.batchInfo?.uid;
-      debugPrint('  Checking    : $batchUid');
-      if (batchUid == payload.batchId) {
+      if (e.batchInfo?.uid == payload.batchId) {
         matched = e;
         break;
       }
     }
 
     if (matched == null) {
-      debugPrint('  Result      : ❌ No matching batch found');
-      debugPrint('────────────────────────────────────────');
+      developer.log(
+        'No matching batch for batchId: ${payload.batchId}',
+        name: 'QRScanner.validate',
+        error: 'batch_not_found',
+      );
       _showResult(
         success: false,
         title: 'Session Not Found',
@@ -320,14 +311,16 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       return;
     }
 
-    // Get student ID from student_details.basic_info.student_id
     final studentId =
         _dashboardData?.studentDetails?.basicInfo?.studentId ?? '';
 
-    debugPrint('  Result      : ✅ Matched → ${matched.batchInfo?.batchName}');
-    debugPrint('  Student ID  : $studentId (from student_details)');
-    debugPrint('  Enrollment UID: ${matched.basicInfo?.uid}');
-    debugPrint('────────────────────────────────────────');
+    developer.log(
+      '─── Batch Matched ───\n'
+      '  batchName     : ${matched.batchInfo?.batchName}\n'
+      '  enrollmentUid : ${matched.basicInfo?.uid}\n'
+      '  studentId     : $studentId',
+      name: 'QRScanner.validate',
+    );
 
     if (studentId.isEmpty) {
       _showResult(
@@ -338,19 +331,15 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       return;
     }
 
-    // Determine which session ID to use
-    // If QR has sessionId, use that; otherwise use startTime as fallback
     final sessionIdToUse =
         (payload.sessionId != null && payload.sessionId!.isNotEmpty)
         ? payload.sessionId!
-        : payload.startTime;
+        : '';
 
-    print('📱 [QRScanner] Using session ID: $sessionIdToUse');
-    if (payload.sessionId == null || payload.sessionId!.isEmpty) {
-      print(
-        '📱 [QRScanner] Using startTime as session ID since no sessionId provided',
-      );
-    }
+    developer.log(
+      'sessionId resolved: "${sessionIdToUse.isEmpty ? "(empty)" : sessionIdToUse}"',
+      name: 'QRScanner.validate',
+    );
 
     _callAttendanceApi(
       batchId: matched.batchInfo?.uid ?? payload.batchId,
@@ -383,6 +372,12 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       if (!mounted) return;
 
       if (result['success'] == true) {
+        // Refresh attendance data so the attendance screen shows updated records
+        final attendanceProvider = context.read<AttendanceProvider>();
+        if (attendanceProvider.selectedBatch != null) {
+          attendanceProvider.loadAttendance();
+        }
+
         _showResult(
           success: true,
           title: 'Attendance Marked!',
@@ -397,7 +392,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
             result['error'] ??
             result['raw_body'] ??
             'Status ${result['statusCode']} — Something went wrong.';
-        debugPrint('  [API Fail] Full result: $result');
+        developer.log('API failure: $result', name: 'QRScanner.api', error: 'status_${result['statusCode']}');
         _showResult(
           success: false,
           title: 'Attendance Failed (${result['statusCode']})',
@@ -405,7 +400,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         );
       }
     } catch (e) {
-      debugPrint('  [API Error] $e');
+      developer.log('Network error: $e', name: 'QRScanner.api', error: e);
       if (!mounted) return;
       _showResult(
         success: false,
@@ -439,7 +434,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
             _detected = false;
             _statusText = 'Align QR code within the frame';
           });
-          _controller.start();
+          _safeStart();
         },
       ),
     );
@@ -448,6 +443,20 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   Future<void> _toggleFlash() async {
     await _controller.toggleTorch();
     setState(() => _isFlashOn = !_isFlashOn);
+  }
+
+  Future<void> _safeStart() async {
+    try {
+      await _controller.start();
+    } catch (e) {
+      developer.log('camera start skipped: $e', name: 'QRScanner.camera');
+    }
+  }
+
+  Future<void> _setZoom(double value) async {
+    final clamped = value.clamp(0.0, 1.0);
+    await _controller.setZoomScale(clamped);
+    setState(() => _zoomLevel = clamped);
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -459,7 +468,11 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       body: Stack(
         children: [
           // Full-screen camera feed
-          MobileScanner(controller: _controller, onDetect: _onDetect),
+          MobileScanner(
+            controller: _controller,
+            onDetect: _onDetect,
+            fit: BoxFit.cover,
+          ),
 
           // Scan frame overlay
           const _ScanOverlay(),
@@ -566,14 +579,57 @@ class _QRScannerScreenState extends State<QRScannerScreen>
               ),
             ),
 
-          // Bottom status hint
+          // Bottom status hint + zoom controls
           if (!_isLoading && !_dashboardError)
             Positioned(
-              bottom: 60,
+              bottom: 40,
               left: 0,
               right: 0,
               child: Column(
                 children: [
+                  // Zoom controls
+                  if (_dashboardLoaded) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => _setZoom(_zoomLevel - 0.1),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.remove, color: Colors.white, size: 18),
+                            ),
+                          ),
+                          Expanded(
+                            child: Slider(
+                              value: _zoomLevel,
+                              min: 0.0,
+                              max: 1.0,
+                              activeColor: const Color(0xFF00C2A8),
+                              inactiveColor: Colors.white24,
+                              onChanged: _setZoom,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => _setZoom(_zoomLevel + 0.1),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.add, color: Colors.white, size: 18),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   Icon(
                     _dashboardLoaded
                         ? Icons.qr_code_scanner
@@ -622,7 +678,7 @@ class _OverlayPainter extends CustomPainter {
         ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
         ..addRRect(RRect.fromRectAndRadius(r, const Radius.circular(20)))
         ..fillType = PathFillType.evenOdd,
-      Paint()..color = Colors.black.withOpacity(0.68),
+      Paint()..color = Colors.black.withValues(alpha: 0.68),
     );
 
     final p = Paint()
@@ -704,8 +760,8 @@ class _CircleBtn extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: active
-            ? const Color(0xFF00C2A8).withOpacity(0.85)
-            : Colors.white.withOpacity(0.15),
+            ? const Color(0xFF00C2A8).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.15),
         shape: BoxShape.circle,
       ),
       child: Icon(icon, color: Colors.white, size: 22),
@@ -742,10 +798,10 @@ class _ResultDialog extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A2E),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: color.withOpacity(0.5), width: 1.5),
+          border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               blurRadius: 30,
               spreadRadius: 2,
             ),
@@ -759,10 +815,10 @@ class _ResultDialog extends StatelessWidget {
               height: 82,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha: 0.15),
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.35),
+                    color: color.withValues(alpha: 0.35),
                     blurRadius: 22,
                     spreadRadius: 4,
                   ),

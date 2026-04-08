@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
@@ -194,6 +195,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                           SizedBox(height: 12),
                           _buildCourseHeader(paymentDetailsScreenProvider),
                           SizedBox(height: 20),
+                          if (!AppConfig.hidePayments) ...[
                           _buildPaymentOptionsTitle(),
                           SizedBox(height: 24),
 
@@ -366,10 +368,12 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                           SizedBox(height: 30),
                           _buildTrustBadges(),
                           SizedBox(height: 100),
+                          ], // end if (!AppConfig.hidePayments)
                         ],
                       ),
                     ),
                   ),
+                  if (!AppConfig.hidePayments)
                   _buildBottomButton(paymentDetailsScreenProvider),
                 ],
               ),
@@ -1782,6 +1786,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                                 // EMI Payment
                                 await provider.getEmiPaymentDetails(
                                   id: enrollmentUid,
+                                  emiPlanId: selectedEmiPlanId ?? '',
                                 );
                                 Navigator.pop(context); // Dismiss loading
 

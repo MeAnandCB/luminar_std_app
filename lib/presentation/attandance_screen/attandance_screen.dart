@@ -3,6 +3,7 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/attandance_screen/controller/attandance_controller.dart';
+import 'package:luminar_std/presentation/scan_screen/scan_screen.dart';
 import 'package:luminar_std/repository/attandance_screen/new_model.dart';
 import 'package:provider/provider.dart';
 
@@ -247,7 +248,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           const SizedBox(width: 14),
           Expanded(child: Text('Attendance', style: AppTextStyles.heading2)),
 
-          // Dark / Light mode toggle
+          // Scan QR button
+          GestureDetector(
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const QRScannerScreen()),
+              );
+              // Screen regains focus — reload to reflect any newly scanned attendance
+              if (mounted) {
+                context.read<AttendanceProvider>().loadAttendance();
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.scaffoldBackground,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                Icons.qr_code_scanner_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+            ),
+          ),
         ],
       ),
     );

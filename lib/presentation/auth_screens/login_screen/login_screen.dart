@@ -17,7 +17,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
   late AnimationController _entryCtrl;
-  late AnimationController _shimmerCtrl;
   late AnimationController _particleCtrl;
 
   // Entry animations
@@ -26,9 +25,6 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<double> _headerFade;
   late Animation<Offset> _formSlide;
   late Animation<double> _formFade;
-
-  // Shimmer sweep for button
-  late Animation<double> _shimmer;
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
@@ -48,11 +44,6 @@ class _LoginScreenState extends State<LoginScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1800),
     );
-
-    _shimmerCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat();
 
     _particleCtrl = AnimationController(
       vsync: this,
@@ -98,11 +89,6 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
 
-    // Button shimmer
-    _shimmer = Tween<double>(begin: -1.5, end: 2.5).animate(
-      CurvedAnimation(parent: _shimmerCtrl, curve: Curves.easeInOut),
-    );
-
     _entryCtrl.forward();
 
     _emailFocus.addListener(() => setState(() {}));
@@ -123,7 +109,6 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void dispose() {
     _entryCtrl.dispose();
-    _shimmerCtrl.dispose();
     _particleCtrl.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -132,10 +117,14 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) return 'Email is required';
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value)) return 'Please enter a valid email';
+  String? _validateIdentifier(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Email or phone is required';
+    }
+    final trimmed = value.trim();
+    final isPhone = RegExp(r'^\+?[0-9]{7,15}$').hasMatch(trimmed);
+    final isEmail = RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,}$').hasMatch(trimmed);
+    if (!isPhone && !isEmail) return 'Enter a valid email or phone number';
     return null;
   }
 
@@ -151,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen>
       authProvider.clearError();
       final success = await authProvider.login(
         context: context,
-        email: _emailController.text.toLowerCase().trim(),
+        identifier: _emailController.text.toLowerCase().trim(),
         password: _passwordController.text.trim(),
       );
       if (success && mounted) {
@@ -432,17 +421,18 @@ class _LoginScreenState extends State<LoginScreen>
 
                                           const SizedBox(height: 28),
 
-                                          // Email field
-                                          _buildFieldLabel('Email address'),
+                                          // Email / Phone field
+                                          _buildFieldLabel('Email or Phone'),
                                           const SizedBox(height: 8),
                                           _buildTextField(
                                             controller: _emailController,
                                             focusNode: _emailFocus,
-                                            hint: 'you@example.com',
-                                            icon: Icons.email_outlined,
-                                            keyboardType:
-                                                TextInputType.emailAddress,
-                                            validator: _validateEmail,
+                                            hint: 'Email or phone number',
+                                            icon: Icons.person_outline_rounded,
+                                            keyboardType: TextInputType.emailAddress,
+                                            validator: _validateIdentifier,
+                                            textInputAction: TextInputAction.next,
+                                            onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_passwordFocus),
                                           ),
 
                                           const SizedBox(height: 20),
@@ -457,19 +447,18 @@ class _LoginScreenState extends State<LoginScreen>
                                             icon: Icons.lock_outline_rounded,
                                             obscure: !_isPasswordVisible,
                                             validator: _validatePassword,
+                                            textInputAction: TextInputAction.done,
+                                            onFieldSubmitted: (_) => _handleLogin(),
                                             suffix: IconButton(
                                               icon: Icon(
                                                 _isPasswordVisible
-                                                    ? Icons
-                                                        .visibility_off_rounded
-                                                    : Icons
-                                                        .visibility_rounded,
+                                                    ? Icons.visibility_off_rounded
+                                                    : Icons.visibility_rounded,
                                                 color: AppColors.primary,
                                                 size: 20,
                                               ),
                                               onPressed: () => setState(() {
-                                                _isPasswordVisible =
-                                                    !_isPasswordVisible;
+                                                _isPasswordVisible = !_isPasswordVisible;
                                               }),
                                             ),
                                           ),
@@ -552,39 +541,53 @@ class _LoginScreenState extends State<LoginScreen>
                                             ),
                                           ),
 
-                                          const SizedBox(height: 8),
+                                          const SizedBox(height: 16),
 
-                                          // Sign in button with shimmer
-                                          _buildSignInButton(authProvider),
-
-                                          const SizedBox(height: 20),
-
-                                          // Sign up link
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                "Don't have an account? ",
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  color:
-                                                      AppColors.textSecondary,
-                                                ),
-                                              ),
-                                              GestureDetector(
-                                                onTap: () {},
-                                                child: Text(
-                                                  'Sign Up',
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: AppColors.primary,
+                                          // Sign in button
+                                          Consumer<AuthProvider>(
+                                            builder: (_, auth, __) => SizedBox(
+                                              width: double.infinity,
+                                              height: 56,
+                                              child: ElevatedButton(
+                                                onPressed: auth.isLoading ? null : _handleLogin,
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: AppColors.primary,
+                                                  foregroundColor: Colors.white,
+                                                  elevation: 4,
+                                                  shadowColor: AppColors.primary.withValues(alpha: 0.4),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(16),
                                                   ),
                                                 ),
+                                                child: auth.isLoading
+                                                    ? const SizedBox(
+                                                        width: 24,
+                                                        height: 24,
+                                                        child: CircularProgressIndicator(
+                                                          color: Colors.white,
+                                                          strokeWidth: 2.5,
+                                                        ),
+                                                      )
+                                                    : const Row(
+                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                        children: [
+                                                          Text(
+                                                            'Sign In',
+                                                            style: TextStyle(
+                                                              fontSize: 17,
+                                                              fontWeight: FontWeight.w700,
+                                                              letterSpacing: 0.3,
+                                                            ),
+                                                          ),
+                                                          SizedBox(width: 8),
+                                                          Icon(Icons.arrow_forward_rounded, size: 20),
+                                                        ],
+                                                      ),
                                               ),
-                                            ],
+                                            ),
                                           ),
+
+                                          const SizedBox(height: 8),
                                         ],
                                       ),
                                     ),
@@ -626,6 +629,8 @@ class _LoginScreenState extends State<LoginScreen>
     TextInputType keyboardType = TextInputType.text,
     bool obscure = false,
     Widget? suffix,
+    TextInputAction textInputAction = TextInputAction.next,
+    void Function(String)? onFieldSubmitted,
   }) {
     final isFocused = focusNode.hasFocus;
     return AnimatedContainer(
@@ -655,6 +660,8 @@ class _LoginScreenState extends State<LoginScreen>
         keyboardType: keyboardType,
         obscureText: obscure,
         validator: validator,
+        textInputAction: textInputAction,
+        onFieldSubmitted: onFieldSubmitted,
         style: TextStyle(fontSize: 15, color: AppColors.textPrimary),
         decoration: InputDecoration(
           hintText: hint,
@@ -685,95 +692,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildSignInButton(AuthProvider authProvider) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: Stack(
-        children: [
-          // Gradient base
-          Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4A2FD6), Color(0xFF6C5CE7), Color(0xFF9B8FFF)],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-          ),
-          // Shimmer sweep
-          if (!authProvider.isLoading)
-            AnimatedBuilder(
-              animation: _shimmer,
-              builder: (_, __) => ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Transform.translate(
-                  offset: Offset(_shimmer.value * 200, 0),
-                  child: Container(
-                    width: 80,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withValues(alpha: 0.0),
-                          Colors.white.withValues(alpha: 0.15),
-                          Colors.white.withValues(alpha: 0.0),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          // Button itself
-          ElevatedButton(
-            onPressed: authProvider.isLoading ? null : _handleLogin,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shadowColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: authProvider.isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
-                    ),
-                  )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Sign In',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward_rounded, size: 20),
-                    ],
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ── Wave clipper for the header/form transition ────────────────

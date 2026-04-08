@@ -576,7 +576,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     Text(
                       'No messages yet',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         color: Colors.grey.shade400,
                         fontStyle: FontStyle.italic,
                       ),

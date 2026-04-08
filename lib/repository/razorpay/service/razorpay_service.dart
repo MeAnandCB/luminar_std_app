@@ -23,12 +23,19 @@ class RazorpayScreenService {
     }
   }
 
-  Future<ApiResponse> getEmiPaymentDetails({required String id}) async {
+  Future<ApiResponse> getEmiPaymentDetails({
+    required String id,
+    String? emiPlanId,
+  }) async {
     LoggerUtils.debug("${AppEndpoints.razorpayEmi}$id/", tag: 'Razorpay');
+    final Map<String, dynamic> body = {};
+    if (emiPlanId != null && emiPlanId.isNotEmpty) {
+      body['emi_plan_id'] = emiPlanId;
+    }
     final response = await ApiService().post(
       endpoint: '${AppEndpoints.razorpayEmi}$id/',
       token: await AppUtils.getAccessKey(),
-      body: {},
+      body: body,
     );
     LoggerUtils.debug(response.data.toString(), tag: 'Razorpay');
     LoggerUtils.debug(response.statusCode.toString(), tag: 'Razorpay');

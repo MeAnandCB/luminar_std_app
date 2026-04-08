@@ -60,15 +60,12 @@ class AttendanceProvider extends ChangeNotifier {
   List<BatchSession> _sessions = [];
   List<BatchSession> get sessions => _sessions;
 
-  /// Called once from the screen with the batch info passed from the previous screen.
+  /// Called every time the screen opens — always fetches fresh data.
   Future<void> initWithBatch({
     required String batchId,
     required String batchName,
     String courseName = '',
   }) async {
-    // No-op if already loaded for the same batch.
-    if (_selectedBatch?.uid == batchId && _attendanceData != null) return;
-
     _selectedBatch = EnrollmentBatch(
       uid: batchId,
       batchName: batchName,
@@ -85,6 +82,7 @@ class AttendanceProvider extends ChangeNotifier {
     _startDate = null;
     _endDate = null;
     _statusFilter = 'All';
+    _error = null;
     notifyListeners();
 
     // Load sessions and attendance in parallel

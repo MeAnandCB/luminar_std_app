@@ -16,7 +16,8 @@ class EmptyStateScreen extends StatefulWidget {
   const EmptyStateScreen({
     super.key,
     this.title = 'Nothing Here Yet',
-    this.message = 'Looks like this space is empty.\nTry a different search or come back later.',
+    this.message =
+        'Looks like this space is empty.\nTry a different search or come back later.',
     this.buttonLabel = 'Explore Something',
     this.icon,
     this.onTap,
@@ -173,7 +174,7 @@ class _EmptyStateScreenState extends State<EmptyStateScreen>
                       Text(
                         widget.title,
                         style: TextStyle(
-                          fontSize: 28,
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
                           letterSpacing: -0.5,
@@ -186,7 +187,7 @@ class _EmptyStateScreenState extends State<EmptyStateScreen>
                           widget.message,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 12,
                             color: AppColors.textSecondary,
                             height: 1.6,
                           ),
@@ -234,10 +235,7 @@ class _NoDataIllustration extends StatelessWidget {
             height: 200,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: color.withOpacity(0.15),
-                width: 2,
-              ),
+              border: Border.all(color: color.withOpacity(0.15), width: 2),
             ),
           ),
           // Middle ring
@@ -247,10 +245,7 @@ class _NoDataIllustration extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: color.withOpacity(0.06),
-              border: Border.all(
-                color: color.withOpacity(0.2),
-                width: 1.5,
-              ),
+              border: Border.all(color: color.withOpacity(0.2), width: 1.5),
             ),
           ),
           // Inner circle
@@ -317,7 +312,8 @@ class NoConnectionScreen extends StatefulWidget {
   const NoConnectionScreen({
     super.key,
     this.title = 'No Connection',
-    this.message = 'Your device is offline. Check your Wi-Fi or mobile data and try again.',
+    this.message =
+        'Your device is offline. Check your Wi-Fi or mobile data and try again.',
     this.buttonLabel = 'Try Again',
     this.onRetry,
   });
@@ -398,11 +394,11 @@ class _NoConnectionScreenState extends State<NoConnectionScreen>
     if (_isRetrying) return;
     setState(() => _isRetrying = true);
     _shakeController.reset();
-    
+
     if (widget.onRetry != null) {
       widget.onRetry!();
     }
-    
+
     await Future.delayed(const Duration(milliseconds: 1800));
     if (!mounted) return;
     _shakeController.forward();
@@ -412,7 +408,9 @@ class _NoConnectionScreenState extends State<NoConnectionScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = AppColors.isDark;
-    final backgroundColor = isDark ? const Color(0xFF0F0E1A) : AppColors.scaffoldBackground;
+    final backgroundColor = isDark
+        ? const Color(0xFF0F0E1A)
+        : AppColors.scaffoldBackground;
     final textColor = isDark ? Colors.white : AppColors.textPrimary;
     final infoColor = const Color(0xFF00D4FF);
 
@@ -425,7 +423,10 @@ class _NoConnectionScreenState extends State<NoConnectionScreen>
             AnimatedBuilder(
               animation: _waveAnim,
               builder: (context, _) => CustomPaint(
-                painter: _WavePainter(progress: _waveAnim.value, color: infoColor),
+                painter: _WavePainter(
+                  progress: _waveAnim.value,
+                  color: infoColor,
+                ),
                 child: const SizedBox.expand(),
               ),
             ),
@@ -503,7 +504,10 @@ class _NoConnectionScreenState extends State<NoConnectionScreen>
 
                       // Retry button
                       _isRetrying
-                          ? _RetryingIndicator(color: infoColor, textColor: textColor)
+                          ? _RetryingIndicator(
+                              color: infoColor,
+                              textColor: textColor,
+                            )
                           : _PulseButton(
                               label: widget.buttonLabel,
                               icon: Icons.refresh_rounded,
@@ -526,7 +530,10 @@ class _WifiIllustration extends StatelessWidget {
   final AnimationController signalController;
   final Color color;
 
-  const _WifiIllustration({required this.signalController, required this.color});
+  const _WifiIllustration({
+    required this.signalController,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -546,7 +553,9 @@ class _WifiIllustration extends StatelessWidget {
                 height: 190,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: color.withOpacity(0.04 + signalController.value * 0.04),
+                  color: color.withOpacity(
+                    0.04 + signalController.value * 0.04,
+                  ),
                 ),
               );
             },
@@ -570,11 +579,10 @@ class _WifiIllustration extends StatelessWidget {
             height: 110,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isDark ? const Color(0xFF1A1830) : AppColors.cardBackground,
-              border: Border.all(
-                color: color.withOpacity(0.3),
-                width: 1.5,
-              ),
+              color: isDark
+                  ? const Color(0xFF1A1830)
+                  : AppColors.cardBackground,
+              border: Border.all(color: color.withOpacity(0.3), width: 1.5),
               boxShadow: [
                 BoxShadow(
                   color: color.withOpacity(0.15),

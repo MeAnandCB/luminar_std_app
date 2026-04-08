@@ -128,14 +128,18 @@ class EnrollmentProvider extends ChangeNotifier {
   }
 
   //get emi data
-  Future<void> getEmiPaymentDetails({required String id}) async {
+  Future<void> getEmiPaymentDetails({
+    required String id,
+    String? emiPlanId,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      LoggerUtils.debug("Fetching EMI payment details for ID: $id", tag: 'Enrollment');
+      LoggerUtils.debug("Fetching EMI payment details for ID: $id, plan: $emiPlanId", tag: 'Enrollment');
       final response = await RazorpayScreenService().getEmiPaymentDetails(
         id: id,
+        emiPlanId: emiPlanId,
       );
 
       if (response.success) {

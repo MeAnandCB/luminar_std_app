@@ -1,3 +1,4 @@
+import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
@@ -84,9 +85,12 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
     final status = provider.enrollmentDataRes!.enrollments[0].status.value;
     final isPaymentPending = status == 'not_set' || status == 'demo_expired' || status == 'admission_fee_paid';
 
+    // On iOS, skip the payment screen entirely and go straight to EnrollmentScreen
+    final showPaymentScreen = isPaymentPending && !AppConfig.hidePayments;
+
     return [
       StudentDashboard(),
-      isPaymentPending ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false) : EnrollmentScreen(),
+      showPaymentScreen ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false) : EnrollmentScreen(),
       ChatListScreen(),
       MoreEnrollmentScreen(),
     ];

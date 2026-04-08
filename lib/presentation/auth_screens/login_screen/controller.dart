@@ -31,7 +31,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> login({
     required BuildContext context,
-    required String email,
+    required String identifier,
     required String password,
   }) async {
     _isLoading = true;
@@ -51,9 +51,15 @@ class AuthProvider extends ChangeNotifier {
       }
       // ──────────────────────────────────────────────────────────
 
+      // Always trim and lowercase before sending
+      final cleanIdentifier = identifier.toLowerCase().trim();
+
+      // Detect email vs phone: if it contains '@' treat as email, else phone
+      final bool isEmail = cleanIdentifier.contains('@');
+
       // Build login body with FCM token
       final Map<String, dynamic> loginBody = {
-        'email': email,
+        if (isEmail) 'email': cleanIdentifier else 'phone': cleanIdentifier,
         'password': password,
         'fcm_token': fcmToken ?? '',
         'platform': Platform.isIOS ? 'ios' : 'android',
@@ -91,20 +97,15 @@ class AuthProvider extends ChangeNotifier {
 
         return true;
       } else {
-        _errorMessage = response.message;
+        _errorMessage = _cleanError(response.message);
         _isLoading = false;
         notifyListeners();
-        LoggerUtils.warning(
-          '❌ Login failed - ${response.message}',
-          tag: 'Auth',
-        );
         return false;
       }
     } catch (e) {
-      _errorMessage = 'Login failed. Please check your connection and try again.';
+      _errorMessage = _cleanError(e.toString());
       _isLoading = false;
       notifyListeners();
-      LoggerUtils.error('🔥 Error during login - $e', tag: 'Auth');
       return false;
     }
   }
@@ -205,5 +206,26 @@ class AuthProvider extends ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  String _cleanError(String? raw) {
+    if (raw == null || raw.isEmpty) return 'Something went wrong. Please try again.';
+    final r = raw.toLowerCase();
+    if (r.contains('socketexception') ||
+        r.contains('failed host lookup') ||
+        r.contains('network is unreachable') ||
+        r.contains('connection refused') ||
+        r.contains('clientexception')) {
+      return 'No internet connection. Please check your network and try again.';
+    }
+    if (r.contains('timeout') || r.contains('timed out')) {
+      return 'Connection timed out. Please try again.';
+    }
+    if (r.contains('invalid credentials') ||
+        r.contains('no active account') ||
+        r.contains('unable to log in')) {
+      return 'Incorrect email/phone or password.';
+    }
+    return raw;
   }
 }

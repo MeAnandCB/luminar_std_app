@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
@@ -468,7 +469,7 @@ class _EnrollmentPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '4 features',
+                    AppConfig.hidePayments ? '3 features' : '4 features',
                     style: TextStyle(
                       fontSize: 11,
                       color: _kPrimary,
@@ -543,29 +544,31 @@ class _EnrollmentPage extends StatelessWidget {
                   );
                 },
               ),
-              SizedBox(height: 12),
-              _FeatureCard(
-                feature: _kFeatures[3],
-                onTap: toEnrollDetails
-                    ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => EnrollmentDetailsScreen(
-                            index: index,
-                            backbuttonValue: true,
+              if (!AppConfig.hidePayments) ...[
+                SizedBox(height: 12),
+                _FeatureCard(
+                  feature: _kFeatures[3],
+                  onTap: toEnrollDetails
+                      ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EnrollmentDetailsScreen(
+                              index: index,
+                              backbuttonValue: true,
+                            ),
+                          ),
+                        )
+                      : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PaymentScreen(
+                              enrollmentId: enrollId,
+                              uid: enrollment.uid ?? '',
+                            ),
                           ),
                         ),
-                      )
-                    : () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PaymentScreen(
-                            enrollmentId: enrollId,
-                            uid: enrollment.uid ?? '',
-                          ),
-                        ),
-                      ),
-              ),
+                ),
+              ],
             ]),
           ),
         ),

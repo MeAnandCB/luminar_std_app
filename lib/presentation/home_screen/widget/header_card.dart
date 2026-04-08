@@ -203,7 +203,45 @@ class HeaderWidget extends StatelessWidget {
 
   Widget _buildNotificationIcon(BuildContext context) {
     final unreadCount =
-        provider.dashboard?.notificationsSummary?.summary?.unreadCount;
+        provider.dashboard?.notificationsSummary?.summary?.unreadCount ?? 0;
+    final hasNotifications = unreadCount > 0;
+
+    final iconWidget = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(
+          hasNotifications
+              ? Icons.notifications_active_outlined
+              : Icons.notifications_none_outlined,
+          color: AppColors.notificationIcon,
+          size: 24,
+        ),
+        if (hasNotifications)
+          Positioned(
+            right: -2,
+            top: -2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.error,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white, width: 1.2),
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
+              child: Text(
+                unreadCount > 99 ? '99+' : unreadCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w700,
+                  height: 1,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
 
     return GestureDetector(
       onTap: () {
@@ -215,46 +253,15 @@ class HeaderWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: const BoxDecoration(shape: BoxShape.circle),
-        child: AvatarGlow(
-          glowColor: AppColors.notificationGlow,
-          child: CircleAvatar(
-            backgroundColor: Colors.transparent,
-            child: Stack(
-              children: [
-                Icon(
-                  Icons.notifications_active_outlined,
-                  color: AppColors.notificationIcon,
-                  size: 20,
+        child: hasNotifications
+            ? AvatarGlow(
+                glowColor: AppColors.notificationGlow,
+                child: CircleAvatar(
+                  backgroundColor: Colors.transparent,
+                  child: iconWidget,
                 ),
-                if (unreadCount != null && unreadCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 12,
-                        minHeight: 12,
-                      ),
-                      child: Text(
-                        '1+',
-                        style: TextStyle(
-                          color: AppColors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
+              )
+            : iconWidget,
       ),
     );
   }

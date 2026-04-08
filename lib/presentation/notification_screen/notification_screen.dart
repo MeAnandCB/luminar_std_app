@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/widgets/status_screens.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -47,7 +49,95 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   void initState() {
     super.initState();
-    _loadPaymentNotifications();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadApiNotifications();
+      _loadPaymentNotifications();
+    });
+  }
+
+  // ── Load notifications from dashboard API data ─────────────────────────────
+  void _loadApiNotifications() {
+    final controller = Provider.of<DashboardController>(context, listen: false);
+    final summary = controller.dashboard?.notificationsSummary;
+    if (summary == null) return;
+
+    final List<NotificationItem> items = [];
+
+    // Urgent notifications first
+    for (final raw in summary.urgentNotifications ?? []) {
+      final item = _parseRawNotification(raw, urgent: true);
+      if (item != null) items.add(item);
+    }
+
+    // Recent notifications (skip duplicates)
+    for (final raw in summary.recentNotifications ?? []) {
+      final item = _parseRawNotification(raw, urgent: false);
+      if (item != null && !items.any((e) => e.id == item.id)) {
+        items.add(item);
+      }
+    }
+
+    if (items.isNotEmpty && mounted) {
+      setState(() => _allNotifications.insertAll(0, items));
+    }
+  }
+
+  NotificationItem? _parseRawNotification(dynamic raw, {required bool urgent}) {
+    if (raw is! Map<String, dynamic>) return null;
+
+    final id = raw['uid']?.toString() ?? raw['id']?.toString() ?? '';
+    final title = raw['title']?.toString() ??
+        raw['subject']?.toString() ??
+        'Notification';
+    final message = raw['message']?.toString() ??
+        raw['body']?.toString() ??
+        raw['content']?.toString() ??
+        '';
+    final isRead = raw['is_read'] as bool? ?? false;
+    final createdAt =
+        raw['created_at']?.toString() ?? raw['timestamp']?.toString() ?? '';
+    final typeStr =
+        raw['notification_type']?.toString() ?? raw['type']?.toString() ?? '';
+
+    // Skip if there's nothing meaningful to show
+    if (message.isEmpty && title == 'Notification') return null;
+
+    return NotificationItem(
+      id: id.isEmpty ? 'api_${title.hashCode}' : id,
+      title: title,
+      message: message,
+      time: _formatNotifTime(createdAt),
+      type: _resolveNotifType(typeStr),
+      isRead: isRead,
+      icon: urgent
+          ? Icons.priority_high_rounded
+          : Icons.notifications_rounded,
+      color: urgent ? const Color(0xFFFF7675) : AppColors.primary,
+      actionUrl: raw['action_url']?.toString() ?? '',
+    );
+  }
+
+  String _formatNotifTime(String raw) {
+    if (raw.isEmpty) return 'Just now';
+    try {
+      final dt = DateTime.parse(raw).toLocal();
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 1) return 'Just now';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24) return '${diff.inHours}h ago';
+      return DateFormat('dd MMM').format(dt);
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  NotificationType _resolveNotifType(String type) {
+    final t = type.toLowerCase();
+    if (t.contains('pay') || t.contains('fee')) return NotificationType.payments;
+    if (t.contains('class') || t.contains('live') || t.contains('session')) {
+      return NotificationType.classes;
+    }
+    return NotificationType.announcements;
   }
 
   Future<void> _loadPaymentNotifications() async {

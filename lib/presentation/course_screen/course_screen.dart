@@ -1,4 +1,5 @@
 // screens/course_screen.dart
+import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 
 import 'package:flutter/material.dart';
@@ -112,9 +113,11 @@ class _CourseScreenState extends State<CourseScreen>
                         _buildEnhancedCourseInfoCard(),
                         const SizedBox(height: 20),
 
-                        // Premium Payment Card
-                        _buildEnhancedPaymentCard(),
-                        const SizedBox(height: 20),
+                        // Premium Payment Card (hidden on iOS)
+                        if (!AppConfig.hidePayments) ...[
+                          _buildEnhancedPaymentCard(),
+                          const SizedBox(height: 20),
+                        ],
 
                         // Action Buttons
                         _buildActionButtons(),
