@@ -56,14 +56,13 @@ class FCMService {
       // TODO: Send updated token to your backend
     });
 
-    // Handle iOS foreground behavior:
-    // We set alert/sound to false here because we manually show a local notification
-    // via _handleForegroundMessages. This prevents the "double notification" issue on iOS.
+    // iOS foreground: let FCM show the notification natively with sound/alert.
+    // Local notifications are only shown on Android to avoid double-notification on iOS.
     if (Platform.isIOS) {
       await _messaging.setForegroundNotificationPresentationOptions(
-        alert: false,
+        alert: true,
         badge: true,
-        sound: false,
+        sound: true,
       );
     }
 
@@ -81,7 +80,7 @@ class FCMService {
       announcement: false,
       badge: true,
       carPlay: false,
-      criticalAlert: false,
+      criticalAlert: true,
       provisional: false,
       sound: true,
     );
@@ -98,6 +97,7 @@ class FCMService {
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
+      requestCriticalPermission: true,
     );
 
     const InitializationSettings initSettings = InitializationSettings(android: androidSettings, iOS: iosSettings);
@@ -157,12 +157,16 @@ class FCMService {
       final notification = message.notification;
       LoggerUtils.info('Foreground FCM: ${notification?.title} | Data: ${message.data}', tag: 'FCM');
       if (notification != null) {
-        _showLocalNotification(
-          id: message.hashCode,
-          title: notification.title ?? 'Luminar',
-          body: notification.body ?? '',
-          payload: jsonEncode(message.data),
-        );
+        // iOS handles foreground notifications natively (alert+sound enabled above).
+        // Only show local notification on Android.
+        if (Platform.isAndroid) {
+          _showLocalNotification(
+            id: message.hashCode,
+            title: notification.title ?? 'Luminar',
+            body: notification.body ?? '',
+            payload: jsonEncode(message.data),
+          );
+        }
       }
     });
   }
@@ -206,7 +210,13 @@ class FCMService {
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
         ),
-        iOS: const DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          sound: 'default',
+          interruptionLevel: InterruptionLevel.timeSensitive,
+        ),
       ),
       payload: payload,
     );
