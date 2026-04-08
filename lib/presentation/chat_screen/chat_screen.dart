@@ -3884,6 +3884,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       controller: _scrollController,
       reverse: true,
       padding: const EdgeInsets.symmetric(vertical: 8),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       itemCount: items.length,
       itemBuilder: (context, index) => items[index],
     );
@@ -4592,7 +4593,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               children: [
                 Expanded(
                   child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
                     onTap: () {
+                      FocusScope.of(context).unfocus();
                       if (_showEmojiPicker) {
                         setState(() => _showEmojiPicker = false);
                       }

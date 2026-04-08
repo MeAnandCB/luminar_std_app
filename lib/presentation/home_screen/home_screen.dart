@@ -608,7 +608,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
       children: [
         // ── Card PageView ─────────────────────────────────────
         SizedBox(
-          height: 310,
+          height: (MediaQuery.of(context).size.height * 0.42).clamp(290.0, 370.0),
           child: PageView.builder(
             controller: _pageController,
             scrollDirection: Axis.horizontal,
@@ -857,10 +857,10 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
 
                 // ── Main content ──────────────────────────────
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisSize: MainAxisSize.max,
                     children: [
                       // ── Header: logo + brand + status ────────
                       Row(
@@ -1044,34 +1044,34 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
                         ],
                       ),
 
-                      const SizedBox(height: 16),
+                      const Spacer(),
 
-                      // // ── Continue button ───────────────────────
-                      // SizedBox(
-                      //   width: double.infinity,
-                      //   child: ElevatedButton.icon(
-                      //     onPressed: navigate,
-                      //     icon: const Icon(
-                      //       Icons.play_circle_outline_rounded,
-                      //       size: 17,
-                      //     ),
-                      //     label: const Text('Continue Learning'),
-                      //     style: ElevatedButton.styleFrom(
-                      //       backgroundColor: Colors.white,
-                      //       foregroundColor: palette[0],
-                      //       elevation: 0,
-                      //       padding: const EdgeInsets.symmetric(vertical: 12),
-                      //       shape: RoundedRectangleBorder(
-                      //         borderRadius: BorderRadius.circular(13),
-                      //       ),
-                      //       textStyle: const TextStyle(
-                      //         fontSize: 13,
-                      //         fontWeight: FontWeight.w700,
-                      //         letterSpacing: 0.2,
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
+                      // ── Continue button ───────────────────────
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: navigate,
+                          icon: const Icon(
+                            Icons.play_circle_outline_rounded,
+                            size: 17,
+                          ),
+                          label: const Text('Continue Learning'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: palette[0],
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

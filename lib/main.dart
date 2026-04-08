@@ -208,6 +208,11 @@ class _MyAppState extends State<MyApp> {
           themeMode: themeProvider.themeMode,
           navigatorKey: navigatorKey,
           home: const SplashScreen(),
+          builder: (context, child) => GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            child: child,
+          ),
         );
       },
     );

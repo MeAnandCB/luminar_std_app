@@ -305,7 +305,10 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
   Widget build(BuildContext context) {
     final filtered = _filteredChats;
 
-    return Container(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Container(
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -673,6 +676,7 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
           ),
         ],
       ),
+    ),
     );
   }
 }

@@ -10,7 +10,7 @@ String _formatBatchTime(String time) {
   try {
     final parts = time.split(RegExp(r'\s*-\s*'));
     if (parts.length == 2) {
-      return '${_to12h(parts[0].trim())} - ${_to12h(parts[1].trim())}';
+      return '${_to12h(parts[0].trim())} – ${_to12h(parts[1].trim())}';
     }
     return _to12h(time.trim());
   } catch (_) {
@@ -31,6 +31,15 @@ String _to12h(String t) {
   return t;
 }
 
+// Per-index card palettes – matches home screen card colours
+const _kPalettes = [
+  [Color(0xFF3D1FA3), Color(0xFF6C5CE7)], // Purple
+  [Color(0xFF0A3D62), Color(0xFF1565C0)], // Royal Blue
+  [Color(0xFF00695C), Color(0xFF26A69A)], // Teal
+  [Color(0xFF4A148C), Color(0xFF7B1FA2)], // Violet
+  [Color(0xFF7B1A1A), Color(0xFFC62828)], // Crimson
+];
+
 class EnrollmentCard extends StatelessWidget {
   final Enrollment enrollment;
   final int index;
@@ -49,12 +58,33 @@ class EnrollmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
     final dateFormat = DateFormat('dd MMM yyyy');
     LoggerUtils.debug(
       enrollment.progress.completionPercentage.toString(),
       tag: 'Enrollment',
     );
+
+    final palette = _kPalettes[index % _kPalettes.length];
+    final gradStart = palette[0];
+    final gradEnd = palette[1];
+    final statusColor = getStatusColor(enrollment.status.color);
+
+    final attendanceMode = enrollment.attendanceMode.value;
+    final modeIcon = switch (attendanceMode) {
+      'online' => Icons.computer_rounded,
+      'offline' => Icons.location_on_rounded,
+      'hybrid' => Icons.sync_alt_rounded,
+      'recording' => Icons.video_library_rounded,
+      _ => Icons.help_outline_rounded,
+    };
+    final modeColor = switch (attendanceMode) {
+      'online' => const Color(0xFF1565C0),
+      'offline' => const Color(0xFF2E7D32),
+      'hybrid' => const Color(0xFFE65100),
+      'recording' => const Color(0xFF6A1B9A),
+      _ => AppColors.textHint,
+    };
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -62,364 +92,413 @@ class EnrollmentCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadowLight,
-              spreadRadius: 0,
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: gradStart.withValues(alpha: 0.22),
+              blurRadius: 24,
+              spreadRadius: -4,
+              offset: const Offset(0, 12),
             ),
           ],
         ),
-        child: Stack(
-          children: [
-            // Main card
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                color: AppColors.cardBackground,
-                border: Border.all(color: AppColors.borderColor, width: 1),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header with index and status
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        // Index badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Gradient Header ────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [gradStart, gradEnd],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Decorative circle blob
+                    Positioned(
+                      top: -20,
+                      right: -20,
+                      child: Container(
+                        width: 110,
+                        height: 110,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.07),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                      child: Row(
+                        children: [
+                          // Index badge
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.18),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.35),
+                                width: 1.5,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '#${index + 1}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
                           ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.primary,
-                                AppColors.primaryLight,
+                          const SizedBox(width: 12),
+                          // Enrollment ID
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Enrollment ID',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.white.withValues(alpha: 0.65),
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  enrollment.enrollmentNumber,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.2,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ],
                             ),
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
                           ),
-                          child: Text(
-                            '#${index + 1}',
-                            style: TextStyle(
+                          const SizedBox(width: 10),
+                          // Status pill
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
                               color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Enrollment number
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Enrollment ID',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.12),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                enrollment.enrollmentNumber,
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Status chip
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: getStatusColor(
-                              enrollment.status.color,
-                            ).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: getStatusColor(
-                                enrollment.status.color,
-                              ).withOpacity(0.3),
+                              ],
                             ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: getStatusColor(
-                                    enrollment.status.color,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: statusColor,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                enrollment.status.name,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: getStatusColor(
-                                    enrollment.status.color,
+                                const SizedBox(width: 5),
+                                Text(
+                                  enrollment.status.name,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: statusColor,
+                                    letterSpacing: 0.2,
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
+                ),
+              ),
 
-                  // Course section
-                  Container(
-                    height: 80,
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: AppColors.surface,
-                    ),
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 16),
-                        // Course icon
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: AppColors.cardBackground,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
+              // ── White body ─────────────────────────────────────
+              Container(
+                color: AppColors.cardBackground,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Course row ────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Icon box with gradient
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  gradStart.withValues(alpha: 0.12),
+                                  gradEnd.withValues(alpha: 0.06),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: gradStart.withValues(alpha: 0.15),
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.menu_book_rounded,
+                              color: gradStart,
+                              size: 26,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  enrollment.course.courseName,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.3,
+                                    letterSpacing: -0.2,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 8),
+                                // Mode + date chips
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 6,
+                                  children: [
+                                    _chip(
+                                      icon: modeIcon,
+                                      label: enrollment.attendanceMode.name,
+                                      iconColor: modeColor,
+                                      bgColor: modeColor.withValues(alpha: 0.09),
+                                      textColor: modeColor,
+                                    ),
+                                    _chip(
+                                      icon: Icons.calendar_today_rounded,
+                                      label: dateFormat.format(enrollment.enrollmentDate),
+                                      iconColor: AppColors.textSecondary,
+                                      bgColor: AppColors.surface,
+                                      textColor: AppColors.textSecondary,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // ── Divider ───────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
+                      child: Container(
+                        height: 1,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.borderColor.withValues(alpha: 0.0),
+                              AppColors.borderColor,
+                              AppColors.borderColor.withValues(alpha: 0.0),
                             ],
                           ),
-                          child: Icon(
-                            Icons.school_outlined,
-                            color: AppColors.primary,
-                            size: 28,
-                          ),
                         ),
-                        const SizedBox(width: 16),
-                        // Course details
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                enrollment.course.courseName,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    // ── Batch row ─────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Batch icon
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF3E0),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.group_rounded,
+                              size: 20,
+                              color: Color(0xFFE65100),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  enrollment.batch.batchName,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.1,
+                                  ),
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    dateFormat.format(
-                                      enrollment.enrollmentDate,
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textSecondary,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Container(
-                                    width: 4,
-                                    height: 4,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.date_range_rounded,
+                                      size: 12,
                                       color: AppColors.textHint,
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        switch (enrollment
-                                            .attendanceMode
-                                            .value) {
-                                          'online' => Icons.computer,
-                                          'offline' => Icons.location_on,
-                                          'hybrid' => Icons.sync_alt,
-                                          'recording' => Icons.video_library,
-                                          _ => Icons.help_outline,
-                                        },
-                                        size: 12,
-                                        color: switch (enrollment
-                                            .attendanceMode
-                                            .value) {
-                                          'online' => AppColors.statsBlue,
-                                          'offline' => AppColors.statsGreen,
-                                          'hybrid' => AppColors.statsOrange,
-                                          'recording' => AppColors.primary,
-                                          _ => AppColors.textHint,
-                                        },
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${dateFormat.format(enrollment.batch.startDate)} – ${dateFormat.format(enrollment.batch.endDate)}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: AppColors.textSecondary,
+                                        fontWeight: FontWeight.w500,
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        enrollment.attendanceMode.name,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: switch (enrollment
-                                              .attendanceMode
-                                              .value) {
-                                            'online' => AppColors.statsBlue,
-                                            'offline' => AppColors.statsGreen,
-                                            'hybrid' => AppColors.statsOrange,
-                                            'recording' => AppColors.primary,
-                                            _ => AppColors.textHint,
-                                          },
+                                    ),
+                                  ],
+                                ),
+                                if (enrollment.batch.time.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          const Color(0xFFFFF3E0),
+                                          const Color(0xFFFFF8F0),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: const Color(0xFFFFCC80),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.schedule_rounded,
+                                          size: 12,
+                                          color: Color(0xFFE65100),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          _formatBatchTime(enrollment.batch.time),
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFFE65100),
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          // Join button
+                          if (enrollment.batch.joinUrl.isNotEmpty) ...[
+                            const SizedBox(width: 10),
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [gradStart, gradEnd],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(13),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: gradStart.withValues(alpha: 0.35),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Batch info
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.statsOrange.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.group,
-                            size: 16,
-                            color: AppColors.statsOrange,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                enrollment.batch.batchName,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              child: const Icon(
+                                Icons.video_call_rounded,
+                                color: Colors.white,
+                                size: 20,
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${dateFormat.format(enrollment.batch.startDate)} - ${dateFormat.format(enrollment.batch.endDate)}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              if (enrollment.batch.time.isNotEmpty) ...[
-                                const SizedBox(height: 10),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 7,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.statsOrange.withOpacity(
-                                      0.1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        "Batch Time :",
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Icon(
-                                        Icons.schedule_rounded,
-                                        size: 11,
-                                        color: AppColors.statsOrange,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _formatBatchTime(enrollment.batch.time),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: AppColors.statsOrange,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        if (enrollment.batch.joinUrl.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.statsBlue.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(
-                              Icons.video_call,
-                              size: 16,
-                              color: AppColors.statsBlue,
-                            ),
-                          ),
-                      ],
+                          ],
+                        ],
+                      ),
                     ),
-                  ),
-
-                  const SizedBox(height: 16),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _chip({
+    required IconData icon,
+    required String label,
+    required Color iconColor,
+    required Color bgColor,
+    required Color textColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: iconColor),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+        ],
       ),
     );
   }
