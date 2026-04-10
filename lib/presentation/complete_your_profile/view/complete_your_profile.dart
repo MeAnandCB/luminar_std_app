@@ -185,11 +185,16 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ProfileController>(
-      builder: (context, controller, child) {
-        final percentage = controller.completionPercentage;
+    return Consumer2<ProfileController, CompleteProfileController>(
+      builder: (context, profileCtrl, completeCtrl, child) {
+        // Use live form progress once user starts filling; fall back to server data
+        final liveCount = completeCtrl.filledFieldsCount;
+        final serverCount = profileCtrl.filledFieldsCount;
+        final filled = liveCount > serverCount ? liveCount : serverCount;
+        final total = CompleteProfileController.totalFields;
+        final percentage = filled / total;
         final percentageInt = (percentage * 100).toInt();
-        final remaining = controller.remainingFieldsCount;
+        final remaining = total - filled;
 
         return Container(
           padding: EdgeInsets.all(16),
@@ -316,7 +321,13 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
       }
 
       _hasProfilePic = _hasValue(pInfo.profilePicture);
-      if (_hasProfilePic) _profilePicUrl = pInfo.profilePicture;
+      if (_hasProfilePic) {
+        _profilePicUrl = pInfo.profilePicture;
+        completeController.serverProfilePic = true;
+      }
+      completeController.serverIdFront = _hasValue(pInfo.idProof);
+      completeController.serverIdBack = _hasValue(pInfo.idProof2);
+      completeController.serverResume = pInfo.resume != null;
 
       if (pInfo.dateOfBirth != null) {
         final dobStr = pInfo.dateOfBirth!.toString().split(' ').first;
@@ -495,7 +506,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                       CustomTextField(
                         label: 'Full Name*',
                         controller: _fullNameController,
-                        enabled: !_hasFullName,
+                        enabled: true,
                         prefixIcon: Icons.person_outline,
                         onChanged: (value) {
                           context.read<CompleteProfileController>().fullName = value;
@@ -512,7 +523,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                       CustomTextField(
                         label: 'Email*',
                         controller: _emailController,
-                        enabled: !_hasEmail,
+                        enabled: false,
                         prefixIcon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                         onChanged: (value) {
@@ -578,7 +589,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                                 border: Border(right: BorderSide(color: AppColors.borderColor)),
                               ),
                               child: CountryCodePicker(
-                                enabled: !_hasPhone,
+                                enabled: false,
                                 onChanged: (code) {
                                   // _countryCode = code.dialCode;
                                 },
@@ -593,7 +604,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                             Expanded(
                               child: TextFormField(
                                 controller: _phoneController,
-                                enabled: !_hasPhone,
+                                enabled: false,
                                 keyboardType: TextInputType.phone,
                                 onChanged: (value) {
                                   context.read<CompleteProfileController>().phone = value;
@@ -1228,8 +1239,8 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                       SizedBox(height: 8),
                       Row(
                         children: [
-                          Expanded(child: _buildRadioButton('No', 'no', !_hasArrears)),
-                          Expanded(child: _buildRadioButton('Yes', 'yes', !_hasArrears)),
+                          Expanded(child: _buildRadioButton('No', 'no', true)),
+                          Expanded(child: _buildRadioButton('Yes', 'yes', true)),
                         ],
                       ),
                     ],
@@ -1494,15 +1505,13 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                           children: [
                             Checkbox(
                               value: _interestedInPlacement,
-                              onChanged: !_hasPlacementAssistance
-                                  ? (value) {
-                                      setState(() {
-                                        _interestedInPlacement = value ?? false;
-                                        context.read<CompleteProfileController>().placementAssistance =
-                                            _interestedInPlacement;
-                                      });
-                                    }
-                                  : null,
+                              onChanged: (value) {
+                                setState(() {
+                                  _interestedInPlacement = value ?? false;
+                                  context.read<CompleteProfileController>().placementAssistance =
+                                      _interestedInPlacement;
+                                });
+                              },
                               activeColor: AppColors.primary,
                             ),
                             Expanded(

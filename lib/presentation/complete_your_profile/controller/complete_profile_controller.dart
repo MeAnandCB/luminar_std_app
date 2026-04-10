@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:luminar_std/repository/academic_info/model.dart';
@@ -21,6 +20,12 @@ class CompleteProfileController extends ChangeNotifier {
   String? get profilePicPath => _profilePicPath;
   String? get resumePath => _resumePath;
 
+  // Server-side flags — set when initializing form from existing profile data
+  bool serverProfilePic = false;
+  bool serverIdFront = false;
+  bool serverIdBack = false;
+  bool serverResume = false;
+
   List<Qualification> _qualifications = [];
   List<Specialization> _specializations = [];
   bool _isLoadingAcademic = false;
@@ -31,30 +36,58 @@ class CompleteProfileController extends ChangeNotifier {
   bool get isLoadingAcademic => _isLoadingAcademic;
   bool get isSubmitting => _isSubmitting;
 
-  // Form Fields
-  String? fullName;
-  String? email;
-  String? phone;
-  String? whatsappNumber;
-  String? dateOfBirth;
-  String? address;
-  String? pincode;
-  String? district;
+  // Form Fields — setters notify listeners so progress bar updates live
+  String? _fullName; String? get fullName => _fullName;
+  set fullName(String? v) { _fullName = v; notifyListeners(); }
 
-  String? qualificationId; // id from model
+  String? _email; String? get email => _email;
+  set email(String? v) { _email = v; notifyListeners(); }
+
+  String? _phone; String? get phone => _phone;
+  set phone(String? v) { _phone = v; notifyListeners(); }
+
+  String? whatsappNumber;
+  String? _dateOfBirth; String? get dateOfBirth => _dateOfBirth;
+  set dateOfBirth(String? v) { _dateOfBirth = v; notifyListeners(); }
+
+  String? _address; String? get address => _address;
+  set address(String? v) { _address = v; notifyListeners(); }
+
+  String? _pincode; String? get pincode => _pincode;
+  set pincode(String? v) { _pincode = v; notifyListeners(); }
+
+  String? _district; String? get district => _district;
+  set district(String? v) { _district = v; notifyListeners(); }
+
+  String? _qualificationId; String? get qualificationId => _qualificationId;
+  set qualificationId(String? v) { _qualificationId = v; notifyListeners(); }
   String? qualificationName;
-  String? college;
-  String? passOutYear;
-  String? specialization;
-  String? cgpa;
+
+  String? _college; String? get college => _college;
+  set college(String? v) { _college = v; notifyListeners(); }
+
+  String? _passOutYear; String? get passOutYear => _passOutYear;
+  set passOutYear(String? v) { _passOutYear = v; notifyListeners(); }
+
+  String? _specialization; String? get specialization => _specialization;
+  set specialization(String? v) { _specialization = v; notifyListeners(); }
+
+  String? _cgpa; String? get cgpa => _cgpa;
+  set cgpa(String? v) { _cgpa = v; notifyListeners(); }
+
   bool? anyArrears;
 
-  String? studentStatus; // student or professional
+  String? _studentStatus; String? get studentStatus => _studentStatus;
+  set studentStatus(String? v) { _studentStatus = v; notifyListeners(); }
+
   bool? placementAssistance;
   String? preferredJobLocation;
 
-  String? parentName;
-  String? parentPhone;
+  String? _parentName; String? get parentName => _parentName;
+  set parentName(String? v) { _parentName = v; notifyListeners(); }
+
+  String? _parentPhone; String? get parentPhone => _parentPhone;
+  set parentPhone(String? v) { _parentPhone = v; notifyListeners(); }
 
   // Additional fields from user's request
   bool? isActive;
@@ -67,13 +100,52 @@ class CompleteProfileController extends ChangeNotifier {
   String? placementCompany;
   String? placementPackage;
   String? placementDate;
-  String? admissionDate;
-  int? age;
+  String? _admissionDate; String? get admissionDate => _admissionDate;
+  set admissionDate(String? v) { _admissionDate = v; notifyListeners(); }
+
+  int? _age; int? get age => _age;
+  set age(int? v) { _age = v; notifyListeners(); }
   String? notes;
   String? howDidYouHear;
   bool? portalAccessEnabled;
   bool? isAlumni;
   bool? isPlaced;
+
+  // ── Live progress tracking ─────────────────────────────────────────────────
+  static const int totalFields = 21;
+
+  int get filledFieldsCount {
+    int count = 0;
+    bool _filled(String? v) => v != null && v.trim().isNotEmpty;
+
+    if (_filled(fullName)) count++;
+    if (_filled(email)) count++;
+    if (_filled(phone)) count++;
+    if (_filled(dateOfBirth)) count++;
+    if (age != null) count++;
+    if (_profilePicPath != null || serverProfilePic) count++;  // profile pic
+    if (_idFrontPath != null || serverIdFront) count++;        // id front
+    if (_idBackPath != null || serverIdBack) count++;          // id back
+    if (_resumePath != null || serverResume) count++;          // resume
+    if (_filled(address)) count++;
+    if (_filled(pincode)) count++;
+    if (_filled(district)) count++;
+    if (_filled(qualificationId)) count++;
+    if (_filled(college)) count++;
+    if (_filled(passOutYear)) count++;
+    if (_filled(specialization)) count++;
+    if (_filled(cgpa)) count++;
+    if (_filled(admissionDate)) count++;
+    if (_filled(studentStatus)) count++;
+    if (_filled(parentName)) count++;
+    if (_filled(parentPhone)) count++;
+    return count > totalFields ? totalFields : count;
+  }
+
+  double get completionPercentage => filledFieldsCount / totalFields;
+  int get remainingFieldsCount => totalFields - filledFieldsCount;
+
+  void notifyProgress() => notifyListeners();
 
   void setResume(String? path) {
     _resumePath = path;
