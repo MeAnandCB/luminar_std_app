@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
@@ -11,21 +10,10 @@ class ExamService {
       final token = await AppUtils.getAccessKey();
       final endpoint = AppEndpoints.examSessions;
 
-      debugPrint('══════════════════════════════════════════');
-      debugPrint('📤 FETCH EXAM SESSIONS');
-      debugPrint('   GET $endpoint');
-
       final response = await ApiService().get(
         endpoint: endpoint,
         token: token,
       );
-
-      debugPrint('📥 FETCH EXAM SESSIONS — response:');
-      debugPrint('   success : ${response.success}');
-      debugPrint('   status  : ${response.statusCode}');
-      debugPrint('   data    : ${response.data}');
-      debugPrint('   message : ${response.message}');
-      debugPrint('══════════════════════════════════════════');
 
       if (response.success) {
         return ApiResponse.success(
@@ -36,7 +24,6 @@ class ExamService {
         return response.cast<ExamSessionsResponse>();
       }
     } catch (e) {
-      debugPrint('❌ FETCH EXAM SESSIONS — exception: $e');
       return ApiResponse.error(e.toString(), null);
     }
   }
@@ -61,27 +48,41 @@ class ExamService {
         ],
       };
 
-      debugPrint('══════════════════════════════════════════');
-      debugPrint('📤 MARK VISIBILITY');
-      debugPrint('   POST $endpoint');
-      debugPrint('   Payload: $body');
-
       final response = await ApiService().post(
         endpoint: endpoint,
         token: token,
         body: body,
       );
 
-      debugPrint('📥 MARK VISIBILITY — response:');
-      debugPrint('   success : ${response.success}');
-      debugPrint('   status  : ${response.statusCode}');
-      debugPrint('   data    : ${response.data}');
-      debugPrint('   message : ${response.message}');
-      debugPrint('══════════════════════════════════════════');
-
       return response;
     } catch (e) {
-      debugPrint('❌ MARK VISIBILITY — exception: $e');
+      return ApiResponse.error(e.toString(), null);
+    }
+  }
+
+  /// Fetches an exam session's result using attemptUid.
+  /// Endpoint: GET /api/student_portal/exams/results/{attemptUid}/
+  Future<ApiResponse<ExamResultResponse>> fetchExamResult({
+    required String attemptUid,
+  }) async {
+    try {
+      final token = await AppUtils.getAccessKey();
+      final endpoint = '${AppEndpoints.examResult}$attemptUid/';
+
+      final response = await ApiService().get(
+        endpoint: endpoint,
+        token: token,
+      );
+
+      if (response.success) {
+        return ApiResponse.success(
+          ExamResultResponse.fromJson(response.data),
+          response.statusCode ?? 200,
+        );
+      } else {
+        return response.cast<ExamResultResponse>();
+      }
+    } catch (e) {
       return ApiResponse.error(e.toString(), null);
     }
   }

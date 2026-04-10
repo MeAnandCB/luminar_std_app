@@ -134,3 +134,82 @@ class ExamMeta {
         sessionCount: json['session_count'] ?? 0,
       );
 }
+
+class ExamResultResponse {
+  final String status;
+  final ExamResultData data;
+
+  ExamResultResponse({
+    required this.status,
+    required this.data,
+  });
+
+  factory ExamResultResponse.fromJson(Map<String, dynamic> json) =>
+      ExamResultResponse(
+        status: json['status'] ?? '',
+        data: ExamResultData.fromJson(json['data'] ?? {}),
+      );
+}
+
+class ExamResultData {
+  final String uid;
+  final int attemptNo;
+  final DateTime? attemptDate;
+  final DateTime? publishedAt;
+  final bool isVisibleToStudent;
+  final bool canOpen;
+  final double overallPercent;
+  final String grade;
+  final String remarks;
+  final bool? examAttended;
+  final String attendanceComment;
+  final ExamSession? examSession;
+  final ExamBatch? batch;
+  final ExamModule? module;
+  final ExamType? examType;
+
+  ExamResultData({
+    required this.uid,
+    required this.attemptNo,
+    this.attemptDate,
+    this.publishedAt,
+    required this.isVisibleToStudent,
+    required this.canOpen,
+    required this.overallPercent,
+    required this.grade,
+    required this.remarks,
+    this.examAttended,
+    required this.attendanceComment,
+    this.examSession,
+    this.batch,
+    this.module,
+    this.examType,
+  });
+
+  factory ExamResultData.fromJson(Map<String, dynamic> json) => ExamResultData(
+        uid: json['uid'] ?? '',
+        attemptNo: json['attempt_no'] ?? 0,
+        attemptDate: json['attempt_date'] != null
+            ? DateTime.tryParse(json['attempt_date'])
+            : null,
+        publishedAt: json['published_at'] != null
+            ? DateTime.tryParse(json['published_at'])
+            : null,
+        isVisibleToStudent: json['is_visible_to_student'] ?? false,
+        canOpen: json['can_open'] ?? false,
+        overallPercent: (json['overall_percent'] as num?)?.toDouble() ?? 0.0,
+        grade: json['grade'] ?? '',
+        remarks: json['remarks'] ?? '',
+        examAttended: json['exam_attended'],
+        attendanceComment: json['attendance_comment'] ?? '',
+        examSession: json['exam_session'] != null
+            ? ExamSession.fromJson(json['exam_session'])
+            : null,
+        batch: json['batch'] != null ? ExamBatch.fromJson(json['batch']) : null,
+        module:
+            json['module'] != null ? ExamModule.fromJson(json['module']) : null,
+        examType: json['exam_type'] != null
+            ? ExamType.fromJson(json['exam_type'])
+            : null,
+      );
+}

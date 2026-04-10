@@ -82,13 +82,13 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
   List<Widget>? _cachedPages;
   bool _showPaymentScreen = false;
 
-  List<Widget> _getPages(int unreadExams) {
+  List<Widget> _getPages() {
     if (_cachedPages != null) return _cachedPages!;
     _cachedPages = [
       const StudentDashboard(),
       _showPaymentScreen ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false) : const EnrollmentScreen(),
       const ChatListScreen(),
-      MoreEnrollmentScreen(unreadCount: unreadExams),
+      const MoreEnrollmentScreen(),
     ];
     return _cachedPages!;
   }
@@ -116,7 +116,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
       }
     }
 
-    final pages = _getPages(unreadExams);
+    final pages = _getPages();
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,

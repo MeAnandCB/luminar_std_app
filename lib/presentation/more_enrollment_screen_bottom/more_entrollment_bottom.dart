@@ -81,8 +81,7 @@ const _kFeatures = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 class MoreEnrollmentScreen extends StatefulWidget {
-  const MoreEnrollmentScreen({super.key, required this.unreadCount});
-  final int unreadCount;
+  const MoreEnrollmentScreen({super.key});
 
   @override
   State<MoreEnrollmentScreen> createState() => _MoreEnrollmentScreenState();
@@ -117,6 +116,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
     context.watch<ThemeProvider>();
     final dashboard = context.watch<DashboardController>();
     final enrollments = dashboard.enrollmentsFromDashboard;
+    final unreadExams = dashboard.unreadExamsCount;
     _rebuildTabControllerIfNeeded(enrollments.length);
     final hasTabs = enrollments.length > 1 && _tabController != null;
 
@@ -130,13 +130,13 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
             tabController: _tabController,
             enrollments: enrollments,
           ),
-          Expanded(child: _buildBody(dashboard.isLoading, enrollments, hasTabs)),
+          Expanded(child: _buildBody(dashboard.isLoading, enrollments, hasTabs, unreadExams)),
         ],
       ),
     );
   }
 
-  Widget _buildBody(bool loading, List enrollments, bool hasTabs) {
+  Widget _buildBody(bool loading, List enrollments, bool hasTabs, int unreadExams) {
     if (loading) return _ShimmerBody();
     if (enrollments.isEmpty) return const _EmptyState();
 
@@ -144,7 +144,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
       return _EnrollmentPage(
         enrollment: enrollments[0],
         index: 0,
-        unreadExams: widget.unreadCount,
+        unreadExams: unreadExams,
       );
     }
 
@@ -155,7 +155,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
         (i) => _EnrollmentPage(
           enrollment: enrollments[i],
           index: i,
-          unreadExams: widget.unreadCount,
+          unreadExams: unreadExams,
         ),
       ),
     );

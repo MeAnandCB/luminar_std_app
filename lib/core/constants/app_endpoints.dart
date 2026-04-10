@@ -69,6 +69,8 @@ class AppEndpoints {
   static const String examSessions = '/api/student_portal/exams/sessions/';
   // Suffix with {session_uid}/visibility/
   static const String examSessionVisibility = '/api/evaluation/exam-sessions/';
+  // Suffix with {attempt_uid}/
+  static const String examResult = '/api/student_portal/exams/results/';
 
   // NACTET Certificates
   static const String certificatesCreate = '/api/certificates/create/';
