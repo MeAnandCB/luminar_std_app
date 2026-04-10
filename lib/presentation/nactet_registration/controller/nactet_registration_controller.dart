@@ -297,22 +297,7 @@ class NactetRegistrationController extends ChangeNotifier {
       registrationModel.higherEducationalQualificationYearOfPassing =
           int.tryParse(higherQualYearController.text.trim());
 
-      // Debug: print all fields being sent
-      final fields = registrationModel.toFields();
-      LoggerUtils.debug('--- NACTET SUBMIT FIELDS ---', tag: 'NACTET');
-      fields.forEach((k, v) => LoggerUtils.debug('  $k: $v', tag: 'NACTET'));
-      LoggerUtils.debug('  basicDoc: ${registrationModel.basicDocPath}', tag: 'NACTET');
-      LoggerUtils.debug('  higherDoc: ${registrationModel.higherDocPath}', tag: 'NACTET');
-      LoggerUtils.debug('  idProof: ${registrationModel.idProofPath}', tag: 'NACTET');
-      LoggerUtils.debug('  photo: ${registrationModel.photoPath}', tag: 'NACTET');
-
       final response = await _service.submitRegistration(registrationModel);
-
-      LoggerUtils.debug('--- NACTET RESPONSE ---', tag: 'NACTET');
-      LoggerUtils.debug('  status: ${response.statusCode}', tag: 'NACTET');
-      LoggerUtils.debug('  success: ${response.success}', tag: 'NACTET');
-      LoggerUtils.debug('  message: ${response.message}', tag: 'NACTET');
-      LoggerUtils.debug('  data: ${response.data}', tag: 'NACTET');
 
       if (response.success) {
         successData = response.data;

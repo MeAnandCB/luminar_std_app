@@ -1,16 +1,10 @@
 // enrollment_screen.dart
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
-import 'package:luminar_std/core/utils/app_utils.dart';
-import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/course_screen/course_screen.dart';
-import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/widget/enrollment_card.dart';
-
-import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:provider/provider.dart';
 
 class EnrollmentScreen extends StatefulWidget {
@@ -22,7 +16,6 @@ class EnrollmentScreen extends StatefulWidget {
 
 class _EnrollmentScreenState extends State<EnrollmentScreen>
     with TickerProviderStateMixin {
-  late EnrollmentProvider _enrollmentProvider;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -38,24 +31,12 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
       curve: Curves.easeInOut,
     );
     _animationController.forward();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _enrollmentProvider = Provider.of<EnrollmentProvider>(
-        context,
-        listen: false,
-      );
-      _loadData();
-    });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadData() async {
-    await _enrollmentProvider.fetchEnrollData(context: context);
   }
 
   Color _getProgressColor(double percentage) {
@@ -97,72 +78,19 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
         elevation: 0.5,
         shadowColor: AppColors.shadowLight,
       ),
-      body: Consumer<EnrollmentProvider>(
-        builder: (context, provider, child) {
-          // Handle loading state
-          if (provider.isLoading && provider.enrollmentData == null) {
-            return Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-              ),
+      body: Consumer<DashboardController>(
+        builder: (context, dashboard, child) {
+          // Show shimmer while dashboard is loading
+          if (dashboard.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
             );
           }
 
-          // Handle error state
-          if (provider.hasError) {
-            final friendly = AppUtils.friendlyError(provider.errorMessage ?? '');
-            final isNetwork = friendly.contains('internet');
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      isNetwork ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
-                      size: 72,
-                      color: AppColors.error,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      isNetwork ? 'No Internet Connection' : 'Something Went Wrong',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      friendly,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _loadData,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text('Try Again'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
+          final enrollments = dashboard.enrollmentsFromDashboard;
 
-          // Handle no data state
-          if (!provider.hasData ||
-              provider.enrollmentData!.enrollments.isEmpty) {
+          // Empty state
+          if (enrollments.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -199,15 +127,16 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
             );
           }
 
-          // Show enrollments
-          final enrollments = provider.enrollmentData!.enrollments;
-
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: ListView.builder(
               itemCount: enrollments.length,
               itemBuilder: (context, index) {
                 final enrollment = enrollments[index];
+                final statusValue = enrollment.status.value;
+                final isPaymentPending = statusValue == 'admission_fee_paid' ||
+                    statusValue == 'not_set' ||
+                    statusValue == 'demo_expired';
                 return FadeTransition(
                   opacity: _fadeAnimation,
                   child: Padding(
@@ -215,11 +144,7 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                     child: EnrollmentCard(
                       enrollment: enrollment,
                       index: index,
-                      onTap:
-                          (enrollments[index].status.value ==
-                                  "admission_fee_paid" ||
-                              enrollments[index].status.value == "not_set" ||
-                              enrollments[index].status.value == "demo_expired")
+                      onTap: isPaymentPending
                           ? () {
                               Navigator.push(
                                 context,
@@ -236,49 +161,21 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => CourseScreen(
-                                    discount: enrollments[index]
-                                        .paymentInfo
-                                        .totalDiscount
-                                        .toInt(),
+                                    discount: enrollment.paymentInfo.totalDiscount.toInt(),
                                     institute: "Luminar Technolab",
-                                    courseName:
-                                        enrollments[index].course.courseName,
-                                    batchName:
-                                        enrollments[index].batch.batchName,
-                                    enrollmentId:
-                                        enrollments[index].enrollmentNumber,
-                                    startDate: enrollments[index]
-                                        .batch
-                                        .startDate
-                                        .toString(),
-                                    schedule: enrollments[index].batch.time,
-                                    batchTime: enrollments[index].batch.time,
-                                    attendanceMode:
-                                        enrollments[index].attendanceMode.name,
-                                    progress: enrollments[index]
-                                        .progress
-                                        .completionPercentage
-                                        .toInt(),
-                                    attendance: enrollments[index]
-                                        .progress
-                                        .completionPercentage
-                                        .toString(),
-                                    paymentCompleted: enrollments[index]
-                                        .paymentInfo
-                                        .amountPaid
-                                        .toInt(),
-                                    amountPaid: enrollments[index]
-                                        .paymentInfo
-                                        .amountPaid
-                                        .toInt(),
-                                    pendingAmount: enrollments[index]
-                                        .paymentInfo
-                                        .pendingAmount
-                                        .toInt(),
-                                    totalFee: enrollments[index]
-                                        .paymentInfo
-                                        .grossAmount
-                                        .toInt(),
+                                    courseName: enrollment.course.courseName,
+                                    batchName: enrollment.batch.batchName,
+                                    enrollmentId: enrollment.enrollmentNumber,
+                                    startDate: enrollment.batch.startDate.toString(),
+                                    schedule: enrollment.batch.time,
+                                    batchTime: enrollment.batch.time,
+                                    attendanceMode: enrollment.attendanceMode.name,
+                                    progress: enrollment.progress.completionPercentage.toInt(),
+                                    attendance: enrollment.progress.completionPercentage.toString(),
+                                    paymentCompleted: enrollment.paymentInfo.amountPaid.toInt(),
+                                    amountPaid: enrollment.paymentInfo.amountPaid.toInt(),
+                                    pendingAmount: enrollment.paymentInfo.pendingAmount.toInt(),
+                                    totalFee: enrollment.paymentInfo.grossAmount.toInt(),
                                   ),
                                 ),
                               );

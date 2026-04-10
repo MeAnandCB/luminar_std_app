@@ -34,7 +34,7 @@ class ApiService {
   // GET
   Future<ApiResponse<dynamic>> get({required String endpoint, String? token, Map<String, String>? queryParams}) async {
     final uri = _buildUri(endpoint, queryParams);
-    // LoggerUtils.debug("GET: $uri", tag: 'API');
+    LoggerUtils.debug("GET: $uri", tag: 'API');
     try {
       final response = await http.get(uri, headers: _headers(token));
       return _handleResponse(response);
@@ -51,7 +51,7 @@ class ApiService {
     Map<String, String>? queryParams,
   }) async {
     final uri = _buildUri(endpoint, queryParams);
-    // LoggerUtils.debug("POST: $uri", tag: 'API');
+    LoggerUtils.debug("POST: $uri", tag: 'API');
     try {
       final response = await http.post(uri, headers: _headers(token), body: jsonEncode(body));
       return _handleResponse(response);
@@ -68,7 +68,7 @@ class ApiService {
     Map<String, String>? queryParams,
   }) async {
     final uri = _buildUri(endpoint, queryParams);
-    // LoggerUtils.debug("PUT: $uri", tag: 'API');
+    LoggerUtils.debug("PUT: $uri", tag: 'API');
     try {
       final response = await http.put(uri, headers: _headers(token), body: jsonEncode(body));
       return _handleResponse(response);
@@ -85,7 +85,7 @@ class ApiService {
     Map<String, String>? queryParams,
   }) async {
     final uri = _buildUri(endpoint, queryParams);
-    // LoggerUtils.debug("PATCH: $uri", tag: 'API');
+    LoggerUtils.debug("PATCH: $uri", tag: 'API');
     try {
       final response = await http.patch(uri, headers: _headers(token), body: jsonEncode(body));
       return _handleResponse(response);
@@ -101,7 +101,7 @@ class ApiService {
     Map<String, String>? queryParams,
   }) async {
     final uri = _buildUri(endpoint, queryParams);
-    // LoggerUtils.debug("DELETE: $uri", tag: 'API');
+    LoggerUtils.debug("DELETE: $uri", tag: 'API');
     try {
       final response = await http.delete(uri, headers: _headers(token));
       return _handleResponse(response);
@@ -119,7 +119,7 @@ class ApiService {
     String? token,
   }) async {
     final uri = _buildUri(endpoint, null);
-    // LoggerUtils.debug("$method (Multipart): $uri", tag: 'API');
+    LoggerUtils.debug("$method (Multipart): $uri", tag: 'API');
     try {
       var request = http.MultipartRequest(method, uri);
       request.headers.addAll(_headers(token));

@@ -15,13 +15,62 @@ class ExamScreen extends StatefulWidget {
 class _ExamScreenState extends State<ExamScreen> {
   late Future<ApiResponse<ExamSessionsResponse>> _future;
 
+  /// UIDs that have been tapped this session — treated as "seen" immediately.
+  final Set<String> _seenUids = {};
+
   @override
   void initState() {
     super.initState();
     _future = ExamService().fetchExamSessions();
   }
 
-  void _retry() => setState(() => _future = ExamService().fetchExamSessions());
+  void _retry() {
+    _seenUids.clear();
+    setState(() => _future = ExamService().fetchExamSessions());
+  }
+
+  Future<void> _onCardTap(ExamSession session) async {
+    final attemptUid = session.attemptUid;
+
+    // Mark seen locally right away so UI updates immediately
+    if (!_seenUids.contains(session.uid)) {
+      setState(() => _seenUids.add(session.uid));
+    }
+
+    // Navigate first so the user isn't blocked
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ExamDetailScreen(session: session)),
+      );
+    }
+
+    // Call visibility API only if there is an attempt to mark
+    if (attemptUid != null && attemptUid.isNotEmpty) {
+      final payload = {
+        'records': [
+          {'attempt_uid': attemptUid, 'is_visible_to_student': true},
+        ],
+      };
+      debugPrint('══════════════════════════════════════════');
+      debugPrint('📤 VISIBILITY API — session: ${session.uid}');
+      debugPrint('   Payload: $payload');
+
+      final response = await ExamService().markVisibility(
+        sessionUid: session.uid,
+        attemptUid: attemptUid,
+      );
+
+      debugPrint('📥 VISIBILITY API — response:');
+      debugPrint('   success : ${response.success}');
+      debugPrint('   status  : ${response.statusCode}');
+      debugPrint('   data    : ${response.data}');
+      debugPrint('   message : ${response.message}');
+      debugPrint('══════════════════════════════════════════');
+    } else {
+      debugPrint('⚠️  VISIBILITY API skipped — no attemptUid for session ${session.uid}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,28 +128,96 @@ class _ExamScreenState extends State<ExamScreen> {
           }
 
           final sessions = snapshot.data!.data!.data;
-          final meta = snapshot.data!.data!.meta;
 
           if (sessions.isEmpty) {
             return _EmptyState();
           }
 
+          final unreadCount = sessions
+              .where((s) =>
+                  !s.isVisibleToStudent && !_seenUids.contains(s.uid))
+              .length;
+          final hasUnread = unreadCount > 0;
+
           return Column(
             children: [
+              // Count header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Row(
+                  children: [
+                    // Total exams pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${sessions.length} Exam${sessions.length == 1 ? '' : 's'}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    if (hasUnread) ...[
+                      const SizedBox(width: 8),
+                      // Unread count — highlighted
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              '$unreadCount New',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
               Expanded(
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                   itemCount: sessions.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (_, i) => _ExamCard(
-                    session: sessions[i],
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ExamDetailScreen(session: sessions[i]),
-                      ),
-                    ),
-                  ),
+                  itemBuilder: (_, i) {
+                    final isNew = !sessions[i].isVisibleToStudent &&
+                        !_seenUids.contains(sessions[i].uid);
+                    return _ExamCard(
+                      session: sessions[i],
+                      isNew: isNew,
+                      onTap: () => _onCardTap(sessions[i]),
+                    );
+                  },
                 ),
               ),
             ],
@@ -111,48 +228,19 @@ class _ExamScreenState extends State<ExamScreen> {
   }
 }
 
-class _MetaStat extends StatelessWidget {
-  const _MetaStat({required this.label, required this.value});
-  final String label;
-  final int value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          value.toString(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 11),
-        ),
-      ],
-    );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) =>
-      Container(width: 1, height: 28, color: Colors.white24);
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Exam card
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ExamCard extends StatelessWidget {
-  const _ExamCard({required this.session, required this.onTap});
+  const _ExamCard({
+    required this.session,
+    required this.onTap,
+    required this.isNew,
+  });
   final ExamSession session;
   final VoidCallback onTap;
+  final bool isNew;
 
   @override
   Widget build(BuildContext context) {
@@ -171,6 +259,12 @@ class _ExamCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
+          border: isNew
+              ? Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.35),
+                  width: 1.2,
+                )
+              : null,
           boxShadow: [
             BoxShadow(
               color: AppColors.shadowLight,
@@ -182,15 +276,35 @@ class _ExamCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon badge
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: typeColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Icon(Icons.assignment_rounded, color: typeColor, size: 22),
+            // Icon badge with unread dot
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: typeColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child:
+                      Icon(Icons.assignment_rounded, color: typeColor, size: 22),
+                ),
+                if (isNew)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 14),
             // Content
@@ -198,7 +312,7 @@ class _ExamCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Exam name + status chip
+                  // Exam name + NEW badge + status chip
                   Row(
                     children: [
                       Expanded(
@@ -214,6 +328,27 @@ class _ExamCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      if (isNew)
+                        Container(
+                          margin: const EdgeInsets.only(right: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'NEW',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ),
                       _StatusChip(status: session.status, color: statusColor),
                     ],
                   ),

@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/complete_your_profile/view/complete_your_profile.dart';
+import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart' as enroll_model;
 import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 import 'package:luminar_std/repository/home_screen/service.dart';
 import 'package:luminar_std/repository/nactet_registration/model/nactet_check_display_model.dart';
@@ -220,6 +221,71 @@ class DashboardController extends ChangeNotifier {
         _dashboard?.financialSummary?.overview ??
         _dashboardModel?.dashboard?.financialSummary?.overview;
     return overview?.totalFeesAmount ?? 0;
+  }
+
+  /// Converts dashboard enrollments into the enrollment-screen model so
+  /// EnrollmentScreen can display them without calling the enrollment API.
+  List<enroll_model.Enrollment> get enrollmentsFromDashboard {
+    final list = _dashboard?.enrollmentDetails?.enrollments ?? [];
+    return list.map((e) => enroll_model.Enrollment(
+      uid: e.basicInfo?.uid ?? '',
+      enrollmentNumber: e.basicInfo?.enrollmentNumber ?? '',
+      enrollmentDate: e.basicInfo?.enrollmentDate ?? DateTime.now(),
+      originalCourseFeesDiscount:
+          (e.paymentDetails?.financialBreakdown?.totalDiscount ?? 0).toDouble(),
+      source: e.basicInfo?.source ?? '',
+      status: enroll_model.Status(
+        name: e.status?.name ?? '',
+        value: e.status?.value ?? '',
+        color: e.status?.color ?? '#000000',
+      ),
+      batch: enroll_model.Batch(
+        uid: e.batchInfo?.uid ?? '',
+        batchName: e.batchInfo?.batchName ?? '',
+        startDate: e.batchInfo?.startDate ?? DateTime.now(),
+        endDate: e.batchInfo?.endDate ?? DateTime.now(),
+        joinUrl: '',
+        time: e.batchInfo?.time ?? '',
+        status: e.batchInfo?.status ?? '',
+      ),
+      course: enroll_model.Course(
+        courseName: e.courseInfo?.courseName ?? '',
+      ),
+      attendanceMode: enroll_model.AttendanceMode(
+        name: e.attendanceMode?.name ?? '',
+        value: e.attendanceMode?.value ?? '',
+      ),
+      paymentInfo: enroll_model.PaymentInfo(
+        grossAmount:
+            (e.paymentDetails?.financialBreakdown?.grossAmount ?? 0).toDouble(),
+        totalDiscount:
+            (e.paymentDetails?.financialBreakdown?.totalDiscount ?? 0).toDouble(),
+        netAmount:
+            (e.paymentDetails?.financialBreakdown?.netAmount ?? 0).toDouble(),
+        amountPaid:
+            (e.paymentDetails?.financialBreakdown?.amountPaid ?? 0).toDouble(),
+        pendingAmount:
+            (e.paymentDetails?.financialBreakdown?.pendingAmount ?? 0).toDouble(),
+        paymentCompletionPercentage:
+            (e.paymentDetails?.financialBreakdown?.paymentCompletionPercentage ?? 0)
+                .toDouble(),
+        isFullyPaid:
+            e.paymentDetails?.financialBreakdown?.isFullyPaid ?? false,
+        hasOverpayment:
+            e.paymentDetails?.financialBreakdown?.hasOverpayment ?? false,
+      ),
+      progress: enroll_model.Progress(
+        attendancePercentage:
+            (e.academicProgress?.attendancePercentage ?? 0).toDouble(),
+        completionPercentage:
+            (e.academicProgress?.completionPercentage ?? 0).toDouble(),
+        finalGrade: e.academicProgress?.finalGrade ?? '',
+        certificateIssued: e.academicProgress?.certificateIssued ?? false,
+      ),
+      specialNotes: e.additionalInfo?.specialNotes ?? '',
+      tags: List<String>.from(
+          e.additionalInfo?.tags?.map((t) => t.toString()) ?? []),
+    )).toList();
   }
 
   // Get unread exams count

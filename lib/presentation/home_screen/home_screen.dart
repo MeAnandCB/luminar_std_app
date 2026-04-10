@@ -1,11 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
 import 'package:luminar_std/presentation/home_screen/widget/natet_certificate.dart';
-import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
@@ -30,39 +27,26 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   String _displayName = 'Loading...';
-  late EnrollmentProvider _enrollmentProvider;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      final dashboardProvider = Provider.of<DashboardController>(
-        context,
-        listen: false,
-      );
-      await dashboardProvider.getDashboardData(context: context);
-
-      await dashboardProvider.getNactetStatus();
-      _loadUserName();
-    });
+    // Data is fetched by BottomNavScreen._loadData() — no duplicate calls here.
+    // Only load the display name once the frame is ready.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _enrollmentProvider = Provider.of<EnrollmentProvider>(
-        context,
-        listen: false,
-      );
-      _loadData();
+      _loadUserName();
     });
   }
 
   Future<void> _loadUserName() async {
-    // Add a small delay to ensure provider is ready
-    await Future.delayed(const Duration(milliseconds: 100));
     if (mounted) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final name = authProvider.studentData?.profile.fullName ?? 'Guest';
-      setState(() {
-        _displayName = name;
-      });
+      if (name != _displayName) {
+        setState(() {
+          _displayName = name;
+        });
+      }
       LoggerUtils.info('📝 Name loaded: $_displayName', tag: 'Dashboard');
     }
   }
@@ -77,29 +61,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return DateFormat('MMM d, yyyy').format(date);
   }
 
-  Future<void> _loadData() async {
-    await _enrollmentProvider.fetchEnrollData(context: context);
-  }
-
   @override
   Widget build(BuildContext context) {
     final dashboardProvider = Provider.of<DashboardController>(context);
     final dashboard = dashboardProvider.dashboard;
-    final provider = Provider.of<EnrollmentProvider>(context);
 
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        // Get student name from provider
-        final studentName = authProvider.studentData?.profile.fullName ?? '';
-
-        // Update display name if different
-        if (studentName.isNotEmpty && studentName != _displayName) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            setState(() {
-              _displayName = studentName;
-            });
-          });
-        }
+        // Get student name directly from provider — no setState needed
+        final studentName = (authProvider.studentData?.profile.fullName ?? '').isNotEmpty
+            ? authProvider.studentData!.profile.fullName
+            : _displayName;
 
         return Scaffold(
           backgroundColor: AppColors.scaffoldBackground,
@@ -168,7 +140,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       HeaderWidget(
-                        enrolldata: provider,
+                        courseName: dashboard?.enrollmentDetails?.enrollments?.isNotEmpty == true
+                            ? dashboard?.enrollmentDetails?.enrollments?.first.courseInfo?.courseName ?? ''
+                            : '',
                         studentName: studentName,
                         provider: dashboardProvider,
                       ),
@@ -206,7 +180,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       ),
                       const SizedBox(height: 14),
                       if (dashboard != null) ...[
-                        _buildCourseCard(dashboard, provider),
+                        _buildCourseCard(dashboard),
 
                         const SizedBox(height: 28),
                         _buildSectionHeading(
@@ -265,7 +239,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   // ============== COURSE CARD SECTION ==============
 
-  Widget _buildCourseCard(Dashboard dashboard, EnrollmentProvider enrollments) {
+  Widget _buildCourseCard(Dashboard dashboard) {
     final enrollmentsList = dashboard.enrollmentDetails?.enrollments ?? [];
 
     if (enrollmentsList.isEmpty) {
@@ -289,7 +263,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
     return _EnrollmentCardStack(
       enrollments: enrollmentsList,
-      provider: enrollments,
       studentName: _displayName,
     );
   }
@@ -546,12 +519,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
 class _EnrollmentCardStack extends StatefulWidget {
   final List enrollments;
-  final EnrollmentProvider provider;
   final String studentName;
 
   const _EnrollmentCardStack({
     required this.enrollments,
-    required this.provider,
     required this.studentName,
   });
 
@@ -759,23 +730,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
       Future.delayed(const Duration(milliseconds: 200), () {
         if (!mounted) return;
 
-        bool shouldGoToDetails;
-
-        if (Platform.isIOS) {
-          // On iOS re-check from provider at tap time — it is likely loaded by now
-          final providerEnrolls =
-              widget.provider.enrollmentDataRes?.enrollments;
-          final tapStatus =
-              (providerEnrolls != null && providerEnrolls.length > index)
-              ? providerEnrolls[index].status.value
-              : statusValue;
-          shouldGoToDetails =
-              tapStatus == 'admission_fee_paid' ||
-              tapStatus == 'not_set' ||
-              tapStatus == 'demo_expired';
-        } else {
-          shouldGoToDetails = isNavigatable;
-        }
+        final bool shouldGoToDetails = isNavigatable;
 
         if (shouldGoToDetails) {
           Navigator.push(

@@ -38,9 +38,8 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   StreamSubscription<Map<String, dynamic>>? _statusSubscription;
   StreamSubscription<Map<String, dynamic>>? _deleteSubscription;
 
-  // Polling timer as a fallback when WebSocket misses events
-  Timer? _pollTimer;
-  static const _pollInterval = Duration(seconds: 8);
+  // Badge count fetched on app open (before chat tab is ever opened)
+  int _apiUnreadCount = 0;
 
   // Getters
   List<Chat> get chats => _chats;
@@ -50,10 +49,23 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   ChatApiService? get apiService => _apiService;
   WebSocketService? get webSocketService => _webSocketService;
 
-  /// Total unread message count across all chats.
-  /// Computed directly from the local chats list, which is already protected
-  /// by _locallyReadChats — so this always reflects what the user sees.
-  int get totalUnreadCount => _chats.fold(0, (sum, c) => sum + c.unreadCount);
+  /// Badge count: uses live chat-list sum when loaded, API count otherwise.
+  int get totalUnreadCount =>
+      _chats.isNotEmpty ? _chats.fold(0, (sum, c) => sum + c.unreadCount) : _apiUnreadCount;
+
+  /// Lightweight call — only fetches badge count, no WebSocket or chat list.
+  Future<void> fetchUnreadCountOnly() async {
+    try {
+      final token = await AppUtils.getAccessKey();
+      if (token == null || token.isEmpty) return;
+      final service = ChatApiService(token: token);
+      final response = await service.fetchUnreadCount();
+      if (response.success && response.data != null) {
+        _apiUnreadCount = response.data!;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
 
   ChatProvider() {
     WidgetsBinding.instance.addObserver(this);
@@ -239,7 +251,6 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
       };
 
       _webSocketService!.connect();
-      _startPolling();
     } catch (e) {
       _error = e.toString();
       debugPrint('[ChatProvider] Init Error: $e');
@@ -353,74 +364,6 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// Polling fallback — silently refreshes chats every 8 seconds.
-  /// Catches any messages the WebSocket may have missed (reconnects, gaps).
-  void _startPolling() {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(_pollInterval, (_) async {
-      if (_apiService == null) {
-        _pollTimer?.cancel();
-        return;
-      }
-
-      // Check if user is still logged in before polling
-      final isLoggedIn = await SharedPrefService.isLoggedIn();
-      if (!isLoggedIn) {
-        debugPrint('[ChatProvider] User logged out — stopping poll timer');
-        _resetInternal();
-        return;
-      }
-
-      try {
-        final response = await _apiService!.fetchChats();
-
-        // If session expired (401 or status: "expired"), stop polling immediately
-        if (response.statusCode == 401 || (response.data is Map && (response.data as Map)['status'] == 'expired')) {
-          debugPrint('[ChatProvider] Session expired during poll — stopping timer');
-          _resetInternal();
-          return;
-        }
-
-        if (!response.success || response.data == null || response.data!.isEmpty) return;
-
-        final fresh = response.data!;
-        bool changed = false;
-
-        for (final freshChat in fresh) {
-          final idx = _chats.indexWhere((c) => c.uid == freshChat.uid);
-
-          if (idx == -1) {
-            // Brand new chat appeared
-            _chats.add(freshChat);
-            changed = true;
-            continue;
-          }
-
-          final existing = _chats[idx];
-          final freshTime = freshChat.lastMessageAt;
-          final existingTime = existing.lastMessageAt;
-
-          // Only update if the server reports a newer message
-          final serverIsNewer = freshTime != null && (existingTime == null || freshTime.isAfter(existingTime));
-
-          if (serverIsNewer) {
-            // If server confirms zero, we can safely lift the local read guard
-            if (freshChat.unreadCount == 0) {
-              _locallyReadChats.remove(freshChat.uid);
-            }
-            // Preserve locally-zeroed unread counts
-            final unread = _locallyReadChats.contains(freshChat.uid) ? 0 : freshChat.unreadCount;
-            _chats[idx] = freshChat.copyWith(unreadCount: unread);
-            changed = true;
-          }
-        }
-
-        if (changed) _sortChats();
-      } catch (e) {
-        debugPrint('[ChatProvider] Poll error: $e');
-      }
-    });
-  }
 
   Future<void> refresh() async {
     await loadChats(showLoading: true);
@@ -525,7 +468,6 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void _resetInternal() {
-    _pollTimer?.cancel();
     _statusSubscription?.cancel();
     _messageSubscription?.cancel();
     _localMessageSubscription?.cancel();
@@ -536,6 +478,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
     _isLoading = false;
     _error = null;
     _currentUser = null;
+    _apiUnreadCount = 0;
     _apiService = null;
     _webSocketService = null;
     userOnlineStatus = {};

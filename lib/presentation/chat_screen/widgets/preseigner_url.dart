@@ -82,7 +82,6 @@ class FileUploadService {
     final payload = json.encode({'file_name': fileName, 'folder': folder});
 
     LoggerUtils.info('[Upload] POST $url', tag: 'Upload');
-    LoggerUtils.debug('[Upload] Payload: $payload', tag: 'Upload');
 
     final response = await http.post(
       Uri.parse(url),
@@ -91,7 +90,6 @@ class FileUploadService {
     );
 
     LoggerUtils.info('[Upload] Presigned status: ${response.statusCode}', tag: 'Upload');
-    LoggerUtils.debug('[Upload] Presigned body  : ${response.body}', tag: 'Upload');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = json.decode(response.body) as Map<String, dynamic>;
@@ -112,8 +110,6 @@ class FileUploadService {
     void Function(double)? onProgress,
   }) async {
     LoggerUtils.info('[Upload] S3 POST → ${presigned.uploadUrl}', tag: 'Upload');
-    LoggerUtils.debug('[Upload] Content-Type: ${presigned.contentType}', tag: 'Upload');
-    LoggerUtils.debug('[Upload] File: ${file.path}', tag: 'Upload');
 
     // Determine safe MediaType — fall back to application/octet-stream
     MediaType mediaType;
@@ -128,7 +124,6 @@ class FileUploadService {
       mediaType = MediaType('application', 'octet-stream');
     }
 
-    LoggerUtils.debug('[Upload] MediaType: $mediaType', tag: 'Upload');
 
     final request = http.MultipartRequest(
       'POST',
@@ -138,7 +133,6 @@ class FileUploadService {
     // All policy fields must come BEFORE the file field
     presigned.fields.forEach((k, v) {
       request.fields[k] = v;
-      LoggerUtils.debug('[Upload] S3 field: $k = $v', tag: 'Upload');
     });
 
     request.files.add(
@@ -154,7 +148,6 @@ class FileUploadService {
     final responseBody = await streamed.stream.bytesToString();
 
     LoggerUtils.info('[Upload] S3 response status: ${streamed.statusCode}', tag: 'Upload');
-    LoggerUtils.debug('[Upload] S3 response body  : $responseBody', tag: 'Upload');
 
     if (streamed.statusCode != 204 &&
         streamed.statusCode != 200 &&
@@ -175,7 +168,6 @@ class FileUploadService {
     void Function(double)? onProgress,
   }) async {
     final fileName = path.basename(file.path);
-    final fileSize = await file.length();
 
     // Resolve MIME type — try by extension first, then by content
     String mimeType = lookupMimeType(file.path) ?? '';
@@ -187,8 +179,6 @@ class FileUploadService {
     }
 
     LoggerUtils.info('[Upload] File: $fileName', tag: 'Upload');
-    LoggerUtils.debug('[Upload] Size: ${_fmtSize(fileSize)}', tag: 'Upload');
-    LoggerUtils.debug('[Upload] MIME: $mimeType', tag: 'Upload');
 
     onProgress?.call(0.05);
 
@@ -278,11 +268,4 @@ class FileUploadService {
     return map[ext] ?? '';
   }
 
-  String _fmtSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) {
-      return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    }
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
 }

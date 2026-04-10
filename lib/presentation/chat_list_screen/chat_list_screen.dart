@@ -29,9 +29,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         _isSearchFocused = _searchFocusNode.hasFocus;
       });
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ChatProvider>().init();
-    });
+    // init() is called by BottomNavScreen on first chat tab tap
   }
 
   @override
@@ -184,7 +182,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
             webSocketService: provider.webSocketService,
           ),
         ),
-      ).then((_) => provider.setActiveChat(null));
+      ).then((_) {
+        provider.setActiveChat(null);
+        // Refresh chat list once when returning from chat screen
+        provider.loadChats(showLoading: false);
+      });
     });
   }
 

@@ -160,7 +160,6 @@ class WebSocketService {
 
   void _handleMessage(String message) {
     try {
-      debugPrint('[WS] Raw message: $message');
       final data = jsonDecode(message);
 
       if (data is Map<String, dynamic> && data['type'] == 'message_deleted') {
@@ -188,7 +187,13 @@ class WebSocketService {
 
       if (data is Map<String, dynamic> && data.containsKey('uid')) {
         try {
-          final receivedMessage = Message.fromJson(data);
+          // Normalize chat_uid → chat so Message.chatId always holds the UUID,
+          // matching Chat.uid correctly for both individual and group chats.
+          final messageData = Map<String, dynamic>.from(data);
+          if (messageData.containsKey('chat_uid')) {
+            messageData['chat'] = messageData['chat_uid'];
+          }
+          final receivedMessage = Message.fromJson(messageData);
           _messageController.add(receivedMessage);
           onMessageReceived?.call(receivedMessage);
           return;

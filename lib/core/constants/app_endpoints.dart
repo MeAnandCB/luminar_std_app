@@ -67,6 +67,8 @@ class AppEndpoints {
 
   static const String attandance = '/api/attendance/qr-scan/';
   static const String examSessions = '/api/student_portal/exams/sessions/';
+  // Suffix with {session_uid}/visibility/
+  static const String examSessionVisibility = '/api/evaluation/exam-sessions/';
 
   // NACTET Certificates
   static const String certificatesCreate = '/api/certificates/create/';
@@ -75,7 +77,8 @@ class AppEndpoints {
 }
 
 class GlobalLinks {
-  static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
+  // static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
+  static const String baseUrl = 'http://192.168.1.42:8000';
   static const String websocketUrl =
       'wss://api.crm.dev.luminartechnohub.com/ws/';
 }

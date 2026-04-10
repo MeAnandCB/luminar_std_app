@@ -6,7 +6,6 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
-import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/notification_screen/notification_screen.dart';
 import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
 import 'package:provider/provider.dart';
@@ -14,13 +13,13 @@ import 'package:provider/provider.dart';
 class HeaderWidget extends StatelessWidget {
   final String studentName;
   final DashboardController provider;
-  final EnrollmentProvider enrolldata;
+  final String courseName;
 
   const HeaderWidget({
     super.key,
     required this.studentName,
     required this.provider,
-    required this.enrolldata,
+    required this.courseName,
   });
 
   String _getFirstLetter() {
@@ -71,12 +70,7 @@ class HeaderWidget extends StatelessWidget {
           MaterialPageRoute(
             builder: (context) => ProfileScreen(
               course:
-                  enrolldata
-                      .enrollmentDataRes
-                      ?.enrollments[0]
-                      .course
-                      .courseName ??
-                  "",
+                  courseName,
             ),
           ),
         );

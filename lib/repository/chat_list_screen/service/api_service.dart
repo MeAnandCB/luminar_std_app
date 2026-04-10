@@ -235,7 +235,7 @@ class ChatApiService {
       int count = 0;
       if (data is Map<String, dynamic>) {
         count =
-            (data['total_unread'] ?? data['unread_count'] ?? data['count'] ?? 0) as int;
+            (data['total_unread_count'] ?? data['total_unread'] ?? data['unread_count'] ?? data['count'] ?? 0) as int;
       } else if (data is int) {
         count = data;
       }

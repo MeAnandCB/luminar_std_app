@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
-import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/gallery_screen/views/gallery_screen.dart';
@@ -91,22 +90,8 @@ class MoreEnrollmentScreen extends StatefulWidget {
 
 class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
     with TickerProviderStateMixin {
-  // Use TickerProviderStateMixin (not Single…) because we may rebuild the
-  // TabController when data arrives.
-  late final EnrollmentProvider _provider;
   TabController? _tabController;
-  bool _loading = true;
-
-  // ── lifecycle ────────────────────────────────────────────────────────────────
-
-  @override
-  void initState() {
-    super.initState();
-    _provider = Provider.of<EnrollmentProvider>(context, listen: false);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchData();
-    });
-  }
+  int _lastTabCount = 0;
 
   @override
   void dispose() {
@@ -114,20 +99,11 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
     super.dispose();
   }
 
-  // ── data ─────────────────────────────────────────────────────────────────────
-
-  Future<void> _fetchData() async {
-    setState(() => _loading = true);
-    await _provider.fetchEnrollData(context: context);
-    _rebuildTabController();
-    if (mounted) setState(() => _loading = false);
-  }
-
-  void _rebuildTabController() {
+  void _rebuildTabControllerIfNeeded(int count) {
+    if (count == _lastTabCount) return;
+    _lastTabCount = count;
     _tabController?.dispose();
     _tabController = null;
-
-    final count = _provider.enrollmentDataRes?.enrollments.length ?? 0;
     if (count > 1 && mounted) {
       _tabController = TabController(length: count, vsync: this)
         ..addListener(() {
@@ -136,53 +112,42 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
     }
   }
 
-  // ── shorthand ────────────────────────────────────────────────────────────────
-
-  bool get _hasTabs =>
-      (_provider.enrollmentDataRes?.enrollments.length ?? 0) > 1 &&
-      _tabController != null;
-
-  // ── root ─────────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
-    context.watch<ThemeProvider>(); // Rebuild on theme change
+    context.watch<ThemeProvider>();
+    final dashboard = context.watch<DashboardController>();
+    final enrollments = dashboard.enrollmentsFromDashboard;
+    _rebuildTabControllerIfNeeded(enrollments.length);
+    final hasTabs = enrollments.length > 1 && _tabController != null;
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      // Column keeps the header fixed; the body below is scrollable per tab.
       body: Column(
         children: [
           _Header(
-            loading: _loading,
-            hasTabs: _hasTabs,
+            loading: dashboard.isLoading,
+            hasTabs: hasTabs,
             tabController: _tabController,
-            enrollments: _provider.enrollmentDataRes?.enrollments ?? [],
+            enrollments: enrollments,
           ),
-          Expanded(child: _buildBody()),
+          Expanded(child: _buildBody(dashboard.isLoading, enrollments, hasTabs)),
         ],
       ),
     );
   }
 
-  // ── body ─────────────────────────────────────────────────────────────────────
-
-  Widget _buildBody() {
-    if (_loading) return _ShimmerBody();
-
-    final enrollments = _provider.enrollmentDataRes?.enrollments ?? [];
+  Widget _buildBody(bool loading, List enrollments, bool hasTabs) {
+    if (loading) return _ShimmerBody();
     if (enrollments.isEmpty) return const _EmptyState();
 
-    // Single enrollment – no TabBarView needed
-    if (!_hasTabs) {
+    if (!hasTabs) {
       return _EnrollmentPage(
         enrollment: enrollments[0],
         index: 0,
-        provider: _provider,
         unreadExams: widget.unreadCount,
       );
     }
 
-    // Multiple enrollments – TabBarView handles swipe & sync with TabBar
     return TabBarView(
       controller: _tabController,
       children: List.generate(
@@ -190,7 +155,6 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
         (i) => _EnrollmentPage(
           enrollment: enrollments[i],
           index: i,
-          provider: _provider,
           unreadExams: widget.unreadCount,
         ),
       ),
@@ -370,13 +334,11 @@ class _EnrollmentPage extends StatelessWidget {
   const _EnrollmentPage({
     required this.enrollment,
     required this.index,
-    required this.provider,
     this.unreadExams = 0,
   });
 
   final dynamic enrollment;
   final int index;
-  final EnrollmentProvider provider;
   final int unreadExams;
 
   void _showAccessDenied(BuildContext context) {

@@ -3,12 +3,10 @@ import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
-import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/chat_list_screen/chat_list_screen.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/home_screen/home_screen.dart';
-import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollments.dart';
 import 'package:luminar_std/presentation/more_enrollment_screen_bottom/more_entrollment_bottom.dart';
@@ -26,9 +24,9 @@ class BottomNavScreen extends StatefulWidget {
 }
 
 class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProviderStateMixin {
-  late EnrollmentProvider enrollmentProvider;
-  late ChatProvider chatProvider;
   late int _currentIndex;
+  late ChatProvider _chatProvider;
+  bool _chatInitialized = false;
 
   // Animation controller for FAB press feedback
   late AnimationController _fabController;
@@ -53,8 +51,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
     ).animate(CurvedAnimation(parent: _fabController, curve: Curves.easeInOut));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
-      chatProvider = Provider.of<ChatProvider>(context, listen: false);
+      _chatProvider = Provider.of<ChatProvider>(context, listen: false);
       _loadData();
     });
   }
@@ -67,11 +64,10 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
 
   Future<void> _loadData() async {
     final dashboardController = Provider.of<DashboardController>(context, listen: false);
-    await Future.wait([
-      enrollmentProvider.fetchEnrollData(context: context),
-      dashboardController.getDashboardData(context: context),
-    ]);
-    chatProvider.init();
+    await dashboardController.getDashboardData(context: context);
+    await dashboardController.getNactetStatus();
+    // Show badge count without loading full chat list
+    _chatProvider.fetchUnreadCountOnly();
     if (mounted) setState(() {});
   }
 
@@ -82,43 +78,54 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
     Navigator.push(context, MaterialPageRoute(builder: (context) => const QRScannerScreen()));
   }
 
-  List<Widget> _buildPages(EnrollmentProvider provider, int unreadExams) {
-    if (provider.enrollmentDataRes == null) {
-      return [StudentDashboard(), EnrollmentScreen(), ChatListScreen(), MoreEnrollmentScreen(unreadCount: unreadExams)];
-    }
+  // Cached pages — built once so initState is not re-triggered on every rebuild
+  List<Widget>? _cachedPages;
+  bool _showPaymentScreen = false;
 
-    final status = provider.enrollmentDataRes!.enrollments[0].status.value;
-    final isPaymentPending = status == 'not_set' || status == 'demo_expired' || status == 'admission_fee_paid';
-
-    // On iOS, skip the payment screen entirely and go straight to EnrollmentScreen
-    final showPaymentScreen = isPaymentPending && !AppConfig.hidePayments;
-
-    return [
-      StudentDashboard(),
-      showPaymentScreen ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false) : EnrollmentScreen(),
-      ChatListScreen(),
+  List<Widget> _getPages(int unreadExams) {
+    if (_cachedPages != null) return _cachedPages!;
+    _cachedPages = [
+      const StudentDashboard(),
+      _showPaymentScreen ? EnrollmentDetailsScreen(index: 0, backbuttonValue: false) : const EnrollmentScreen(),
+      const ChatListScreen(),
       MoreEnrollmentScreen(unreadCount: unreadExams),
     ];
+    return _cachedPages!;
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<EnrollmentProvider>(context);
     final chatProv = context.watch<ChatProvider>();
     context.watch<ThemeProvider>();
     final unreadCount = chatProv.totalUnreadCount;
     final unreadExams = context.select<DashboardController, int>((c) => c.unreadExamsCount);
     final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
-    if (provider.enrollmentDataRes != null) {
-      LoggerUtils.debug(provider.enrollmentDataRes!.enrollments.length.toString(), tag: 'BottomNav');
+    // Use dashboard enrollment status — no separate enrollment API call needed
+    final dashEnrollments = context.select<DashboardController, List>(
+      (c) => c.dashboard?.enrollmentDetails?.enrollments ?? [],
+    );
+    if (dashEnrollments.isNotEmpty) {
+      LoggerUtils.debug(dashEnrollments.length.toString(), tag: 'BottomNav');
+      final status = dashEnrollments[0].status?.value ?? '';
+      final isPaymentPending = status == 'not_set' || status == 'demo_expired' || status == 'admission_fee_paid';
+      final newShowPayment = isPaymentPending && !AppConfig.hidePayments;
+      if (newShowPayment != _showPaymentScreen) {
+        _showPaymentScreen = newShowPayment;
+        _cachedPages = null;
+      }
     }
 
-    final pages = _buildPages(provider, unreadExams);
+    final pages = _getPages(unreadExams);
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      body: SafeArea(child: pages[_currentIndex]),
+      body: SafeArea(
+        child: IndexedStack(
+          index: _currentIndex,
+          children: pages,
+        ),
+      ),
 
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
@@ -240,7 +247,17 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
     );
 
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () {
+        setState(() => _currentIndex = index);
+        if (index == 2) {
+          if (!_chatInitialized) {
+            _chatInitialized = true;
+            _chatProvider.init();
+          } else {
+            _chatProvider.loadChats(showLoading: false);
+          }
+        }
+      },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:luminar_std/core/utils/app_utils.dart';
 import 'dart:async';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/gestures.dart';
@@ -29,6 +28,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:luminar_std/presentation/widgets/status_screens.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -59,7 +59,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   late ScrollController _scrollController;
   bool _isLoadingMessages = true;
   String? _error;
-  late Timer _pollTimer;
   StreamSubscription<Message>? _messageSubscription;
   StreamSubscription<Map<String, dynamic>>? _statusSubscription;
   StreamSubscription<Map<String, dynamic>>? _deleteSubscription;
@@ -226,9 +225,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
 
     if (widget.webSocketService == null) _webSocketService.connect();
-    _loadMessages();
-    _startPolling();
-    _loadAllChats(); // ← NEW
+    _loadMessages(); // load messages once — WebSocket handles real-time updates
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final chatProv = context.read<ChatProvider>();
+        if (chatProv.chats.isNotEmpty) {
+          setState(() => _allChats = chatProv.chats);
+        } else {
+          _loadAllChats();
+        }
+      }
+    });
   }
 
   @override
@@ -243,9 +250,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     for (final c in _swipeReturnAnims.values) {
       c.dispose();
     }
-    try {
-      _pollTimer.cancel();
-    } catch (_) {}
     _statusSubscription?.cancel();
     _messageSubscription?.cancel();
     _deleteSubscription?.cancel();
@@ -1813,25 +1817,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _startPolling() {
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
-      if (!mounted) return;
-      try {
-        final response = await widget.apiService.fetchMessages(widget.chat.uid);
-        if (!mounted || !response.success || response.data == null) return;
-        final msgs = response.data!;
-        final existing = _messages.map((m) => m.uid).toSet();
-        final newMsgs = msgs.where((m) => !existing.contains(m.uid)).toList();
-        if (newMsgs.isNotEmpty) {
-          setState(() {
-            _messages.addAll(newMsgs);
-            _messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          });
-          _scrollToBottom();
-        }
-      } catch (_) {}
-    });
-  }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {

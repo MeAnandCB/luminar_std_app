@@ -5,6 +5,7 @@ import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/widgets/status_screens.dart';
 import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/widget/pay_in_full_card.dart';
@@ -53,20 +54,15 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlePaymentErrorResponse);
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlePaymentSuccessResponse);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handleExternalWalletSelected);
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      final provider = Provider.of<EnrollmentProvider>(context, listen: false);
-      await Provider.of<EnrollmentProvider>(
-        context,
-        listen: false,
-      ).fetchEnrollData(context: context);
+    // Get enrollment UID from dashboard — no separate enrollment API call needed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final dashboard = Provider.of<DashboardController>(context, listen: false);
+      final enrollments = dashboard.enrollmentsFromDashboard;
+      final uid = enrollments.length > widget.index
+          ? enrollments[widget.index].uid
+          : '';
+      _apiService.setEnrollmentId(uid);
     });
-    _apiService.setEnrollmentId(
-      Provider.of<EnrollmentProvider>(
-            context,
-            listen: false,
-          ).enrollmentDataRes?.enrollments[widget.index].uid ??
-          "",
-    );
     emiPlans = _apiService.fetchEmiPlans();
   }
 
