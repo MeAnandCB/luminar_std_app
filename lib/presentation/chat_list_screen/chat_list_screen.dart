@@ -166,7 +166,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   // ── Chat tile tap handler ──────────────────────────────────────────────────
   void _onChatTap(Chat chat) {
     final provider = context.read<ChatProvider>();
-    if (chat.unreadCount > 0) provider.markChatAsRead(chat);
+    if (chat.unreadCount > 0) provider.zeroChatBadge(chat);
     provider.setActiveChat(chat.uid);
 
     // Provide a subtle delay to ensure the ripple effect is visible

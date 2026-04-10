@@ -133,8 +133,8 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
         return;
       }
 
-      // Mark as read optimistically
-      markChatAsRead(chat);
+      // Zero badge locally — ChatScreen handles actual server mark-read
+      zeroChatBadge(chat);
       setActiveChat(chat.uid);
 
       navigatorKey.currentState!
@@ -420,45 +420,30 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  Future<void> markChatAsRead(Chat chat) async {
-    if (_apiService == null || _markingReadInProgress.contains(chat.uid)) return;
-
-    _markingReadInProgress.add(chat.uid);
+  /// Zeroes the unread badge locally — call this when opening a chat.
+  /// No API call. The actual server mark-read happens in ChatScreen once messages load.
+  void zeroChatBadge(Chat chat) {
     _locallyReadChats.add(chat.uid);
-
-    // Optimistically zero the badge immediately
     final chatIndex = _chats.indexWhere((c) => c.uid == chat.uid);
     if (chatIndex != -1) {
       _chats[chatIndex] = _chats[chatIndex].copyWith(unreadCount: 0);
       notifyListeners();
     }
+  }
 
+  /// Marks messages as read on the server using already-loaded message list.
+  /// Call this from ChatScreen after _loadMessages() completes.
+  Future<void> markMessagesRead(String chatUid, List<String> messageUids) async {
+    if (_apiService == null || _markingReadInProgress.contains(chatUid)) return;
+    if (messageUids.isEmpty) return;
+
+    _markingReadInProgress.add(chatUid);
     try {
-      final response = await _apiService!.fetchMessages(
-        chat.uid,
-        page: 1,
-        pageSize: 50,
-      );
-
-      if (response.success && response.data != null) {
-        final messages = response.data!;
-        final unreadUids = messages
-            .where((m) => m.sender.id != _currentUser?.id)
-            .map((m) => m.uid)
-            .toList();
-
-        if (unreadUids.isNotEmpty) {
-          await _apiService!.markMessagesAsRead(chat.uid, unreadUids);
-        }
-        // NOTE: Do NOT remove from _locallyReadChats here regardless of success/fail.
-        // The poll removes it only when the server confirms unread_count == 0,
-        // preventing the badge from jumping back on the next refresh.
-      }
+      await _apiService!.markMessagesAsRead(chatUid, messageUids);
     } catch (e) {
       debugPrint('[ChatProvider] MarkRead Error: $e');
     } finally {
-      _markingReadInProgress.remove(chat.uid);
-      notifyListeners();
+      _markingReadInProgress.remove(chatUid);
     }
   }
 

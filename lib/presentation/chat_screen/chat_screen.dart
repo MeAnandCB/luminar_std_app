@@ -1771,6 +1771,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             if (messages.length < _pageSize) _hasNextPage = false;
           });
           _scrollToBottom();
+          // Mark messages as read using already-loaded list — no extra API call
+          final unreadUids = messages
+              .where((m) => m.sender.id != widget.currentUser.id)
+              .map((m) => m.uid)
+              .toList();
+          if (unreadUids.isNotEmpty) {
+            context.read<ChatProvider>().markMessagesRead(widget.chat.uid, unreadUids);
+          }
         } else {
           setState(() {
             _error = response.message;
