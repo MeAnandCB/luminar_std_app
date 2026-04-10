@@ -17,11 +17,18 @@ class ChatListScreen extends StatefulWidget {
 class _ChatListScreenState extends State<ChatListScreen> {
   // ── Search ─────────────────────────────────────────────────────────────────
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
+  bool _isSearchFocused = false;
 
   @override
   void initState() {
     super.initState();
+    _searchFocusNode.addListener(() {
+      setState(() {
+        _isSearchFocused = _searchFocusNode.hasFocus;
+      });
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ChatProvider>().init();
     });
@@ -30,6 +37,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -46,43 +54,83 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   // ── Search bar widget ──────────────────────────────────────────────────────
   Widget _buildSearchBar() {
-    return Container(
-      color: AppColors.cardBackground,
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.fastOutSlowIn,
+      margin: EdgeInsets.fromLTRB(
+          16, 8, 16, _isSearchFocused || _searchQuery.isNotEmpty ? 16 : 12),
+      decoration: BoxDecoration(
+        color: AppColors.isDark ? const Color(0xFF151E2E) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.isDark
+                ? Colors.black.withOpacity(0.3)
+                : AppColors.primary.withOpacity(0.08),
+            blurRadius: _isSearchFocused ? 12 : 8,
+            offset: const Offset(0, 4),
+          ),
+          if (_isSearchFocused)
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.1),
+              spreadRadius: 2,
+            )
+        ],
+        border: Border.all(
+          color: _isSearchFocused
+              ? AppColors.primary.withOpacity(0.5)
+              : (AppColors.isDark ? AppColors.borderLight : Colors.transparent),
+          width: 1,
+        ),
+      ),
       child: TextField(
         controller: _searchController,
+        focusNode: _searchFocusNode,
         onChanged: (v) => setState(() => _searchQuery = v.trim()),
-        style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+        style: TextStyle(
+          fontSize: 15,
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w500,
+        ),
         decoration: InputDecoration(
           hintText: 'Search chats…',
-          hintStyle: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          hintStyle: TextStyle(
+            fontSize: 15,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w400,
+          ),
           prefixIcon: Icon(
             Icons.search_rounded,
-            color: AppColors.textSecondary,
-            size: 20,
+            color: _isSearchFocused
+                ? AppColors.primary
+                : AppColors.textSecondary.withOpacity(0.7),
+            size: 22,
           ),
           suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
-                  icon: Icon(
-                    Icons.close_rounded,
-                    color: AppColors.textSecondary,
-                    size: 18,
-                  ),
-                  onPressed: () {
+              ? GestureDetector(
+                  onTap: () {
                     _searchController.clear();
                     setState(() => _searchQuery = '');
+                    _searchFocusNode.unfocus();
                   },
+                  child: Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.textSecondary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textSecondary,
+                      size: 16,
+                    ),
+                  ),
                 )
               : null,
-          filled: true,
-          fillColor: AppColors.scaffoldBackground,
+          border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 10,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+            horizontal: 20,
+            vertical: 14,
           ),
         ),
       ),
@@ -122,18 +170,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final provider = context.read<ChatProvider>();
     if (chat.unreadCount > 0) provider.markChatAsRead(chat);
     provider.setActiveChat(chat.uid);
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatScreen(
-          chat: chat,
-          currentUser: provider.currentUser!,
-          websocketUrl: "${provider.webSocketService!.url}",
-          apiService: provider.apiService!,
-          webSocketService: provider.webSocketService,
+
+    // Provide a subtle delay to ensure the ripple effect is visible
+    Future.delayed(const Duration(milliseconds: 150), () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatScreen(
+            chat: chat,
+            currentUser: provider.currentUser!,
+            websocketUrl: "${provider.webSocketService!.url}",
+            apiService: provider.apiService!,
+            webSocketService: provider.webSocketService,
+          ),
         ),
-      ),
-    ).then((_) => provider.setActiveChat(null));
+      ).then((_) => provider.setActiveChat(null));
+    });
   }
 
   // ── WebSocket connection indicator ─────────────────────────────────────────
@@ -144,53 +196,73 @@ class _ChatListScreenState extends State<ChatListScreen> {
           ? Tooltip(
               key: const ValueKey('online'),
               message: 'Connected',
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.statsGreen,
-                      shape: BoxShape.circle,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.statusActiveBackground,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.statusActive.withOpacity(0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.statusActive,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'Online',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.statsGreen,
+                    const SizedBox(width: 6),
+                    Text(
+                      'Online',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.statusActive,
+                        letterSpacing: 0.3,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             )
           : Tooltip(
               key: const ValueKey('offline'),
               message: 'Connecting…',
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppColors.textSecondary.withOpacity(0.4),
-                      shape: BoxShape.circle,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.textSecondary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.textSecondary.withOpacity(0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: AppColors.textSecondary,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Connecting…',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary.withOpacity(0.6),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Connecting…',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                        letterSpacing: 0.3,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
     );
@@ -204,7 +276,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final isOnline =
         chat.otherParticipant != null &&
         onlineStatus[chat.otherParticipant!.id] == true;
-    final bgColor = AppColors.primary.withOpacity(0.2);
+    final bgColor = AppColors.primary.withOpacity(0.15);
     final bgImage = chat.otherParticipant?.profilePic != null
         ? NetworkImage(chat.otherParticipant!.profilePic!)
         : null;
@@ -212,29 +284,48 @@ class _ChatListScreenState extends State<ChatListScreen> {
       chat.name.isNotEmpty ? chat.name[0].toUpperCase() : '?',
       style: TextStyle(
         color: AppColors.primary,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
       ),
     );
     return Stack(
+      alignment: Alignment.center,
       children: [
-        CircleAvatar(
-          radius: 26,
-          backgroundColor: bgColor,
-          backgroundImage: bgImage,
-          child: bgImage == null ? child : null,
+        Container(
+          width: 54,
+          height: 54,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: bgColor,
+            image: bgImage != null ? DecorationImage(image: bgImage, fit: BoxFit.cover) : null,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.isDark ? Colors.black26 : Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              )
+            ],
+            border: Border.all(
+              color: AppColors.isDark ? AppColors.whiteWithOpacity10 : Colors.white,
+              width: 2,
+            )
+          ),
+          child: bgImage == null ? Center(child: child) : null,
         ),
         if (isOnline)
           Positioned(
             right: 0,
-            bottom: 0,
+            bottom: 2,
             child: Container(
-              width: 13,
-              height: 13,
+              width: 14,
+              height: 14,
               decoration: BoxDecoration(
-                color: AppColors.statsGreen,
+                color: AppColors.statusActive,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.cardBackground, width: 2),
+                border: Border.all(
+                  color: AppColors.isDark ? AppColors.scaffoldBackground : Colors.white,
+                  width: 2.5,
+                ),
               ),
             ),
           ),
@@ -245,110 +336,92 @@ class _ChatListScreenState extends State<ChatListScreen> {
   // ── Stacked Avatar ─────────────────────────────────────────────────────────
   Widget _buildStackedAvatar(Chat chat) {
     final isBatch = chat.chatType == ChatType.batch;
-    final color = isBatch ? Colors.orange : Colors.purple;
-    final icon = isBatch ? Icons.school : Icons.group;
+    final color = isBatch ? const Color(0xFFF39C12) : const Color(0xFF8E44AD);
+    final icon = isBatch ? Icons.school_rounded : Icons.group_rounded;
     return SizedBox(
-      width: 52,
-      height: 52,
+      width: 54,
+      height: 54,
       child: Stack(
         children: [
           Positioned(
-            right: 2,
-            bottom: 6,
-            child: CircleAvatar(
-              radius: 17,
-              backgroundColor: color.withOpacity(0.2),
+            right: 0,
+            bottom: 4,
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withOpacity(0.15),
+                border: Border.all(
+                  color: AppColors.isDark ? AppColors.scaffoldBackground : Colors.white,
+                  width: 2.5,
+                ),
+              ),
               child: Icon(
                 Icons.person_outline_rounded,
-                color: color.withOpacity(0.5),
+                color: color.withOpacity(0.6),
                 size: 20,
               ),
             ),
           ),
           Positioned(
             left: 0,
-            top: 2,
+            top: 0,
             child: Container(
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.cardBackground, width: 2),
-              ),
-              child: CircleAvatar(
-                radius: 18,
-                backgroundColor: color.withOpacity(0.15),
-                backgroundImage: chat.groupIcon != null
-                    ? NetworkImage(chat.groupIcon!)
-                    : null,
-                child: chat.groupIcon == null
-                    ? Icon(
-                        Icons.person_rounded,
-                        color: color.withOpacity(0.8),
-                        size: 22,
+                color: color.withOpacity(0.2),
+                border: Border.all(
+                  color: AppColors.isDark ? AppColors.scaffoldBackground : Colors.white,
+                  width: 2.5,
+                ),
+                image: chat.groupIcon != null
+                    ? DecorationImage(
+                        image: NetworkImage(chat.groupIcon!),
+                        fit: BoxFit.cover,
                       )
                     : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ],
               ),
+              child: chat.groupIcon == null
+                  ? Icon(
+                      Icons.groups_rounded,
+                      color: color.withOpacity(0.9),
+                      size: 24,
+                    )
+                  : null,
             ),
           ),
           Positioned(
             right: 0,
-            bottom: 2,
+            top: 0,
             child: Container(
               width: 20,
               height: 20,
               decoration: BoxDecoration(
                 color: color,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.cardBackground, width: 2),
+                border: Border.all(
+                  color: AppColors.isDark ? AppColors.scaffoldBackground : Colors.white,
+                  width: 2,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.3),
+                    color: color.withOpacity(0.4),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: Icon(icon, color: Colors.white, size: 11),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Chat type badge ────────────────────────────────────────────────────────
-  Widget _buildTypeBadge(Chat chat) {
-    if (chat.chatType == ChatType.individual) return const SizedBox.shrink();
-    final isBatch = chat.chatType == ChatType.batch;
-    final color = isBatch ? Colors.orange : Colors.purple;
-    final icon = isBatch ? Icons.school_outlined : Icons.group_outlined;
-    final label = isBatch
-        ? (chat.batchName ?? 'Batch')
-        : (chat.groupName ?? 'Group');
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.isDark ? color.withOpacity(0.2) : color.shade50,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: AppColors.isDark ? color.withOpacity(0.4) : color.shade200,
-          width: 0.8,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 10,
-            color: AppColors.isDark ? color.shade200 : color.shade700,
-          ),
-          const SizedBox(width: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: AppColors.isDark ? color.shade200 : color.shade700,
-              fontWeight: FontWeight.w600,
+              child: Icon(icon, color: Colors.white, size: 10),
             ),
           ),
         ],
@@ -366,7 +439,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final sender = preview['sender'] as String? ?? '';
     final isDeleted = preview['is_deleted'] == true;
 
-    if (isDeleted) return 'Message deleted';
+    if (isDeleted) return '🚫 This message was deleted';
 
     String displayContent = content;
 
@@ -383,7 +456,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
           displayContent = '🎬 Video';
           break;
         case 'file':
-          displayContent = '📎 File';
+          displayContent = '📎 Attachment';
           break;
       }
     }
@@ -404,45 +477,87 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
-        elevation: 0,
-        shadowColor: AppColors.shadowLight,
-        titleSpacing: 16,
-        title: Row(
+      body: SafeArea(
+        bottom: false,
+        child: Column(
           children: [
-            Text(
-              'Chats',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 8),
-            _buildWsIndicator(provider.isWsConnected),
+            _buildHeader(provider),
+            Expanded(child: _buildBody(provider)),
           ],
         ),
-        actions: [
-          IconButton(
-            onPressed: () => provider.refresh(),
-            icon: Icon(Icons.refresh, color: AppColors.textPrimary),
-          ),
-          const SizedBox(width: 4),
-        ],
-        // ── Search bar pinned below the title row ──────────────────────
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(52),
-          child: _buildSearchBar(),
-        ),
       ),
-      body: _buildBody(provider),
+    );
+  }
+
+  Widget _buildHeader(ChatProvider provider) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.scaffoldBackground,
+        boxShadow: [
+          if (_isSearchFocused || _searchQuery.isNotEmpty)
+             BoxShadow(
+              color: AppColors.isDark ? Colors.black12 : Colors.black.withOpacity(0.03),
+              offset: const Offset(0, 4),
+              blurRadius: 10,
+            )
+        ]
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Chats',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    _buildWsIndicator(provider.isWsConnected),
+                  ],
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.isDark
+                        ? AppColors.whiteWithOpacity10
+                        : AppColors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: () => provider.refresh(),
+                    icon: Icon(Icons.refresh_rounded, 
+                      color: AppColors.primary, 
+                      size: 22
+                    ),
+                    tooltip: 'Refresh',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _buildSearchBar(),
+        ],
+      ),
     );
   }
 
   Widget _buildBody(ChatProvider provider) {
     if (provider.isLoading) {
-      return Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primary,
+          strokeWidth: 3,
+        ),
+      );
     }
 
     if (provider.error != null) {
@@ -452,7 +567,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       );
     }
 
-    final chats = _filteredChats(provider.chats); // ← apply search filter
+    final chats = _filteredChats(provider.chats);
 
     if (provider.chats.isEmpty) {
       return EmptyStateScreen(
@@ -464,7 +579,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
       );
     }
 
-    // Empty search results state
     if (chats.isEmpty) {
       return EmptyStateScreen(
         title: 'No Matches',
@@ -474,17 +588,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
 
     return RefreshIndicator(
-      color: const Color(0xFF7B9FD4),
+      color: AppColors.primary,
+      backgroundColor: AppColors.cardBackground,
       onRefresh: () => provider.loadChats(),
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.builder(
+        padding: const EdgeInsets.only(top: 8, bottom: 80),
+        physics: const BouncingScrollPhysics(),
         itemCount: chats.length,
-        itemBuilder: (context, index) => _buildChatTile(chats[index], provider),
-        separatorBuilder: (context, index) => const Divider(
-          height: 1,
-          endIndent: 16,
-          color: Color.fromARGB(255, 236, 236, 236),
-        ),
+        itemBuilder: (context, index) {
+          return _buildChatTile(chats[index], provider);
+        },
       ),
     );
   }
@@ -498,134 +611,157 @@ class _ChatListScreenState extends State<ChatListScreen> {
         chat.otherParticipant != null &&
         provider.userOnlineStatus[chat.otherParticipant!.id] == true;
 
-    return InkWell(
-      onTap: () => _onChatTap(chat),
-      child: Container(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.isDark ? AppColors.cardBackground : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.isDark 
+                ? Colors.black.withOpacity(0.2) 
+                : const Color(0xFF5D6072).withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          )
+        ],
+        border: Border.all(
+          color: AppColors.isDark ? AppColors.borderLight.withOpacity(0.3) : Colors.transparent,
+          width: 0.5,
+        ),
+      ),
+      child: Material(
         color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _buildAvatar(chat, provider.userOnlineStatus),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          splashColor: AppColors.primary.withOpacity(0.1),
+          highlightColor: AppColors.primary.withOpacity(0.05),
+          onTap: () => _onChatTap(chat),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _buildAvatar(chat, provider.userOnlineStatus),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Expanded(
-                        child: Text(
-                          chat.name,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              chat.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: hasUnread
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                color: AppColors.textPrimary,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      if (isOnline && isIndividual && previewText.isEmpty)
+                        Row(
+                          children: [
+                            Text(
+                              'Typing...',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.primary,
+                                fontStyle: FontStyle.italic,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        )
+                      else if (previewText.isNotEmpty)
+                        Text(
+                          previewText,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 14,
+                            height: 1.3,
+                            color: hasUnread
+                                ? (AppColors.isDark ? Colors.white : Colors.black87)
+                                : AppColors.textSecondary,
                             fontWeight: hasUnread
-                                ? FontWeight.w700
-                                : FontWeight.w600,
-                            color: AppColors.textPrimary,
+                                ? FontWeight.w600
+                                : FontWeight.w400,
                           ),
-                        ),
-                      ),
-                      // if (chat.chatType != ChatType.individual) ...[
-                      //   const SizedBox(width: 6),
-                      //   _buildTypeBadge(chat),
-                      // ],
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  if (isOnline)
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppColors.statsGreen,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'Online',
+                        )
+                      else
+                        Text(
+                          'No messages yet',
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.statsGreen,
-                            fontWeight: FontWeight.w500,
+                            color: AppColors.textHint,
+                            fontStyle: FontStyle.italic,
                           ),
                         ),
-                      ],
-                    )
-                  else if (previewText.isNotEmpty)
-                    Text(
-                      previewText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: hasUnread
-                            ? AppColors.textPrimary
-                            : AppColors.textSecondary,
-                        fontWeight: hasUnread
-                            ? FontWeight.w500
-                            : FontWeight.normal,
-                      ),
-                    )
-                  else
-                    Text(
-                      'No messages yet',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade400,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  _formatMessageTime(chat.lastMessageAt ?? chat.createdAt),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: hasUnread
-                        ? const Color(0xFF7B9FD4)
-                        : Colors.grey.shade400,
-                    fontWeight: hasUnread ? FontWeight.w600 : FontWeight.normal,
+                    ],
                   ),
                 ),
-                const SizedBox(height: 5),
-                if (hasUnread)
-                  Container(
-                    constraints: const BoxConstraints(minWidth: 20),
-                    height: 20,
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      chat.unreadCount > 99
-                          ? '99+'
-                          : chat.unreadCount.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                const SizedBox(width: 12),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      _formatMessageTime(chat.lastMessageAt ?? chat.createdAt),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: hasUnread
+                            ? AppColors.primary
+                            : AppColors.textSecondary.withOpacity(0.8),
+                        fontWeight: hasUnread ? FontWeight.bold : FontWeight.w500,
                       ),
                     ),
-                  )
-                else
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 8),
+                    if (hasUnread)
+                      Container(
+                        constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            )
+                          ]
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          chat.unreadCount > 99
+                              ? '99+'
+                              : chat.unreadCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    else
+                      const SizedBox(height: 24, width: 24), // Placeholder to maintain height
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

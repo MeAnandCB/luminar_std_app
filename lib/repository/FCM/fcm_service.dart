@@ -56,13 +56,14 @@ class FCMService {
       // TODO: Send updated token to your backend
     });
 
-    // iOS foreground: let FCM show the notification natively with sound/alert.
-    // Local notifications are only shown on Android to avoid double-notification on iOS.
+    // To ensure sound plays reliably and customize foreground behavior,
+    // we use flutter_local_notifications to show foreground notifications on BOTH platforms.
+    // We disable the native FCM foreground alert for iOS to prevent duplicate notifications.
     if (Platform.isIOS) {
       await _messaging.setForegroundNotificationPresentationOptions(
-        alert: true,
+        alert: false, // Turned off so flutter_local_notifications handles it
         badge: true,
-        sound: true,
+        sound: false, // Turned off to avoid native double sound
       );
     }
 
@@ -157,16 +158,14 @@ class FCMService {
       final notification = message.notification;
       LoggerUtils.info('Foreground FCM: ${notification?.title} | Data: ${message.data}', tag: 'FCM');
       if (notification != null) {
-        // iOS handles foreground notifications natively (alert+sound enabled above).
-        // Only show local notification on Android.
-        if (Platform.isAndroid) {
-          _showLocalNotification(
-            id: message.hashCode,
-            title: notification.title ?? 'Luminar',
-            body: notification.body ?? '',
-            payload: jsonEncode(message.data),
-          );
-        }
+        // We use flutter_local_notifications for BOTH platforms to force sound
+        // in the foreground even if the backend payload misses it.
+        _showLocalNotification(
+          id: message.hashCode,
+          title: notification.title ?? 'Luminar',
+          body: notification.body ?? '',
+          payload: jsonEncode(message.data),
+        );
       }
     });
   }

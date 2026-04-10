@@ -108,6 +108,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
     context.watch<ThemeProvider>();
     final unreadCount = chatProv.totalUnreadCount;
     final unreadExams = context.select<DashboardController, int>((c) => c.unreadExamsCount);
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     if (provider.enrollmentDataRes != null) {
       LoggerUtils.debug(provider.enrollmentDataRes!.enrollments.length.toString(), tag: 'BottomNav');
@@ -122,7 +123,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
       // ★ Creative FAB — larger, with ring glow
-      floatingActionButton: ScaleTransition(
+      floatingActionButton: isKeyboardOpen ? null : ScaleTransition(
         scale: _fabScale,
         child: GestureDetector(
           onTap: _navigateToScanner,
