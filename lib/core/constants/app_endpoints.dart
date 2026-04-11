@@ -40,6 +40,7 @@ class AppEndpoints {
   static const String payments = '/api/student/payments/';
   static const String emiPlans = '/api/emi-plans/';
   static const String emiPreview = '/api/student-enrollment/emi-preview/';
+  static const String emiConfirm = '/api/student-enrollment/emi-confirm/';
 
   // Razorpay / Payments
   static const String razorpayFull =

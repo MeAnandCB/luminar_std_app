@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/repository/academic_info/model.dart';
 import 'package:luminar_std/repository/academic_info/service.dart';
 import 'package:luminar_std/repository/complete_profile/service.dart';
@@ -234,8 +235,9 @@ class CompleteProfileController extends ChangeNotifier {
       addIfChanged('specialization', specialization, initialProfile?.academicInfo?.specialization);
       addIfChanged('cgpa', cgpa, initialProfile?.academicInfo?.cgpa);
       addIfChanged('admission_date', admissionDate, initialProfile?.academicInfo?.admissionDate);
-      if (anyArrears != null && anyArrears != initialProfile?.academicInfo?.anyArrears) {
-        deltaFields['any_arrears'] = anyArrears;
+      // Always send any_arrears as explicit true/false boolean
+      if (anyArrears != null) {
+        deltaFields['any_arrears'] = anyArrears! ? true : false;
       }
 
       // Career
@@ -244,8 +246,9 @@ class CompleteProfileController extends ChangeNotifier {
         studentStatus,
         initialProfile?.academicInfo?.studentOrWorkingProfessional,
       );
-      if (placementAssistance != null && placementAssistance != initialProfile?.placementInfo?.placementAssistance) {
-        deltaFields['placement_assistance'] = placementAssistance;
+      // Always send placement_assistance as explicit true/false boolean
+      if (placementAssistance != null) {
+        deltaFields['placement_assistance'] = placementAssistance! ? true : false;
       }
       addIfChanged('preferred_job_location', preferredJobLocation, initialProfile?.placementInfo?.preferredJobLocation);
 
@@ -281,6 +284,18 @@ class CompleteProfileController extends ChangeNotifier {
         return;
       }
 
+      // ── Log full payload before posting ───────────────────────────────────
+      LoggerUtils.info('=== Profile Submit Payload ===', tag: 'CompleteProfile');
+      LoggerUtils.info('student_id : ${initialProfile?.personalInfo?.studentId}', tag: 'CompleteProfile');
+      deltaFields.forEach((key, value) {
+        LoggerUtils.info('  $key : $value (${value.runtimeType})', tag: 'CompleteProfile');
+      });
+      LoggerUtils.info('  id_proof (front) : ${_idFrontPath ?? 'not changed'}', tag: 'CompleteProfile');
+      LoggerUtils.info('  id_proof_2 (back) : ${_idBackPath ?? 'not changed'}', tag: 'CompleteProfile');
+      LoggerUtils.info('  profile_pic : ${_profilePicPath ?? 'not changed'}', tag: 'CompleteProfile');
+      LoggerUtils.info('  resume : ${_resumePath ?? 'not changed'}', tag: 'CompleteProfile');
+      LoggerUtils.info('==============================', tag: 'CompleteProfile');
+
       await _submissionService.submitProfile(
         student_id: initialProfile?.personalInfo?.studentId.toString(),
         fields: deltaFields,
@@ -290,6 +305,7 @@ class CompleteProfileController extends ChangeNotifier {
         resumePath: _resumePath,
       );
     } catch (e) {
+      LoggerUtils.error('submitProfile error: $e', tag: 'CompleteProfile', error: e);
       rethrow;
     } finally {
       _isSubmitting = false;

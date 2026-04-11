@@ -275,6 +275,10 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
   bool _hasProfilePic = false;
   String? _profilePicUrl;
 
+  // Shown when pincode is not found — lets user pick Out of State / Out of Country
+  bool _showLocationFallback = false;
+  String? _selectedLocationFallback;
+
   bool _hasValue(String? value) => value != null && value.trim().isNotEmpty;
 
   @override
@@ -425,11 +429,41 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
     }
   }
 
+  Widget _buildLocationFallbackDropdown(CompleteProfileController completeController) {
+    const options = ['Out of State', 'Out of Country'];
+    return DropdownButtonFormField<String>(
+      initialValue: _selectedLocationFallback,
+      decoration: InputDecoration(
+        labelText: 'District*',
+        prefixIcon: Icon(Icons.map_outlined, color: AppColors.primary, size: 20),
+        labelStyle: TextStyle(color: AppColors.textSecondary),
+      ),
+      hint: Text('Select location type', style: TextStyle(color: AppColors.textHint, fontSize: 13)),
+      items: options
+          .map((o) => DropdownMenuItem(value: o, child: Text(o, style: TextStyle(fontSize: 14))))
+          .toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedLocationFallback = value;
+          completeController.district = value;
+        });
+      },
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'Please select';
+        return null;
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ProfileController>(
       builder: (context, controller, child) {
-        _initData(controller);
+        if (!_initialized && controller.profileData != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _initData(controller);
+          });
+        }
         return SingleChildScrollView(
           padding: EdgeInsets.all(16),
           child: Form(
@@ -646,91 +680,83 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                       ),
                       SizedBox(height: 12),
 
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomTextField(
-                              label: 'Pincode*',
-                              controller: _pincodeController,
-                              enabled: !_hasPincode,
-                              prefixIcon: Icons.pin_drop_outlined,
-                              keyboardType: TextInputType.number,
-                              maxLength: 6,
-                              onChanged: (value) async {
-                                final completeController = context.read<CompleteProfileController>();
-                                completeController.pincode = value;
+                      CustomTextField(
+                        label: 'Pincode*',
+                        controller: _pincodeController,
+                        enabled: !_hasPincode,
+                        prefixIcon: Icons.pin_drop_outlined,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        onChanged: (value) async {
+                          final completeController = context.read<CompleteProfileController>();
+                          completeController.pincode = value;
 
-                                // Clear district and pincode if backspace is pressed (length < 6)
-                                if (_districtController.text.isNotEmpty && value.length < 6) {
-                                  setState(() {
-                                    _districtController.clear();
-                                    completeController.district = null;
-                                  });
-                                  return;
-                                }
+                          // Reset district when pincode is being edited
+                          if (value.length < 6) {
+                            setState(() {
+                              _districtController.clear();
+                              completeController.district = null;
+                              _showLocationFallback = false;
+                              _selectedLocationFallback = null;
+                            });
+                            return;
+                          }
 
-                                if (value.isEmpty) {
-                                  setState(() {
-                                    _districtController.clear();
-                                    completeController.district = null;
-                                  });
-                                  return;
-                                }
-
-                                // Auto-fill district based on pincode
-                                if (value.length == 6) {
-                                  setState(() {
-                                    _districtController.text = 'Loading...';
-                                  });
-                                  final district = await context.read<ProfileController>().getDistrictFromPincode(
-                                    value,
-                                  );
-                                  if (district != null) {
-                                    setState(() {
-                                      _districtController.text = district;
-                                      completeController.district = district;
-                                    });
-                                  } else {
-                                    setState(() {
-                                      _districtController.text = 'District not found';
-                                      completeController.district = null;
-                                    });
-                                  }
-                                }
-                              },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter pincode';
-                                }
-                                if (value.length != 6) {
-                                  return 'Pincode must be 6 digits';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: controller.isPincodeLoading
-                                ? Center(child: const CircularProgressIndicator())
-                                : CustomTextField(
-                                    label: 'District*',
-                                    controller: _districtController,
-                                    prefixIcon: Icons.map_outlined,
-                                    enabled: false,
-                                    onChanged: (value) {
-                                      context.read<CompleteProfileController>().district = value;
-                                    },
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'District will auto-fill';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                          ),
-                        ],
+                          // Auto-fill district based on pincode
+                          if (value.length == 6) {
+                            setState(() {
+                              _districtController.text = 'Loading...';
+                              _showLocationFallback = false;
+                              _selectedLocationFallback = null;
+                            });
+                            final district = await context.read<ProfileController>().getDistrictFromPincode(value);
+                            if (district != null) {
+                              setState(() {
+                                _districtController.text = district;
+                                completeController.district = district;
+                                _showLocationFallback = false;
+                              });
+                            } else {
+                              // Pincode not found — show Out of State / Out of Country picker
+                              setState(() {
+                                _districtController.clear();
+                                completeController.district = null;
+                                _showLocationFallback = true;
+                                _selectedLocationFallback = null;
+                              });
+                            }
+                          }
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter pincode';
+                          }
+                          if (value.length != 6) {
+                            return 'Pincode must be 6 digits';
+                          }
+                          return null;
+                        },
                       ),
+                      SizedBox(height: 12),
+                      controller.isPincodeLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : _showLocationFallback
+                              ? _buildLocationFallbackDropdown(context.read<CompleteProfileController>())
+                              : CustomTextField(
+                                  label: 'District*',
+                                  controller: _districtController,
+                                  prefixIcon: Icons.map_outlined,
+                                  enabled: false,
+                                  onChanged: (value) {
+                                    context.read<CompleteProfileController>().district = value;
+                                  },
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'District will auto-fill';
+                                    }
+                                    return null;
+                                  },
+                                ),
                     ],
                   ),
                 ),
@@ -1420,7 +1446,11 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
   Widget build(BuildContext context) {
     return Consumer<ProfileController>(
       builder: (context, controller, child) {
-        _initData(controller);
+        if (!_initialized && controller.profileData != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _initData(controller);
+          });
+        }
         return SingleChildScrollView(
           padding: EdgeInsets.all(16),
           child: Form(
@@ -1660,7 +1690,11 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
   Widget build(BuildContext context) {
     return Consumer<ProfileController>(
       builder: (context, controller, child) {
-        _initData(controller);
+        if (!_initialized && controller.profileData != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _initData(controller);
+          });
+        }
         return SingleChildScrollView(
           padding: EdgeInsets.all(16),
           child: Form(

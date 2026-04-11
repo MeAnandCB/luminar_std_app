@@ -6,6 +6,7 @@ import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen
 import 'package:luminar_std/repository/enrollment_screen/service/enrollment_service.dart';
 import 'package:luminar_std/repository/razorpay/model/emi_res_model.dart';
 import 'package:luminar_std/repository/razorpay/model/razorpay_model.dart';
+import 'package:luminar_std/repository/enrollment_screen/service/installment_service.dart';
 import 'package:luminar_std/repository/razorpay/service/razorpay_service.dart';
 
 import 'package:provider/provider.dart';
@@ -133,19 +134,62 @@ class EnrollmentProvider extends ChangeNotifier {
     }
   }
 
+  // Confirm EMI plan — POST /api/student-enrollment/emi-confirm/
+  String? emiConfirmError;
+
+  Future<bool> confirmEmiPlan({
+    required String emiPlanId,
+    required String enrollmentId,
+    required List<num> emiAmounts,
+    required PaymentDetailsApiService apiService,
+    String? firstEmiDate,
+  }) async {
+    _isLoading = true;
+    emiConfirmError = null;
+    notifyListeners();
+    try {
+      LoggerUtils.debug(
+        'Confirming EMI plan: $emiPlanId\n'
+        '  enrollment_id  : $enrollmentId\n'
+        '  emi_amounts    : $emiAmounts\n'
+        '  first_emi_date : ${firstEmiDate ?? "(default)"}',
+        tag: 'Enrollment',
+      );
+      final response = await apiService.confirmEmiPlan(
+        emiPlanId: emiPlanId,
+        enrollmentId: enrollmentId,
+        emiAmounts: emiAmounts,
+        firstEmiDate: firstEmiDate,
+      );
+      if (response.success) {
+        LoggerUtils.info('EMI plan confirmed successfully', tag: 'Enrollment');
+        return true;
+      } else {
+        emiConfirmError = response.message ?? 'Failed to confirm EMI plan';
+        LoggerUtils.warning(emiConfirmError!, tag: 'Enrollment');
+        return false;
+      }
+    } catch (e) {
+      emiConfirmError = e.toString();
+      LoggerUtils.error(e.toString(), tag: 'Enrollment');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   //get emi data
   Future<void> getEmiPaymentDetails({
     required String id,
-    String? emiPlanId,
   }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      LoggerUtils.debug("Fetching EMI payment details for ID: $id, plan: $emiPlanId", tag: 'Enrollment');
+      LoggerUtils.debug("Fetching EMI payment details for plan ID: $id", tag: 'Enrollment');
       final response = await RazorpayScreenService().getEmiPaymentDetails(
         id: id,
-        emiPlanId: emiPlanId,
       );
 
       if (response.success) {

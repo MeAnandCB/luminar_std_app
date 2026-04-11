@@ -176,8 +176,7 @@ class ApiService {
   ApiResponse<dynamic> _handleResponse(http.Response response) {
     final statusCode = response.statusCode;
 
-    // Log response in debug mode
-    // LoggerUtils.debug("Response [Status $statusCode]: ${response.body}", tag: 'API');
+    LoggerUtils.debug("◀ Response [$statusCode]: ${response.body}", tag: 'API');
 
     try {
       // Handle empty body (like 204 No Content or 201 Created with no body)

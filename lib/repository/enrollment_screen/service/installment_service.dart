@@ -2,6 +2,7 @@ import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/emiplans_model.dart';
 
 class PaymentDetailsApiService {
@@ -45,6 +46,62 @@ class PaymentDetailsApiService {
         return response.cast<List<EmiPlan>>();
       }
     } catch (e) {
+      return ApiResponse.error(e.toString(), null);
+    }
+  }
+
+  Future<ApiResponse<dynamic>> confirmEmiPlan({
+    required String emiPlanId,
+    required String enrollmentId,
+    required List<num> emiAmounts,
+    String? firstEmiDate,
+  }) async {
+    if (emiPlanId.isEmpty) {
+      return ApiResponse.error('emi_plan_id cannot be empty', null);
+    }
+    if (enrollmentId.isEmpty) {
+      return ApiResponse.error('enrollment_id cannot be empty', null);
+    }
+    if (emiAmounts.isEmpty) {
+      return ApiResponse.error('emi_amounts cannot be empty', null);
+    }
+    try {
+      final accessKey = await AppUtils.getAccessKey();
+      final Map<String, dynamic> body = {
+        'enrollment_id': enrollmentId,
+        'emi_plan_id': emiPlanId,
+        'emi_amounts': emiAmounts,
+        'confirmation': true,
+      };
+      if (firstEmiDate != null && firstEmiDate.isNotEmpty) {
+        body['first_emi_date'] = firstEmiDate;
+      }
+
+      LoggerUtils.info('=== EMI Confirm REQUEST ===', tag: 'EmiConfirm');
+      LoggerUtils.info('POST ${AppEndpoints.emiConfirm}', tag: 'EmiConfirm');
+      LoggerUtils.info('  enrollment_id  : $enrollmentId', tag: 'EmiConfirm');
+      LoggerUtils.info('  emi_plan_id    : $emiPlanId', tag: 'EmiConfirm');
+      LoggerUtils.info('  emi_amounts    : $emiAmounts', tag: 'EmiConfirm');
+      LoggerUtils.info('  confirmation   : true', tag: 'EmiConfirm');
+      LoggerUtils.info('  first_emi_date : ${firstEmiDate ?? "(not sent)"}', tag: 'EmiConfirm');
+      LoggerUtils.info('===========================', tag: 'EmiConfirm');
+
+      final response = await _apiService.post(
+        endpoint: AppEndpoints.emiConfirm,
+        token: accessKey,
+        body: body,
+      );
+
+      LoggerUtils.info('=== EMI Confirm RESPONSE ===', tag: 'EmiConfirm');
+      LoggerUtils.info('  status  : ${response.statusCode}', tag: 'EmiConfirm');
+      LoggerUtils.info('  success : ${response.success}', tag: 'EmiConfirm');
+      LoggerUtils.info('  message : ${response.message}', tag: 'EmiConfirm');
+      LoggerUtils.info('  data    : ${response.data}', tag: 'EmiConfirm');
+      LoggerUtils.info('============================', tag: 'EmiConfirm');
+
+      return response;
+    } catch (e) {
+      LoggerUtils.error('EMI Confirm exception: $e', tag: 'EmiConfirm', error: e);
       return ApiResponse.error(e.toString(), null);
     }
   }

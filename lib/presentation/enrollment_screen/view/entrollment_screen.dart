@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
+import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/widgets/status_screens.dart';
 import 'package:luminar_std/core/services/response.dart';
@@ -12,7 +14,6 @@ import 'package:luminar_std/presentation/enrollment_screen/view/widget/pay_in_fu
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/emiplans_model.dart';
 import 'package:luminar_std/repository/enrollment_screen/service/installment_service.dart';
-import 'package:luminar_std/repository/razorpay/model/emi_res_model.dart';
 import 'package:luminar_std/repository/razorpay/model/razorpay_model.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:provider/provider.dart';
@@ -1718,56 +1719,101 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                                 .enrollments[widget.index]
                                 .uid;
 
-                            // Show loading indicator
+                            // Show loading
                             showDialog(
                               context: context,
                               barrierDismissible: false,
-                              builder: (context) => Center(
-                                child: CircularProgressIndicator(
-                                  color: AppColors.primary,
-                                ),
+                              builder: (_) => const Center(
+                                child: CircularProgressIndicator(),
                               ),
                             );
 
                             try {
                               if (selectedPaymentMethod == 0) {
-                                // Full Payment
+                                // ── Full Payment ──────────────────────────
                                 await provider.getPaymentDetails(
                                   id: enrollmentUid,
                                 );
-                                Navigator.pop(context); // Dismiss loading
+                                if (!context.mounted) return;
+                                Navigator.pop(context);
 
                                 if (provider.paymentDetails != null) {
-                                  _startRazorpayPayment(
-                                    provider.paymentDetails!,
-                                  );
+                                  _startRazorpayPayment(provider.paymentDetails!);
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text(
-                                        'Failed to get payment details',
-                                      ),
+                                      content: Text('Failed to get payment details'),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
                                 }
                               } else {
-                                // EMI Payment
-                                await provider.getEmiPaymentDetails(
-                                  id: enrollmentUid,
-                                  emiPlanId: selectedEmiPlanId ?? '',
-                                );
-                                Navigator.pop(context); // Dismiss loading
+                                // ── EMI Payment ───────────────────────────
+                                // POST /api/student-enrollment/emi-confirm/
+                                final emiAmounts = _previewData
+                                        ?.installmentBreakdown.schedule
+                                        .map((i) => i.amount)
+                                        .toList() ??
+                                    [];
+                                final firstEmiDate =
+                                    _previewData?.emiPreview.firstEmiDate;
 
-                                if (provider.emiResData != null) {
-                                  _startEmiRazorpayPayment(
-                                    provider.emiResData!,
+                                LoggerUtils.info(
+                                  '── EMI Confirm button tapped ──\n'
+                                  '  enrollment_id  : $enrollmentUid\n'
+                                  '  emi_plan_id    : $selectedEmiPlanId\n'
+                                  '  emi_amounts    : $emiAmounts\n'
+                                  '  first_emi_date : ${firstEmiDate ?? "(not set)"}',
+                                  tag: 'EmiConfirm',
+                                );
+
+                                final confirmed = await provider.confirmEmiPlan(
+                                  emiPlanId: selectedEmiPlanId ?? '',
+                                  enrollmentId: enrollmentUid,
+                                  emiAmounts: emiAmounts,
+                                  firstEmiDate: firstEmiDate,
+                                  apiService: _apiService,
+                                );
+
+                                if (!context.mounted) return;
+                                Navigator.pop(context);
+
+                                if (confirmed) {
+                                  LoggerUtils.info(
+                                    'EMI confirmed ✓ — refreshing dashboard & navigating home',
+                                    tag: 'EmiConfirm',
                                   );
-                                } else {
+                                  // Refresh dashboard so home screen shows updated data
+                                  await context
+                                      .read<DashboardController>()
+                                      .getDashboardData(
+                                        context: context,
+                                        forceRefresh: true,
+                                      );
+                                  if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
+                                      content: Text('EMI scheduled successfully!'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const BottomNavScreen(),
+                                    ),
+                                    (route) => false,
+                                  );
+                                } else {
+                                  LoggerUtils.error(
+                                    'EMI confirm failed: ${provider.emiConfirmError}',
+                                    tag: 'EmiConfirm',
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
                                       content: Text(
-                                        'Failed to get EMI payment details',
+                                        provider.emiConfirmError ??
+                                            'Failed to confirm EMI plan',
                                       ),
                                       backgroundColor: Colors.red,
                                     ),
@@ -1775,11 +1821,17 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                                 }
                               }
                             } catch (e) {
-                              Navigator.pop(context); // Dismiss loading
+                              if (!context.mounted) return;
+                              Navigator.pop(context);
+                              LoggerUtils.error(
+                                'Confirm button exception: $e',
+                                tag: 'EmiConfirm',
+                                error: e,
+                              );
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text(
-                                    'Something went wrong. Please try again.',
+                                    'Something went wrong: $e',
                                   ),
                                   backgroundColor: Colors.red,
                                 ),
@@ -2055,26 +2107,6 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   void _startRazorpayPayment(RazorpayPaymentDetails details) {
-    var options = {
-      'key': details.key,
-      'amount': details.amount,
-      "order_id": details.orderId,
-      'name': details.name,
-      'description': details.description,
-      'retry': {'enabled': true, 'max_count': 1},
-      'send_sms_hash': true,
-      'prefill': {
-        'contact': details.prefill?.contact,
-        'email': details.prefill?.email,
-      },
-      'external': {
-        'wallets': ['paytm'],
-      },
-    };
-    _razorpay.open(options);
-  }
-
-  void _startEmiRazorpayPayment(EmiResponseData details) {
     var options = {
       'key': details.key,
       'amount': details.amount,
