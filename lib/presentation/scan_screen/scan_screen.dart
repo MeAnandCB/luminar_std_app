@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
@@ -473,6 +474,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(

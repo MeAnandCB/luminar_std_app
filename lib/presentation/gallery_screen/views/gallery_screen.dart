@@ -1,5 +1,6 @@
 // screens/gallery_screen.dart
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/gallery_details_screen/views/gallery_detail_screen.dart';
 import 'package:luminar_std/presentation/gallery_screen/controller/gallery_screen_controller.dart';
@@ -64,6 +65,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final provider = Provider.of<GalleryProvider>(context, listen: false);
 
     return Scaffold(

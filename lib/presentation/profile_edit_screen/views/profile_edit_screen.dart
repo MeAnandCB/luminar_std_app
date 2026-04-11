@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -34,6 +35,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return ChangeNotifierProvider(
       create: (_) => ProfileEditController(),
       child: Consumer2<ProfileController, ProfileEditController>(

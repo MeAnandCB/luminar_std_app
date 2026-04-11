@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -17,6 +18,7 @@ class NotificationApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return MaterialApp(
       title: 'Notifications',
       debugShowCheckedModeBanner: false,

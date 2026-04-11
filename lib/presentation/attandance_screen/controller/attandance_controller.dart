@@ -61,10 +61,14 @@ class AttendanceProvider extends ChangeNotifier {
   List<BatchSession> get sessions => _sessions;
 
   /// Called every time the screen opens — always fetches fresh data.
+  ///
+  /// Pass [preloadedSessions] to skip the duplicate dashboard API call when
+  /// the caller already has session data from [DashboardController].
   Future<void> initWithBatch({
     required String batchId,
     required String batchName,
     String courseName = '',
+    List<BatchSession> preloadedSessions = const [],
   }) async {
     _selectedBatch = EnrollmentBatch(
       uid: batchId,
@@ -74,7 +78,7 @@ class AttendanceProvider extends ChangeNotifier {
       courseName: courseName,
       sessions: [],
     );
-    _sessions = [];
+    _sessions = preloadedSessions;
     _selectedSession = null;
     _allRecords = [];
     _attendanceData = null;
@@ -85,11 +89,17 @@ class AttendanceProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    // Load sessions and attendance in parallel
-    await Future.wait([loadAttendance(), _loadSessions(batchId)]);
+    if (preloadedSessions.isNotEmpty) {
+      // Sessions already provided — only fetch attendance data
+      await loadAttendance();
+    } else {
+      // Fallback: fetch both in parallel (sessions come from dashboard API)
+      await Future.wait([loadAttendance(), _loadSessions(batchId)]);
+    }
   }
 
   /// Fetches sessions for the current batch from the dashboard API.
+  /// Only called when the caller did not supply [preloadedSessions].
   Future<void> _loadSessions(String batchId) async {
     final response = await _service.getDashboard();
     if (response.success && response.data != null) {

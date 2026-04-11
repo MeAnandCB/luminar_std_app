@@ -1,3 +1,5 @@
+import 'package:luminar_std/core/theme/theme_provider.dart';
+import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -148,6 +150,7 @@ class _ExamResultScreenState extends State<ExamResultScreen>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: FutureBuilder<ApiResponse<ExamResultResponse>>(
@@ -240,11 +243,25 @@ class _ExamResultScreenState extends State<ExamResultScreen>
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
                     child: Column(
                       children: [
-                        // Performance Level
-                        _PerformanceLevelCard(percent: result.overallPercent),
+                        // ── 1. Your Marks (criterion scores) ─────────────
+                        if (result.criterionScores.isNotEmpty) ...[
+                          _CriterionScoresCard(
+                            scores: result.criterionScores,
+                            overallScore: result.overallScore,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // ── 2. Grade / Performance level ─────────────────
+                        result.templateGradeBands.isNotEmpty
+                            ? _TemplateBandsCard(
+                                bands: result.templateGradeBands,
+                                currentPercent: result.overallPercent,
+                              )
+                            : _PerformanceLevelCard(percent: result.overallPercent),
                         const SizedBox(height: 16),
 
-                        // Quick stats row
+                        // ── 3. Quick stats row ────────────────────────────
                         Row(
                           children: [
                             Expanded(
@@ -285,47 +302,60 @@ class _ExamResultScreenState extends State<ExamResultScreen>
                         ),
                         const SizedBox(height: 16),
 
-                        // Details card
-                        _InfoCard(
-                          children: [
-                            _InfoRow(
-                              icon: Icons.menu_book_rounded,
-                              label: 'Course',
-                              value: result.batch?.courseName ?? '—',
-                            ),
-                            _InfoRow(
-                              icon: Icons.class_outlined,
-                              label: 'Batch',
-                              value: result.batch?.batchName ?? '—',
-                            ),
-                            _InfoRow(
-                              icon: Icons.calendar_today_rounded,
-                              label: 'Published',
-                              value: publishedStr,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Remarks
-                        if (result.remarks.isNotEmpty)
+                        // ── 4. Instructor Remarks ─────────────────────────
+                        if (result.remarks.isNotEmpty) ...[
                           _CommentCard(
                             title: 'Instructor Remarks',
                             icon: Icons.chat_bubble_rounded,
                             content: result.remarks,
                             color: AppColors.primary,
                           ),
+                          const SizedBox(height: 16),
+                        ],
 
-                        if (result.attendanceComment.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16),
-                            child: _CommentCard(
-                              title: 'Attendance Comment',
-                              icon: Icons.event_available_rounded,
-                              content: result.attendanceComment,
-                              color: Colors.teal,
-                            ),
+                        // ── 5. Attendance comment — only when NOT present ─
+                        if (result.examAttended != true &&
+                            result.attendanceComment.isNotEmpty)
+                          _CommentCard(
+                            title: 'Attendance Note',
+                            icon: Icons.event_busy_rounded,
+                            content: result.attendanceComment,
+                            color: Colors.orange,
                           ),
+
+                        // ── 6. Course details at bottom ───────────────────
+                        if (result.batch?.courseName != null ||
+                            result.batch?.batchName != null ||
+                            result.evaluatedByName != null) ...[
+                          const SizedBox(height: 4),
+                          _InfoCard(
+                            children: [
+                              if (result.batch?.courseName != null)
+                                _InfoRow(
+                                  icon: Icons.menu_book_rounded,
+                                  label: 'Course',
+                                  value: result.batch!.courseName,
+                                ),
+                              if (result.batch?.batchName != null)
+                                _InfoRow(
+                                  icon: Icons.class_outlined,
+                                  label: 'Batch',
+                                  value: result.batch!.batchName,
+                                ),
+                              _InfoRow(
+                                icon: Icons.calendar_today_rounded,
+                                label: 'Published',
+                                value: publishedStr,
+                              ),
+                              if (result.evaluatedByName != null)
+                                _InfoRow(
+                                  icon: Icons.person_rounded,
+                                  label: 'Evaluated By',
+                                  value: result.evaluatedByName!,
+                                ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -495,6 +525,404 @@ class _HeroHeader extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+// ── Template Grade Bands Card ─────────────────────────────────────────────────
+class _TemplateBandsCard extends StatelessWidget {
+  final List<TemplateGradeBand> bands;
+  final double currentPercent;
+
+  const _TemplateBandsCard({
+    required this.bands,
+    required this.currentPercent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Sort by sequence
+    final sorted = [...bands]..sort((a, b) => a.sequenceNo.compareTo(b.sequenceNo));
+    // Find active band
+    final activeIndex = sorted.indexWhere(
+      (b) => currentPercent >= b.minPercent && currentPercent <= b.maxPercent,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.bar_chart_rounded, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Grade Bands',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Band segments
+          Row(
+            children: List.generate(sorted.length, (i) {
+              final band = sorted[i];
+              final isActive = i == activeIndex;
+              final isPast = activeIndex >= 0 && i > activeIndex;
+              final color = band.isPass ? const Color(0xFF42A5F5) : Colors.red.shade400;
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: i < sorted.length - 1 ? 5 : 0),
+                  child: Column(
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
+                        height: isActive ? 14 : 8,
+                        decoration: BoxDecoration(
+                          color: isPast
+                              ? color.withValues(alpha: 0.25)
+                              : isActive
+                                  ? color
+                                  : color.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: isActive
+                              ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)]
+                              : [],
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        band.gradeName,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                          color: isActive ? color : AppColors.textHint,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        '${band.minPercent.toInt()}–${band.maxPercent.toInt()}%',
+                        style: TextStyle(fontSize: 8, color: AppColors.textHint),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+          if (activeIndex >= 0) ...[
+            const SizedBox(height: 8),
+            Center(
+              child: Text(
+                sorted[activeIndex].gradeName,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: sorted[activeIndex].isPass
+                      ? const Color(0xFF42A5F5)
+                      : Colors.red.shade400,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Your Marks Card ───────────────────────────────────────────────────────────
+class _CriterionScoresCard extends StatelessWidget {
+  final List<CriterionScore> scores;
+  final double? overallScore;
+
+  const _CriterionScoresCard({
+    required this.scores,
+    this.overallScore,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = [...scores]..sort((a, b) => a.sequenceNo.compareTo(b.sequenceNo));
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary.withValues(alpha: 0.08), Colors.transparent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.stars_rounded, color: AppColors.primary, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Your Marks',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (overallScore != null) ...[
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Total  ${overallScore!.toStringAsFixed(1)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // Score items
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            child: Column(
+              children: List.generate(sorted.length, (i) {
+                final s = sorted[i];
+                final progress = (s.scoreValue != null && s.maxScore != null && s.maxScore! > 0)
+                    ? (s.scoreValue! / s.maxScore!).clamp(0.0, 1.0)
+                    : 0.0;
+
+                // Pick a unique accent color per item
+                final accentColors = [
+                  const Color(0xFF6C63FF),
+                  const Color(0xFF10B981),
+                  const Color(0xFFFF6B6B),
+                  const Color(0xFFFF9800),
+                  const Color(0xFF3B82F6),
+                ];
+                final accent = accentColors[i % accentColors.length];
+
+                final barColor = progress >= 0.8
+                    ? Colors.green.shade500
+                    : progress >= 0.5
+                        ? const Color(0xFFFF9800)
+                        : Colors.red.shade400;
+
+                return Padding(
+                  padding: EdgeInsets.only(top: i == 0 ? 8 : 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: accent.withValues(alpha: 0.15)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            // Index badge
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: accent.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '${i + 1}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: accent,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                s.criterionName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            // Score bubble
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: barColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: barColor.withValues(alpha: 0.3)),
+                              ),
+                              child: Text(
+                                s.scoreValue != null && s.maxScore != null
+                                    ? '${s.scoreValue!.toStringAsFixed(0)} / ${s.maxScore!.toStringAsFixed(0)}'
+                                    : s.scoreValue?.toStringAsFixed(0) ?? '—',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: barColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Thick progress bar with percentage
+                        Stack(
+                          children: [
+                            Container(
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: barColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                            FractionallySizedBox(
+                              widthFactor: progress,
+                              child: Container(
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [barColor.withValues(alpha: 0.7), barColor],
+                                  ),
+                                  borderRadius: BorderRadius.circular(6),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: barColor.withValues(alpha: 0.4),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            if (s.gradeLabel != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: accent.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  s.gradeLabel!,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: accent,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            const Spacer(),
+                            Text(
+                              '${(progress * 100).toInt()}%',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: barColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (s.comment != null) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.scaffoldBackground,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.format_quote_rounded, size: 14, color: AppColors.textHint),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    s.comment!,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                      fontStyle: FontStyle.italic,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

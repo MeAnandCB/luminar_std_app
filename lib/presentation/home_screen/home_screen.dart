@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
@@ -63,6 +64,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final dashboardProvider = Provider.of<DashboardController>(context);
     final dashboard = dashboardProvider.dashboard;
 

@@ -3,7 +3,9 @@ import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
+import 'package:provider/provider.dart';
 
 String _formatBatchTime(String time) {
   if (time.isEmpty) return 'N/A';
@@ -58,6 +60,7 @@ class EnrollmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final dateFormat = DateFormat('dd MMM yyyy');
     LoggerUtils.debug(
       enrollment.progress.completionPercentage.toString(),
@@ -192,11 +195,11 @@ class EnrollmentCard extends StatelessWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.cardBackground,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.12),
+                                  color: AppColors.shadowLight,
                                   blurRadius: 8,
                                   offset: const Offset(0, 3),
                                 ),
@@ -276,11 +279,12 @@ class EnrollmentCard extends StatelessWidget {
                               children: [
                                 Text(
                                   enrollment.course.courseName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w800,
                                     height: 1.3,
                                     letterSpacing: -0.2,
+                                    color: AppColors.textPrimary,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -345,13 +349,13 @@ class EnrollmentCard extends StatelessWidget {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF3E0),
+                              color: AppColors.statsOrange.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.group_rounded,
                               size: 20,
-                              color: Color(0xFFE65100),
+                              color: AppColors.statsOrange,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -361,10 +365,11 @@ class EnrollmentCard extends StatelessWidget {
                               children: [
                                 Text(
                                   enrollment.batch.batchName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: -0.1,
+                                    color: AppColors.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -394,32 +399,27 @@ class EnrollmentCard extends StatelessWidget {
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          const Color(0xFFFFF3E0),
-                                          const Color(0xFFFFF8F0),
-                                        ],
-                                      ),
+                                      color: AppColors.statsOrange.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: const Color(0xFFFFCC80),
+                                        color: AppColors.statsOrange.withValues(alpha: 0.35),
                                         width: 0.8,
                                       ),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(
+                                        Icon(
                                           Icons.schedule_rounded,
                                           size: 12,
-                                          color: Color(0xFFE65100),
+                                          color: AppColors.statsOrange,
                                         ),
                                         const SizedBox(width: 6),
                                         Text(
                                           _formatBatchTime(enrollment.batch.time),
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 12,
-                                            color: Color(0xFFE65100),
+                                            color: AppColors.statsOrange,
                                             fontWeight: FontWeight.w700,
                                             letterSpacing: 0.1,
                                           ),

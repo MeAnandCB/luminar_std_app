@@ -1,3 +1,5 @@
+import 'package:luminar_std/core/theme/theme_provider.dart';
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/foundation.dart';
@@ -175,6 +177,7 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     super.build(context); // Required for AutomaticKeepAliveClientMixin
 
     if (isLoading) {

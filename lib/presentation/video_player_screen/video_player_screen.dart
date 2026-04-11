@@ -1,3 +1,5 @@
+import 'package:luminar_std/core/theme/theme_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:luminar_std/repository/gallery_details_screen/models/gallery_detail_model.dart';
@@ -253,6 +255,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return WillPopScope(
       onWillPop: () async {
         // If in fullscreen, exit fullscreen first

@@ -3,6 +3,7 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/attandance_screen/controller/attandance_controller.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/scan_screen/scan_screen.dart';
 import 'package:luminar_std/repository/attandance_screen/new_model.dart';
 import 'package:provider/provider.dart';
@@ -45,12 +46,49 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Extract sessions from the already-loaded DashboardController so
+      // AttendanceController doesn't need to call the dashboard API again.
+      final preloadedSessions = _extractSessionsFromDashboard(
+        context.read<DashboardController>(),
+        widget.batchId,
+      );
       context.read<AttendanceProvider>().initWithBatch(
         batchId: widget.batchId,
         batchName: widget.batchName,
         courseName: widget.courseName,
+        preloadedSessions: preloadedSessions,
       );
     });
+  }
+
+  Future<void> _reload(AttendanceProvider provider) {
+    final preloadedSessions = _extractSessionsFromDashboard(
+      context.read<DashboardController>(),
+      widget.batchId,
+    );
+    return provider.initWithBatch(
+      batchId: widget.batchId,
+      batchName: widget.batchName,
+      courseName: widget.courseName,
+      preloadedSessions: preloadedSessions,
+    );
+  }
+
+  List<BatchSession> _extractSessionsFromDashboard(
+    DashboardController dashboard,
+    String batchId,
+  ) {
+    final enrollments =
+        dashboard.dashboard?.enrollmentDetails?.enrollments ?? [];
+    for (final e in enrollments) {
+      if (e.batchInfo?.uid == batchId) {
+        return (e.batchInfo?.sessions?.topics ?? [])
+            .whereType<Map<String, dynamic>>()
+            .map((t) => BatchSession.fromJson(t))
+            .toList();
+      }
+    }
+    return [];
   }
 
   @override
@@ -142,20 +180,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               child: provider.error != null && provider.allRecords.isEmpty
                   ? _buildErrorState(
                       provider.error!,
-                      () => provider.initWithBatch(
-                        batchId: widget.batchId,
-                        batchName: widget.batchName,
-                        courseName: widget.courseName,
-                      ),
+                      () => _reload(provider),
                     )
                   : RefreshIndicator(
                       color: AppColors.primary,
                       backgroundColor: AppColors.cardBackground,
-                      onRefresh: () => provider.initWithBatch(
-                        batchId: widget.batchId,
-                        batchName: widget.batchName,
-                        courseName: widget.courseName,
-                      ),
+                      onRefresh: () => _reload(provider),
                       child: CustomScrollView(
                         controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(),

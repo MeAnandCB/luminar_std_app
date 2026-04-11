@@ -159,6 +159,7 @@ class ExamResultData {
   final bool isVisibleToStudent;
   final bool canOpen;
   final double overallPercent;
+  final double? overallScore;
   final String grade;
   final String remarks;
   final bool? examAttended;
@@ -167,6 +168,9 @@ class ExamResultData {
   final ExamBatch? batch;
   final ExamModule? module;
   final ExamType? examType;
+  final List<CriterionScore> criterionScores;
+  final List<TemplateGradeBand> templateGradeBands;
+  final String? evaluatedByName;
 
   ExamResultData({
     required this.uid,
@@ -176,6 +180,7 @@ class ExamResultData {
     required this.isVisibleToStudent,
     required this.canOpen,
     required this.overallPercent,
+    this.overallScore,
     required this.grade,
     required this.remarks,
     this.examAttended,
@@ -184,6 +189,9 @@ class ExamResultData {
     this.batch,
     this.module,
     this.examType,
+    this.criterionScores = const [],
+    this.templateGradeBands = const [],
+    this.evaluatedByName,
   });
 
   factory ExamResultData.fromJson(Map<String, dynamic> json) => ExamResultData(
@@ -197,7 +205,10 @@ class ExamResultData {
             : null,
         isVisibleToStudent: json['is_visible_to_student'] ?? false,
         canOpen: json['can_open'] ?? false,
-        overallPercent: (json['overall_percent'] as num?)?.toDouble() ?? 0.0,
+        overallPercent: double.tryParse(json['overall_percent']?.toString() ?? '') ?? 0.0,
+        overallScore: json['overall_score'] != null
+            ? double.tryParse(json['overall_score'].toString())
+            : null,
         grade: json['grade'] ?? '',
         remarks: json['remarks'] ?? '',
         examAttended: json['exam_attended'],
@@ -211,5 +222,84 @@ class ExamResultData {
         examType: json['exam_type'] != null
             ? ExamType.fromJson(json['exam_type'])
             : null,
+        criterionScores: (json['criterion_scores'] as List<dynamic>? ?? [])
+            .map((e) => CriterionScore.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        templateGradeBands: (json['template_grade_bands'] as List<dynamic>? ?? [])
+            .map((e) => TemplateGradeBand.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        evaluatedByName: json['evaluated_by_name'],
+      );
+}
+
+class CriterionScore {
+  final String uid;
+  final String criterionName;
+  final String criterionCode;
+  final int sequenceNo;
+  final String scoreType;
+  final double? scoreValue;
+  final double? maxScore;
+  final double? weightPercent;
+  final String? gradeLabel;
+  final String? comment;
+
+  CriterionScore({
+    required this.uid,
+    required this.criterionName,
+    required this.criterionCode,
+    required this.sequenceNo,
+    required this.scoreType,
+    this.scoreValue,
+    this.maxScore,
+    this.weightPercent,
+    this.gradeLabel,
+    this.comment,
+  });
+
+  factory CriterionScore.fromJson(Map<String, dynamic> json) => CriterionScore(
+        uid: json['uid'] ?? '',
+        criterionName: json['criterion_name'] ?? '',
+        criterionCode: json['criterion_code'] ?? '',
+        sequenceNo: json['criterion_sequence_no'] ?? 0,
+        scoreType: json['score_type'] ?? 'numeric',
+        scoreValue: json['score_value'] != null
+            ? double.tryParse(json['score_value'].toString())
+            : null,
+        maxScore: json['max_score'] != null
+            ? double.tryParse(json['max_score'].toString())
+            : null,
+        weightPercent: json['weight_percent'] != null
+            ? double.tryParse(json['weight_percent'].toString())
+            : null,
+        gradeLabel: json['grade_label'],
+        comment: (json['comment'] as String?)?.isNotEmpty == true
+            ? json['comment']
+            : null,
+      );
+}
+
+class TemplateGradeBand {
+  final String gradeName;
+  final double minPercent;
+  final double maxPercent;
+  final bool isPass;
+  final int sequenceNo;
+
+  TemplateGradeBand({
+    required this.gradeName,
+    required this.minPercent,
+    required this.maxPercent,
+    required this.isPass,
+    required this.sequenceNo,
+  });
+
+  factory TemplateGradeBand.fromJson(Map<String, dynamic> json) =>
+      TemplateGradeBand(
+        gradeName: json['grade_name'] ?? '',
+        minPercent: double.tryParse(json['min_percent']?.toString() ?? '') ?? 0.0,
+        maxPercent: double.tryParse(json['max_percent']?.toString() ?? '') ?? 0.0,
+        isPass: json['is_pass'] ?? false,
+        sequenceNo: json['sequence_no'] ?? 0,
       );
 }

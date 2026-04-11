@@ -1,3 +1,4 @@
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'dart:io';
 
@@ -59,6 +60,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Scaffold(
       appBar: AppBar(
         title: Text('Complete Profile'),

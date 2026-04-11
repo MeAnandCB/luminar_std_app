@@ -1,5 +1,6 @@
 // screens/folder_browser_screen.dart
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/gallery_details_screen/controller/gallery_details_screen_controller.dart';
 import 'package:luminar_std/presentation/gallery_details_screen/views/widget/section_header.dart';
@@ -80,6 +81,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(

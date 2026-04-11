@@ -520,35 +520,49 @@ class _EnrollmentPage extends StatelessWidget {
                 SizedBox(height: 12),
                 _FeatureCard(
                   feature: _kFeatures[3],
-                  onTap: toEnrollDetails
-                      ? () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => EnrollmentDetailsScreen(
-                              index: index,
-                              backbuttonValue: true,
-                            ),
-                          ),
-                        )
-                      : () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PaymentScreen(
-                              enrollmentId: enrollId,
-                              uid: enrollment.uid ?? '',
-                            ),
+                  onTap: () {
+                    if (!crmAccess) {
+                      _showAccessDenied(context);
+                      return;
+                    }
+                    if (toEnrollDetails) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EnrollmentDetailsScreen(
+                            index: index,
+                            backbuttonValue: true,
                           ),
                         ),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PaymentScreen(
+                            enrollmentId: enrollId,
+                            uid: enrollment.uid ?? '',
+                          ),
+                        ),
+                      );
+                    }
+                  },
                 ),
               ],
               SizedBox(height: 12),
               _FeatureCard(
                 feature: _kFeatures[4],
                 badgeCount: unreadExams,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ExamScreen()),
-                ),
+                onTap: () {
+                  if (!crmAccess) {
+                    _showAccessDenied(context);
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ExamScreen()),
+                  );
+                },
               ),
             ]),
           ),

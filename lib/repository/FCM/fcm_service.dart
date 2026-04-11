@@ -8,10 +8,51 @@ import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provid
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:provider/provider.dart';
 
-/// Top-level background FCM handler
+/// Top-level background FCM handler — runs in an isolate (no BuildContext)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   LoggerUtils.info('Background FCM: ${message.notification?.title} | Data: ${message.data}', tag: 'FCM');
+
+  // For Android data-only messages that arrive in background/terminated state,
+  // Firebase won't show a system notification automatically — we must do it here.
+  // (If a `notification` key is present, Firebase already shows it using the
+  //  android.notification.sound from the payload, so we skip to avoid duplicates.)
+  if (Platform.isAndroid && message.notification == null) {
+    final plugin = FlutterLocalNotificationsPlugin();
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    await plugin.initialize(
+      settings: const InitializationSettings(android: androidSettings),
+    );
+
+    const channel = AndroidNotificationChannel(
+      'luminar_high_importance_channel',
+      'Luminar Notifications',
+      description: 'Luminar Student App Notifications',
+      importance: Importance.high,
+      playSound: true,
+    );
+    await plugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+
+    await plugin.show(
+      id: message.hashCode,
+      title: message.data['title'] as String? ?? 'Luminar',
+      body: message.data['body'] as String? ?? '',
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'luminar_high_importance_channel',
+          'Luminar Notifications',
+          channelDescription: 'Luminar Student App Notifications',
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: true,
+          icon: '@mipmap/ic_launcher',
+        ),
+      ),
+      payload: null,
+    );
+  }
 }
 
 /// Top-level local notification background tap handler

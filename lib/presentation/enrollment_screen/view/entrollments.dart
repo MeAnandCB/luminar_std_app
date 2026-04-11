@@ -1,6 +1,7 @@
 // enrollment_screen.dart
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/course_screen/course_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/widget/enrollment_card.dart';
@@ -59,6 +60,7 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(

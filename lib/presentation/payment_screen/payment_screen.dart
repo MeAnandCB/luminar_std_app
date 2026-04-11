@@ -1,6 +1,7 @@
 // lib/main.dart - Updated to show single enrollment details
 
 import 'dart:convert';
+import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -221,6 +222,7 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
