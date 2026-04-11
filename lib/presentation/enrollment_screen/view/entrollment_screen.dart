@@ -1552,27 +1552,10 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
 
   Widget _buildConfirmationSheet() {
     final provider = Provider.of<EnrollmentProvider>(context, listen: false);
-    final grossAmount =
-        provider
-            .enrollmentDataRes
-            ?.enrollments[widget.index]
-            .paymentInfo
-            .grossAmount ??
-        "";
-    final discount =
-        provider
-            .enrollmentDataRes
-            ?.enrollments[widget.index]
-            .paymentInfo
-            .totalDiscount ??
-        "";
-    final pendingAmount =
-        provider
-            .enrollmentDataRes
-            ?.enrollments[widget.index]
-            .paymentInfo
-            .pendingAmount ??
-        "";
+    final enrollment = provider.enrollmentDataRes?.enrollments[widget.index];
+    final grossAmount = _fmt(enrollment?.paymentInfo.grossAmount);
+    final discount = _fmt(enrollment?.originalCourseFeesDiscount);
+    final pendingAmount = _fmt(_netPayable(provider, widget.index));
 
     return Container(
       decoration: BoxDecoration(
@@ -1913,41 +1896,161 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   void handlePaymentErrorResponse(PaymentFailureResponse response) {
-    /*
-    * PaymentFailureResponse contains three values:
-    * 1. Error Code
-    * 2. Error Description
-    * 3. Metadata
-    * */
-    showAlertDialog(
-      context,
-      "Payment Failed",
-      "Code: ${response.code}\nDescription: ${response.message}\nMetadata:${response.error.toString()}",
+    // Map known Razorpay error codes to friendly messages
+    String userMessage;
+    switch (response.code) {
+      case Razorpay.PAYMENT_CANCELLED:
+        userMessage = 'Payment was cancelled. You can try again whenever you\'re ready.';
+        break;
+      case Razorpay.NETWORK_ERROR:
+        userMessage = 'No internet connection. Please check your network and try again.';
+        break;
+      case Razorpay.INVALID_OPTIONS:
+        userMessage = 'Something went wrong with the payment setup. Please contact support.';
+        break;
+      default:
+        userMessage = 'Payment could not be completed. Please try a different payment method or try again later.';
+    }
+    _showPaymentResultSheet(
+      isSuccess: false,
+      title: 'Payment Failed',
+      message: userMessage,
     );
   }
 
   void handlePaymentSuccessResponse(PaymentSuccessResponse response) {
-    showAlertDialog(
-      context,
-      "Payment Successful",
-      "Payment ID: ${response.paymentId}",
+    _showPaymentResultSheet(
+      isSuccess: true,
+      title: 'Payment Successful!',
+      message: 'Your payment has been received.\nPayment ID: ${response.paymentId}',
+      onDismiss: () {
+        if (mounted) {
+          Provider.of<EnrollmentProvider>(
+            context,
+            listen: false,
+          ).refreshData(context);
+        }
+      },
     );
-    // Refresh data after successful payment with a delay
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        Provider.of<EnrollmentProvider>(
-          context,
-          listen: false,
-        ).refreshData(context);
-      }
-    });
   }
 
   void handleExternalWalletSelected(ExternalWalletResponse response) {
-    showAlertDialog(
-      context,
-      "External Wallet Selected",
-      "${response.walletName}",
+    _showPaymentResultSheet(
+      isSuccess: null,
+      title: 'Wallet Selected',
+      message: 'Proceeding with ${response.walletName}. Complete the payment in the wallet app.',
+    );
+  }
+
+  void _showPaymentResultSheet({
+    required bool? isSuccess, // null = neutral (wallet)
+    required String title,
+    required String message,
+    VoidCallback? onDismiss,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isDismissible: true,
+      enableDrag: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final Color iconBg = isSuccess == true
+            ? AppColors.statsGreen.withValues(alpha: 0.12)
+            : isSuccess == false
+                ? AppColors.error.withValues(alpha: 0.1)
+                : AppColors.primary.withValues(alpha: 0.1);
+        final Color iconColor = isSuccess == true
+            ? AppColors.statsGreen
+            : isSuccess == false
+                ? AppColors.error
+                : AppColors.primary;
+        final IconData icon = isSuccess == true
+            ? Icons.check_circle_rounded
+            : isSuccess == false
+                ? Icons.cancel_rounded
+                : Icons.account_balance_wallet_rounded;
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 28),
+              // Icon
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 36, color: iconColor),
+              ),
+              const SizedBox(height: 20),
+              // Title
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Message
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+              // Button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: iconColor,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    onDismiss?.call();
+                  },
+                  child: Text(
+                    isSuccess == true ? 'Done' : 'OK',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1991,31 +2094,6 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     _razorpay.open(options);
   }
 
-  void showAlertDialog(BuildContext context, String title, String message) {
-    AlertDialog alert = AlertDialog(
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-      content: Text(message),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      actions: [
-        TextButton(
-          child: Text(
-            "OK",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary,
-            ),
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ],
-    );
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
-      },
-    );
-  }
 }
 
 // ==================== EMI PREVIEW DETAILS WIDGET ====================
