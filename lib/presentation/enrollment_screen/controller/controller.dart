@@ -59,9 +59,15 @@ class EnrollmentProvider extends ChangeNotifier {
       if (response.success) {
         enrollmentDataRes = response.data;
         _errorMessage = null;
+        debugPrint('======= ENROLLMENT API RESPONSE =======');
+        debugPrint(response.data?.toString() ?? 'No Data');
+        debugPrint('=======================================');
       } else {
         _errorMessage = response.message ?? 'Failed to fetch enrollment data';
         enrollmentDataRes = null;
+        debugPrint('======= ENROLLMENT API ERROR =======');
+        debugPrint(response.message ?? 'Unknown error');
+        debugPrint('====================================');
 
         if (response.statusCode == 401) {
           AppUtils.clearUserSession();

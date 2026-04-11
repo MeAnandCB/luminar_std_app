@@ -73,6 +73,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         listen: false,
       );
 
+      // getDashboardData is a no-op if data is already cached (C-1 guard)
       await controller.getDashboardData(context: context);
 
       await _fetchEnrollmentDetails();
@@ -515,7 +516,11 @@ class _PaymentScreenState extends State<PaymentScreen>
           return a.dueDate!.compareTo(b.dueDate!);
         });
         nextDueEmi = pendingEmis.first;
-        nextDueAmount = nextDueEmi?.totalAmount ?? 0;
+        // Use pendingAmount (what's actually owed) — matches what the backend
+        // creates the Razorpay order for. totalAmount is the gross installment
+        // value and differs when a partial payment has already been made.
+        nextDueAmount =
+            nextDueEmi.pendingAmount ?? nextDueEmi.totalAmount ?? 0;
         nextDueDate = nextDueEmi?.dueDate ?? DateTime.now();
       }
     }
@@ -1068,7 +1073,13 @@ class _PaymentScreenState extends State<PaymentScreen>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      currencyFormat.format(emi.totalAmount ?? 0),
+                      // Paid → show original total. Unpaid → show what's
+                      // actually due (matches the Razorpay order amount).
+                      currencyFormat.format(
+                        emiStatus == EmiStatus.paid
+                            ? (emi.totalAmount ?? 0)
+                            : (emi.pendingAmount ?? emi.totalAmount ?? 0),
+                      ),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -1803,32 +1814,156 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   void handlePaymentErrorResponse(PaymentFailureResponse response) {
-    showAlertDialog(
-      context,
-      "Payment Failed",
-      "Code: ${response.code}\nDescription: ${response.message}",
+    final error = response.error ?? {};
+    final reason = error['reason'] as String? ?? '';
+    final step   = error['step']   as String? ?? '';
+    final code   = response.code ?? -1;
+
+    String title;
+    String message;
+    IconData icon;
+    Color iconColor;
+
+    // Razorpay code 0 = network error
+    if (code == 0) {
+      icon      = Icons.wifi_off_rounded;
+      iconColor = AppColors.statsOrange;
+      title     = 'No Internet Connection';
+      message   = 'Please check your connection and try again.';
+    }
+    // User cancelled / closed the Razorpay sheet
+    else if (reason == 'cancel' || reason == 'dismissed') {
+      icon      = Icons.cancel_outlined;
+      iconColor = AppColors.textSecondary;
+      title     = 'Payment Cancelled';
+      message   = 'You closed the payment window. No amount was deducted.';
+    }
+    // Authentication / OTP failed
+    else if (step == 'payment_authentication') {
+      icon      = Icons.lock_outline_rounded;
+      iconColor = AppColors.error;
+      title     = 'Authentication Failed';
+      message   = 'Your bank declined the payment. Please verify your OTP or try a different card/UPI.';
+    }
+    // Card / UPI not authorized
+    else if (step == 'payment_authorization') {
+      icon      = Icons.credit_card_off_rounded;
+      iconColor = AppColors.error;
+      title     = 'Payment Not Authorized';
+      message   = 'Your bank did not authorize this transaction. Please try a different payment method.';
+    }
+    // Generic bad-request / declined
+    else {
+      icon      = Icons.error_outline_rounded;
+      iconColor = AppColors.error;
+      title     = 'Payment Failed';
+      message   = 'Your payment could not be processed. Please try again or use a different payment method.';
+    }
+
+    _showPaymentResultDialog(
+      icon: icon,
+      iconColor: iconColor,
+      title: title,
+      message: message,
+      isSuccess: false,
     );
   }
 
   void handlePaymentSuccessResponse(PaymentSuccessResponse response) {
-    showAlertDialog(
-      context,
-      "Payment Successful",
-      "Payment ID: ${response.paymentId}",
+    _showPaymentResultDialog(
+      icon: Icons.check_circle_outline_rounded,
+      iconColor: AppColors.statsGreen,
+      title: 'Payment Successful',
+      message: 'Your payment has been received.\nPayment ID: ${response.paymentId ?? '—'}',
+      isSuccess: true,
     );
-    // Refresh data after successful payment with a small delay to allow backend to update
     Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        _initializeData();
-      }
+      if (mounted) _initializeData();
     });
   }
 
   void handleExternalWalletSelected(ExternalWalletResponse response) {
-    showAlertDialog(
-      context,
-      "External Wallet Selected",
-      "${response.walletName}",
+    _showPaymentResultDialog(
+      icon: Icons.account_balance_wallet_outlined,
+      iconColor: AppColors.primary,
+      title: 'Wallet Selected',
+      message: '${response.walletName ?? 'External wallet'} was selected for payment.',
+      isSuccess: true,
+    );
+  }
+
+  void _showPaymentResultDialog({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String message,
+    required bool isSuccess,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 32),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isSuccess ? AppColors.statsGreen : AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  isSuccess ? 'Done' : 'Try Again',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

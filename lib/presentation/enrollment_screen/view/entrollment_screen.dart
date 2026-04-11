@@ -54,16 +54,31 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handlePaymentErrorResponse);
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handlePaymentSuccessResponse);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, handleExternalWalletSelected);
-    // Get enrollment UID from dashboard — no separate enrollment API call needed
+    // Get enrollment UID from dashboard
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final dashboard = Provider.of<DashboardController>(context, listen: false);
+      final dashboard = Provider.of<DashboardController>(
+        context,
+        listen: false,
+      );
       final enrollments = dashboard.enrollmentsFromDashboard;
       final uid = enrollments.length > widget.index
           ? enrollments[widget.index].uid
           : '';
       _apiService.setEnrollmentId(uid);
+
+      // Fetch the actual enrollment data for this screen's provider so amounts are populated!
+      Provider.of<EnrollmentProvider>(
+        context,
+        listen: false,
+      ).fetchEnrollData(context: context);
+
+      setState(() {
+        emiPlans = _apiService.fetchEmiPlans();
+      });
     });
-    emiPlans = _apiService.fetchEmiPlans();
+
+    // Initialize with a dummy future to avoid LateInitializationError before the post-frame callback
+    emiPlans = Future.value(ApiResponse.error("Loading...", 0));
   }
 
   @override
@@ -163,6 +178,20 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     });
   }
 
+  String _fmt(double? amount) {
+    if (amount == null) return '0';
+    final formatter = NumberFormat('#,##0', 'en_IN');
+    return formatter.format(amount);
+  }
+
+  double? _netPayable(EnrollmentProvider provider, int index) {
+    final enrollment = provider.enrollmentDataRes?.enrollments[index];
+    if (enrollment == null) return null;
+    final pending = enrollment.paymentInfo.pendingAmount;
+    final discount = enrollment.originalCourseFeesDiscount;
+    return (pending - discount).clamp(0, double.infinity);
+  }
+
   @override
   Widget build(BuildContext context) {
     final paymentDetailsScreenProvider = Provider.of<EnrollmentProvider>(
@@ -192,185 +221,185 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                           _buildCourseHeader(paymentDetailsScreenProvider),
                           SizedBox(height: 20),
                           if (!AppConfig.hidePayments) ...[
-                          _buildPaymentOptionsTitle(),
-                          SizedBox(height: 24),
+                            _buildPaymentOptionsTitle(),
+                            SizedBox(height: 24),
 
-                          // Full Payment Tile
-                          PaymentTile(
-                            icon: Icons.flash_on_rounded,
-                            iconColor: AppColors.primary,
-                            title: "Pay Full Amount",
-                            subtitle: 'One-time payment',
-                            wasnow:
-                                "₹${paymentDetailsScreenProvider.enrollmentDataRes?.enrollments[widget.index].paymentInfo.amountPaid ?? ""}",
-                            amount:
-                                "₹${paymentDetailsScreenProvider.enrollmentDataRes?.enrollments[widget.index].paymentInfo.pendingAmount ?? ""}",
-                            discount:
-                                'Save ₹${paymentDetailsScreenProvider.enrollmentDataRes?.enrollments[widget.index].paymentInfo.totalDiscount ?? ""}',
-                            showOriginalPrice: true,
-                            isSelected: selectedPaymentMethod == 0,
-                            isFullpayment: true,
-                            onTap: () {
-                              setState(() {
-                                if (selectedPaymentMethod == 0) {
-                                  selectedPaymentMethod = -1;
-                                  showFullPaymentDetails = false;
-                                } else {
-                                  selectedPaymentMethod = 0;
-                                  showFullPaymentDetails = true;
-                                  expandedEmiTile = null;
-                                  _deselectPlan();
-                                }
-                              });
-                            },
-                          ),
-
-                          SizedBox(height: 12),
-
-                          // EMI Payment Main Tile
-                          PaymentTile(
-                            wasnow: "",
-                            icon: Icons.calendar_month_rounded,
-                            iconColor: AppColors.statsOrange,
-                            title: 'EMI Payment Plan',
-                            subtitle: 'Pay in installments',
-                            amount: 'Multiple plans available',
-                            isSelected: selectedPaymentMethod == 1,
-                            isFullpayment: false,
-                            onTap: () {
-                              setState(() {
-                                if (selectedPaymentMethod == 1) {
-                                  selectedPaymentMethod = -1;
-                                  showFullPaymentDetails = false;
-                                  expandedEmiTile = null;
-                                  _deselectPlan();
-                                } else {
-                                  selectedPaymentMethod = 1;
-                                  showFullPaymentDetails = false;
-                                }
-                              });
-                            },
-                          ),
-
-                          // EMI Plans List
-                          if (selectedPaymentMethod == 1) ...[
-                            SizedBox(height: 20),
-                            _buildEmiPlansHeader(),
-                            SizedBox(height: 12),
-                            FutureBuilder<ApiResponse<List<EmiPlan>>>(
-                              future: emiPlans,
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(20),
-                                      child: CircularProgressIndicator(
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  );
-                                }
-
-                                if (snapshot.hasError) {
-                                  return Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(20),
-                                      child: Column(
-                                        children: [
-                                          Icon(
-                                            Icons.error_outline,
-                                            size: 48,
-                                            color: Colors.red,
-                                          ),
-                                          SizedBox(height: 16),
-                                          Text(
-                                            'Error loading EMI plans',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          SizedBox(height: 8),
-                                          Text(
-                                            'Something went wrong. Please try again.',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.red,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          SizedBox(height: 16),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                emiPlans = _apiService
-                                                    .fetchEmiPlans();
-                                              });
-                                            },
-                                            child: Text('Retry'),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }
-
-                                if (!snapshot.hasData ||
-                                    !snapshot.data!.success ||
-                                    snapshot.data!.data == null ||
-                                    snapshot.data!.data!.isEmpty) {
-                                  return Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(20),
-                                      child: Text(
-                                        snapshot.data?.message ??
-                                            'No EMI plans available',
-                                        style: TextStyle(
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }
-
-                                final plans = snapshot.data!.data!;
-                                return Column(
-                                  children: [
-                                    ...plans.asMap().entries.map(
-                                      (entry) => _buildEmiTile(
-                                        index: entry.key,
-                                        plan: entry.value,
-                                      ),
-                                    ),
-                                  ],
-                                );
+                            // Full Payment Tile
+                            PaymentTile(
+                              icon: Icons.flash_on_rounded,
+                              iconColor: AppColors.primary,
+                              title: "Pay Full Amount",
+                              subtitle: 'One-time payment',
+                              wasnow:
+                                  "₹${_fmt(paymentDetailsScreenProvider.enrollmentDataRes?.enrollments[widget.index].paymentInfo.grossAmount)}",
+                              amount:
+                                  "₹${_fmt(_netPayable(paymentDetailsScreenProvider, widget.index))}",
+                              discount:
+                                  'Save ₹${_fmt(paymentDetailsScreenProvider.enrollmentDataRes?.enrollments[widget.index].originalCourseFeesDiscount)}',
+                              showOriginalPrice: true,
+                              isSelected: selectedPaymentMethod == 0,
+                              isFullpayment: true,
+                              onTap: () {
+                                setState(() {
+                                  if (selectedPaymentMethod == 0) {
+                                    selectedPaymentMethod = -1;
+                                    showFullPaymentDetails = false;
+                                  } else {
+                                    selectedPaymentMethod = 0;
+                                    showFullPaymentDetails = true;
+                                    expandedEmiTile = null;
+                                    _deselectPlan();
+                                  }
+                                });
                               },
                             ),
-                          ],
 
-                          // Full Payment Details
-                          if (selectedPaymentMethod == 0 &&
-                              showFullPaymentDetails) ...[
-                            SizedBox(height: 32),
-                            _buildPaymentBreakdown(
-                              paymentDetailsScreenProvider,
+                            SizedBox(height: 12),
+
+                            // EMI Payment Main Tile
+                            PaymentTile(
+                              wasnow: "",
+                              icon: Icons.calendar_month_rounded,
+                              iconColor: AppColors.statsOrange,
+                              title: 'EMI Payment Plan',
+                              subtitle: 'Pay in installments',
+                              amount: 'Multiple plans available',
+                              isSelected: selectedPaymentMethod == 1,
+                              isFullpayment: false,
+                              onTap: () {
+                                setState(() {
+                                  if (selectedPaymentMethod == 1) {
+                                    selectedPaymentMethod = -1;
+                                    showFullPaymentDetails = false;
+                                    expandedEmiTile = null;
+                                    _deselectPlan();
+                                  } else {
+                                    selectedPaymentMethod = 1;
+                                    showFullPaymentDetails = false;
+                                  }
+                                });
+                              },
                             ),
-                            SizedBox(height: 20),
-                            _buildRazorpayInfo(),
-                          ],
 
-                          SizedBox(height: 40),
-                          _buildSecuritySection(),
-                          SizedBox(height: 30),
-                          _buildTrustBadges(),
-                          SizedBox(height: 100),
+                            // EMI Plans List
+                            if (selectedPaymentMethod == 1) ...[
+                              SizedBox(height: 20),
+                              _buildEmiPlansHeader(),
+                              SizedBox(height: 12),
+                              FutureBuilder<ApiResponse<List<EmiPlan>>>(
+                                future: emiPlans,
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(20),
+                                        child: CircularProgressIndicator(
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  if (snapshot.hasError) {
+                                    return Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(20),
+                                        child: Column(
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline,
+                                              size: 48,
+                                              color: Colors.red,
+                                            ),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              'Error loading EMI plans',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            SizedBox(height: 8),
+                                            Text(
+                                              'Something went wrong. Please try again.',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.red,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            SizedBox(height: 16),
+                                            ElevatedButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  emiPlans = _apiService
+                                                      .fetchEmiPlans();
+                                                });
+                                              },
+                                              child: Text('Retry'),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  if (!snapshot.hasData ||
+                                      !snapshot.data!.success ||
+                                      snapshot.data!.data == null ||
+                                      snapshot.data!.data!.isEmpty) {
+                                    return Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(20),
+                                        child: Text(
+                                          snapshot.data?.message ??
+                                              'No EMI plans available',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  final plans = snapshot.data!.data!;
+                                  return Column(
+                                    children: [
+                                      ...plans.asMap().entries.map(
+                                        (entry) => _buildEmiTile(
+                                          index: entry.key,
+                                          plan: entry.value,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ],
+
+                            // Full Payment Details
+                            if (selectedPaymentMethod == 0 &&
+                                showFullPaymentDetails) ...[
+                              SizedBox(height: 32),
+                              _buildPaymentBreakdown(
+                                paymentDetailsScreenProvider,
+                              ),
+                              SizedBox(height: 20),
+                              _buildRazorpayInfo(),
+                            ],
+
+                            SizedBox(height: 40),
+                            _buildSecuritySection(),
+                            SizedBox(height: 30),
+                            _buildTrustBadges(),
+                            SizedBox(height: 100),
                           ], // end if (!AppConfig.hidePayments)
                         ],
                       ),
                     ),
                   ),
                   if (!AppConfig.hidePayments)
-                  _buildBottomButton(paymentDetailsScreenProvider),
+                    _buildBottomButton(paymentDetailsScreenProvider),
                 ],
               ),
       ),
@@ -946,27 +975,11 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   Widget _buildCourseHeader(EnrollmentProvider provider) {
-    final pendingAmount =
-        provider
-            .enrollmentDataRes
-            ?.enrollments[widget.index]
-            .paymentInfo
-            .pendingAmount ??
-        "";
-    final amountPaid =
-        provider
-            .enrollmentDataRes
-            ?.enrollments[widget.index]
-            .paymentInfo
-            .amountPaid ??
-        "";
-    final discount =
-        provider
-            .enrollmentDataRes
-            ?.enrollments[widget.index]
-            .paymentInfo
-            .totalDiscount ??
-        "";
+    final enrollment = provider.enrollmentDataRes?.enrollments[widget.index];
+    final pi = enrollment?.paymentInfo;
+    final amountPaid = _fmt(pi?.amountPaid);
+    final pendingAmount = _fmt(_netPayable(provider, widget.index));
+    final discount = _fmt(enrollment?.originalCourseFeesDiscount);
 
     return Container(
       width: double.infinity,
@@ -1115,27 +1128,10 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   Widget _buildPaymentBreakdown(EnrollmentProvider provider) {
-    final grossAmount =
-        provider
-            .enrollmentDataRes
-            ?.enrollments[widget.index]
-            .paymentInfo
-            .grossAmount ??
-        "";
-    final discount =
-        provider
-            .enrollmentDataRes
-            ?.enrollments[widget.index]
-            .paymentInfo
-            .totalDiscount ??
-        "";
-    final pendingAmount =
-        provider
-            .enrollmentDataRes
-            ?.enrollments[widget.index]
-            .paymentInfo
-            .pendingAmount ??
-        "";
+    final enrollment = provider.enrollmentDataRes?.enrollments[widget.index];
+    final grossAmount = _fmt(enrollment?.paymentInfo.grossAmount);
+    final discount = _fmt(enrollment?.originalCourseFeesDiscount);
+    final pendingAmount = _fmt(_netPayable(provider, widget.index));
 
     return Column(
       children: [
@@ -1440,13 +1436,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
       );
     }
 
-    final pendingAmount =
-        provider
-            .enrollmentDataRes
-            ?.enrollments[widget.index]
-            .paymentInfo
-            .pendingAmount ??
-        "";
+    final pendingAmount = _fmt(_netPayable(provider, widget.index));
 
     String amountToShow = '';
     String buttonText = '';

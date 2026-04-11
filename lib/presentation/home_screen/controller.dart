@@ -39,7 +39,13 @@ class DashboardController extends ChangeNotifier {
         _nactetStatus!.enrollmentsWithCertificateData >= _nactetStatus!.totalEligibleEnrollments;
   }
 
-  Future<Dashboard?> getDashboardData({required BuildContext context}) async {
+  Future<Dashboard?> getDashboardData({
+    required BuildContext context,
+    bool forceRefresh = false,
+  }) async {
+    // Return cached data unless a forced refresh is requested
+    if (!forceRefresh && _dashboard != null) return _dashboard;
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -108,9 +114,9 @@ class DashboardController extends ChangeNotifier {
     return _dashboard;
   }
 
-  // Convenience method to refresh dashboard data
+  // Convenience method to force-refresh dashboard data (e.g. pull-to-refresh)
   Future<void> refreshDashboard({required BuildContext context}) async {
-    await getDashboardData(context: context);
+    await getDashboardData(context: context, forceRefresh: true);
     await getNactetStatus();
   }
 

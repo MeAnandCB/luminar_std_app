@@ -41,6 +41,8 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   // Badge count fetched on app open (before chat tab is ever opened)
   int _apiUnreadCount = 0;
 
+  bool _isDisposed = false;
+
   // Getters
   List<Chat> get chats => _chats;
   bool get isLoading => _isLoading;
@@ -87,6 +89,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void _ensureConnectivity() {
+    if (_isDisposed) return;
     if (_webSocketService == null) return;
     if (!_webSocketService!.isConnected) {
       debugPrint('[ChatProvider] WebSocket disconnected — reconnecting...');
@@ -475,6 +478,7 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _isDisposed = true;
     WidgetsBinding.instance.removeObserver(this);
     _resetInternal();
     super.dispose();

@@ -34,4 +34,15 @@ import UserNotifications
   ) {
     Messaging.messaging().apnsToken = deviceToken
   }
+
+  // Foreground notification presentation — flutter_local_notifications handles
+  // the actual display, but we must return .sound here as a fallback so iOS
+  // plays sound even if the Flutter plugin is slow to respond.
+  override func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    completionHandler([.banner, .badge, .sound])
+  }
 }

@@ -226,13 +226,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     if (widget.webSocketService == null) _webSocketService.connect();
     _loadMessages(); // load messages once — WebSocket handles real-time updates
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
         final chatProv = context.read<ChatProvider>();
         if (chatProv.chats.isNotEmpty) {
           setState(() => _allChats = chatProv.chats);
         } else {
-          _loadAllChats();
+          await _loadAllChats();
         }
       }
     });
@@ -262,6 +262,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   // ── Load all chats for forward sheet ──────────────────────────────────────
   Future<void> _loadAllChats() async {
+    if (!mounted) return;
     try {
       final response = await widget.apiService.fetchChats();
       if (mounted && response.success && response.data != null) {

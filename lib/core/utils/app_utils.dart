@@ -36,6 +36,7 @@ class AppUtils {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('access_key');
       await prefs.remove('user_data');
+      await prefs.remove('local_profile_completed');
       // Clear any other stored data
       // await AppUtils.clearAccessKey(); // If you have this method
     } catch (e) {

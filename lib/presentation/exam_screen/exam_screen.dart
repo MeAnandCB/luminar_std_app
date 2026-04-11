@@ -64,6 +64,8 @@ class _ExamScreenState extends State<ExamScreen> {
         attemptUid: attemptUid,
       );
 
+      if (!mounted) return; // widget may have been disposed during the await
+
       debugPrint('📥 VISIBILITY API — response:');
       debugPrint('   success : ${response.success}');
       debugPrint('   status  : ${response.statusCode}');

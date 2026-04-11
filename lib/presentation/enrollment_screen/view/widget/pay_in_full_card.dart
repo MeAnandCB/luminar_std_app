@@ -161,7 +161,7 @@ class PaymentTile extends StatelessWidget {
             ),
             if (showOriginalPrice && isSelected)
               Text(
-                'was ₹28,000',
+                'was $wasnow',
                 style: TextStyle(
                   fontSize: 11,
                   color: AppColors.textHint,
