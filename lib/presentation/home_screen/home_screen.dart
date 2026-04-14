@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
@@ -732,7 +733,7 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
       Future.delayed(const Duration(milliseconds: 200), () {
         if (!mounted) return;
 
-        final bool shouldGoToDetails = isNavigatable;
+        final bool shouldGoToDetails = isNavigatable && !AppConfig.hidePayments;
 
         if (shouldGoToDetails) {
           Navigator.push(

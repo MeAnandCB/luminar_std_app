@@ -98,6 +98,11 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
           "Loaded ${newImages.length} images. Total: ${images.length}",
           tag: 'Instagram',
         );
+      } else {
+        LoggerUtils.error(
+          "Instagram API error ${response.statusCode}: ${response.body}",
+          tag: 'Instagram',
+        );
       }
     } catch (e) {
       LoggerUtils.error("Error fetching images: $e", tag: 'Instagram');
