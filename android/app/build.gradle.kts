@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.luminar.studentapp"
+    namespace = "com.luminartechnolab.studentapp"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.luminar.studentapp"
+        applicationId = "com.luminartechnolab.studentapp"
         minSdk = flutter.minSdkVersion  // CHANGE to 21 (desugaring requires minimum 21)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

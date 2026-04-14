@@ -1,4 +1,4 @@
-package com.luminar.studentapp
+package com.luminartechnolab.studentapp
 
 import io.flutter.embedding.android.FlutterActivity
 

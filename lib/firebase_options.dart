@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCMavM4clvYxjA7bcOGVTpGA9MJp83FC6I',
-    appId: '1:805620757740:android:2eeb60b287b857aa6de1c9',
+    appId: '1:805620757740:android:b5154b43aec6f7426de1c9',
     messagingSenderId: '805620757740',
     projectId: 'luminar-crm',
     storageBucket: 'luminar-crm.firebasestorage.app',
@@ -60,11 +60,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDaaep9_pWzxvDY6h-QUoioYJCjx6ouT6I',
-    appId: '1:805620757740:ios:b33f6418bc720c926de1c9',
+    appId: '1:805620757740:ios:cb1e6dd556cc4d086de1c9',
     messagingSenderId: '805620757740',
     projectId: 'luminar-crm',
     storageBucket: 'luminar-crm.firebasestorage.app',
-    iosBundleId: 'com.luminar.studentapp',
+    iosBundleId: 'com.luminartechnolab.studentapp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -73,7 +73,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '805620757740',
     projectId: 'luminar-crm',
     storageBucket: 'luminar-crm.firebasestorage.app',
-    iosBundleId: 'com.luminar.studentapp',
+    iosBundleId: 'com.luminartechnolab.studentapp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
