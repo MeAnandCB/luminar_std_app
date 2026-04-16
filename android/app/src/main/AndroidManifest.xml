@@ -1,18 +1,17 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 <!-- Internet Permission -->
 <uses-permission android:name="android.permission.INTERNET"/>
 
-<!-- Storage Permissions -->
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-
-<!-- For Android 11+ -->
-<uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
-<uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-<uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
-<uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+<!-- Force remove media permissions that might be merged from dependencies -->
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove"/>
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove"/>
+<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove"/>
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove"/>
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
     <application
         android:label="Luminar Technolab"
         android:name="${applicationName}"

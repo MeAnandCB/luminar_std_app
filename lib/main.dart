@@ -31,9 +31,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-Future<void> requestPermissions() async {
-  await [Permission.storage, Permission.photos].request();
-}
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,7 +50,7 @@ void main() async {
     LoggerUtils.error('❌ Firebase init failed: $e', tag: 'Main');
   }
 
-  await requestPermissions();
+
 
   // Pre-load token for chat service
   String? accessToken;
