@@ -446,16 +446,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           _pickVideo();
         },
       ),
-      _AttachItem(
-        icon: Icons.mic_rounded,
-        label: 'Audio',
-        sublabel: 'mp3 · recorded',
-        color: Colors.purple.shade400,
-        onTap: () {
-          Navigator.pop(context);
-          _pickAudio();
-        },
-      ),
+
       _AttachItem(
         icon: Icons.picture_as_pdf_rounded,
         label: 'PDF',
@@ -1778,7 +1769,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               .map((m) => m.uid)
               .toList();
           if (unreadUids.isNotEmpty) {
-            context.read<ChatProvider>().markMessagesRead(widget.chat.uid, unreadUids);
+            context.read<ChatProvider>().markMessagesRead(
+              widget.chat.uid,
+              unreadUids,
+            );
           }
         } else {
           setState(() {
@@ -1825,7 +1819,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       if (mounted) setState(() => _isLoadingMore = false);
     }
   }
-
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {

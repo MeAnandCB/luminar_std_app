@@ -1,5 +1,6 @@
 // enrollment_screen.dart
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/course_screen/course_screen.dart';
@@ -146,7 +147,7 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
                     child: EnrollmentCard(
                       enrollment: enrollment,
                       index: index,
-                      onTap: isPaymentPending
+                      onTap: isPaymentPending && !AppConfig.hidePayments
                           ? () {
                               Navigator.push(
                                 context,

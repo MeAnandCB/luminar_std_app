@@ -1,6 +1,7 @@
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'dart:io';
+import 'package:flutter/services.dart';
 
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -18,7 +19,8 @@ class ProfileCompletionScreen extends StatefulWidget {
   const ProfileCompletionScreen({super.key});
 
   @override
-  State<ProfileCompletionScreen> createState() => _ProfileCompletionScreenState();
+  State<ProfileCompletionScreen> createState() =>
+      _ProfileCompletionScreenState();
 }
 
 class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
@@ -53,7 +55,10 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Provider.of<ProfileController>(context, listen: false).getProfileData(context: context);
+      await Provider.of<ProfileController>(
+        context,
+        listen: false,
+      ).getProfileData(context: context);
       setState(() {});
     });
   }
@@ -71,7 +76,10 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                 icon: Icon(Icons.arrow_back, color: AppColors.primary),
                 onPressed: () {
                   if (_currentPage > 0) {
-                    _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
                   }
                 },
               )
@@ -83,7 +91,8 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
           Expanded(
             child: PageView(
               controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(), // Disable swiping until valid
+              physics:
+                  const NeverScrollableScrollPhysics(), // Disable swiping until valid
               onPageChanged: (page) {
                 setState(() {
                   _currentPage = page;
@@ -105,7 +114,10 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                 onPressed: () {
                   if (_validateCurrentPage()) {
                     if (_currentPage < _totalPages - 1) {
-                      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
                     }
                   }
                 },
@@ -113,8 +125,13 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
                   minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 child: Text('Next'),
               ),
@@ -123,57 +140,91 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
             Padding(
               padding: EdgeInsets.all(16.0),
               child: Consumer2<ProfileController, CompleteProfileController>(
-                builder: (context, profileController, completeController, child) {
-                  return ElevatedButton(
-                    onPressed: completeController.isSubmitting
-                        ? null
-                        : () async {
-                            if (_validateCurrentPage()) {
-                              try {
-                                await completeController.submitProfile(profileController.profileData);
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Profile completed successfully!'),
-                                      backgroundColor: AppColors.statusActive,
-                                    ),
-                                  );
-                                  // Optionally navigate away or refresh
-                                  await profileController.refreshProfile(context: context);
-                                  // Refresh dashboard data as well
-                                  if (context.mounted) {
-                                    await context.read<DashboardController>().getDashboardData(context: context);
-                                  }
-                                  if (context.mounted) {
-                                    Navigator.pushAndRemoveUntil(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const BottomNavScreen()),
-                                      (route) => false,
+                builder:
+                    (context, profileController, completeController, child) {
+                      return ElevatedButton(
+                        onPressed: completeController.isSubmitting
+                            ? null
+                            : () async {
+                                if (_validateCurrentPage()) {
+                                  try {
+                                    await completeController.submitProfile(
+                                      profileController.profileData,
                                     );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Profile completed successfully!',
+                                          ),
+                                          backgroundColor:
+                                              AppColors.statusActive,
+                                        ),
+                                      );
+                                      // Optionally navigate away or refresh
+                                      await profileController.refreshProfile(
+                                        context: context,
+                                      );
+                                      // Refresh dashboard data as well
+                                      if (context.mounted) {
+                                        await context
+                                            .read<DashboardController>()
+                                            .getDashboardData(context: context);
+                                      }
+                                      if (context.mounted) {
+                                        Navigator.pushAndRemoveUntil(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const BottomNavScreen(),
+                                          ),
+                                          (route) => false,
+                                        );
+                                      }
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      LoggerUtils.error(
+                                        e.toString(),
+                                        tag: 'ProfileCompletion',
+                                      );
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            AppUtils.friendlyError(
+                                              e.toString(),
+                                            ),
+                                          ),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
                                   }
                                 }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  LoggerUtils.error(e.toString(), tag: 'ProfileCompletion');
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(AppUtils.friendlyError(e.toString())), backgroundColor: Colors.red),
-                                  );
-                                }
-                              }
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.statusActive,
-                      foregroundColor: AppColors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    child: completeController.isSubmitting
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : Text('Submit'),
-                  );
-                },
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.statusActive,
+                          foregroundColor: AppColors.white,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          textStyle: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        child: completeController.isSubmitting
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : Text('Submit'),
+                      );
+                    },
               ),
             ),
         ],
@@ -202,7 +253,13 @@ class ProfileHeader extends StatelessWidget {
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.white,
-            boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 4, offset: const Offset(0, 2))],
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadowLight,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             children: [
@@ -211,7 +268,11 @@ class ProfileHeader extends StatelessWidget {
                 children: [
                   Text(
                     'Complete Profile',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -221,7 +282,10 @@ class ProfileHeader extends StatelessWidget {
                     ),
                     child: Text(
                       '$percentageInt%',
-                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -232,12 +296,17 @@ class ProfileHeader extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: percentage,
                   backgroundColor: AppColors.borderColor,
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.primary,
+                  ),
                   minHeight: 8,
                 ),
               ),
               SizedBox(height: 8),
-              Text('$remaining fields remaining', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+              Text(
+                '$remaining fields remaining',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              ),
             ],
           ),
         );
@@ -385,7 +454,8 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
   void _calculateAge(DateTime birthDate) {
     DateTime today = DateTime.now();
     int age = today.year - birthDate.year;
-    if (today.month < birthDate.month || (today.month == birthDate.month && today.day < birthDate.day)) {
+    if (today.month < birthDate.month ||
+        (today.month == birthDate.month && today.day < birthDate.day)) {
       age--;
     }
     _ageController.text = age.toString();
@@ -429,18 +499,32 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
     }
   }
 
-  Widget _buildLocationFallbackDropdown(CompleteProfileController completeController) {
+  Widget _buildLocationFallbackDropdown(
+    CompleteProfileController completeController,
+  ) {
     const options = ['Out of State', 'Out of Country'];
     return DropdownButtonFormField<String>(
       initialValue: _selectedLocationFallback,
       decoration: InputDecoration(
         labelText: 'District*',
-        prefixIcon: Icon(Icons.map_outlined, color: AppColors.primary, size: 20),
+        prefixIcon: Icon(
+          Icons.map_outlined,
+          color: AppColors.primary,
+          size: 20,
+        ),
         labelStyle: TextStyle(color: AppColors.textSecondary),
       ),
-      hint: Text('Select location type', style: TextStyle(color: AppColors.textHint, fontSize: 13)),
+      hint: Text(
+        'Select location type',
+        style: TextStyle(color: AppColors.textHint, fontSize: 13),
+      ),
       items: options
-          .map((o) => DropdownMenuItem(value: o, child: Text(o, style: TextStyle(fontSize: 14))))
+          .map(
+            (o) => DropdownMenuItem(
+              value: o,
+              child: Text(o, style: TextStyle(fontSize: 14)),
+            ),
+          )
           .toList(),
       onChanged: (value) {
         setState(() {
@@ -484,7 +568,10 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                     children: [
                       Text(
                         'Profile Picture',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       SizedBox(height: 12),
                       Row(
@@ -494,11 +581,26 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                               return CircleAvatar(
                                 radius: 30,
                                 backgroundColor: AppColors.avatarBackground,
-                                backgroundImage: completeController.profilePicPath != null
-                                    ? FileImage(File(completeController.profilePicPath!))
-                                    : (_profilePicUrl != null ? NetworkImage(_profilePicUrl!) : null) as ImageProvider?,
-                                child: (completeController.profilePicPath == null && _profilePicUrl == null)
-                                    ? Icon(Icons.person, size: 30, color: AppColors.textSecondary)
+                                backgroundImage:
+                                    completeController.profilePicPath != null
+                                    ? FileImage(
+                                        File(
+                                          completeController.profilePicPath!,
+                                        ),
+                                      )
+                                    : (_profilePicUrl != null
+                                              ? NetworkImage(_profilePicUrl!)
+                                              : null)
+                                          as ImageProvider?,
+                                child:
+                                    (completeController.profilePicPath ==
+                                            null &&
+                                        _profilePicUrl == null)
+                                    ? Icon(
+                                        Icons.person,
+                                        size: 30,
+                                        color: AppColors.textSecondary,
+                                      )
                                     : null,
                               );
                             },
@@ -507,11 +609,19 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: _pickImage,
-                              icon: Icon(Icons.upload, color: AppColors.primary),
-                              label: Text('Upload', style: TextStyle(color: AppColors.primary)),
+                              icon: Icon(
+                                Icons.upload,
+                                color: AppColors.primary,
+                              ),
+                              label: Text(
+                                'Upload',
+                                style: TextStyle(color: AppColors.primary),
+                              ),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(color: AppColors.primary),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                             ),
                           ),
@@ -535,7 +645,11 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                     children: [
                       Text(
                         'Personal Information',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 16),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                        ),
                       ),
                       SizedBox(height: 16),
 
@@ -545,11 +659,20 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                         enabled: true,
                         prefixIcon: Icons.person_outline,
                         onChanged: (value) {
-                          context.read<CompleteProfileController>().fullName = value;
+                          context.read<CompleteProfileController>().fullName =
+                              value;
                         },
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Please enter your full name';
+                          }
+                          if (value.trim().length < 2) {
+                            return 'Name must be at least 2 characters';
+                          }
+                          if (!RegExp(
+                            r"^[a-zA-Z\s]+$",
+                          ).hasMatch(value.trim())) {
+                            return 'Name must contain only letters';
                           }
                           return null;
                         },
@@ -563,14 +686,17 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                         prefixIcon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                         onChanged: (value) {
-                          context.read<CompleteProfileController>().email = value;
+                          context.read<CompleteProfileController>().email =
+                              value;
                         },
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Please enter your email';
                           }
-                          if (!value.contains('@')) {
-                            return 'Please enter a valid email';
+                          if (!RegExp(
+                            r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$',
+                          ).hasMatch(value.trim())) {
+                            return 'Please enter a valid email address';
                           }
                           return null;
                         },
@@ -622,7 +748,11 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                border: Border(right: BorderSide(color: AppColors.borderColor)),
+                                border: Border(
+                                  right: BorderSide(
+                                    color: AppColors.borderColor,
+                                  ),
+                                ),
                               ),
                               child: CountryCodePicker(
                                 enabled: false,
@@ -634,7 +764,9 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                                 showCountryOnly: false,
                                 showOnlyCountryWhenClosed: false,
                                 alignLeft: false,
-                                textStyle: TextStyle(color: AppColors.textPrimary),
+                                textStyle: TextStyle(
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                             ),
                             Expanded(
@@ -643,19 +775,18 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                                 enabled: false,
                                 keyboardType: TextInputType.phone,
                                 onChanged: (value) {
-                                  context.read<CompleteProfileController>().phone = value;
+                                  context
+                                          .read<CompleteProfileController>()
+                                          .phone =
+                                      value;
                                 },
                                 decoration: const InputDecoration(
                                   hintText: 'Phone number',
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your phone number';
-                                  }
-                                  return null;
-                                },
                               ),
                             ),
                           ],
@@ -669,7 +800,8 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                         enabled: !_hasAddress,
                         prefixIcon: Icons.location_on_outlined,
                         onChanged: (value) {
-                          context.read<CompleteProfileController>().address = value;
+                          context.read<CompleteProfileController>().address =
+                              value;
                         },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -688,7 +820,8 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                         keyboardType: TextInputType.number,
                         maxLength: 6,
                         onChanged: (value) async {
-                          final completeController = context.read<CompleteProfileController>();
+                          final completeController = context
+                              .read<CompleteProfileController>();
                           completeController.pincode = value;
 
                           // Reset district when pincode is being edited
@@ -709,7 +842,9 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                               _showLocationFallback = false;
                               _selectedLocationFallback = null;
                             });
-                            final district = await context.read<ProfileController>().getDistrictFromPincode(value);
+                            final district = await context
+                                .read<ProfileController>()
+                                .getDistrictFromPincode(value);
                             if (district != null) {
                               setState(() {
                                 _districtController.text = district;
@@ -741,22 +876,27 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                       controller.isPincodeLoading
                           ? const Center(child: CircularProgressIndicator())
                           : _showLocationFallback
-                              ? _buildLocationFallbackDropdown(context.read<CompleteProfileController>())
-                              : CustomTextField(
-                                  label: 'District*',
-                                  controller: _districtController,
-                                  prefixIcon: Icons.map_outlined,
-                                  enabled: false,
-                                  onChanged: (value) {
-                                    context.read<CompleteProfileController>().district = value;
-                                  },
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'District will auto-fill';
-                                    }
-                                    return null;
-                                  },
-                                ),
+                          ? _buildLocationFallbackDropdown(
+                              context.read<CompleteProfileController>(),
+                            )
+                          : CustomTextField(
+                              label: 'District*',
+                              controller: _districtController,
+                              prefixIcon: Icons.map_outlined,
+                              enabled: false,
+                              onChanged: (value) {
+                                context
+                                        .read<CompleteProfileController>()
+                                        .district =
+                                    value;
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'District will auto-fill';
+                                }
+                                return null;
+                              },
+                            ),
                     ],
                   ),
                 ),
@@ -803,7 +943,9 @@ class CustomTextField extends StatelessWidget {
       enabled: enabled,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.primary, size: 20) : null,
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, color: AppColors.primary, size: 20)
+            : null,
         labelStyle: TextStyle(color: AppColors.textSecondary),
         counterText: '',
       ),
@@ -824,6 +966,7 @@ class IdProofSectionState extends State<IdProofSection> {
   bool _initialized = false;
   bool _hasFrontId = false;
   bool _hasBackId = false;
+  bool _showError = false;
 
   bool _hasValue(String? value) => value != null && value.trim().isNotEmpty;
 
@@ -842,7 +985,9 @@ class IdProofSectionState extends State<IdProofSection> {
     final controller = context.read<CompleteProfileController>();
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -850,17 +995,25 @@ class IdProofSectionState extends State<IdProofSection> {
             ListTile(
               leading: Icon(Icons.camera_alt, color: AppColors.primary),
               title: Text('Take Photo'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                controller.pickIdImage(isFront: isFront, source: ImageSource.camera);
+                await controller.pickIdImage(
+                  isFront: isFront,
+                  source: ImageSource.camera,
+                );
+                if (mounted) setState(() => _showError = false);
               },
             ),
             ListTile(
               leading: Icon(Icons.photo_library, color: AppColors.primary),
               title: Text('Choose from Gallery'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                controller.pickIdImage(isFront: isFront, source: ImageSource.gallery);
+                await controller.pickIdImage(
+                  isFront: isFront,
+                  source: ImageSource.gallery,
+                );
+                if (mounted) setState(() => _showError = false);
               },
             ),
           ],
@@ -891,7 +1044,11 @@ class IdProofSectionState extends State<IdProofSection> {
                   children: [
                     Text(
                       'ID Proof (Both sides required) *',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     SizedBox(height: 20),
 
@@ -919,13 +1076,24 @@ class IdProofSectionState extends State<IdProofSection> {
                   ],
                 ),
               ),
-              if (profileController.error != null &&
-                  (completeProfileController.idFrontPath == null || completeProfileController.idBackPath == null))
+              if (_showError &&
+                  (completeProfileController.idFrontPath == null &&
+                          !_hasFrontId ||
+                      completeProfileController.idBackPath == null &&
+                          !_hasBackId))
                 Padding(
-                  padding: EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.only(top: 12),
                   child: Text(
-                    'Both ID proof sides are required',
-                    style: TextStyle(color: AppColors.primary, fontSize: 12),
+                    completeProfileController.idFrontPath == null &&
+                            !_hasFrontId &&
+                            completeProfileController.idBackPath == null &&
+                            !_hasBackId
+                        ? 'Both front and back ID proof are required'
+                        : completeProfileController.idFrontPath == null &&
+                              !_hasFrontId
+                        ? 'Front side of ID proof is required'
+                        : 'Back side of ID proof is required',
+                    style: const TextStyle(color: Colors.red, fontSize: 13),
                   ),
                 ),
             ],
@@ -937,7 +1105,13 @@ class IdProofSectionState extends State<IdProofSection> {
 
   bool validate() {
     final controller = context.read<CompleteProfileController>();
-    return (_hasFrontId || controller.idFrontPath != null) && (_hasBackId || controller.idBackPath != null);
+    final isValid =
+        (_hasFrontId || controller.idFrontPath != null) &&
+        (_hasBackId || controller.idBackPath != null);
+    if (!isValid) {
+      setState(() => _showError = true);
+    }
+    return isValid;
   }
 
   Widget _buildUploadSection({
@@ -952,7 +1126,10 @@ class IdProofSectionState extends State<IdProofSection> {
       children: [
         Text(
           title,
-          style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
         ),
         SizedBox(height: 8),
         Container(
@@ -969,44 +1146,80 @@ class IdProofSectionState extends State<IdProofSection> {
                   if (imagePath != null)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
-                      child: Image.file(File(imagePath), width: 50, height: 50, fit: BoxFit.cover),
+                      child: Image.file(
+                        File(imagePath),
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      ),
                     )
                   else if (isUploaded)
-                    Icon(Icons.check_circle, color: AppColors.statusActive, size: 40)
+                    Icon(
+                      Icons.check_circle,
+                      color: AppColors.statusActive,
+                      size: 40,
+                    )
                   else
-                    Icon(Icons.image_outlined, color: AppColors.textHint, size: 40),
+                    Icon(
+                      Icons.image_outlined,
+                      color: AppColors.textHint,
+                      size: 40,
+                    ),
                   SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          imagePath != null ? 'Image Selected' : (isUploaded ? 'Already Uploaded' : 'Not Uploaded'),
+                          imagePath != null
+                              ? 'Image Selected'
+                              : (isUploaded
+                                    ? 'Already Uploaded'
+                                    : 'Not Uploaded'),
                           style: TextStyle(
-                            color: (imagePath != null || isUploaded) ? AppColors.textPrimary : AppColors.textHint,
-                            fontWeight: (imagePath != null || isUploaded) ? FontWeight.w500 : FontWeight.normal,
+                            color: (imagePath != null || isUploaded)
+                                ? AppColors.textPrimary
+                                : AppColors.textHint,
+                            fontWeight: (imagePath != null || isUploaded)
+                                ? FontWeight.w500
+                                : FontWeight.normal,
                           ),
                         ),
                         if (imagePath != null)
-                          Text('Ready to save', style: TextStyle(color: AppColors.statusActive, fontSize: 12)),
+                          Text(
+                            'Ready to save',
+                            style: TextStyle(
+                              color: AppColors.statusActive,
+                              fontSize: 12,
+                            ),
+                          ),
                       ],
                     ),
                   ),
                   ElevatedButton(
                     onPressed: isUploaded ? null : onUpload,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isUploaded ? AppColors.statusActive : AppColors.primary,
+                      backgroundColor: isUploaded
+                          ? AppColors.statusActive
+                          : AppColors.primary,
                       foregroundColor: AppColors.white,
                       minimumSize: const Size(100, 40),
                       disabledBackgroundColor: AppColors.statusActive,
                       disabledForegroundColor: AppColors.white,
                     ),
-                    child: Text(isUploaded ? 'Uploaded' : (imagePath != null ? 'Change' : 'Pick')),
+                    child: Text(
+                      isUploaded
+                          ? 'Uploaded'
+                          : (imagePath != null ? 'Change' : 'Pick'),
+                    ),
                   ),
                 ],
               ),
               SizedBox(height: 8),
-              Text(subtitle, style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              Text(
+                subtitle,
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
             ],
           ),
         ),
@@ -1098,11 +1311,15 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
   bool validate() {
     final isFormValid = _formKey.currentState?.validate() ?? false;
     final isDropdownsValid =
-        _selectedQualification != null && _selectedSpecialization != null && _selectedPassOutYear != null;
+        _selectedQualification != null &&
+        _selectedSpecialization != null &&
+        _selectedPassOutYear != null;
     final isRadioValid = _anyArrears != null;
 
     if (!isDropdownsValid || !isRadioValid) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please complete all academic fields')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please complete all academic fields')),
+      );
     }
     return isFormValid && isDropdownsValid && isRadioValid;
   }
@@ -1133,13 +1350,19 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
       builder: (context, profileController, completeProfileController, child) {
         _initData(profileController);
 
-        final qualifications = completeProfileController.qualifications.map((q) => q.name).toList();
-        if (_selectedQualification != null && !qualifications.contains(_selectedQualification)) {
+        final qualifications = completeProfileController.qualifications
+            .map((q) => q.name)
+            .toList();
+        if (_selectedQualification != null &&
+            !qualifications.contains(_selectedQualification)) {
           qualifications.insert(0, _selectedQualification!);
         }
 
-        final specializations = completeProfileController.specializations.map((s) => s.name).toList();
-        if (_selectedSpecialization != null && !specializations.contains(_selectedSpecialization)) {
+        final specializations = completeProfileController.specializations
+            .map((s) => s.name)
+            .toList();
+        if (_selectedSpecialization != null &&
+            !specializations.contains(_selectedSpecialization)) {
           specializations.insert(0, _selectedSpecialization!);
         }
 
@@ -1162,7 +1385,11 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                     children: [
                       Text(
                         'Academic Information',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       SizedBox(height: 20),
 
@@ -1171,16 +1398,21 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         label: 'Qualification *',
                         value: _selectedQualification,
                         items: qualifications,
-                        isLoading: completeProfileController.isLoadingAcademic && qualifications.isEmpty,
+                        isLoading:
+                            completeProfileController.isLoadingAcademic &&
+                            qualifications.isEmpty,
                         isEditable: !_hasQualification,
                         onChanged: (value) {
                           setState(() {
                             _selectedQualification = value;
-                            final completeController = context.read<CompleteProfileController>();
+                            final completeController = context
+                                .read<CompleteProfileController>();
                             completeController.qualificationName = value;
                             // Find ID
-                            final q = completeController.qualifications.firstWhere((element) => element.name == value);
-                            completeController.qualificationId = q.id.toString();
+                            final q = completeController.qualifications
+                                .firstWhere((element) => element.name == value);
+                            completeController.qualificationId = q.id
+                                .toString();
                           });
                         },
                       ),
@@ -1194,7 +1426,8 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         enabled: !_hasCollege,
                         prefixIcon: Icons.school_outlined,
                         onChanged: (value) {
-                          context.read<CompleteProfileController>().college = value;
+                          context.read<CompleteProfileController>().college =
+                              value;
                         },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -1207,18 +1440,57 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                       SizedBox(height: 16),
 
                       // CGPA
-                      CustomTextField(
-                        label: 'CGPA *',
+                      TextFormField(
                         controller: _cgpaController,
                         enabled: !_hasCgpa,
-                        prefixIcon: Icons.grade_outlined,
                         keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                        ],
+                        decoration: InputDecoration(
+                          labelText: 'CGPA *',
+                          prefixIcon: Icon(
+                            Icons.grade_outlined,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                          labelStyle: TextStyle(color: AppColors.textSecondary),
+                          counterText: '',
+                        ),
                         onChanged: (value) {
-                          context.read<CompleteProfileController>().cgpa = value;
+                          final cgpa = double.tryParse(value);
+                          if (cgpa != null) {
+                            if (cgpa > 10) {
+                              _cgpaController.text = '10';
+                              _cgpaController.selection =
+                                  TextSelection.fromPosition(
+                                    TextPosition(
+                                      offset: _cgpaController.text.length,
+                                    ),
+                                  );
+                            } else if (cgpa < 0) {
+                              _cgpaController.text = '0';
+                              _cgpaController.selection =
+                                  TextSelection.fromPosition(
+                                    TextPosition(
+                                      offset: _cgpaController.text.length,
+                                    ),
+                                  );
+                            }
+                          }
+                          context.read<CompleteProfileController>().cgpa =
+                              _cgpaController.text;
                         },
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Please enter CGPA';
+                          }
+                          final cgpa = double.tryParse(value.trim());
+                          if (cgpa == null) {
+                            return 'CGPA must be a valid number';
+                          }
+                          if (cgpa < 0 || cgpa > 10) {
+                            return 'CGPA must be between 0 and 10';
                           }
                           return null;
                         },
@@ -1231,12 +1503,17 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         label: 'Specialization *',
                         value: _selectedSpecialization,
                         items: specializations,
-                        isLoading: completeProfileController.isLoadingAcademic && specializations.isEmpty,
+                        isLoading:
+                            completeProfileController.isLoadingAcademic &&
+                            specializations.isEmpty,
                         isEditable: !_hasSpecialization,
                         onChanged: (value) {
                           setState(() {
                             _selectedSpecialization = value;
-                            context.read<CompleteProfileController>().specialization = value;
+                            context
+                                    .read<CompleteProfileController>()
+                                    .specialization =
+                                value;
                           });
                         },
                       ),
@@ -1252,7 +1529,10 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         onChanged: (value) {
                           setState(() {
                             _selectedPassOutYear = value;
-                            context.read<CompleteProfileController>().passOutYear = value;
+                            context
+                                    .read<CompleteProfileController>()
+                                    .passOutYear =
+                                value;
                           });
                         },
                       ),
@@ -1262,13 +1542,18 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                       // Any Arrears?
                       Text(
                         'Any Arrears?',
-                        style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(child: _buildRadioButton('No', 'no', true)),
-                          Expanded(child: _buildRadioButton('Yes', 'yes', true)),
+                          Expanded(
+                            child: _buildRadioButton('Yes', 'yes', true),
+                          ),
                         ],
                       ),
                     ],
@@ -1295,7 +1580,10 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
       children: [
         Text(
           label,
-          style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
         ),
         SizedBox(height: 8),
         Container(
@@ -1310,7 +1598,9 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
               hint: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  isLoading ? 'Loading...' : 'Select ${label.replaceAll('*', '').trim()}',
+                  isLoading
+                      ? 'Loading...'
+                      : 'Select ${label.replaceAll('*', '').trim()}',
                   style: TextStyle(fontSize: 14, color: AppColors.textHint),
                 ),
               ),
@@ -1320,13 +1610,22 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                       value: item,
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(item, style: TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+                        child: Text(
+                          item,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                       ),
                     ),
                   )
                   .toList(),
               onChanged: isEditable ? onChanged : null,
-              icon: Padding(padding: EdgeInsets.only(right: 16), child: Icon(Icons.arrow_drop_down)),
+              icon: Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: Icon(Icons.arrow_drop_down),
+              ),
             ),
           ),
         ),
@@ -1340,12 +1639,15 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
       child: RadioListTile<String>(
         title: Text(title, style: TextStyle(fontSize: 14)),
         value: value,
-        groupValue: _anyArrears == true ? 'yes' : (_anyArrears == false ? 'no' : null),
+        groupValue: _anyArrears == true
+            ? 'yes'
+            : (_anyArrears == false ? 'no' : null),
         onChanged: isEnabled
             ? (val) {
                 setState(() {
                   _anyArrears = val == 'yes';
-                  context.read<CompleteProfileController>().anyArrears = _anyArrears;
+                  context.read<CompleteProfileController>().anyArrears =
+                      _anyArrears;
                 });
               }
             : null,
@@ -1425,7 +1727,9 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
   bool validate() {
     final isFormValid = _formKey.currentState?.validate() ?? false;
     if (_currentStatus == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select your current status')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your current status')),
+      );
       return false;
     }
     return isFormValid;
@@ -1470,14 +1774,21 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                     children: [
                       Text(
                         'Career Information',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       SizedBox(height: 20),
 
                       // Current Status
                       Text(
                         'Current Status *',
-                        style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       SizedBox(height: 8),
                       Container(
@@ -1490,15 +1801,21 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                           value: _currentStatus,
                           isExpanded: true,
                           underline: SizedBox(),
-                          items: [
-                            'Student',
-                            'Working Professional',
-                          ].map((status) => DropdownMenuItem(value: status, child: Text(status))).toList(),
+                          items: ['Student', 'Working Professional']
+                              .map(
+                                (status) => DropdownMenuItem(
+                                  value: status,
+                                  child: Text(status),
+                                ),
+                              )
+                              .toList(),
                           onChanged: !_hasCurrentStatus
                               ? (value) {
                                   setState(() {
                                     _currentStatus = value;
-                                    context.read<CompleteProfileController>().studentStatus = value == 'Student'
+                                    context
+                                        .read<CompleteProfileController>()
+                                        .studentStatus = value == 'Student'
                                         ? 'student'
                                         : 'working_professional';
                                   });
@@ -1516,7 +1833,10 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                         enabled: !_hasPreferredLocation,
                         prefixIcon: Icons.location_city_outlined,
                         onChanged: (value) {
-                          context.read<CompleteProfileController>().preferredJobLocation = value;
+                          context
+                                  .read<CompleteProfileController>()
+                                  .preferredJobLocation =
+                              value;
                         },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -1532,7 +1852,10 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                       // Placement Assistance Checkbox
                       Container(
                         padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         child: Row(
                           children: [
                             Checkbox(
@@ -1540,7 +1863,9 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                               onChanged: (value) {
                                 setState(() {
                                   _interestedInPlacement = value ?? false;
-                                  context.read<CompleteProfileController>().placementAssistance =
+                                  context
+                                          .read<CompleteProfileController>()
+                                          .placementAssistance =
                                       _interestedInPlacement;
                                 });
                               },
@@ -1559,7 +1884,10 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                       // Resume Upload Section
                       Text(
                         'Resume (Optional)',
-                        style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       SizedBox(height: 8),
                       Consumer<CompleteProfileController>(
@@ -1574,21 +1902,28 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                             child: Row(
                               children: [
                                 Icon(
-                                  completeController.resumePath != null || _hasResume
+                                  completeController.resumePath != null ||
+                                          _hasResume
                                       ? Icons.description
                                       : Icons.upload_file,
-                                  color: completeController.resumePath != null || _hasResume
+                                  color:
+                                      completeController.resumePath != null ||
+                                          _hasResume
                                       ? AppColors.statusActive
                                       : AppColors.textHint,
                                 ),
                                 SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    completeController.resumePath != null || _hasResume
+                                    completeController.resumePath != null ||
+                                            _hasResume
                                         ? 'Resume selected'
                                         : 'Upload your resume (PDF)',
                                     style: TextStyle(
-                                      color: completeController.resumePath != null || _hasResume
+                                      color:
+                                          completeController.resumePath !=
+                                                  null ||
+                                              _hasResume
                                           ? AppColors.textPrimary
                                           : AppColors.textHint,
                                     ),
@@ -1596,16 +1931,25 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                                 ),
                                 TextButton(
                                   onPressed: () async {
-                                    final FilePickerResult? result = await FilePicker.platform.pickFiles(
-                                      type: FileType.custom,
-                                      allowedExtensions: ['pdf'],
-                                    );
+                                    final FilePickerResult? result =
+                                        await FilePicker.platform.pickFiles(
+                                          type: FileType.custom,
+                                          allowedExtensions: ['pdf'],
+                                        );
 
-                                    if (result != null && result.files.single.path != null) {
-                                      completeController.setResume(result.files.single.path);
+                                    if (result != null &&
+                                        result.files.single.path != null) {
+                                      completeController.setResume(
+                                        result.files.single.path,
+                                      );
                                     }
                                   },
-                                  child: Text(completeController.resumePath != null || _hasResume ? 'Change' : 'Pick'),
+                                  child: Text(
+                                    completeController.resumePath != null ||
+                                            _hasResume
+                                        ? 'Change'
+                                        : 'Pick',
+                                  ),
                                 ),
                               ],
                             ),
@@ -1714,7 +2058,11 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                     children: [
                       Text(
                         'Parent/Guardian',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       SizedBox(height: 20),
 
@@ -1725,11 +2073,20 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                         enabled: !_hasParentName,
                         prefixIcon: Icons.person_outline,
                         onChanged: (value) {
-                          context.read<CompleteProfileController>().parentName = value;
+                          context.read<CompleteProfileController>().parentName =
+                              value;
                         },
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Please enter parent/guardian name';
+                          }
+                          if (value.trim().length < 2) {
+                            return 'Name must be at least 2 characters';
+                          }
+                          if (!RegExp(
+                            r"^[a-zA-Z\s]+$",
+                          ).hasMatch(value.trim())) {
+                            return 'Name must contain only letters';
                           }
                           return null;
                         },
@@ -1747,7 +2104,11 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                border: Border(right: BorderSide(color: AppColors.borderColor)),
+                                border: Border(
+                                  right: BorderSide(
+                                    color: AppColors.borderColor,
+                                  ),
+                                ),
                               ),
                               child: CountryCodePicker(
                                 enabled: !_hasParentPhone,
@@ -1759,7 +2120,9 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                                 showCountryOnly: false,
                                 showOnlyCountryWhenClosed: false,
                                 alignLeft: false,
-                                textStyle: TextStyle(color: AppColors.textPrimary),
+                                textStyle: TextStyle(
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                             ),
                             Expanded(
@@ -1768,19 +2131,18 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                                 enabled: !_hasParentPhone,
                                 keyboardType: TextInputType.phone,
                                 onChanged: (value) {
-                                  context.read<CompleteProfileController>().parentPhone = value;
+                                  context
+                                          .read<CompleteProfileController>()
+                                          .parentPhone =
+                                      value;
                                 },
                                 decoration: const InputDecoration(
                                   hintText: 'Phone number',
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter phone number';
-                                  }
-                                  return null;
-                                },
                               ),
                             ),
                           ],
