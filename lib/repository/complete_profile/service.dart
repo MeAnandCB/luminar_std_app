@@ -1,9 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
-import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/repository/shared_pref.dart';
 
 class CompleteProfileService {
@@ -76,13 +76,6 @@ class CompleteProfileService {
       );
     }
 
-    // ── Log payload to console ──────────────────────────────────────────────
-    LoggerUtils.info('=== Complete Profile PATCH Payload ===', tag: 'CompleteProfile');
-    LoggerUtils.info('Endpoint : ${AppEndpoints.profileUpdate}$student_id/update/', tag: 'CompleteProfile');
-    LoggerUtils.info('Text fields: $stringFields', tag: 'CompleteProfile');
-    LoggerUtils.info('Files     : ${files.map((f) => '${f.field}=${f.filename}').toList()}', tag: 'CompleteProfile');
-    LoggerUtils.info('======================================', tag: 'CompleteProfile');
-
     try {
       final response = await _apiService.multipart(
         endpoint: '${AppEndpoints.profileUpdate}$student_id/update/',
@@ -93,17 +86,14 @@ class CompleteProfileService {
       );
 
       if (response.success) {
-        LoggerUtils.info('Profile update success [${response.statusCode}]', tag: 'CompleteProfile');
+        debugPrint('[CompleteProfile] PATCH success [${response.statusCode}]');
         return ApiResponse.success(response.data, response.statusCode ?? 200);
       } else {
-        LoggerUtils.error(
-          'Profile update failed [${response.statusCode}]: ${response.message}',
-          tag: 'CompleteProfile',
-        );
+        debugPrint('[CompleteProfile] PATCH FAILED [${response.statusCode}]: ${response.message}');
         return response.cast<Map<String, dynamic>>();
       }
-    } catch (e) {
-      LoggerUtils.error('Profile update exception: $e', tag: 'CompleteProfile', error: e);
+    } catch (e, st) {
+      debugPrint('[CompleteProfile] PATCH exception: $e\n$st');
       return ApiResponse.error(e.toString(), null);
     }
   }

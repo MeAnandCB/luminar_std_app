@@ -73,6 +73,9 @@ class AppEndpoints {
   // Suffix with {attempt_uid}/
   static const String examResult = '/api/student_portal/exams/results/';
 
+  // Locations / Branches
+  static const String locations = '/api/locations/';
+
   // NACTET Certificates
   static const String certificatesCreate = '/api/certificates/create/';
   static const String certificatesCheckDisplay =
@@ -80,7 +83,8 @@ class AppEndpoints {
 }
 
 class GlobalLinks {
-  static const String baseUrl = 'https://api.crm.luminartechnohub.com';
+  static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
   //static const String baseUrl = 'http://192.168.1.42:8000';
-  static const String websocketUrl = 'wss://api.crm.luminartechnohub.com/ws/';
+  static const String websocketUrl =
+      'wss://api.crm.dev.luminartechnohub.com/ws/';
 }

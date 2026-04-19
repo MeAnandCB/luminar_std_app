@@ -333,6 +333,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final phone = provider.profile?.personalInfo?.phone ?? '';
     final profilePic = provider.profile?.personalInfo?.profilePicture;
     final admDate = provider.profile?.academicInfo?.admissionDate;
+    final enrollmentNumber = context
+        .read<DashboardController>()
+        .enrollmentsFromDashboard
+        .firstOrNull
+        ?.enrollmentNumber;
 
     return Container(
       width: double.infinity,
@@ -533,6 +538,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // ── ID pill ─────────────────────────────────────────────
             const SizedBox(height: 12),
+            Text(
+              'STUDENT ID',
+              style: TextStyle(
+                color: _kCardLabel,
+                fontSize: 8,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2.0,
+              ),
+            ),
+            const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
               decoration: BoxDecoration(
@@ -631,6 +646,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
               child: Column(
                 children: [
+                  if (enrollmentNumber != null && enrollmentNumber.isNotEmpty) ...[
+                    _buildCardInfoRow(
+                      iconData: Icons.badge_rounded,
+                      iconColor: const Color(0xFF5B3FA6),
+                      iconBg: const Color(0xFFEDE9FF),
+                      label: 'Enrollment No.',
+                      value: enrollmentNumber,
+                    ),
+                    Divider(color: _kCardPale, height: 1, thickness: 0.5),
+                  ],
                   _buildCardInfoRow(
                     iconData: Icons.school_rounded,
                     iconColor: _kCardAccent,

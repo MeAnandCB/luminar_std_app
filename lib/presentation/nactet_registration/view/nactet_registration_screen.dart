@@ -338,15 +338,18 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           const SizedBox(height: 20),
           _buildLabel('Please mention your Institution (Branch) *'),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              _buildBranchChip('Calicut', controller),
-              const SizedBox(width: 8),
-              _buildBranchChip('Cochin', controller),
-              const SizedBox(width: 8),
-              _buildBranchChip('Thrissur', controller),
-            ],
-          ),
+          controller.isLoadingLocations
+              ? const SizedBox(
+                  height: 36,
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                )
+              : Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: controller.locations
+                      .map((loc) => _buildBranchChip(loc.name, loc.id, controller))
+                      .toList(),
+                ),
           const SizedBox(height: 20),
           _buildLabel('Name of the Candidate *'),
           const SizedBox(height: 8),
@@ -712,10 +715,10 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     );
   }
 
-  Widget _buildBranchChip(String label, NactetRegistrationController controller) {
-    final bool isSelected = controller.isBranchSelected(label); 
+  Widget _buildBranchChip(String label, int id, NactetRegistrationController controller) {
+    final bool isSelected = controller.isBranchSelected(id);
     return GestureDetector(
-      onTap: () => controller.updateBranch(label),
+      onTap: () => controller.updateBranch(id),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(

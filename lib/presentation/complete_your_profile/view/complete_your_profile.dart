@@ -163,15 +163,15 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                                               AppColors.statusActive,
                                         ),
                                       );
-                                      // Optionally navigate away or refresh
                                       await profileController.refreshProfile(
                                         context: context,
                                       );
-                                      // Refresh dashboard data as well
+                                      // Clear cached dashboard so BottomNavScreen
+                                      // fetches fresh data with profileCompleted:true
                                       if (context.mounted) {
-                                        await context
+                                        context
                                             .read<DashboardController>()
-                                            .getDashboardData(context: context);
+                                            .clearDashboardData();
                                       }
                                       if (context.mounted) {
                                         Navigator.pushAndRemoveUntil(
@@ -437,6 +437,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
       }
     }
     _initialized = true;
+    if (mounted) setState(() {});
   }
 
   bool validate() {
@@ -1303,6 +1304,11 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
       if (_hasArrears) {
         _anyArrears = aInfo.anyArrears!;
         completeController.anyArrears = aInfo.anyArrears;
+      }
+
+      if (aInfo.admissionDate != null) {
+        completeController.admissionDate =
+            aInfo.admissionDate.toString().split(' ').first;
       }
     }
     _initialized = true;

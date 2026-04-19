@@ -273,31 +273,35 @@ class CompleteProfileController extends ChangeNotifier {
       if (isAlumni != null) deltaFields['is_alumni'] = isAlumni;
       if (isPlaced != null) deltaFields['is_placed'] = isPlaced;
 
+      final profileStudentId = initialProfile?.personalInfo?.studentId;
+
+      debugPrint('===== COMPLETE PROFILE PATCH =====');
+      debugPrint('student_id : $profileStudentId');
+      debugPrint('endpoint   : /api/student/profile/$profileStudentId/update/');
+      if (deltaFields.isEmpty) {
+        debugPrint('deltaFields: (empty — no text fields changed)');
+      } else {
+        deltaFields.forEach((k, v) => debugPrint('  $k = $v (${v.runtimeType})'));
+      }
+      debugPrint('id_proof   : ${_idFrontPath ?? 'unchanged'}');
+      debugPrint('id_proof_2 : ${_idBackPath ?? 'unchanged'}');
+      debugPrint('profile_pic: ${_profilePicPath ?? 'unchanged'}');
+      debugPrint('resume     : ${_resumePath ?? 'unchanged'}');
+      debugPrint('==================================');
+
       if (deltaFields.isEmpty &&
           _idFrontPath == null &&
           _idBackPath == null &&
           _profilePicPath == null &&
           _resumePath == null) {
-        // Nothing to update
+        debugPrint('[CompleteProfile] Nothing changed — skipping PATCH');
         _isSubmitting = false;
         notifyListeners();
         return;
       }
 
-      // ── Log full payload before posting ───────────────────────────────────
-      LoggerUtils.info('=== Profile Submit Payload ===', tag: 'CompleteProfile');
-      LoggerUtils.info('student_id : ${initialProfile?.personalInfo?.studentId}', tag: 'CompleteProfile');
-      deltaFields.forEach((key, value) {
-        LoggerUtils.info('  $key : $value (${value.runtimeType})', tag: 'CompleteProfile');
-      });
-      LoggerUtils.info('  id_proof (front) : ${_idFrontPath ?? 'not changed'}', tag: 'CompleteProfile');
-      LoggerUtils.info('  id_proof_2 (back) : ${_idBackPath ?? 'not changed'}', tag: 'CompleteProfile');
-      LoggerUtils.info('  profile_pic : ${_profilePicPath ?? 'not changed'}', tag: 'CompleteProfile');
-      LoggerUtils.info('  resume : ${_resumePath ?? 'not changed'}', tag: 'CompleteProfile');
-      LoggerUtils.info('==============================', tag: 'CompleteProfile');
-
       await _submissionService.submitProfile(
-        student_id: initialProfile?.personalInfo?.studentId.toString(),
+        student_id: profileStudentId?.toString(),
         fields: deltaFields,
         idFrontPath: _idFrontPath,
         idBackPath: _idBackPath,

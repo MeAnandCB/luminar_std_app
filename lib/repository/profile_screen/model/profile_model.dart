@@ -83,8 +83,9 @@ class AcademicInfo {
     "college": college,
     "pass_out_year": passOutYear,
     "specialization": specialization,
-    "admission_date":
-        "${admissionDate!.year.toString().padLeft(4, '0')}-${admissionDate!.month.toString().padLeft(2, '0')}-${admissionDate!.day.toString().padLeft(2, '0')}",
+    "admission_date": admissionDate == null
+        ? null
+        : "${admissionDate!.year.toString().padLeft(4, '0')}-${admissionDate!.month.toString().padLeft(2, '0')}-${admissionDate!.day.toString().padLeft(2, '0')}",
     "cgpa": cgpa,
     "any_arrears": anyArrears,
     "student_or_working_professional": studentOrWorkingProfessional,

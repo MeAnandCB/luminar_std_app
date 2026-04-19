@@ -5,21 +5,27 @@ import 'package:luminar_std/repository/nactet_registration/model/nactet_registra
 import 'package:luminar_std/repository/nactet_registration/model/nactet_check_display_model.dart';
 import 'package:luminar_std/repository/nactet_registration/service/nactet_registration_service.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
+import 'package:luminar_std/repository/locations/model.dart';
+import 'package:luminar_std/repository/locations/service.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 
 class NactetRegistrationController extends ChangeNotifier {
   final NactetRegistrationService _service = NactetRegistrationService();
+  final LocationsService _locationsService = LocationsService();
   final NactetRegistrationModel registrationModel = NactetRegistrationModel();
 
   int currentStep = 0;
   bool isLoading = false;
   bool isCheckingStatus = false;
+  bool isLoadingLocations = false;
   bool isSuccess = false;
   bool displayForm = true;
   bool confirmationChecked = false;
   String? errorMessage;
   String? fileSizeError;
   dynamic successData;
+
+  List<LocationModel> locations = [];
 
   static const int _maxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
 
@@ -36,14 +42,30 @@ class NactetRegistrationController extends ChangeNotifier {
   final higherQualController = TextEditingController();
   final higherQualYearController = TextEditingController();
 
+  Future<void> fetchLocations() async {
+    isLoadingLocations = true;
+    notifyListeners();
+    try {
+      final response = await _locationsService.getLocations();
+      if (response.success && response.data != null) {
+        locations = response.data!.locations;
+      }
+    } catch (e) {
+      LoggerUtils.error('Error fetching locations: $e', tag: 'NACTET');
+    } finally {
+      isLoadingLocations = false;
+      notifyListeners();
+    }
+  }
+
   void init(Enrollment? enrollment, String? studentName, String? studentEmail, String? studentMobile) {
+    fetchLocations();
     if (enrollment != null) {
       registrationModel.enrollment = enrollment.uid;
-      registrationModel.course = 1; 
+      registrationModel.course = 1;
       registrationModel.batch = enrollment.batch.uid;
-      // Map branch name to ID if needed (e.g., Calicut -> 7)
-      registrationModel.branch = "7"; 
-      
+      registrationModel.branch = null;
+
       // Auto-check if already filled
       checkRegistrationStatus(enrollment.uid);
     }
@@ -74,8 +96,9 @@ class NactetRegistrationController extends ChangeNotifier {
     registrationModel.enrollment = enrollment.enrollmentUid;
     registrationModel.course = enrollment.courseId;
     registrationModel.batch = enrollment.batchUid;
-    registrationModel.branch = "7";
+    registrationModel.branch = null;
 
+    fetchLocations();
     checkRegistrationStatus(enrollment.enrollmentUid);
 
     if (studentName != null && nameController.text.isEmpty) {
@@ -158,24 +181,13 @@ class NactetRegistrationController extends ChangeNotifier {
     }
   }
 
-  void updateBranch(String branchName) {
-    // Map labels to IDs
-    String branchId = "7";
-    if (branchName.toLowerCase() == 'calicut') branchId = "7";
-    else if (branchName.toLowerCase() == 'cochin') branchId = "1";
-    else if (branchName.toLowerCase() == 'thrissur') branchId = "3";
-    
-    registrationModel.branch = branchId;
+  void updateBranch(int locationId) {
+    registrationModel.branch = locationId.toString();
     notifyListeners();
   }
 
-  bool isBranchSelected(String branchName) {
-    String expectedId = "7";
-    if (branchName.toLowerCase() == 'calicut') expectedId = "7";
-    else if (branchName.toLowerCase() == 'cochin') expectedId = "1";
-    else if (branchName.toLowerCase() == 'thrissur') expectedId = "3";
-    
-    return registrationModel.branch == expectedId;
+  bool isBranchSelected(int locationId) {
+    return registrationModel.branch == locationId.toString();
   }
 
   void updateGender(String gender) {
