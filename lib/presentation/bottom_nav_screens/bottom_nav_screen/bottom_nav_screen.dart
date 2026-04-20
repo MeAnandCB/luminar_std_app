@@ -75,6 +75,38 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
     await _fabController.forward();
     await _fabController.reverse();
     if (!mounted) return;
+
+    final dashboardController = Provider.of<DashboardController>(context, listen: false);
+    final enrollments = dashboardController.dashboard?.enrollmentDetails?.enrollments ?? [];
+    final bool accessDenied = enrollments.isNotEmpty &&
+        enrollments.every((e) => e.basicInfo?.crmAccess == false);
+
+    if (accessDenied) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(Icons.lock_outline_rounded, color: Colors.red.shade400, size: 22),
+              const SizedBox(width: 8),
+              const Text('Access Denied'),
+            ],
+          ),
+          content: const Text(
+            'Your access was denied. Please contact your academic counselor.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     Navigator.push(context, MaterialPageRoute(builder: (context) => const QRScannerScreen()));
   }
 

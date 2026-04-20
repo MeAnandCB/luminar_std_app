@@ -158,18 +158,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       icon: Icons.person_outline_rounded,
                       color: AppColors.primary,
                       children: [
-                        _buildTextField('Full Name', editController.fullNameController, isEditable: false),
+                        _buildTextField('Full Name', editController.fullNameController),
                         _buildTextField(
                           'Email Address',
                           editController.emailController,
                           keyboardType: TextInputType.emailAddress,
-                          isEditable: false,
                         ),
                         _buildTextField(
                           'Phone Number',
                           editController.phoneController,
                           keyboardType: TextInputType.phone,
-                          isEditable: false,
                         ),
                         _buildPhoneField(
                           'WhatsApp Number',
@@ -210,7 +208,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           'Age',
                           editController.ageController,
                           keyboardType: TextInputType.number,
-                          isEditable: false,
                         ),
                       ],
                     ),
@@ -491,15 +488,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(label, style: AppTextStyles.statLabel),
-              if (!isEditable) ...[
-                SizedBox(width: 8),
-                Icon(Icons.lock_outline_rounded, size: 12, color: AppColors.textSecondary),
-              ],
-            ],
-          ),
+          Text(label, style: AppTextStyles.statLabel),
           SizedBox(height: 6),
           Container(
             decoration: BoxDecoration(
@@ -513,13 +502,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               enabled: isEditable,
               style: TextStyle(
                 fontSize: 14,
-                color: isEditable ? AppColors.textPrimary : AppColors.textSecondary,
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.w500,
               ),
               decoration: InputDecoration(
                 contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: InputBorder.none,
-                hintText: isEditable ? 'Enter $label' : 'Cannot edit',
+                hintText: 'Enter $label',
                 hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
               ),
             ),

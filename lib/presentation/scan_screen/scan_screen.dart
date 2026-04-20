@@ -292,6 +292,41 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     }
   }
 
+  // ── Access denied dialog (same as more screen) ───────────────────────────
+
+  void _showAccessDenied() {
+    setState(() {
+      _detected = false;
+      _isLoading = false;
+      _statusText = 'Align QR code within the frame';
+    });
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.lock_outline_rounded, color: Colors.red.shade400, size: 22),
+            const SizedBox(width: 8),
+            const Text('Access Denied'),
+          ],
+        ),
+        content: const Text(
+          'Your access was denied. Please contact your academic counselor.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _safeStart();
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Step 3: Validate batchId against enrollments ──────────────────────────
 
   void _validateAndSubmit(QRPayload payload) {
@@ -317,6 +352,12 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         message:
             'This session does not belong to your enrolled batches.\nPlease verify you are scanning the correct QR.',
       );
+      return;
+    }
+
+    final bool crmAccess = matched.basicInfo?.crmAccess ?? true;
+    if (!crmAccess) {
+      _showAccessDenied();
       return;
     }
 
