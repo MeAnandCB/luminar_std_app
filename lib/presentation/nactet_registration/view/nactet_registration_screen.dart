@@ -924,11 +924,28 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
   }
 
   Widget _buildSuccessView(NactetRegistrationController controller) {
-    final enrollmentProvider = Provider.of<EnrollmentProvider>(context, listen: false);
-    final enrollment = enrollmentProvider.enrollmentDataRes?.enrollments.isNotEmpty == true 
-          ? enrollmentProvider.enrollmentDataRes!.enrollments.first : null;
-    
     final data = controller.successData;
+
+    final String courseName;
+    final String batchName;
+    if (widget.nactetEnrollment != null) {
+      courseName = widget.nactetEnrollment!.courseName;
+      batchName = widget.nactetEnrollment!.batchName;
+    } else {
+      final ep = Provider.of<EnrollmentProvider>(context, listen: false);
+      final enr = ep.enrollmentDataRes?.enrollments.isNotEmpty == true
+          ? ep.enrollmentDataRes!.enrollments.first
+          : null;
+      courseName = enr?.course.courseName ?? 'N/A';
+      batchName = enr?.batch.batchName ?? 'N/A';
+    }
+
+    final branchName = data?['branch_name'] as String? ??
+        controller.locations
+            .where((l) => l.id.toString() == controller.registrationModel.branch)
+            .map((l) => l.name)
+            .firstOrNull ??
+        '—';
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -972,7 +989,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Registration for ${data?['course_name'] ?? enrollment?.course.courseName ?? "your course"} received. Confirmation sent to ${controller.emailController.text}.',
+              'Registration for ${data?['course_name'] ?? courseName} received. Confirmation sent to ${controller.emailController.text}.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -991,7 +1008,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             decoration: BoxDecoration(
               color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.borderColor.withOpacity(0.5)),
+              border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.5)),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.shadowLight,
@@ -1014,9 +1031,9 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                 ),
                 const SizedBox(height: 20),
                 _buildSummaryRow('Name', data?['name'] ?? controller.nameController.text),
-                _buildSummaryRow('Branch', data?['branch_name'] ?? 'Calicut'),
-                _buildSummaryRow('Course', data?['course_name'] ?? enrollment?.course.courseName ?? 'N/A'),
-                _buildSummaryRow('Batch', data?['batch_name'] ?? enrollment?.batch.batchName ?? 'N/A'),
+                _buildSummaryRow('Branch', branchName),
+                _buildSummaryRow('Course', data?['course_name'] ?? courseName),
+                _buildSummaryRow('Batch', data?['batch_name'] ?? batchName),
                 _buildSummaryRow('Mobile', data?['mobile_number'] ?? controller.mobileController.text),
                 _buildSummaryRow('Email', data?['email'] ?? controller.emailController.text),
               ],
@@ -1087,6 +1104,227 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     );
   }
 
+  void _showConfirmationSheet(NactetRegistrationController controller) {
+    final nactet = widget.nactetEnrollment;
+    final String courseName;
+    final String batchName;
+    final String enrollmentNumber;
+
+    if (nactet != null) {
+      courseName = nactet.courseName;
+      batchName = nactet.batchName;
+      enrollmentNumber = nactet.enrollmentNumber;
+    } else {
+      final ep = Provider.of<EnrollmentProvider>(context, listen: false);
+      final enr = ep.enrollmentDataRes?.enrollments.isNotEmpty == true
+          ? ep.enrollmentDataRes!.enrollments.first
+          : null;
+      courseName = enr?.course.courseName ?? 'N/A';
+      batchName = enr?.batch.batchName ?? 'N/A';
+      enrollmentNumber = enr?.enrollmentNumber ?? 'N/A';
+    }
+
+    final m = controller.registrationModel;
+    final branchName = controller.locations
+        .where((l) => l.id.toString() == m.branch)
+        .map((l) => l.name)
+        .firstOrNull ?? m.branch ?? 'N/A';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: AppColors.scaffoldBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Icon(Icons.assignment_turned_in_outlined, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Review & Confirm',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Please review all details before submitting.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  children: [
+                    _buildSheetSection('PERSONAL DETAILS', [
+                      _buildSheetRow('Name', controller.nameController.text.isNotEmpty ? controller.nameController.text : '—'),
+                      _buildSheetRow('Guardian Name', controller.guardianNameController.text.isNotEmpty ? controller.guardianNameController.text : '—'),
+                      _buildSheetRow('Gender', m.gender ?? '—'),
+                      _buildSheetRow('Date of Birth', controller.dobController.text.isNotEmpty ? controller.dobController.text : '—'),
+                      _buildSheetRow('Address', controller.addressController.text.isNotEmpty ? controller.addressController.text : '—'),
+                      _buildSheetRow('Mobile', controller.mobileController.text.isNotEmpty ? controller.mobileController.text : '—'),
+                      _buildSheetRow('Email', controller.emailController.text.isNotEmpty ? controller.emailController.text : '—'),
+                    ]),
+                    const SizedBox(height: 16),
+                    _buildSheetSection('EDUCATIONAL QUALIFICATION', [
+                      _buildSheetRow('Basic Qualification', m.basicEducationalQualification ?? '—'),
+                      _buildSheetRow('Basic Qual Year', controller.basicQualYearController.text.isNotEmpty ? controller.basicQualYearController.text : '—'),
+                      _buildSheetRow('Higher Qualification', controller.higherQualController.text.isNotEmpty ? controller.higherQualController.text : '—'),
+                      _buildSheetRow('Higher Qual Year', controller.higherQualYearController.text.isNotEmpty ? controller.higherQualYearController.text : '—'),
+                    ]),
+                    const SizedBox(height: 16),
+                    _buildSheetSection('COURSE & ENROLLMENT', [
+                      _buildSheetRow('Branch', branchName),
+                      _buildSheetRow('Course', courseName),
+                      _buildSheetRow('Batch', batchName),
+                      _buildSheetRow('Enrollment No.', enrollmentNumber),
+                    ]),
+                    const SizedBox(height: 16),
+                    _buildSheetSection('DOCUMENTS', [
+                      _buildSheetRow('Basic Qual Doc', m.basicDocPath?.split('/').last ?? '—'),
+                      _buildSheetRow('Higher Qual Doc', m.higherDocPath?.split('/').last ?? '—'),
+                      _buildSheetRow('ID Proof', m.idProofPath?.split('/').last ?? '—'),
+                      _buildSheetRow('Passport Photo', m.photoPath?.split('/').last ?? '—'),
+                    ]),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  boxShadow: [BoxShadow(color: AppColors.shadowLight, blurRadius: 8, offset: const Offset(0, -4))],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(color: AppColors.borderColor),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text('Edit', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: StatefulBuilder(
+                        builder: (_, setSheetState) => ElevatedButton(
+                          onPressed: controller.isLoading ? null : () async {
+                            Navigator.pop(context);
+                            final success = await controller.submit(context);
+                            if (success) {
+                              if (mounted) setState(() {});
+                            } else if (controller.errorMessage != null && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(AppUtils.friendlyError(controller.errorMessage!)), backgroundColor: Colors.red),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.statusActive,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.check_circle_outline, size: 18, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text('Confirm & Submit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSheetSection(String title, List<Widget> rows) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textSecondary.withValues(alpha: 0.5),
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...rows,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSheetRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 130,
+            child: Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBottomNavigation(NactetRegistrationController controller) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
@@ -1121,7 +1359,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             count: 4,
             effect: ScrollingDotsEffect(
               activeDotColor: AppColors.primary,
-              dotColor: AppColors.primary.withOpacity(0.2),
+              dotColor: AppColors.primary.withValues(alpha: 0.2),
               dotHeight: 8,
               dotWidth: 8,
             ),
@@ -1154,7 +1392,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             )
           else
             ElevatedButton(
-              onPressed: controller.isLoading ? null : () async {
+              onPressed: controller.isLoading ? null : () {
                 final validationError = controller.validateStep(3);
                 if (validationError != null) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1162,35 +1400,20 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                   );
                   return;
                 }
-                final success = await controller.submit(context);
-                if (success) {
-                  if (mounted) {
-                    setState(() {
-                      controller.isSuccess = true;
-                    });
-                  }
-                } else if (controller.errorMessage != null) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(AppUtils.friendlyError(controller.errorMessage!)), backgroundColor: Colors.red),
-                    );
-                  }
-                }
+                _showConfirmationSheet(controller);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.statusActive,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: controller.isLoading 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Row(
-                  children: const [
-                    Icon(Icons.check_circle_outline, size: 18, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('Submit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ],
-                ),
+              child: Row(
+                children: const [
+                  Icon(Icons.check_circle_outline, size: 18, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Review & Submit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
         ],
       ),

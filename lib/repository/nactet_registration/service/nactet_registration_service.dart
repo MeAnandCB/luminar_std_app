@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
@@ -21,6 +22,14 @@ class NactetRegistrationService {
     try {
       final fields = registrationModel.toFields();
       final files = await registrationModel.toFiles();
+
+      developer.log(
+        '─── NACTET Registration Payload ───\n'
+        '  endpoint : ${AppEndpoints.certificatesCreate}\n'
+        '  fields   :\n${fields.entries.map((e) => '    ${e.key}: ${e.value}').join('\n')}\n'
+        '  files    : ${files.isEmpty ? '(none)' : files.map((f) => '${f.field} → ${f.filename}').join(', ')}',
+        name: 'NactetRegistration.payload',
+      );
 
       final response = await _apiService.multipart(
         endpoint: AppEndpoints.certificatesCreate,

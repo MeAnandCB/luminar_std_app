@@ -222,7 +222,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
           builder: (_) =>
               NactetRegistrationScreen(nactetEnrollment: enrollments.first),
         ),
-      );
+      ).then((_) {
+        if (context.mounted) {
+          Provider.of<DashboardController>(context, listen: false).getNactetStatus();
+        }
+      });
     } else {
       _showEnrollmentSelectionSheet(context, enrollments);
     }
@@ -1393,7 +1397,11 @@ class _EnrollmentSelectionSheet extends StatelessWidget {
                             builder: (_) =>
                                 NactetRegistrationScreen(nactetEnrollment: e),
                           ),
-                        );
+                        ).then((_) {
+                          if (context.mounted) {
+                            Provider.of<DashboardController>(context, listen: false).getNactetStatus();
+                          }
+                        });
                       },
                 child: Container(
                   padding: const EdgeInsets.all(14),
