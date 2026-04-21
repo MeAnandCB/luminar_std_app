@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:luminar_std/core/services/app_update_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
@@ -127,6 +129,12 @@ class _MyAppState extends State<MyApp> {
       final results = await Connectivity().checkConnectivity();
       if (results.every((r) => r == ConnectivityResult.none)) {
         _showNoInternetDialog();
+      } else {
+        // 3. Version check (only when online)
+        final newVersion = await AppUpdateService.checkForUpdate();
+        if (newVersion != null && mounted) {
+          _showUpdateDialog(newVersion);
+        }
       }
     });
     // Listen for changes
@@ -192,6 +200,72 @@ class _MyAppState extends State<MyApp> {
 
   void _dismissDialog() {
     navigatorKey.currentState?.pop();
+  }
+
+  void _showUpdateDialog(String newVersion) {
+    final ctx = navigatorKey.currentContext;
+    if (ctx == null) return;
+    showDialog(
+      context: ctx,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.system_update_rounded, size: 48, color: Colors.blue.shade600),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Update Available',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Version $newVersion is available. Please update to get the latest features and improvements.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.5),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final uri = Uri.parse(AppUpdateService.storeUrl);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Update Now', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Later', style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override

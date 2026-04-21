@@ -657,7 +657,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                       CustomTextField(
                         label: 'Full Name*',
                         controller: _fullNameController,
-                        enabled: true,
+                        enabled: false,
                         prefixIcon: Icons.person_outline,
                         onChanged: (value) {
                           context.read<CompleteProfileController>().fullName =
@@ -756,9 +756,15 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                                 ),
                               ),
                               child: CountryCodePicker(
-                                enabled: false,
+                                enabled: true,
                                 onChanged: (code) {
-                                  // _countryCode = code.dialCode;
+                                  final dial = code.dialCode ?? '+91';
+                                  setState(() => _countryCode = dial);
+                                  final digits = _phoneController.text
+                                      .replaceFirst(RegExp(r'^\+\d+\s*'), '');
+                                  _phoneController.text = '$dial $digits';
+                                  context.read<CompleteProfileController>().phone =
+                                      _phoneController.text;
                                 },
                                 initialSelection: 'IN',
                                 favorite: ['+91', '+1', '+44'],
@@ -773,13 +779,17 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                             Expanded(
                               child: TextFormField(
                                 controller: _phoneController,
-                                enabled: false,
+                                enabled: true,
                                 keyboardType: TextInputType.phone,
-                                onChanged: (value) {
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                onChanged: (digits) {
+                                  final full =
+                                      '${_countryCode ?? '+91'} $digits';
                                   context
-                                          .read<CompleteProfileController>()
-                                          .phone =
-                                      value;
+                                      .read<CompleteProfileController>()
+                                      .phone = full;
                                 },
                                 decoration: const InputDecoration(
                                   hintText: 'Phone number',
@@ -798,7 +808,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                       CustomTextField(
                         label: 'Address*',
                         controller: _addressController,
-                        enabled: !_hasAddress,
+                        enabled: true,
                         prefixIcon: Icons.location_on_outlined,
                         onChanged: (value) {
                           context.read<CompleteProfileController>().address =
@@ -816,7 +826,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                       CustomTextField(
                         label: 'Pincode*',
                         controller: _pincodeController,
-                        enabled: !_hasPincode,
+                        enabled: true,
                         prefixIcon: Icons.pin_drop_outlined,
                         keyboardType: TextInputType.number,
                         maxLength: 6,
@@ -1407,7 +1417,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         isLoading:
                             completeProfileController.isLoadingAcademic &&
                             qualifications.isEmpty,
-                        isEditable: !_hasQualification,
+                        isEditable: true,
                         onChanged: (value) {
                           setState(() {
                             _selectedQualification = value;
@@ -1429,7 +1439,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                       CustomTextField(
                         label: 'College/University *',
                         controller: _collegeNameController,
-                        enabled: !_hasCollege,
+                        enabled: true,
                         prefixIcon: Icons.school_outlined,
                         onChanged: (value) {
                           context.read<CompleteProfileController>().college =
@@ -1448,7 +1458,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                       // CGPA
                       TextFormField(
                         controller: _cgpaController,
-                        enabled: !_hasCgpa,
+                        enabled: true,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
@@ -1512,7 +1522,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         isLoading:
                             completeProfileController.isLoadingAcademic &&
                             specializations.isEmpty,
-                        isEditable: !_hasSpecialization,
+                        isEditable: true,
                         onChanged: (value) {
                           setState(() {
                             _selectedSpecialization = value;
@@ -1531,7 +1541,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                         label: 'Pass Out Year *',
                         value: _selectedPassOutYear,
                         items: _passOutYears,
-                        isEditable: !_hasPassOutYear,
+                        isEditable: true,
                         onChanged: (value) {
                           setState(() {
                             _selectedPassOutYear = value;
@@ -1815,18 +1825,16 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                                 ),
                               )
                               .toList(),
-                          onChanged: !_hasCurrentStatus
-                              ? (value) {
-                                  setState(() {
-                                    _currentStatus = value;
-                                    context
-                                        .read<CompleteProfileController>()
-                                        .studentStatus = value == 'Student'
-                                        ? 'student'
-                                        : 'working_professional';
-                                  });
-                                }
-                              : null,
+                          onChanged: (value) {
+                            setState(() {
+                              _currentStatus = value;
+                              context
+                                  .read<CompleteProfileController>()
+                                  .studentStatus = value == 'Student'
+                                  ? 'student'
+                                  : 'working_professional';
+                            });
+                          },
                         ),
                       ),
 
@@ -1836,7 +1844,7 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                       CustomTextField(
                         label: 'Preferred Job Location *',
                         controller: _locationController,
-                        enabled: !_hasPreferredLocation,
+                        enabled: true,
                         prefixIcon: Icons.location_city_outlined,
                         onChanged: (value) {
                           context
@@ -1985,6 +1993,7 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  String _parentCountryCode = '+91';
 
   bool _initialized = false;
   bool _hasParentName = false;
@@ -2076,7 +2085,7 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                       CustomTextField(
                         label: 'Name *',
                         controller: _nameController,
-                        enabled: !_hasParentName,
+                        enabled: true,
                         prefixIcon: Icons.person_outline,
                         onChanged: (value) {
                           context.read<CompleteProfileController>().parentName =
@@ -2117,9 +2126,16 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                                 ),
                               ),
                               child: CountryCodePicker(
-                                enabled: !_hasParentPhone,
+                                enabled: true,
                                 onChanged: (code) {
-                                  // _countryCode = code.dialCode;
+                                  final dial = code.dialCode ?? '+91';
+                                  setState(() => _parentCountryCode = dial);
+                                  final digits = _phoneController.text
+                                      .replaceFirst(RegExp(r'^\+\d+\s*'), '');
+                                  _phoneController.text = '$dial $digits';
+                                  context
+                                      .read<CompleteProfileController>()
+                                      .parentPhone = _phoneController.text;
                                 },
                                 initialSelection: 'IN',
                                 favorite: ['+91', '+1', '+44'],
@@ -2134,13 +2150,16 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                             Expanded(
                               child: TextFormField(
                                 controller: _phoneController,
-                                enabled: !_hasParentPhone,
+                                enabled: true,
                                 keyboardType: TextInputType.phone,
-                                onChanged: (value) {
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                onChanged: (digits) {
+                                  final full = '$_parentCountryCode $digits';
                                   context
-                                          .read<CompleteProfileController>()
-                                          .parentPhone =
-                                      value;
+                                      .read<CompleteProfileController>()
+                                      .parentPhone = full;
                                 },
                                 decoration: const InputDecoration(
                                   hintText: 'Phone number',

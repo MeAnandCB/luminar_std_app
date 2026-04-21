@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -29,6 +30,15 @@ class CompleteProfileService {
     final Map<String, String> stringFields = {};
     fields.forEach((key, value) {
       if (value != null) {
+        if (key == 'cgpa') {
+          // Avoid floating-point strings like "8.500000000000001" — API max_digits=4
+          final d = double.tryParse(value.toString());
+          if (d != null) {
+            final formatted = d.toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), '');
+            stringFields[key] = formatted;
+            return;
+          }
+        }
         stringFields[key] = value.toString();
       }
     });
@@ -75,6 +85,14 @@ class CompleteProfileService {
         ),
       );
     }
+
+    developer.log(
+      '─── Profile Update Payload ───\n'
+      '  endpoint   : ${AppEndpoints.profileUpdate}$student_id/update/\n'
+      '  fields     :\n${stringFields.entries.map((e) => '    ${e.key}: ${e.value}').join('\n')}\n'
+      '  files      : ${files.isEmpty ? '(none)' : files.map((f) => '${f.field} → ${f.filename}').join(', ')}',
+      name: 'ProfileUpdate.payload',
+    );
 
     try {
       final response = await _apiService.multipart(
