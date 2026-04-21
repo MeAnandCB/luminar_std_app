@@ -503,9 +503,21 @@ class _SplashScreenState extends State<SplashScreen>
             // ── Version ─────────────────────────────────────
             Positioned(
               bottom: 24,
+              left: 24,
+              child: Text(
+                'Developed by Anvitha Infotech',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white.withValues(alpha: 0.38),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 24,
               right: 24,
               child: Text(
-                'v1.0.0',
+                'V1 : 2.0.4+7',
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.white.withValues(alpha: 0.38),
