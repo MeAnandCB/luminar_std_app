@@ -3,6 +3,7 @@ import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
+import 'package:luminar_std/presentation/interview_prep/interview_prep_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/gallery_screen/views/gallery_screen.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
@@ -76,6 +77,13 @@ const _kFeatures = [
     Color(0xFF6C63FF),
     Color(0xFF9D73FF),
   ),
+  _Feature(
+    Icons.workspace_premium_rounded,
+    'Interview Prep',
+    'Practice HR, Behavioral, Situational and common Q&A',
+    Color(0xFFEC4899),
+    Color(0xFFF472B6),
+  ),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -130,13 +138,25 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
             tabController: _tabController,
             enrollments: enrollments,
           ),
-          Expanded(child: _buildBody(dashboard.isLoading, enrollments, hasTabs, unreadExams)),
+          Expanded(
+            child: _buildBody(
+              dashboard.isLoading,
+              enrollments,
+              hasTabs,
+              unreadExams,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildBody(bool loading, List enrollments, bool hasTabs, int unreadExams) {
+  Widget _buildBody(
+    bool loading,
+    List enrollments,
+    bool hasTabs,
+    int unreadExams,
+  ) {
     if (loading) return _ShimmerBody();
     if (enrollments.isEmpty) return const _EmptyState();
 
@@ -441,7 +461,7 @@ class _EnrollmentPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    AppConfig.hidePayments ? '4 features' : '5 features',
+                    AppConfig.hidePayments ? '5 features' : '6 features',
                     style: TextStyle(
                       fontSize: 11,
                       color: _kPrimary,
@@ -563,6 +583,16 @@ class _EnrollmentPage extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => const ExamScreen()),
                   );
                 },
+              ),
+              SizedBox(height: 12),
+              _FeatureCard(
+                feature: _kFeatures[5],
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const InterviewPrepScreen(),
+                  ),
+                ),
               ),
             ]),
           ),
@@ -695,7 +725,11 @@ class _Chip extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _FeatureCard extends StatelessWidget {
-  const _FeatureCard({required this.feature, required this.onTap, this.badgeCount = 0});
+  const _FeatureCard({
+    required this.feature,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
 
   final _Feature feature;
   final VoidCallback onTap;
