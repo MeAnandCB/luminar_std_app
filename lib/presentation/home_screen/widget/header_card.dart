@@ -223,7 +223,7 @@ class HeaderWidget extends StatelessWidget {
               ),
               constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
               child: Text(
-                unreadCount > 99 ? '99+' : unreadCount.toString(),
+                '1+',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 8,

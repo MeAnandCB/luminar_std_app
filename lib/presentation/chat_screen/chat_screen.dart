@@ -4574,7 +4574,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           // Content column pivots up based on keyboard height
           Padding(
             padding: EdgeInsets.only(
-              bottom: _showEmojiPicker ? 250 : keyboardHeight,
+              bottom: keyboardHeight,
             ),
             child: Column(
               children: [

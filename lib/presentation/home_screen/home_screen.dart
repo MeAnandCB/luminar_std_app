@@ -14,6 +14,7 @@ import 'package:luminar_std/presentation/auth_screens/login_screen/controller.da
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/instagram_view_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:luminar_std/presentation/nactet_registration/view/nactet_registration_screen.dart';
 import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 import 'package:luminar_std/repository/nactet_registration/model/nactet_check_display_model.dart';
@@ -199,6 +200,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         ),
                         const SizedBox(height: 14),
                         const AdvancedInstaCarousel(),
+                        const SizedBox(height: 28),
+                        _buildSectionHeading(
+                          'Follow Us',
+                          'Stay connected with Luminar',
+                        ),
+                        const SizedBox(height: 14),
+                        _buildSocialSection(),
                         const SizedBox(height: 32),
                       ],
                     ],
@@ -395,6 +403,70 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ],
         ),
       ],
+    );
+  }
+
+  // ============== SOCIAL MEDIA SECTION ==============
+
+  Future<void> _launchSocial(String url) async {
+    final uri = Uri.parse(url);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Widget _buildSocialSection() {
+    final platforms = [
+      _SocialPlatform(
+        label: 'Website',
+        handle: 'luminartechnolab.com',
+        tag: 'Visit us online',
+        url: 'https://www.luminartechnolab.com/',
+        gradientColors: [Color(0xFF1E3A5F), Color(0xFF1565C0), Color(0xFF2196F3)],
+        icon: Icons.language_rounded,
+        accentIcon: Icons.open_in_new_rounded,
+      ),
+      _SocialPlatform(
+        label: 'LinkedIn',
+        handle: 'luminartechnolab',
+        tag: 'Connect & network',
+        url: 'https://www.linkedin.com/company/luminartechnolab/posts/?feedView=all',
+        gradientColors: [Color(0xFF003C71), Color(0xFF0072B1), Color(0xFF0A88D1)],
+        icon: Icons.work_rounded,
+        accentIcon: Icons.people_rounded,
+        badge: 'in',
+      ),
+      _SocialPlatform(
+        label: 'Instagram',
+        handle: '@luminartechnolab',
+        tag: 'Photos & Reels',
+        url: 'https://www.instagram.com/luminartechnolab',
+        gradientColors: [Color(0xFF833AB4), Color(0xFFE1306C), Color(0xFFF77737)],
+        icon: Icons.camera_alt_rounded,
+        accentIcon: Icons.favorite_rounded,
+      ),
+      _SocialPlatform(
+        label: 'YouTube',
+        handle: '@LuminarTechnolab',
+        tag: 'Tutorials & Demos',
+        url: 'https://www.youtube.com/@LuminarTechnolab',
+        gradientColors: [Color(0xFF7F0000), Color(0xFFCC0000), Color(0xFFFF3D3D)],
+        icon: Icons.play_circle_filled_rounded,
+        accentIcon: Icons.subscriptions_rounded,
+      ),
+    ];
+
+    return SizedBox(
+      height: 158,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(right: 4),
+        itemCount: platforms.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => _SocialCard(
+          platform: platforms[i],
+          onTap: () => _launchSocial(platforms[i].url),
+        ),
+      ),
     );
   }
 
@@ -1204,6 +1276,114 @@ class _ChipPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter _) => false;
+}
+
+// ── Social Media Data Model ────────────────────────────────────────────────────
+
+class _SocialPlatform {
+  final String label;
+  final String handle;
+  final String tag;
+  final String url;
+  final List<Color> gradientColors;
+  final IconData icon;
+  final IconData accentIcon;
+  final String? badge;
+
+  const _SocialPlatform({
+    required this.label,
+    required this.handle,
+    required this.tag,
+    required this.url,
+    required this.gradientColors,
+    required this.icon,
+    required this.accentIcon,
+    this.badge,
+  });
+}
+
+// ── Social Card Widget ─────────────────────────────────────────────────────────
+
+class _SocialCard extends StatelessWidget {
+  final _SocialPlatform platform;
+  final VoidCallback onTap;
+
+  const _SocialCard({required this.platform, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = platform;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 140,
+        height: 158,
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderColor),
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: p.gradientColors.first.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: p.badge != null
+                  ? Center(
+                      child: Text(
+                        p.badge!,
+                        style: TextStyle(
+                          color: p.gradientColors.first,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    )
+                  : Icon(p.icon, color: p.gradientColors.first, size: 20),
+            ),
+            const Spacer(),
+            Text(
+              p.label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              p.handle,
+              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text(
+                  'Open',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: p.gradientColors.first,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                Icon(Icons.arrow_forward_rounded, size: 12, color: p.gradientColors.first),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Subtle dot-grid texture for card background

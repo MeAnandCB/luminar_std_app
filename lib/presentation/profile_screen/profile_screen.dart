@@ -16,6 +16,8 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // ── ID Card brand colours ──────────────────────────────────────────────────
 const _kCardDark = Color(0xFF1E163A);
@@ -1244,24 +1246,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SizedBox(height: 16),
 
                     // ── Your Counselor ──────────────────────────────────
-                    _buildSectionCard(
-                      title: 'Your Counselor',
-                      icon: Icons.support_agent_rounded,
-                      color: AppColors.statsOrange,
-                      children: [
-                        _buildInfoRow(
-                          'Name',
-                          profileProvider.profile?.counselor?.name ?? "",
-                        ),
-                        _buildInfoRow(
-                          'Email',
-                          profileProvider.profile?.counselor?.email ?? "",
-                        ),
-                        _buildInfoRow(
-                          'Phone',
-                          profileProvider.profile?.counselor?.phone ?? "",
-                        ),
-                      ],
+                    _buildCounselorCard(
+                      name: profileProvider.profile?.counselor?.name ?? "",
+                      email: profileProvider.profile?.counselor?.email ?? "",
+                      phone: profileProvider.profile?.counselor?.phone ?? "",
                     ),
 
                     SizedBox(height: 16),
@@ -1596,6 +1584,167 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ─── Counselor card ────────────────────────────────────────────────────────
+
+  Future<void> _copyToClipboard(String text, String label) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$label copied'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
+  }
+
+  Widget _buildCounselorCard({
+    required String name,
+    required String email,
+    required String phone,
+  }) {
+    const orange = AppColors.statsOrange;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: orange.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 5)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.support_agent_rounded, color: orange, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text('Your Counselor', style: AppTextStyles.sectionTitle),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Name row
+          if (name.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(
+                      color: orange.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        name[0].toUpperCase(),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: orange),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                ],
+              ),
+            ),
+
+          // Phone row
+          if (phone.isNotEmpty) ...[
+            _buildCounselorContactRow(
+              icon: Icons.phone_rounded,
+              value: phone,
+              color: const Color(0xFF10B981),
+              onCopy: () => _copyToClipboard(phone, 'Phone number'),
+              actions: [
+                _ContactActionButton(
+                  icon: Icons.call_rounded,
+                  label: 'Call',
+                  color: const Color(0xFF10B981),
+                  onTap: () => launchUrl(Uri(scheme: 'tel', path: phone), mode: LaunchMode.externalApplication),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // Email row
+          if (email.isNotEmpty)
+            _buildCounselorContactRow(
+              icon: Icons.email_rounded,
+              value: email,
+              color: const Color(0xFF3B82F6),
+              onCopy: () => _copyToClipboard(email, 'Email address'),
+              actions: [
+                _ContactActionButton(
+                  icon: Icons.mail_rounded,
+                  label: 'Mail',
+                  color: const Color(0xFF3B82F6),
+                  onTap: () => launchUrl(Uri(scheme: 'mailto', path: email), mode: LaunchMode.externalApplication),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCounselorContactRow({
+    required IconData icon,
+    required String value,
+    required Color color,
+    required VoidCallback onCopy,
+    required List<Widget> actions,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // Copy button
+          GestureDetector(
+            onTap: onCopy,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.copy_rounded, size: 14, color: color),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ...actions,
+        ],
+      ),
+    );
+  }
+
   // ─── Reusable section widgets ───────────────────────────────────────────────
 
   Widget _buildSectionCard({
@@ -1858,6 +2007,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     )
                   : null,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Contact action button ───────────────────────────────────────────────────
+
+class _ContactActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ContactActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: Colors.white),
+            const SizedBox(width: 4),
+            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
           ],
         ),
       ),
