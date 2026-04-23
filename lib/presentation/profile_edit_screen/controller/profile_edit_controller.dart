@@ -1,4 +1,7 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/repository/complete_profile/service.dart';
 import 'package:luminar_std/repository/profile_screen/model/profile_model.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
@@ -40,6 +43,9 @@ class ProfileEditController extends ChangeNotifier {
   final parentPhoneController = TextEditingController();
   final hearAboutController = TextEditingController();
   final preferredJobLocationController = TextEditingController();
+
+  int? _qualificationId;
+  int? _preferredLocationId;
 
   String _selectedStudentType = 'student';
   String get selectedStudentType => _selectedStudentType;
@@ -83,6 +89,7 @@ class ProfileEditController extends ChangeNotifier {
     ageController.text = p?.age?.toString() ?? '';
 
     // Academic Info
+    _qualificationId = a?.qualification?.id;
     qualificationController.text = a?.qualification?.name ?? '';
     collegeController.text = a?.college ?? '';
     passoutYearController.text = a?.passOutYear?.toString() ?? '';
@@ -99,6 +106,7 @@ class ProfileEditController extends ChangeNotifier {
     addressController.text = c?.address ?? '';
     districtController.text = c?.district ?? '';
     pincodeController.text = c?.pincode ?? '';
+    _preferredLocationId = c?.preferredLocation?.id;
     preferredLocationController.text = c?.preferredLocation?.name ?? '';
     parentNameController.text = c?.parentName ?? '';
     parentPhoneController.text = c?.parentPhone ?? '';
@@ -171,7 +179,7 @@ class ProfileEditController extends ChangeNotifier {
       );
       addIfChanged('age', int.tryParse(ageController.text), p?.age);
 
-      addIfChanged('qualification', qualificationController.text, a?.qualification?.name);
+      addIfChanged('qualification_id', _qualificationId, a?.qualification?.id);
       addIfChanged('college', collegeController.text, a?.college);
       addIfChanged('pass_out_year', int.tryParse(passoutYearController.text), a?.passOutYear);
       addIfChanged('specialization', specializationController.text, a?.specialization);
@@ -191,9 +199,9 @@ class ProfileEditController extends ChangeNotifier {
       addIfChanged('address', addressController.text, c?.address);
       addIfChanged('district', districtController.text, c?.district);
       addIfChanged('pincode', pincodeController.text, c?.pincode);
-      addIfChanged('preferred_location', preferredLocationController.text, c?.preferredLocation?.name);
+      addIfChanged('preferred_location_id', _preferredLocationId, c?.preferredLocation?.id);
       addIfChanged('parent_name', parentNameController.text, c?.parentName);
-      addIfChanged('parent_phone', parentPhoneController.text, c?.parentPhone);
+      addIfChanged('parent_phone_number', parentPhoneController.text, c?.parentPhone);
       addIfChanged('how_did_you_hear', hearAboutController.text, c?.howDidYouHear);
 
       addIfChanged('placement_assistance', _placementAssistance, pl?.placementAssistance);
@@ -204,6 +212,23 @@ class ProfileEditController extends ChangeNotifier {
         notifyListeners();
         return true;
       }
+
+      developer.log(
+        '\n'
+        '╔══════════════════════════════════════════════════════════╗\n'
+        '║             📤  EDIT PROFILE PAYLOAD                    ║\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '║  endpoint : ${AppEndpoints.profileUpdate}${p?.studentId}/update/\n'
+        '║  method   : PATCH (multipart)\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '║  DELTA FIELDS (${deltaFields.length} changed)${deltaFields.isEmpty ? ' — none' : ''}\n'
+        '${deltaFields.entries.map((e) => '║    ${e.key.padRight(22)}: ${e.value}  (${e.value.runtimeType})').join('\n')}\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '║  FILES\n'
+        '║    profile_pic : ${_profilePicPath ?? '(unchanged)'}\n'
+        '╚══════════════════════════════════════════════════════════╝',
+        name: '📤 Profile.EditPayload',
+      );
 
       await _submissionService.submitProfile(
         student_id: p?.studentId.toString(),

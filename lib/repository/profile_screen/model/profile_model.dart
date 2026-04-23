@@ -146,13 +146,15 @@ class ContactInfo {
 }
 
 class PreferredLocation {
+  int? id;
   String? name;
 
-  PreferredLocation({this.name});
+  PreferredLocation({this.id, this.name});
 
-  factory PreferredLocation.fromJson(Map<String, dynamic> json) => PreferredLocation(name: json["name"]);
+  factory PreferredLocation.fromJson(Map<String, dynamic> json) =>
+      PreferredLocation(id: json["id"], name: json["name"]);
 
-  Map<String, dynamic> toJson() => {"name": name};
+  Map<String, dynamic> toJson() => {"id": id, "name": name};
 }
 
 class Counselor {

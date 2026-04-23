@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 
 import 'package:luminar_std/core/utils/logger_utils.dart';
@@ -34,6 +36,7 @@ class ProfileController extends ChangeNotifier {
 
         if (profile != null) {
           _error = null;
+          _logProfileResponse(profile!);
         } else {
           _error = 'No profile data available';
         }
@@ -123,6 +126,71 @@ class ProfileController extends ChangeNotifier {
 
   int get remainingFieldsCount => totalFields - filledFieldsCount;
   double get completionPercentage => filledFieldsCount / totalFields;
+
+  void _logProfileResponse(Profile p) {
+    final pi = p.personalInfo;
+    final ai = p.academicInfo;
+    final ci = p.contactInfo;
+    final si = p.statusInfo;
+    final pl = p.placementInfo;
+    final co = p.counselor;
+
+    developer.log(
+      '\n'
+      '╔══════════════════════════════════════════════════════════╗\n'
+      '║              📥  PROFILE RESPONSE RECEIVED              ║\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  PERSONAL INFO                                          ║\n'
+      '║    student_id       : ${pi?.studentId ?? 'null'}\n'
+      '║    full_name        : ${pi?.fullName ?? 'null'}\n'
+      '║    email            : ${pi?.email ?? 'null'}\n'
+      '║    phone            : ${pi?.phone ?? 'null'}\n'
+      '║    whatsapp_number  : ${pi?.whatsappNumber ?? 'null'}\n'
+      '║    date_of_birth    : ${pi?.dateOfBirth ?? 'null'}\n'
+      '║    age              : ${pi?.age ?? 'null'}\n'
+      '║    profile_picture  : ${pi?.profilePicture != null ? '(set)' : 'null'}\n'
+      '║    id_proof         : ${pi?.idProof != null ? '(set)' : 'null'}\n'
+      '║    id_proof_2       : ${pi?.idProof2 != null ? '(set)' : 'null'}\n'
+      '║    resume           : ${pi?.resume != null ? '(set)' : 'null'}\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  ACADEMIC INFO                                          ║\n'
+      '║    qualification_id : ${ai?.qualification?.id ?? 'null'}\n'
+      '║    qualification    : ${ai?.qualification?.name ?? 'null'}\n'
+      '║    college          : ${ai?.college ?? 'null'}\n'
+      '║    pass_out_year    : ${ai?.passOutYear ?? 'null'}\n'
+      '║    specialization   : ${ai?.specialization ?? 'null'}\n'
+      '║    cgpa             : ${ai?.cgpa ?? 'null'}\n'
+      '║    admission_date   : ${ai?.admissionDate ?? 'null'}\n'
+      '║    any_arrears      : ${ai?.anyArrears ?? 'null'}\n'
+      '║    student_type     : ${ai?.studentOrWorkingProfessional ?? 'null'}\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  CONTACT INFO                                           ║\n'
+      '║    address          : ${ci?.address ?? 'null'}\n'
+      '║    district         : ${ci?.district ?? 'null'}\n'
+      '║    pincode          : ${ci?.pincode ?? 'null'}\n'
+      '║    preferred_loc_id : ${ci?.preferredLocation?.id ?? 'null'}\n'
+      '║    preferred_loc    : ${ci?.preferredLocation?.name ?? 'null'}\n'
+      '║    parent_name      : ${ci?.parentName ?? 'null'}\n'
+      '║    parent_phone     : ${ci?.parentPhone ?? 'null'}\n'
+      '║    how_did_you_hear : ${ci?.howDidYouHear ?? 'null'}\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  STATUS INFO                                            ║\n'
+      '║    status           : ${si?.status?.name ?? 'null'}\n'
+      '║    is_alumni        : ${si?.isAlumni ?? 'null'}\n'
+      '║    is_placed        : ${si?.isPlaced ?? 'null'}\n'
+      '║    portal_access    : ${si?.portalAccessEnabled ?? 'null'}\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  PLACEMENT INFO                                         ║\n'
+      '║    placement_assist : ${pl?.placementAssistance ?? 'null'}\n'
+      '║    pref_job_location: ${pl?.preferredJobLocation ?? 'null'}\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  COUNSELOR                                              ║\n'
+      '║    name             : ${co?.name ?? 'null'}\n'
+      '║    email            : ${co?.email ?? 'null'}\n'
+      '╚══════════════════════════════════════════════════════════╝',
+      name: '📥 Profile.Response',
+    );
+  }
 
   // Clear profile data (useful for logout)
   void clearProfileData() {

@@ -2,7 +2,6 @@ import 'dart:developer' as dev;
 import 'package:flutter/foundation.dart';
 
 class LoggerUtils {
-  // log levels matching dart:developer convention
   static const int _levelDebug   = 500;
   static const int _levelInfo    = 800;
   static const int _levelWarning = 900;

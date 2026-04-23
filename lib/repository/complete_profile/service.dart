@@ -87,11 +87,20 @@ class CompleteProfileService {
     }
 
     developer.log(
-      '─── Profile Update Payload ───\n'
-      '  endpoint   : ${AppEndpoints.profileUpdate}$student_id/update/\n'
-      '  fields     :\n${stringFields.entries.map((e) => '    ${e.key}: ${e.value}').join('\n')}\n'
-      '  files      : ${files.isEmpty ? '(none)' : files.map((f) => '${f.field} → ${f.filename}').join(', ')}',
-      name: 'ProfileUpdate.payload',
+      '\n'
+      '╔══════════════════════════════════════════════════════════╗\n'
+      '║           📤  COMPLETE PROFILE PAYLOAD                  ║\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  endpoint : ${AppEndpoints.profileUpdate}$student_id/update/\n'
+      '║  method   : PATCH (multipart)\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  TEXT FIELDS (${stringFields.length})${stringFields.isEmpty ? ' — none' : ''}\n'
+      '${stringFields.entries.map((e) => '║    ${e.key.padRight(26)}: ${e.value}').join('\n')}\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  FILES (${files.length})${files.isEmpty ? ' — none' : ''}\n'
+      '${files.isEmpty ? '║    (none)' : files.map((f) => '║    ${f.field.padRight(14)} → ${f.filename}').join('\n')}\n'
+      '╚══════════════════════════════════════════════════════════╝',
+      name: '📤 Profile.CompletePayload',
     );
 
     try {

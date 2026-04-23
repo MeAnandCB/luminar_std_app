@@ -541,10 +541,6 @@ class _EnrollmentPage extends StatelessWidget {
                 _FeatureCard(
                   feature: _kFeatures[3],
                   onTap: () {
-                    if (!crmAccess) {
-                      _showAccessDenied(context);
-                      return;
-                    }
                     if (toEnrollDetails) {
                       Navigator.push(
                         context,
@@ -587,12 +583,18 @@ class _EnrollmentPage extends StatelessWidget {
               SizedBox(height: 12),
               _FeatureCard(
                 feature: _kFeatures[5],
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const InterviewPrepScreen(),
-                  ),
-                ),
+                onTap: () {
+                  if (!crmAccess) {
+                    _showAccessDenied(context);
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const InterviewPrepScreen(),
+                    ),
+                  );
+                },
               ),
             ]),
           ),

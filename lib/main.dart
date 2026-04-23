@@ -29,11 +29,8 @@ import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provid
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'package:luminar_std/core/theme/app_theme.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,13 +43,13 @@ void main() async {
 
   // Safe Firebase init
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     LoggerUtils.info('✅ Firebase initialized', tag: 'Main');
-  } catch (e) {
-    LoggerUtils.error('❌ Firebase init failed: $e', tag: 'Main');
+  } catch (e, st) {
+    LoggerUtils.error('❌ Firebase init failed', tag: 'Main', error: e, stackTrace: st);
   }
-
-
 
   // Pre-load token for chat service
   String? accessToken;
@@ -62,44 +59,33 @@ void main() async {
     if (accessToken != null) {
       LoggerUtils.info('Token preview: ${accessToken.substring(0, 10)}...', tag: 'Main');
     }
-  } catch (e) {
-    LoggerUtils.error('Error loading token in main: $e', tag: 'Main');
+  } catch (e, st) {
+    LoggerUtils.error('Error loading token in main', tag: 'Main', error: e, stackTrace: st);
   }
 
   // Safe FCM init
   try {
     await FCMService().initialize();
     LoggerUtils.info('✅ FCM initialized', tag: 'Main');
-  } catch (e) {
-    LoggerUtils.error('❌ FCM init failed: $e', tag: 'Main');
+  } catch (e, st) {
+    LoggerUtils.error('❌ FCM init failed', tag: 'Main', error: e, stackTrace: st);
   }
 
   runApp(
     MultiProvider(
       providers: [
-        // Theme Provider
         ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
-
-        // Auth Providers
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ForgotPasswordController()),
-
-        // Dashboard/Home Providers
         ChangeNotifierProvider(create: (_) => DashboardController()),
         ChangeNotifierProvider(create: (_) => BottomNavProvider()),
-
-        // Feature Providers
         ChangeNotifierProvider(create: (_) => ProfileController()),
         ChangeNotifierProvider(create: (_) => CompleteProfileController()),
         ChangeNotifierProvider(create: (_) => EnrollmentProvider()),
-
-        // Attendance Service
         Provider<AttendanceService1>(create: (_) => AttendanceService1()),
         ChangeNotifierProvider(create: (_) => GalleryProvider()),
         ChangeNotifierProvider(create: (_) => FolderBrowserProvider()),
         ChangeNotifierProvider(create: (_) => LiveClassController()),
-
-        // Chat Provider
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => NactetRegistrationController()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
@@ -166,15 +152,24 @@ class _MyAppState extends State<MyApp> {
       builder: (_) => PopScope(
         canPop: false,
         child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle),
-                child: Icon(Icons.wifi_off_rounded, size: 48, color: Colors.red.shade400),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.wifi_off_rounded,
+                  size: 48,
+                  color: Colors.red.shade400,
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
@@ -186,7 +181,11 @@ class _MyAppState extends State<MyApp> {
               Text(
                 'Please check your Wi-Fi or mobile data.\nThe app will continue automatically once you\'re back online.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.5),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 4),
             ],
@@ -212,7 +211,9 @@ class _MyAppState extends State<MyApp> {
       builder: (_) => PopScope(
         canPop: false,
         child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -223,7 +224,11 @@ class _MyAppState extends State<MyApp> {
                   color: Colors.blue.shade50,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.system_update_rounded, size: 48, color: Colors.blue.shade600),
+                child: Icon(
+                  Icons.system_update_rounded,
+                  size: 48,
+                  color: Colors.blue.shade600,
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
@@ -235,7 +240,11 @@ class _MyAppState extends State<MyApp> {
               Text(
                 'Version $newVersion is available. Please update to get the latest features and improvements.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.5),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -244,22 +253,33 @@ class _MyAppState extends State<MyApp> {
                   onPressed: () async {
                     final uri = Uri.parse(AppUpdateService.storeUrl);
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue.shade600,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                  child: const Text('Update Now', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                  child: const Text(
+                    'Update Now',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Later', style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+                child: Text(
+                  'Later',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                ),
               ),
             ],
           ),

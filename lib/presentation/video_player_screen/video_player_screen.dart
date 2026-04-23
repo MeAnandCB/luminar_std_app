@@ -26,6 +26,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   int _likeCount = 0;
   bool _isLiking = false;
 
+  // Double-tap seek indicators
+  bool _showForwardIndicator = false;
+  bool _showBackwardIndicator = false;
+
   // Repository for API calls
 
   @override
@@ -145,6 +149,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         ]);
       }
     }
+  }
+
+  void _seekForward() {
+    if (!_isPlayerReady) return;
+    final newPos = _controller.value.position + const Duration(seconds: 10);
+    _controller.seekTo(newPos);
+    setState(() => _showForwardIndicator = true);
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (mounted) setState(() => _showForwardIndicator = false);
+    });
+  }
+
+  void _seekBackward() {
+    if (!_isPlayerReady) return;
+    final current = _controller.value.position;
+    final newPos = current.inSeconds > 10
+        ? current - const Duration(seconds: 10)
+        : Duration.zero;
+    _controller.seekTo(newPos);
+    setState(() => _showBackwardIndicator = true);
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (mounted) setState(() => _showBackwardIndicator = false);
+    });
   }
 
   // Dynamic like functionality with API integration
@@ -341,6 +368,35 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                             child: Stack(
                               children: [
                                 Center(child: player),
+                                // Double-tap seek overlays
+                                Positioned.fill(
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: GestureDetector(
+                                          behavior:
+                                              HitTestBehavior.translucent,
+                                          onDoubleTap: _seekBackward,
+                                          child: const SizedBox.expand(),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: GestureDetector(
+                                          behavior:
+                                              HitTestBehavior.translucent,
+                                          onDoubleTap: _seekForward,
+                                          child: const SizedBox.expand(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Backward indicator
+                                if (_showBackwardIndicator)
+                                  _buildSeekIndicator(isForward: false),
+                                // Forward indicator
+                                if (_showForwardIndicator)
+                                  _buildSeekIndicator(isForward: true),
                                 if (!_isPlayerReady)
                                   Container(
                                     color: Colors.black,
@@ -358,6 +414,43 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSeekIndicator({required bool isForward}) {
+    return Positioned(
+      left: isForward ? null : 0,
+      right: isForward ? 0 : null,
+      top: 0,
+      bottom: 0,
+      width: 120,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.35),
+          borderRadius: isForward
+              ? const BorderRadius.horizontal(left: Radius.circular(60))
+              : const BorderRadius.horizontal(right: Radius.circular(60)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isForward ? Icons.forward_10_rounded : Icons.replay_10_rounded,
+              color: Colors.white,
+              size: 36,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              isForward ? '+10s' : '-10s',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
