@@ -26,6 +26,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   int _likeCount = 0;
   bool _isLiking = false;
 
+  // Pause state
+  bool _isPaused = false;
+
   // Double-tap seek indicators
   bool _showForwardIndicator = false;
   bool _showBackwardIndicator = false;
@@ -111,6 +114,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         isLive: false,
         forceHD: false,
         enableCaption: true,
+        hideThumbnail: true,
         hideControls: false,
         useHybridComposition: true,
         controlsVisibleAtStart: true,
@@ -127,6 +131,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           _isPlayerReady = true;
         });
       }
+    }
+
+    // Track paused state
+    final isPaused = _controller.value.playerState == PlayerState.paused;
+    if (isPaused != _isPaused && mounted) {
+      setState(() => _isPaused = isPaused);
     }
 
     // Detect fullscreen changes
@@ -374,16 +384,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                                     children: [
                                       Expanded(
                                         child: GestureDetector(
-                                          behavior:
-                                              HitTestBehavior.translucent,
+                                          behavior: HitTestBehavior.translucent,
                                           onDoubleTap: _seekBackward,
                                           child: const SizedBox.expand(),
                                         ),
                                       ),
                                       Expanded(
                                         child: GestureDetector(
-                                          behavior:
-                                              HitTestBehavior.translucent,
+                                          behavior: HitTestBehavior.translucent,
                                           onDoubleTap: _seekForward,
                                           child: const SizedBox.expand(),
                                         ),
@@ -397,6 +405,44 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                                 // Forward indicator
                                 if (_showForwardIndicator)
                                   _buildSeekIndicator(isForward: true),
+                                // Pause overlay — hides YouTube thumbnail, tap to resume
+                                // bottom: 48 leaves the controls bar visible
+                                if (_isPaused)
+                                  Positioned(
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 48,
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () => _controller.play(),
+                                      child: Container(
+                                        color: Colors.black.withValues(alpha: 0.6),
+                                        child: Center(
+                                          child: Container(
+                                            width: 68,
+                                            height: 68,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withValues(alpha: 0.92),
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withValues(alpha: 0.4),
+                                                  blurRadius: 16,
+                                                  spreadRadius: 2,
+                                                ),
+                                              ],
+                                            ),
+                                            child: const Icon(
+                                              Icons.play_arrow_rounded,
+                                              color: Color(0xFF6C5CE7),
+                                              size: 42,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 if (!_isPlayerReady)
                                   Container(
                                     color: Colors.black,
