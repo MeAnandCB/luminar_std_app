@@ -6,6 +6,20 @@ import 'package:luminar_std/repository/academic_info/service.dart';
 import 'package:luminar_std/repository/complete_profile/service.dart';
 import 'package:luminar_std/repository/profile_screen/model/profile_model.dart' as model;
 
+class ProfileFieldStatus {
+  final String name;
+  final bool isFilled;
+  final int pageIndex;
+  final String section;
+
+  const ProfileFieldStatus({
+    required this.name,
+    required this.isFilled,
+    required this.pageIndex,
+    required this.section,
+  });
+}
+
 class CompleteProfileController extends ChangeNotifier {
   final ImagePicker _picker = ImagePicker();
   final AcademicInfoService _academicService = AcademicInfoService();
@@ -113,7 +127,7 @@ class CompleteProfileController extends ChangeNotifier {
   bool? isPlaced;
 
   // ── Live progress tracking ─────────────────────────────────────────────────
-  static const int totalFields = 21;
+  static const int totalFields = 19;
 
   int get filledFieldsCount {
     int count = 0;
@@ -124,10 +138,8 @@ class CompleteProfileController extends ChangeNotifier {
     if (_filled(phone)) count++;
     if (_filled(dateOfBirth)) count++;
     if (age != null) count++;
-    if (_profilePicPath != null || serverProfilePic) count++;  // profile pic
-    if (_idFrontPath != null || serverIdFront) count++;        // id front
-    if (_idBackPath != null || serverIdBack) count++;          // id back
-    if (_resumePath != null || serverResume) count++;          // resume
+    if (_idFrontPath != null || serverIdFront) count++;
+    if (_idBackPath != null || serverIdBack) count++;
     if (_filled(address)) count++;
     if (_filled(pincode)) count++;
     if (_filled(district)) count++;
@@ -323,5 +335,35 @@ class CompleteProfileController extends ChangeNotifier {
     _profilePicPath = null;
     _resumePath = null;
     notifyListeners();
+  }
+
+  List<ProfileFieldStatus> getFieldStatuses() {
+    bool _f(String? v) => v != null && v.trim().isNotEmpty;
+    return [
+      // Personal Info (page 0)
+      ProfileFieldStatus(name: 'Full Name', isFilled: _f(fullName), pageIndex: 0, section: 'Personal Info'),
+      ProfileFieldStatus(name: 'Email', isFilled: _f(email), pageIndex: 0, section: 'Personal Info'),
+      ProfileFieldStatus(name: 'Phone', isFilled: _f(phone), pageIndex: 0, section: 'Personal Info'),
+      ProfileFieldStatus(name: 'Date of Birth', isFilled: _f(dateOfBirth), pageIndex: 0, section: 'Personal Info'),
+      ProfileFieldStatus(name: 'Age', isFilled: age != null, pageIndex: 0, section: 'Personal Info'),
+      ProfileFieldStatus(name: 'Address', isFilled: _f(address), pageIndex: 0, section: 'Personal Info'),
+      ProfileFieldStatus(name: 'Pincode', isFilled: _f(pincode), pageIndex: 0, section: 'Personal Info'),
+      ProfileFieldStatus(name: 'District', isFilled: _f(district), pageIndex: 0, section: 'Personal Info'),
+      // ID Proof (page 1)
+      ProfileFieldStatus(name: 'ID Proof (Front)', isFilled: _idFrontPath != null || serverIdFront, pageIndex: 1, section: 'ID Proof'),
+      ProfileFieldStatus(name: 'ID Proof (Back)', isFilled: _idBackPath != null || serverIdBack, pageIndex: 1, section: 'ID Proof'),
+      // Academic Info (page 2)
+      ProfileFieldStatus(name: 'Qualification', isFilled: _f(qualificationId), pageIndex: 2, section: 'Academic Info'),
+      ProfileFieldStatus(name: 'College / University', isFilled: _f(college), pageIndex: 2, section: 'Academic Info'),
+      ProfileFieldStatus(name: 'Pass Out Year', isFilled: _f(passOutYear), pageIndex: 2, section: 'Academic Info'),
+      ProfileFieldStatus(name: 'Specialization', isFilled: _f(specialization), pageIndex: 2, section: 'Academic Info'),
+      ProfileFieldStatus(name: 'CGPA', isFilled: _f(cgpa), pageIndex: 2, section: 'Academic Info'),
+      ProfileFieldStatus(name: 'Admission Date', isFilled: _f(admissionDate), pageIndex: 2, section: 'Academic Info'),
+      // Career Info (page 3)
+      ProfileFieldStatus(name: 'Current Status', isFilled: _f(studentStatus), pageIndex: 3, section: 'Career Info'),
+      // Parent Info (page 4)
+      ProfileFieldStatus(name: 'Parent / Guardian Name', isFilled: _f(parentName), pageIndex: 4, section: 'Parent Info'),
+      ProfileFieldStatus(name: 'Parent / Guardian Phone', isFilled: _f(parentPhone), pageIndex: 4, section: 'Parent Info'),
+    ];
   }
 }

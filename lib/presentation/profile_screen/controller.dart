@@ -87,7 +87,7 @@ class ProfileController extends ChangeNotifier {
   }
 
   // Metrics calculation
-  int get totalFields => 21;
+  int get totalFields => 19;
 
   int get filledFieldsCount {
     if (profile == null) return 0;
@@ -100,10 +100,8 @@ class ProfileController extends ChangeNotifier {
     if (p.personalInfo?.phone?.isNotEmpty ?? false) count++;
     if (p.personalInfo?.dateOfBirth != null) count++;
     if (p.personalInfo?.age != null) count++;
-    if (p.personalInfo?.profilePicture?.isNotEmpty ?? false) count++;
     if (p.personalInfo?.idProof?.isNotEmpty ?? false) count++;
     if (p.personalInfo?.idProof2?.isNotEmpty ?? false) count++;
-    if (p.personalInfo?.resume != null) count++;
     if (p.contactInfo?.address?.isNotEmpty ?? false) count++;
     if (p.contactInfo?.pincode?.isNotEmpty ?? false) count++;
     if (p.contactInfo?.district?.isNotEmpty ?? false) count++;

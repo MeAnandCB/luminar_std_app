@@ -24,11 +24,20 @@ class NactetRegistrationService {
       final files = await registrationModel.toFiles();
 
       developer.log(
-        '─── NACTET Registration Payload ───\n'
-        '  endpoint : ${AppEndpoints.certificatesCreate}\n'
-        '  fields   :\n${fields.entries.map((e) => '    ${e.key}: ${e.value}').join('\n')}\n'
-        '  files    : ${files.isEmpty ? '(none)' : files.map((f) => '${f.field} → ${f.filename}').join(', ')}',
-        name: 'NactetRegistration.payload',
+        '\n'
+        '╔══════════════════════════════════════════════════════════╗\n'
+        '║           📤  NACTET REGISTRATION PAYLOAD               ║\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '║  endpoint : ${AppEndpoints.certificatesCreate}\n'
+        '║  method   : POST (multipart)\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '║  TEXT FIELDS (${fields.length})\n'
+        '${fields.entries.map((e) => '║    ${e.key.padRight(50)}: ${e.value}').join('\n')}\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '║  FILES (${files.length})${files.isEmpty ? ' — none' : ''}\n'
+        '${files.isEmpty ? '║    (none)' : files.map((f) => '║    ${f.field.padRight(42)} → ${f.filename}').join('\n')}\n'
+        '╚══════════════════════════════════════════════════════════╝',
+        name: '📤 NACTET.Payload',
       );
 
       final response = await _apiService.multipart(
@@ -37,6 +46,28 @@ class NactetRegistrationService {
         fields: fields,
         files: files,
         token: token,
+      );
+
+      developer.log(
+        '\n'
+        '╔══════════════════════════════════════════════════════════╗\n'
+        '║           📥  NACTET REGISTRATION RESPONSE              ║\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '║  status_code : ${response.statusCode}\n'
+        '║  success     : ${response.success}\n'
+        '║  message     : ${response.message ?? '—'}\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '║  data :\n'
+        '${(() {
+          final d = response.data;
+          if (d == null) return '║    (null)';
+          if (d is Map) {
+            return d.entries.map((e) => '║    ${e.key.toString().padRight(28)}: ${e.value}').join('\n');
+          }
+          return '║    $d';
+        })()}\n'
+        '╚══════════════════════════════════════════════════════════╝',
+        name: '📥 NACTET.Response',
       );
 
       return response;

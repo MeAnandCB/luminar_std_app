@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -21,8 +22,6 @@ class NactetRegistrationScreen extends StatefulWidget {
 }
 
 class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
-  String _mobileCountryCode = '+91';
-
   @override
   void initState() {
     super.initState();
@@ -112,7 +111,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.lock_clock_outlined, size: 64, color: AppColors.primary.withOpacity(0.2)),
+          Icon(Icons.lock_clock_outlined, size: 64, color: AppColors.primary.withValues(alpha: 0.2)),
           const SizedBox(height: 24),
           Text(
             'Registration Unavailable',
@@ -137,7 +136,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 4,
-                shadowColor: AppColors.primary.withOpacity(0.4),
+                shadowColor: AppColors.primary.withValues(alpha: 0.4),
               ),
               child: const Text('Back to Home', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
             ),
@@ -153,7 +152,10 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       elevation: 0,
       leading: IconButton(
         icon: Icon(Icons.close, color: AppColors.textPrimary),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () {
+          Provider.of<NactetRegistrationController>(context, listen: false).reset();
+          Navigator.pop(context);
+        },
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,7 +176,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(Icons.stars_rounded, color: AppColors.primary, size: 20),
@@ -215,7 +217,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: controller.isSuccess ? 1.0 : (controller.currentStep + 1) / 4,
-              backgroundColor: Colors.grey.withOpacity(0.1),
+              backgroundColor: Colors.grey.withValues(alpha: 0.1),
               valueColor: AlwaysStoppedAnimation<Color>(
                 controller.isSuccess ? AppColors.statusActive : AppColors.primary,
               ),
@@ -224,49 +226,6 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStepCircle(int step, String label, NactetRegistrationController controller) {
-    final bool isActive = controller.currentStep == step;
-    final bool isCompleted = controller.currentStep > step;
-
-    return Column(
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: isCompleted 
-                ? AppColors.statusActive 
-                : isActive ? AppColors.primary : AppColors.cardBackground,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: (isCompleted || isActive) ? Colors.transparent : AppColors.borderColor,
-            ),
-          ),
-          child: Center(
-            child: isCompleted 
-                ? const Icon(Icons.check, color: Colors.white, size: 20)
-                : Text(
-                    (step + 1).toString(),
-                    style: TextStyle(
-                      color: isActive ? Colors.white : AppColors.textSecondary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: isActive ? AppColors.primary : AppColors.textSecondary,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ],
     );
   }
 
@@ -294,9 +253,9 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
+        color: AppColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -387,7 +346,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           const SizedBox(height: 20),
           _buildLabel('Email *'),
           const SizedBox(height: 10),
-          _buildTextField(controller.emailController, 'your@email.com', keyboardType: TextInputType.emailAddress),
+          _buildTextField(controller.emailController, 'your@email.com', keyboardType: TextInputType.emailAddress, capitalize: false),
           const SizedBox(height: 40),
         ],
       ),
@@ -468,9 +427,9 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.red.withOpacity(0.4)),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
               ),
               child: Row(
                 children: [
@@ -630,9 +589,9 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             ),
             child: CountryCodePicker(
               onChanged: (code) {
-                setState(() => _mobileCountryCode = code.dialCode ?? '+91');
+                controller.mobileCountryCode = code.dialCode ?? '+91';
                 controller.registrationModel.mobileNumber =
-                    '$_mobileCountryCode${controller.mobileController.text.trim()}';
+                    '${controller.mobileCountryCode}${controller.mobileController.text.trim()}';
               },
               initialSelection: 'IN',
               favorite: const ['+91', '+1', '+44'],
@@ -648,8 +607,10 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
               keyboardType: TextInputType.phone,
               onChanged: (value) {
                 controller.registrationModel.mobileNumber =
-                    '$_mobileCountryCode${value.trim()}';
+                    '${controller.mobileCountryCode}${value.trim()}';
               },
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              autofillHints: const [],
               style: TextStyle(fontSize: 13, color: AppColors.textPrimary),
               decoration: InputDecoration(
                 hintText: 'Mobile number',
@@ -664,11 +625,33 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {int maxLines = 1, TextInputType? keyboardType}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint, {
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    bool capitalize = true,
+  }) {
     return TextField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
+      textCapitalization: capitalize ? TextCapitalization.characters : TextCapitalization.none,
+      autocorrect: false,
+      autofillHints: const [],
+      inputFormatters: capitalize
+          ? [
+              TextInputFormatter.withFunction(
+                (oldValue, newValue) =>
+                    newValue.copyWith(text: newValue.text.toUpperCase()),
+              ),
+            ]
+          : null,
+      style: TextStyle(
+        fontSize: 13,
+        color: AppColors.textPrimary,
+        letterSpacing: capitalize ? 0.5 : 0,
+      ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: AppColors.textHint, fontSize: 13),
@@ -685,7 +668,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+          borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
         ),
       ),
     );
@@ -696,9 +679,9 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.05),
+        color: Colors.orange.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.orange.withOpacity(0.2)),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -722,7 +705,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.cardBackground,
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.cardBackground,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.borderColor,
@@ -747,7 +730,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.cardBackground,
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.cardBackground,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.borderColor,
@@ -772,7 +755,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.cardBackground,
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.cardBackground,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.borderColor,
@@ -844,7 +827,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 24),
         decoration: BoxDecoration(
-          color: hasFile ? AppColors.primary.withOpacity(0.05) : AppColors.cardBackground,
+          color: hasFile ? AppColors.primary.withValues(alpha: 0.05) : AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: hasFile ? AppColors.primary : AppColors.borderColor,
@@ -898,7 +881,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w800,
-        color: AppColors.textSecondary.withOpacity(0.5),
+        color: AppColors.textSecondary.withValues(alpha: 0.5),
         letterSpacing: 1.2,
       ),
     );
@@ -960,7 +943,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: AppColors.statusActive.withOpacity(0.1),
+              color: AppColors.statusActive.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -968,7 +951,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppColors.statusActive.withOpacity(0.2),
+                  color: AppColors.statusActive.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -1025,7 +1008,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textSecondary.withOpacity(0.5),
+                    color: AppColors.textSecondary.withValues(alpha: 0.5),
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -1055,7 +1038,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 4,
-                shadowColor: AppColors.primary.withOpacity(0.4),
+                shadowColor: AppColors.primary.withValues(alpha: 0.4),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1129,6 +1112,10 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
         .where((l) => l.id.toString() == m.branch)
         .map((l) => l.name)
         .firstOrNull ?? m.branch ?? 'N/A';
+
+    // Track sheet dismissal intent so .then() knows whether to reset
+    bool editTapped = false;
+    bool submitTapped = false;
 
     showModalBottomSheet(
       context: context,
@@ -1225,7 +1212,10 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          editTapped = true;
+                          Navigator.pop(context);
+                        },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           side: BorderSide(color: AppColors.borderColor),
@@ -1240,6 +1230,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                       child: StatefulBuilder(
                         builder: (_, setSheetState) => ElevatedButton(
                           onPressed: controller.isLoading ? null : () async {
+                            submitTapped = true;
                             Navigator.pop(context);
                             final success = await controller.submit(context);
                             if (success) {
@@ -1273,7 +1264,12 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           ),
         ),
       ),
-    );
+    ).then((_) {
+      // Swiped away or tapped outside without submitting → reset the form
+      if (!editTapped && !submitTapped && !controller.isSuccess && mounted) {
+        controller.reset();
+      }
+    });
   }
 
   Widget _buildSheetSection(String title, List<Widget> rows) {
@@ -1350,7 +1346,10 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             )
           else
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                controller.reset();
+                Navigator.pop(context);
+              },
               child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
             ),
           
@@ -1375,6 +1374,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                   );
                   return;
                 }
+                controller.logStep(controller.currentStep);
                 controller.nextStep();
               },
               style: ElevatedButton.styleFrom(
@@ -1400,6 +1400,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                   );
                   return;
                 }
+                controller.logStep(3);
                 _showConfirmationSheet(controller);
               },
               style: ElevatedButton.styleFrom(

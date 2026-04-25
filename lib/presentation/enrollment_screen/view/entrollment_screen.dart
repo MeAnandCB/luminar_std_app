@@ -1974,13 +1974,38 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     _showPaymentResultSheet(
       isSuccess: true,
       title: 'Payment Successful!',
-      message: 'Your payment has been received.\nPayment ID: ${response.paymentId}',
-      onDismiss: () {
+      message:
+          'Your payment has been received.\nPayment ID: ${response.paymentId}',
+      onDismiss: () async {
         if (mounted) {
+          // 1. Refresh EnrollmentProvider
           Provider.of<EnrollmentProvider>(
             context,
             listen: false,
           ).refreshData(context);
+
+          // 2. Refresh DashboardController (Crucial for the list screen updating!)
+          await Provider.of<DashboardController>(
+            context,
+            listen: false,
+          ).getDashboardData(context: context, forceRefresh: true);
+
+          if (mounted) {
+            // 3. Reset local selection state
+            setState(() {
+              selectedPaymentMethod = -1;
+              selectedEmiPlanId = null;
+              expandedEmiTile = null;
+              showFullPaymentDetails = false;
+            });
+
+            // 4. Navigate to home/list to "reset" the screen context
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const BottomNavScreen()),
+              (route) => false,
+            );
+          }
         }
       },
     );

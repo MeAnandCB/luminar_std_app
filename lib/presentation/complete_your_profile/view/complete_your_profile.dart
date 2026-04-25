@@ -146,63 +146,96 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                         onPressed: completeController.isSubmitting
                             ? null
                             : () async {
-                                if (_validateCurrentPage()) {
-                                  try {
-                                    await completeController.submitProfile(
-                                      profileController.profileData,
+                                if (!_validateCurrentPage()) return;
+
+                                final shouldSubmit =
+                                    await showModalBottomSheet<bool>(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (sheetContext) => ProfileReviewSheet(
+                                    controller: completeController,
+                                    onGoToField: (page, fieldName) {
+                                      Navigator.pop(sheetContext, false);
+                                      _pageController.jumpToPage(page);
+                                      if (fieldName.isNotEmpty) {
+                                        WidgetsBinding.instance
+                                            .addPostFrameCallback((_) {
+                                          if (page == 0) {
+                                            _personalInfoKey.currentState
+                                                ?.highlightField(fieldName);
+                                          } else if (page == 1) {
+                                            _idProofKey.currentState
+                                                ?.highlightField(fieldName);
+                                          } else if (page == 2) {
+                                            _academicInfoKey.currentState
+                                                ?.highlightField(fieldName);
+                                          } else if (page == 3) {
+                                            _careerInfoKey.currentState
+                                                ?.highlightField(fieldName);
+                                          } else if (page == 4) {
+                                            _parentInfoKey.currentState
+                                                ?.highlightField(fieldName);
+                                          }
+                                        });
+                                      }
+                                    },
+                                  ),
+                                );
+
+                                if (shouldSubmit != true ||
+                                    !context.mounted) return;
+
+                                try {
+                                  await completeController.submitProfile(
+                                    profileController.profileData,
+                                  );
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(
+                                      context,
+                                    ).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Profile completed successfully!',
+                                        ),
+                                        backgroundColor: AppColors.statusActive,
+                                      ),
+                                    );
+                                    await profileController.refreshProfile(
+                                      context: context,
                                     );
                                     if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Profile completed successfully!',
-                                          ),
-                                          backgroundColor:
-                                              AppColors.statusActive,
-                                        ),
-                                      );
-                                      await profileController.refreshProfile(
-                                        context: context,
-                                      );
-                                      // Clear cached dashboard so BottomNavScreen
-                                      // fetches fresh data with profileCompleted:true
-                                      if (context.mounted) {
-                                        context
-                                            .read<DashboardController>()
-                                            .clearDashboardData();
-                                      }
-                                      if (context.mounted) {
-                                        Navigator.pushAndRemoveUntil(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const BottomNavScreen(),
-                                          ),
-                                          (route) => false,
-                                        );
-                                      }
+                                      context
+                                          .read<DashboardController>()
+                                          .clearDashboardData();
                                     }
-                                  } catch (e) {
                                     if (context.mounted) {
-                                      LoggerUtils.error(
-                                        e.toString(),
-                                        tag: 'ProfileCompletion',
-                                      );
-                                      ScaffoldMessenger.of(
+                                      Navigator.pushAndRemoveUntil(
                                         context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            AppUtils.friendlyError(
-                                              e.toString(),
-                                            ),
-                                          ),
-                                          backgroundColor: Colors.red,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const BottomNavScreen(),
                                         ),
+                                        (route) => false,
                                       );
                                     }
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    LoggerUtils.error(
+                                      e.toString(),
+                                      tag: 'ProfileCompletion',
+                                    );
+                                    ScaffoldMessenger.of(
+                                      context,
+                                    ).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          AppUtils.friendlyError(e.toString()),
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
                                   }
                                 }
                               },
@@ -222,7 +255,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                             ? const CircularProgressIndicator(
                                 color: Colors.white,
                               )
-                            : Text('Submit'),
+                            : const Text('Review & Submit'),
                       );
                     },
               ),
@@ -235,6 +268,103 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key});
+
+  void _showMissingFieldsInfo(BuildContext context, CompleteProfileController ctrl) {
+    final missing = ctrl.getFieldStatuses().where((s) => !s.isFilled).toList();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Missing Fields',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${missing.length} field${missing.length == 1 ? '' : 's'} still need your attention',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            ...missing.map(
+              (f) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        f.name,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        f.section,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Close', style: TextStyle(color: AppColors.primary)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +407,7 @@ class ProfileHeader extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -303,9 +433,37 @@ class ProfileHeader extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 8),
-              Text(
-                '$remaining fields remaining',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              GestureDetector(
+                onTap: remaining > 0
+                    ? () => _showMissingFieldsInfo(context, completeCtrl)
+                    : null,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      remaining == 0
+                          ? 'All fields completed!'
+                          : '$remaining field${remaining == 1 ? '' : 's'} remaining',
+                      style: TextStyle(
+                        color: remaining == 0
+                            ? Colors.green
+                            : Colors.orange.shade700,
+                        fontSize: 14,
+                        fontWeight: remaining > 0
+                            ? FontWeight.w500
+                            : FontWeight.normal,
+                      ),
+                    ),
+                    if (remaining > 0) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.info_outline,
+                        size: 14,
+                        color: Colors.orange.shade700,
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -322,7 +480,36 @@ class PersonalInfoSection extends StatefulWidget {
   State<PersonalInfoSection> createState() => PersonalInfoSectionState();
 }
 
-class PersonalInfoSectionState extends State<PersonalInfoSection> {
+class PersonalInfoSectionState extends State<PersonalInfoSection>
+    with AutomaticKeepAliveClientMixin<PersonalInfoSection> {
+  @override
+  bool get wantKeepAlive => true;
+
+  String? _highlightedField;
+
+  void highlightField(String fieldName) {
+    setState(() => _highlightedField = fieldName);
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) setState(() => _highlightedField = null);
+    });
+  }
+
+  Widget _wrapHighlight(String name, Widget child) {
+    final on = _highlightedField == name;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: on ? const EdgeInsets.all(3) : EdgeInsets.zero,
+      decoration: on
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.orange.shade400, width: 2),
+              color: Colors.orange.withValues(alpha: 0.04),
+            )
+          : null,
+      child: child,
+    );
+  }
+
   final _formKey = GlobalKey<FormState>();
   String? _countryCode = '+91';
   final TextEditingController _fullNameController = TextEditingController();
@@ -542,6 +729,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer<ProfileController>(
       builder: (context, controller, child) {
         if (!_initialized && controller.profileData != null) {
@@ -654,7 +842,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                       ),
                       SizedBox(height: 16),
 
-                      CustomTextField(
+                      _wrapHighlight('Full Name', CustomTextField(
                         label: 'Full Name*',
                         controller: _fullNameController,
                         enabled: false,
@@ -670,17 +858,12 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           if (value.trim().length < 2) {
                             return 'Name must be at least 2 characters';
                           }
-                          if (!RegExp(
-                            r"^[a-zA-Z\s]+$",
-                          ).hasMatch(value.trim())) {
-                            return 'Name must contain only letters';
-                          }
                           return null;
                         },
-                      ),
+                      )),
                       SizedBox(height: 12),
 
-                      CustomTextField(
+                      _wrapHighlight('Email', CustomTextField(
                         label: 'Email*',
                         controller: _emailController,
                         enabled: false,
@@ -701,10 +884,10 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           }
                           return null;
                         },
-                      ),
+                      )),
                       SizedBox(height: 12),
 
-                      Row(
+                      _wrapHighlight('Date of Birth', Row(
                         children: [
                           Expanded(
                             flex: 2,
@@ -736,11 +919,11 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                             ),
                           ),
                         ],
-                      ),
+                      )),
                       SizedBox(height: 12),
 
-                      // WhatsApp with Country Code Picker
-                      Container(
+                      // Phone with Country Code Picker
+                      _wrapHighlight('Phone', Container(
                         decoration: BoxDecoration(
                           border: Border.all(color: AppColors.borderColor),
                           borderRadius: BorderRadius.circular(12),
@@ -802,10 +985,10 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                             ),
                           ],
                         ),
-                      ),
+                      )),
                       SizedBox(height: 12),
 
-                      CustomTextField(
+                      _wrapHighlight('Address', CustomTextField(
                         label: 'Address*',
                         controller: _addressController,
                         enabled: true,
@@ -820,10 +1003,10 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           }
                           return null;
                         },
-                      ),
+                      )),
                       SizedBox(height: 12),
 
-                      CustomTextField(
+                      _wrapHighlight('Pincode', CustomTextField(
                         label: 'Pincode*',
                         controller: _pincodeController,
                         enabled: true,
@@ -882,7 +1065,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           }
                           return null;
                         },
-                      ),
+                      )),
                       SizedBox(height: 12),
                       controller.isPincodeLoading
                           ? const Center(child: CircularProgressIndicator())
@@ -890,7 +1073,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                           ? _buildLocationFallbackDropdown(
                               context.read<CompleteProfileController>(),
                             )
-                          : CustomTextField(
+                          : _wrapHighlight('District', CustomTextField(
                               label: 'District*',
                               controller: _districtController,
                               prefixIcon: Icons.map_outlined,
@@ -907,7 +1090,7 @@ class PersonalInfoSectionState extends State<PersonalInfoSection> {
                                 }
                                 return null;
                               },
-                            ),
+                            )),
                     ],
                   ),
                 ),
@@ -973,7 +1156,35 @@ class IdProofSection extends StatefulWidget {
   State<IdProofSection> createState() => IdProofSectionState();
 }
 
-class IdProofSectionState extends State<IdProofSection> {
+class IdProofSectionState extends State<IdProofSection>
+    with AutomaticKeepAliveClientMixin<IdProofSection> {
+  @override
+  bool get wantKeepAlive => true;
+
+  String? _highlightedField;
+
+  void highlightField(String fieldName) {
+    setState(() => _highlightedField = fieldName);
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) setState(() => _highlightedField = null);
+    });
+  }
+
+  Widget _wrapHighlight(String name, Widget child) {
+    final on = _highlightedField == name;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: on ? const EdgeInsets.all(3) : EdgeInsets.zero,
+      decoration: on
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.orange.shade400, width: 2),
+              color: Colors.orange.withValues(alpha: 0.04),
+            )
+          : null,
+      child: child,
+    );
+  }
   bool _initialized = false;
   bool _hasFrontId = false;
   bool _hasBackId = false;
@@ -1035,6 +1246,7 @@ class IdProofSectionState extends State<IdProofSection> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer2<ProfileController, CompleteProfileController>(
       builder: (context, profileController, completeProfileController, child) {
         _initData(profileController);
@@ -1064,26 +1276,26 @@ class IdProofSectionState extends State<IdProofSection> {
                     SizedBox(height: 20),
 
                     // Front Side
-                    _buildUploadSection(
+                    _wrapHighlight('ID Proof (Front)', _buildUploadSection(
                       title: 'Front Side *',
                       subtitle: 'Upload the front side of your ID proof',
                       imagePath: completeProfileController.idFrontPath,
                       onUpload: () => _showImageSourceDialog(true),
                       isUploaded: _hasFrontId,
-                    ),
+                    )),
 
                     SizedBox(height: 20),
                     Divider(),
                     SizedBox(height: 20),
 
                     // Back Side
-                    _buildUploadSection(
+                    _wrapHighlight('ID Proof (Back)', _buildUploadSection(
                       title: 'Back Side *',
                       subtitle: 'Upload the back side of your ID proof',
                       imagePath: completeProfileController.idBackPath,
                       onUpload: () => _showImageSourceDialog(false),
                       isUploaded: _hasBackId,
-                    ),
+                    )),
                   ],
                 ),
               ),
@@ -1246,7 +1458,35 @@ class AcademicInfoSection extends StatefulWidget {
   State<AcademicInfoSection> createState() => AcademicInfoSectionState();
 }
 
-class AcademicInfoSectionState extends State<AcademicInfoSection> {
+class AcademicInfoSectionState extends State<AcademicInfoSection>
+    with AutomaticKeepAliveClientMixin<AcademicInfoSection> {
+  @override
+  bool get wantKeepAlive => true;
+
+  String? _highlightedField;
+
+  void highlightField(String fieldName) {
+    setState(() => _highlightedField = fieldName);
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) setState(() => _highlightedField = null);
+    });
+  }
+
+  Widget _wrapHighlight(String name, Widget child) {
+    final on = _highlightedField == name;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: on ? const EdgeInsets.all(3) : EdgeInsets.zero,
+      decoration: on
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.orange.shade400, width: 2),
+              color: Colors.orange.withValues(alpha: 0.04),
+            )
+          : null,
+      child: child,
+    );
+  }
   final _formKey = GlobalKey<FormState>();
   String? _selectedQualification;
   String? _selectedSpecialization;
@@ -1362,6 +1602,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer2<ProfileController, CompleteProfileController>(
       builder: (context, profileController, completeProfileController, child) {
         _initData(profileController);
@@ -1410,7 +1651,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                       SizedBox(height: 20),
 
                       // Qualification Dropdown
-                      _buildDropdown(
+                      _wrapHighlight('Qualification', _buildDropdown(
                         label: 'Qualification *',
                         value: _selectedQualification,
                         items: qualifications,
@@ -1431,12 +1672,12 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                                 .toString();
                           });
                         },
-                      ),
+                      )),
 
                       SizedBox(height: 16),
 
                       // College/University
-                      CustomTextField(
+                      _wrapHighlight('College / University', CustomTextField(
                         label: 'College/University *',
                         controller: _collegeNameController,
                         enabled: true,
@@ -1451,12 +1692,12 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                           }
                           return null;
                         },
-                      ),
+                      )),
 
                       SizedBox(height: 16),
 
                       // CGPA
-                      TextFormField(
+                      _wrapHighlight('CGPA', TextFormField(
                         controller: _cgpaController,
                         enabled: true,
                         keyboardType: TextInputType.number,
@@ -1510,12 +1751,12 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                           }
                           return null;
                         },
-                      ),
+                      )),
 
                       SizedBox(height: 16),
 
                       // Specialization Dropdown
-                      _buildDropdown(
+                      _wrapHighlight('Specialization', _buildDropdown(
                         label: 'Specialization *',
                         value: _selectedSpecialization,
                         items: specializations,
@@ -1532,12 +1773,12 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                                 value;
                           });
                         },
-                      ),
+                      )),
 
                       SizedBox(height: 16),
 
                       // Pass Out Year Dropdown
-                      _buildDropdown(
+                      _wrapHighlight('Pass Out Year', _buildDropdown(
                         label: 'Pass Out Year *',
                         value: _selectedPassOutYear,
                         items: _passOutYears,
@@ -1551,7 +1792,7 @@ class AcademicInfoSectionState extends State<AcademicInfoSection> {
                                 value;
                           });
                         },
-                      ),
+                      )),
 
                       SizedBox(height: 16),
 
@@ -1679,9 +1920,38 @@ class CareerInfoSection extends StatefulWidget {
   State<CareerInfoSection> createState() => CareerInfoSectionState();
 }
 
-class CareerInfoSectionState extends State<CareerInfoSection> {
+class CareerInfoSectionState extends State<CareerInfoSection>
+    with AutomaticKeepAliveClientMixin<CareerInfoSection> {
+  @override
+  bool get wantKeepAlive => true;
+
+  String? _highlightedField;
+
+  void highlightField(String fieldName) {
+    setState(() => _highlightedField = fieldName);
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) setState(() => _highlightedField = null);
+    });
+  }
+
+  Widget _wrapHighlight(String name, Widget child) {
+    final on = _highlightedField == name;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: on ? const EdgeInsets.all(3) : EdgeInsets.zero,
+      decoration: on
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.orange.shade400, width: 2),
+              color: Colors.orange.withValues(alpha: 0.04),
+            )
+          : null,
+      child: child,
+    );
+  }
   final _formKey = GlobalKey<FormState>();
-  String? _currentStatus = 'Student';
+  String? _currentStatus;
+  bool _showStatusError = false;
   final TextEditingController _locationController = TextEditingController();
   bool _interestedInPlacement = true;
 
@@ -1743,9 +2013,7 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
   bool validate() {
     final isFormValid = _formKey.currentState?.validate() ?? false;
     if (_currentStatus == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your current status')),
-      );
+      setState(() => _showStatusError = true);
       return false;
     }
     return isFormValid;
@@ -1764,6 +2032,7 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer<ProfileController>(
       builder: (context, controller, child) {
         if (!_initialized && controller.profileData != null) {
@@ -1807,16 +2076,27 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                         ),
                       ),
                       SizedBox(height: 8),
-                      Container(
+                      _wrapHighlight('Current Status', Container(
                         padding: EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.borderColor),
+                          border: Border.all(
+                            color: _showStatusError && _currentStatus == null
+                                ? Colors.red
+                                : AppColors.borderColor,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: DropdownButton<String>(
                           value: _currentStatus,
                           isExpanded: true,
                           underline: SizedBox(),
+                          hint: Text(
+                            'Choose your status',
+                            style: TextStyle(
+                              color: AppColors.textHint,
+                              fontSize: 14,
+                            ),
+                          ),
                           items: ['Student', 'Working Professional']
                               .map(
                                 (status) => DropdownMenuItem(
@@ -1828,6 +2108,7 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                           onChanged: (value) {
                             setState(() {
                               _currentStatus = value;
+                              _showStatusError = false;
                               context
                                   .read<CompleteProfileController>()
                                   .studentStatus = value == 'Student'
@@ -1836,7 +2117,18 @@ class CareerInfoSectionState extends State<CareerInfoSection> {
                             });
                           },
                         ),
-                      ),
+                      )),
+                      if (_showStatusError && _currentStatus == null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6, left: 12),
+                          child: Text(
+                            'Please choose your current status',
+                            style: TextStyle(
+                              color: Colors.red.shade700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
 
                       SizedBox(height: 16),
 
@@ -1989,7 +2281,35 @@ class ParentInfoSection extends StatefulWidget {
   State<ParentInfoSection> createState() => ParentInfoSectionState();
 }
 
-class ParentInfoSectionState extends State<ParentInfoSection> {
+class ParentInfoSectionState extends State<ParentInfoSection>
+    with AutomaticKeepAliveClientMixin<ParentInfoSection> {
+  @override
+  bool get wantKeepAlive => true;
+
+  String? _highlightedField;
+
+  void highlightField(String fieldName) {
+    setState(() => _highlightedField = fieldName);
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) setState(() => _highlightedField = null);
+    });
+  }
+
+  Widget _wrapHighlight(String name, Widget child) {
+    final on = _highlightedField == name;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: on ? const EdgeInsets.all(3) : EdgeInsets.zero,
+      decoration: on
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.orange.shade400, width: 2),
+              color: Colors.orange.withValues(alpha: 0.04),
+            )
+          : null,
+      child: child,
+    );
+  }
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -2047,6 +2367,7 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer<ProfileController>(
       builder: (context, controller, child) {
         if (!_initialized && controller.profileData != null) {
@@ -2082,7 +2403,7 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                       SizedBox(height: 20),
 
                       // Parent Name
-                      CustomTextField(
+                      _wrapHighlight('Parent / Guardian Name', CustomTextField(
                         label: 'Name *',
                         controller: _nameController,
                         enabled: true,
@@ -2098,19 +2419,14 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                           if (value.trim().length < 2) {
                             return 'Name must be at least 2 characters';
                           }
-                          if (!RegExp(
-                            r"^[a-zA-Z\s]+$",
-                          ).hasMatch(value.trim())) {
-                            return 'Name must contain only letters';
-                          }
                           return null;
                         },
-                      ),
+                      )),
 
                       SizedBox(height: 16),
 
                       // Parent Phone with Country Code
-                      Container(
+                      _wrapHighlight('Parent / Guardian Phone', Container(
                         decoration: BoxDecoration(
                           border: Border.all(color: AppColors.borderColor),
                           borderRadius: BorderRadius.circular(12),
@@ -2172,7 +2488,7 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
                             ),
                           ],
                         ),
-                      ),
+                      )),
                     ],
                   ),
                 ),
@@ -2181,6 +2497,353 @@ class ParentInfoSectionState extends State<ParentInfoSection> {
           ),
         );
       },
+    );
+  }
+}
+
+// ── Profile Review Sheet ───────────────────────────────────────────────────
+
+class ProfileReviewSheet extends StatelessWidget {
+  final CompleteProfileController controller;
+  final void Function(int page, String fieldName) onGoToField;
+
+  const ProfileReviewSheet({
+    super.key,
+    required this.controller,
+    required this.onGoToField,
+  });
+
+  static const _sections = [
+    (name: 'Personal Info', icon: Icons.person_outline),
+    (name: 'ID Proof', icon: Icons.badge_outlined),
+    (name: 'Academic Info', icon: Icons.school_outlined),
+    (name: 'Career Info', icon: Icons.work_outline),
+    (name: 'Parent Info', icon: Icons.family_restroom),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final statuses = controller.getFieldStatuses();
+    final filled = statuses.where((s) => s.isFilled).length;
+    final total = statuses.length;
+    final allComplete = filled == total;
+
+    final Map<String, List<ProfileFieldStatus>> bySection = {};
+    for (final s in statuses) {
+      bySection.putIfAbsent(s.section, () => []).add(s);
+    }
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Drag handle
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Profile Review',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: allComplete
+                                ? Colors.green.withValues(alpha: 0.12)
+                                : Colors.orange.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '$filled / $total',
+                            style: TextStyle(
+                              color: allComplete
+                                  ? Colors.green
+                                  : Colors.orange.shade700,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      allComplete
+                          ? 'All fields completed — ready to submit!'
+                          : '${total - filled} field${total - filled == 1 ? '' : 's'} still need attention',
+                      style: TextStyle(
+                        color: allComplete
+                            ? Colors.green
+                            : AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: filled / total,
+                        backgroundColor: AppColors.borderColor,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          allComplete ? Colors.green : AppColors.primary,
+                        ),
+                        minHeight: 6,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Divider(height: 1, color: AppColors.borderColor),
+                  ],
+                ),
+              ),
+              // Section list
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  children: [
+                    for (int i = 0; i < _sections.length; i++) ...[
+                      _SectionReviewTile(
+                        name: _sections[i].name,
+                        icon: _sections[i].icon,
+                        fields: bySection[_sections[i].name] ?? [],
+                        onTap: () => onGoToField(i, ''),
+                        onFieldTap: onGoToField,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ],
+                ),
+              ),
+              // Action buttons
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: allComplete
+                            ? AppColors.statusActive
+                            : AppColors.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      child: Text(
+                        allComplete ? 'Submit Profile' : 'Submit Anyway',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(
+                        'Go Back & Fix',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SectionReviewTile extends StatelessWidget {
+  final String name;
+  final IconData icon;
+  final List<ProfileFieldStatus> fields;
+  final VoidCallback onTap;
+  final void Function(int page, String fieldName) onFieldTap;
+
+  const _SectionReviewTile({
+    required this.name,
+    required this.icon,
+    required this.fields,
+    required this.onTap,
+    required this.onFieldTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final filledCount = fields.where((f) => f.isFilled).length;
+    final missing = fields.where((f) => !f.isFilled).toList();
+    final isComplete = missing.isEmpty;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isComplete
+              ? Colors.green.withValues(alpha: 0.05)
+              : Colors.orange.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isComplete
+                ? Colors.green.withValues(alpha: 0.3)
+                : Colors.orange.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: isComplete
+                        ? Colors.green.withValues(alpha: 0.12)
+                        : Colors.orange.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 18,
+                    color: isComplete ? Colors.green : Colors.orange.shade700,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isComplete
+                        ? Colors.green.withValues(alpha: 0.12)
+                        : Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$filledCount / ${fields.length}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isComplete ? Colors.green : Colors.red,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(
+                  isComplete
+                      ? Icons.check_circle_outline
+                      : Icons.arrow_forward_ios,
+                  size: 15,
+                  color: isComplete ? Colors.green : Colors.orange.shade700,
+                ),
+              ],
+            ),
+            if (missing.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: missing
+                    .map(
+                      (f) => GestureDetector(
+                        onTap: () => onFieldTap(f.pageIndex, f.name),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: Colors.red.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.edit_outlined,
+                                size: 11,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                f.name,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Tap a field to jump directly to it →',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.orange.shade700,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

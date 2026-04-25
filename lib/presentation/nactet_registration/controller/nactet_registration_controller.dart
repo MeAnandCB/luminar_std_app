@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -26,6 +27,13 @@ class NactetRegistrationController extends ChangeNotifier {
   dynamic successData;
 
   List<LocationModel> locations = [];
+
+  String _mobileCountryCode = '+91';
+  String get mobileCountryCode => _mobileCountryCode;
+  set mobileCountryCode(String value) {
+    _mobileCountryCode = value;
+    notifyListeners();
+  }
 
   static const int _maxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
 
@@ -58,7 +66,12 @@ class NactetRegistrationController extends ChangeNotifier {
     }
   }
 
-  void init(Enrollment? enrollment, String? studentName, String? studentEmail, String? studentMobile) {
+  void init(
+    Enrollment? enrollment,
+    String? studentName,
+    String? studentEmail,
+    String? studentMobile,
+  ) {
     fetchLocations();
     if (enrollment != null) {
       registrationModel.enrollment = enrollment.uid;
@@ -69,20 +82,7 @@ class NactetRegistrationController extends ChangeNotifier {
       // Auto-check if already filled
       checkRegistrationStatus(enrollment.uid);
     }
-    
-    if (studentName != null && nameController.text.isEmpty) {
-      nameController.text = studentName;
-      registrationModel.name = studentName;
-    }
-    if (studentEmail != null && emailController.text.isEmpty) {
-      emailController.text = studentEmail;
-      registrationModel.email = studentEmail;
-    }
-    if (studentMobile != null && mobileController.text.isEmpty) {
-      mobileController.text = studentMobile;
-      registrationModel.mobileNumber = studentMobile;
-    }
-    
+
     notifyListeners();
   }
 
@@ -100,20 +100,6 @@ class NactetRegistrationController extends ChangeNotifier {
 
     fetchLocations();
     checkRegistrationStatus(enrollment.enrollmentUid);
-
-    if (studentName != null && nameController.text.isEmpty) {
-      nameController.text = studentName;
-      registrationModel.name = studentName;
-    }
-    if (studentEmail != null && emailController.text.isEmpty) {
-      emailController.text = studentEmail;
-      registrationModel.email = studentEmail;
-    }
-    if (studentMobile != null && mobileController.text.isEmpty) {
-      mobileController.text = studentMobile;
-      registrationModel.mobileNumber = studentMobile;
-    }
-
     notifyListeners();
   }
 
@@ -126,16 +112,38 @@ class NactetRegistrationController extends ChangeNotifier {
   String? validateStep(int step) {
     switch (step) {
       case 0:
-        if (registrationModel.branch == null) return 'Please select your branch';
-        if (nameController.text.trim().isEmpty) return 'Please enter your full name';
-        if (guardianNameController.text.trim().isEmpty) return 'Please enter guardian name';
-        if (registrationModel.gender == null) return 'Please select your gender';
-        if (dobController.text.trim().isEmpty) return 'Please select your date of birth';
-        if (addressController.text.trim().isEmpty) return 'Please enter your permanent address';
-        if (mobileController.text.trim().isEmpty) return 'Please enter your mobile number';
-        if (mobileController.text.trim().length < 5) return 'Please enter a valid mobile number';
-        if (emailController.text.trim().isEmpty) return 'Please enter your email';
-        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(emailController.text.trim())) {
+        if (registrationModel.branch == null)
+          return 'Please select your branch';
+        final name = nameController.text.trim();
+        if (name.isEmpty) return 'Please enter your full name';
+        if (name.length < 2) return 'Name must be at least 2 characters';
+        if (!RegExp(r'^[A-Za-z\s]+$').hasMatch(name))
+          return 'Name should contain letters only';
+        final guardian = guardianNameController.text.trim();
+        if (guardian.isEmpty) return 'Please enter guardian name';
+        if (guardian.length < 2)
+          return 'Guardian name must be at least 2 characters';
+        if (!RegExp(r'^[A-Za-z\s]+$').hasMatch(guardian))
+          return 'Guardian name should contain letters only';
+        if (registrationModel.gender == null)
+          return 'Please select your gender';
+        if (dobController.text.trim().isEmpty)
+          return 'Please select your date of birth';
+        if (addressController.text.trim().isEmpty)
+          return 'Please enter your permanent address';
+        final digits = mobileController.text.trim().replaceAll(
+          RegExp(r'\D'),
+          '',
+        );
+        if (digits.isEmpty) return 'Please enter your mobile number';
+        if (digits.length < 7) return 'Mobile number must be at least 7 digits';
+        if (digits.length > 15)
+          return 'Mobile number must not exceed 15 digits';
+        if (emailController.text.trim().isEmpty)
+          return 'Please enter your email';
+        if (!RegExp(
+          r'^[^@\s]+@[^@\s]+\.[^@\s]{2,}$',
+        ).hasMatch(emailController.text.trim())) {
           return 'Please enter a valid email address';
         }
         return null;
@@ -147,8 +155,10 @@ class NactetRegistrationController extends ChangeNotifier {
           return 'Please enter basic qualification year of passing';
         }
         final basicYear = int.tryParse(basicQualYearController.text.trim());
-        if (basicYear == null || basicYear < 1950 || basicYear > DateTime.now().year) {
-          return 'Please enter a valid year (1950–${DateTime.now().year})';
+        if (basicYear == null ||
+            basicYear < 1950 ||
+            basicYear > DateTime.now().year + 5) {
+          return 'Please enter a valid year (1950–${DateTime.now().year + 5})';
         }
         if (higherQualController.text.trim().isEmpty) {
           return 'Please enter your highest educational qualification';
@@ -157,8 +167,10 @@ class NactetRegistrationController extends ChangeNotifier {
           return 'Please enter year of passing for highest qualification';
         }
         final higherYear = int.tryParse(higherQualYearController.text.trim());
-        if (higherYear == null || higherYear < 1950 || higherYear > DateTime.now().year) {
-          return 'Please enter a valid year (1950–${DateTime.now().year})';
+        if (higherYear == null ||
+            higherYear < 1950 ||
+            higherYear > DateTime.now().year + 5) {
+          return 'Please enter a valid year (1950–${DateTime.now().year + 5})';
         }
         return null;
       case 2:
@@ -168,8 +180,10 @@ class NactetRegistrationController extends ChangeNotifier {
         if (registrationModel.higherDocPath == null) {
           return 'Please upload your highest qualification document';
         }
-        if (registrationModel.idProofPath == null) return 'Please upload your ID proof';
-        if (registrationModel.photoPath == null) return 'Please upload your passport size photo';
+        if (registrationModel.idProofPath == null)
+          return 'Please upload your ID proof';
+        if (registrationModel.photoPath == null)
+          return 'Please upload your passport size photo';
         return null;
       case 3:
         if (!confirmationChecked) {
@@ -201,7 +215,9 @@ class NactetRegistrationController extends ChangeNotifier {
 
     try {
       // Check if form should be displayed
-      final displayResponse = await _service.fetchCheckDisplayStatus(enrollmentUid: enrollmentUid);
+      final displayResponse = await _service.fetchCheckDisplayStatus(
+        enrollmentUid: enrollmentUid,
+      );
       if (displayResponse.statusCode == 200 && displayResponse.data != null) {
         final dispData = displayResponse.data;
         if (dispData is Map<String, dynamic>) {
@@ -262,9 +278,13 @@ class NactetRegistrationController extends ChangeNotifier {
 
         // Enforce 10 MB limit
         final fileSize = await File(filePath).length();
-        LoggerUtils.debug('[$type] File: $filePath | Size: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB', tag: 'NACTET');
+        LoggerUtils.debug(
+          '[$type] File: $filePath | Size: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB',
+          tag: 'NACTET',
+        );
         if (fileSize > _maxFileSizeBytes) {
-          fileSizeError = 'File exceeds 10 MB limit (${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB). Please choose a smaller file.';
+          fileSizeError =
+              'File exceeds 10 MB limit (${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB). Please choose a smaller file.';
           notifyListeners();
           return;
         }
@@ -296,16 +316,25 @@ class NactetRegistrationController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Final sync of controllers to model
-      registrationModel.name = nameController.text.trim();
-      registrationModel.guardianName = guardianNameController.text.trim();
+      // Final sync — all text fields forced to UPPER CASE before sending
+      registrationModel.name = nameController.text.trim().toUpperCase();
+      registrationModel.guardianName = guardianNameController.text
+          .trim()
+          .toUpperCase();
       registrationModel.dateOfBirth = dobController.text.trim();
-      registrationModel.permanentAddress = addressController.text.trim();
-      registrationModel.mobileNumber = mobileController.text.trim();
-      registrationModel.email = emailController.text.trim();
+      registrationModel.permanentAddress = addressController.text
+          .trim()
+          .toUpperCase();
+      // Include the selected country code in the mobile number
+      registrationModel.mobileNumber =
+          '$mobileCountryCode${mobileController.text.trim()}';
+      registrationModel.email = emailController.text.trim().toLowerCase();
       registrationModel.basicEducationalQualificationYearOfPassing =
           int.tryParse(basicQualYearController.text.trim());
-      registrationModel.higherEducationalQualification = higherQualController.text.trim();
+      registrationModel.higherEducationalQualification = higherQualController
+          .text
+          .trim()
+          .toUpperCase();
       registrationModel.higherEducationalQualificationYearOfPassing =
           int.tryParse(higherQualYearController.text.trim());
 
@@ -318,7 +347,9 @@ class NactetRegistrationController extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        errorMessage = response.message ?? 'Registration failed (status ${response.statusCode})';
+        errorMessage =
+            response.message ??
+            'Registration failed (status ${response.statusCode})';
         isLoading = false;
         notifyListeners();
         return false;
@@ -370,6 +401,47 @@ class NactetRegistrationController extends ChangeNotifier {
     registrationModel.course = null;
     registrationModel.batch = null;
     notifyListeners();
+  }
+
+  void logStep(int step) {
+    final m = registrationModel;
+    developer.log(
+      '\n'
+      '╔══════════════════════════════════════════════════════════╗\n'
+      '║        📋  NACTET FORM — STEP $step COMPLETED              ║\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  STEP 1 — PERSONAL\n'
+      '║    branch              : ${m.branch ?? '—'}\n'
+      '║    name                : ${nameController.text}\n'
+      '║    guardian_name       : ${guardianNameController.text}\n'
+      '║    gender              : ${m.gender ?? '—'}\n'
+      '║    date_of_birth       : ${dobController.text}\n'
+      '║    address             : ${addressController.text}\n'
+      '║    country_code        : $_mobileCountryCode\n'
+      '║    mobile_digits       : ${mobileController.text}\n'
+      '║    mobile_full         : $_mobileCountryCode${mobileController.text}\n'
+      '║    email               : ${emailController.text}\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  STEP 2 — EDUCATION\n'
+      '║    basic_qual          : ${m.basicEducationalQualification ?? '—'}\n'
+      '║    basic_qual_year     : ${basicQualYearController.text}\n'
+      '║    higher_qual         : ${higherQualController.text}\n'
+      '║    higher_qual_year    : ${higherQualYearController.text}\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  STEP 3 — DOCUMENTS\n'
+      '║    basic_doc           : ${m.basicDocPath?.split('/').last ?? '—'}\n'
+      '║    higher_doc          : ${m.higherDocPath?.split('/').last ?? '—'}\n'
+      '║    id_proof            : ${m.idProofPath?.split('/').last ?? '—'}\n'
+      '║    passport_photo      : ${m.photoPath?.split('/').last ?? '—'}\n'
+      '╠══════════════════════════════════════════════════════════╣\n'
+      '║  STEP 4 — COURSE\n'
+      '║    enrollment          : ${m.enrollment ?? '—'}\n'
+      '║    course              : ${m.course ?? '—'}\n'
+      '║    batch               : ${m.batch ?? '—'}\n'
+      '║    confirmed           : $confirmationChecked\n'
+      '╚══════════════════════════════════════════════════════════╝',
+      name: '📋 NACTET.Step$step',
+    );
   }
 
   @override
