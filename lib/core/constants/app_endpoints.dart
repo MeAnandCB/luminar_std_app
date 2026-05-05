@@ -27,6 +27,9 @@ class AppEndpoints {
       '/api/student/profile/'; // Suffix with {id}/update/.
   // Academic & Misc
   static const String qualifications = '/api/public/lead/qualifications/';
+  static const String publicCourses = '/api/public/courses/';
+  static const String referralSubmit = '/api/hooks/referral-lead/';
+  static const String referredStudents = '/api/student/'; // Suffix with {student_id}/referred-students/
   static const String specializations = '/api/specializations/list/';
   static const String pincode =
       '/api/postal-pincode/'; // Suffix with {pincode}/
@@ -83,7 +86,8 @@ class AppEndpoints {
 }
 
 class GlobalLinks {
-  static const String baseUrl = 'https://api.crm.luminartechnohub.com';
-  //static const String baseUrl = 'http://192.168.1.41:8000';
-  static const String websocketUrl = 'wss://api.crm.luminartechnohub.com/ws/';
+  // static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
+  static const String baseUrl = 'http://192.168.1.34:8000';
+  static const String websocketUrl =
+      'wss://api.crm.dev.luminartechnohub.com/ws/';
 }

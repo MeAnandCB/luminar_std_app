@@ -78,3 +78,39 @@ class SpecializationResponse {
     );
   }
 }
+
+class PublicCourse {
+  final int id;
+  final String courseName;
+
+  PublicCourse({
+    required this.id,
+    required this.courseName,
+  });
+
+  factory PublicCourse.fromJson(Map<String, dynamic> json) {
+    return PublicCourse(
+      id: json['id'],
+      courseName: json['course_name'],
+    );
+  }
+}
+
+class PublicCourseResponse {
+  final String status;
+  final List<PublicCourse> courses;
+
+  PublicCourseResponse({
+    required this.status,
+    required this.courses,
+  });
+
+  factory PublicCourseResponse.fromJson(Map<String, dynamic> json) {
+    return PublicCourseResponse(
+      status: json['status'],
+      courses: (json['courses'] as List)
+          .map((i) => PublicCourse.fromJson(i))
+          .toList(),
+    );
+  }
+}

@@ -18,6 +18,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:luminar_std/presentation/nactet_registration/view/nactet_registration_screen.dart';
 import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 import 'package:luminar_std/repository/nactet_registration/model/nactet_check_display_model.dart';
+import 'package:luminar_std/presentation/referral_screen/referral_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -207,6 +208,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         ),
                         const SizedBox(height: 14),
                         _buildSocialSection(),
+                        const SizedBox(height: 28),
+                        _buildReferralCard(),
                         const SizedBox(height: 32),
                       ],
                     ],
@@ -467,6 +470,127 @@ class _StudentDashboardState extends State<StudentDashboard> {
           onTap: () => _launchSocial(platforms[i].url),
         ),
       ),
+    );
+  }
+
+  // ============== REFERRAL CARD SECTION ==============
+
+  Widget _buildReferralCard() {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        final profile = authProvider.studentData?.profile;
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ReferralScreen(
+                  referrerName: profile?.fullName,
+                  referrerPhone: profile?.phone,
+                ),
+              ),
+            );
+          },
+          child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6C5CE7), Color(0xFF9B8FFF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6C5CE7).withValues(alpha: 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              right: -10,
+              bottom: -15,
+              child: Icon(
+                Icons.redeem_rounded,
+                size: 100,
+                color: Colors.white.withValues(alpha: 0.15),
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
+                      SizedBox(width: 4),
+                      Text(
+                        'REFER & EARN',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Refer your friend,\nearn your pocket money!',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Invite Now',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF6C5CE7),
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 16,
+                        color: Color(0xFF6C5CE7),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+      },
     );
   }
 

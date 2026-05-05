@@ -39,4 +39,22 @@ class AcademicInfoService {
       );
     }
   }
+
+  Future<ApiResponse<PublicCourseResponse>> getPublicCourses() async {
+    final response = await ApiService().get(
+      endpoint: AppEndpoints.publicCourses,
+    );
+
+    if (response.success && response.data != null) {
+      return ApiResponse.success(
+        PublicCourseResponse.fromJson(response.data),
+        response.statusCode ?? 200,
+      );
+    } else {
+      return ApiResponse.error(
+        response.message ?? 'Failed to fetch courses',
+        response.statusCode,
+      );
+    }
+  }
 }

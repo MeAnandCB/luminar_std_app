@@ -13,6 +13,7 @@ import 'package:luminar_std/presentation/exam_screen/exam_screen.dart';
 import 'package:luminar_std/presentation/test_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:luminar_std/presentation/referral_status_screen/referral_status_screen.dart';
 
 // ─── palette ─────────────────────────────────────────────────────────────────
 // ─── palette ─────────────────────────────────────────────────────────────────
@@ -83,6 +84,13 @@ const _kFeatures = [
     'Practice HR, Behavioral, Situational and common Q&A',
     Color(0xFFEC4899),
     Color(0xFFF472B6),
+  ),
+  _Feature(
+    Icons.people_alt_rounded,
+    'Referral Status',
+    'Track the status of your referred leads',
+    Color(0xFF8B5CF6),
+    Color(0xFFA78BFA),
   ),
 ];
 
@@ -461,7 +469,7 @@ class _EnrollmentPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    AppConfig.hidePayments ? '5 features' : '6 features',
+                    AppConfig.hidePayments ? '6 features' : '7 features',
                     style: TextStyle(
                       fontSize: 11,
                       color: _kPrimary,
@@ -592,6 +600,25 @@ class _EnrollmentPage extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => const InterviewPrepScreen(),
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: 12),
+              _FeatureCard(
+                feature: _kFeatures[6],
+                onTap: () {
+                  final studentId = dashCtrl.dashboard?.studentDetails?.basicInfo?.studentId;
+                  if (studentId == null || studentId.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Student ID not found')),
+                    );
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ReferralStatusScreen(studentId: studentId),
                     ),
                   );
                 },
