@@ -7,9 +7,9 @@ import 'package:luminar_std/repository/shared_pref.dart';
 class ReferralStatusService {
   final ApiService _apiService = ApiService();
 
-  Future<ReferredStudentsModel?> getReferredStudents(String studentId) async {
+  Future<ReferredStudentsModel?> getReferredStudentsHistory() async {
     try {
-      final endpoint = '${AppEndpoints.referredStudents}$studentId/referred-students/';
+      final endpoint = AppEndpoints.referredStudentsHistory;
       
       final token = await SharedPrefService.getAccessToken();
       
@@ -21,11 +21,34 @@ class ReferralStatusService {
       if (response.success && response.data != null) {
         return ReferredStudentsModel.fromJson(response.data);
       } else {
-        debugPrint('Failed to fetch referred students: ${response.message}');
+        debugPrint('Failed to fetch referred history: ${response.message}');
         return null;
       }
     } catch (e, stack) {
-      debugPrint('Error in ReferralStatusService: $e\n$stack');
+      debugPrint('Error in ReferralStatusService History: $e\n$stack');
+      return null;
+    }
+  }
+
+  Future<ReferredStudentsModel?> getReferredStudentsEnrolled(String studentId) async {
+    try {
+      final endpoint = '${AppEndpoints.referredStudentsEnrolled}$studentId/referred-students/';
+      
+      final token = await SharedPrefService.getAccessToken();
+      
+      final response = await _apiService.get(
+        endpoint: endpoint,
+        token: token,
+      );
+
+      if (response.success && response.data != null) {
+        return ReferredStudentsModel.fromJson(response.data);
+      } else {
+        debugPrint('Failed to fetch enrolled students: ${response.message}');
+        return null;
+      }
+    } catch (e, stack) {
+      debugPrint('Error in ReferralStatusService Enrolled: $e\n$stack');
       return null;
     }
   }
