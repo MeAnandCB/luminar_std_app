@@ -7,8 +7,11 @@ import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bo
 import 'package:luminar_std/presentation/home_screen/widget/natet_certificate.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
+
+import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/home_screen/widget/header_card.dart';
+import 'package:luminar_std/presentation/global_widget/festival_overlay.dart';
 import 'package:luminar_std/presentation/home_screen/widget/top_status_card.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -69,152 +72,186 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
     final dashboardProvider = Provider.of<DashboardController>(context);
+    final profileProvider = Provider.of<ProfileController>(context);
     final dashboard = dashboardProvider.dashboard;
 
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         // Get student name directly from provider — no setState needed
-        final studentName = (authProvider.studentData?.profile.fullName ?? '').isNotEmpty
+        final studentName =
+            (authProvider.studentData?.profile.fullName ?? '').isNotEmpty
             ? authProvider.studentData!.profile.fullName
             : _displayName;
 
-        return Scaffold(
-          backgroundColor: AppColors.scaffoldBackground,
-          body: dashboardProvider.isLoading
-              ? const DashboardShimmer()
-              : dashboardProvider.error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          AppUtils.friendlyError(
-                                dashboardProvider.error!,
-                              ).contains('internet')
-                              ? Icons.wifi_off_rounded
-                              : Icons.error_outline_rounded,
-                          size: 72,
-                          color: AppColors.error,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          AppUtils.friendlyError(
-                                dashboardProvider.error!,
-                              ).contains('internet')
-                              ? 'No Internet Connection'
-                              : 'Something Went Wrong',
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.headerName.copyWith(
-                            fontSize: 18,
+        final themeInfo = FestivalDateManager.getCurrentThemeInfo();
+
+        return FestivalOverlay(
+          theme: themeInfo.theme,
+          titleOverride: themeInfo.titleOverride,
+          defaultBackgroundColor: AppColors.scaffoldBackground,
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: dashboardProvider.isLoading
+                ? const DashboardShimmer()
+                : dashboardProvider.error != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            AppUtils.friendlyError(
+                                  dashboardProvider.error!,
+                                ).contains('internet')
+                                ? Icons.wifi_off_rounded
+                                : Icons.error_outline_rounded,
+                            size: 72,
+                            color: AppColors.error,
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          AppUtils.friendlyError(dashboardProvider.error!),
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.activitySubtitle,
-                        ),
-                        const SizedBox(height: 28),
-                        ElevatedButton.icon(
-                          onPressed: () => dashboardProvider.refreshDashboard(
-                            context: context,
-                          ),
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text('Try Again'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: AppColors.white,
-                            minimumSize: const Size(180, 46),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                          const SizedBox(height: 20),
+                          Text(
+                            AppUtils.friendlyError(
+                                  dashboardProvider.error!,
+                                ).contains('internet')
+                                ? 'No Internet Connection'
+                                : 'Something Went Wrong',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.headerName.copyWith(
+                              fontSize: 18,
                             ),
                           ),
+                          const SizedBox(height: 10),
+                          Text(
+                            AppUtils.friendlyError(dashboardProvider.error!),
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.activitySubtitle,
+                          ),
+                          const SizedBox(height: 28),
+                          ElevatedButton.icon(
+                            onPressed: () => dashboardProvider.refreshDashboard(
+                              context: context,
+                            ),
+                            icon: const Icon(Icons.refresh_rounded, size: 18),
+                            label: const Text('Try Again'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.white,
+                              minimumSize: const Size(180, 46),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        HeaderWidget(
+                          courseName:
+                              dashboard
+                                      ?.enrollmentDetails
+                                      ?.enrollments
+                                      ?.isNotEmpty ==
+                                  true
+                              ? dashboard
+                                        ?.enrollmentDetails
+                                        ?.enrollments
+                                        ?.first
+                                        .courseInfo
+                                        ?.courseName ??
+                                    ''
+                              : '',
+                          studentName: studentName,
+                          provider: dashboardProvider,
                         ),
+                        const SizedBox(height: 12),
+                        StatusCard(
+                          status:
+                              dashboard
+                                  ?.studentDetails
+                                  ?.statusInfo
+                                  ?.currentStatus
+                                  ?.name ??
+                              'Active',
+                        ),
+
+                        // ── BIRTHDAY CARD ──────────────────────────────────────────
+                        if (_isBirthday(
+                          profileProvider
+                              .profileData
+                              ?.personalInfo
+                              ?.dateOfBirth,
+                        )) ...[
+                          const SizedBox(height: 20),
+                          _buildBirthdayCard(studentName.split(' ').first),
+                        ],
+
+                        // ── END TEST ──────────────────────────────────────────
+                        if (dashboardProvider.shouldShowNactetBanner) ...[
+                          const SizedBox(height: 28),
+                          _buildSectionHeading(
+                            'NACTET Registration',
+                            'Complete your registration below',
+                          ),
+                          const SizedBox(height: 14),
+                          NactetBanner(
+                            pendingCount: dashboardProvider.pendingNactetCount,
+                            onFormTap: () => _onNactetFormTap(
+                              context,
+                              dashboardProvider.nactetStatus?.enrollments ?? [],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 14),
+                        _buildSectionHeading(
+                          'My Courses',
+                          'Your active enrollments',
+                        ),
+                        const SizedBox(height: 14),
+                        if (dashboard != null) ...[
+                          _buildCourseCard(dashboard),
+
+                          const SizedBox(height: 28),
+                          _buildSectionHeading(
+                            'Financial Overview',
+                            'Fees & payment summary',
+                          ),
+                          const SizedBox(height: 14),
+                          _buildQuickStatsGrid(dashboard),
+                          const SizedBox(height: 28),
+                          _buildSectionHeading('Referral', 'Earn rewards'),
+                          const SizedBox(height: 14),
+                          _buildReferralCard(),
+                          const SizedBox(height: 28),
+                          _buildSectionHeading(
+                            'Latest Updates',
+                            'News & announcements',
+                          ),
+                          const SizedBox(height: 14),
+                          const AdvancedInstaCarousel(),
+                          const SizedBox(height: 28),
+                          _buildSectionHeading(
+                            'Follow Us',
+                            'Stay connected with Luminar',
+                          ),
+                          const SizedBox(height: 14),
+                          _buildSocialSection(),
+
+                          const SizedBox(height: 32),
+                        ],
                       ],
                     ),
                   ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      HeaderWidget(
-                        courseName: dashboard?.enrollmentDetails?.enrollments?.isNotEmpty == true
-                            ? dashboard?.enrollmentDetails?.enrollments?.first.courseInfo?.courseName ?? ''
-                            : '',
-                        studentName: studentName,
-                        provider: dashboardProvider,
-                      ),
-                      const SizedBox(height: 12),
-                      StatusCard(
-                        status:
-                            dashboard
-                                ?.studentDetails
-                                ?.statusInfo
-                                ?.currentStatus
-                                ?.name ??
-                            'Active',
-                      ),
-
-                      // ── END TEST ──────────────────────────────────────────
-                      if (dashboardProvider.shouldShowNactetBanner) ...[
-                        const SizedBox(height: 28),
-                        _buildSectionHeading(
-                          'NACTET Registration',
-                          'Complete your registration below',
-                        ),
-                        const SizedBox(height: 14),
-                        NactetBanner(
-                          pendingCount: dashboardProvider.pendingNactetCount,
-                          onFormTap: () => _onNactetFormTap(
-                            context,
-                            dashboardProvider.nactetStatus?.enrollments ?? [],
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 14),
-                      _buildSectionHeading(
-                        'My Courses',
-                        'Your active enrollments',
-                      ),
-                      const SizedBox(height: 14),
-                      if (dashboard != null) ...[
-                        _buildCourseCard(dashboard),
-
-                        const SizedBox(height: 28),
-                        _buildSectionHeading(
-                          'Financial Overview',
-                          'Fees & payment summary',
-                        ),
-                        const SizedBox(height: 14),
-                        _buildQuickStatsGrid(dashboard),
-                        const SizedBox(height: 28),
-                        _buildSectionHeading(
-                          'Latest Updates',
-                          'News & announcements',
-                        ),
-                        const SizedBox(height: 14),
-                        const AdvancedInstaCarousel(),
-                        const SizedBox(height: 28),
-                        _buildSectionHeading(
-                          'Follow Us',
-                          'Stay connected with Luminar',
-                        ),
-                        const SizedBox(height: 14),
-                        _buildSocialSection(),
-                        const SizedBox(height: 28),
-                        _buildReferralCard(),
-                        const SizedBox(height: 32),
-                      ],
-                    ],
-                  ),
-                ),
+          ),
         );
       },
     );
@@ -235,7 +272,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
         ),
       ).then((_) {
         if (context.mounted) {
-          Provider.of<DashboardController>(context, listen: false).getNactetStatus();
+          Provider.of<DashboardController>(
+            context,
+            listen: false,
+          ).getNactetStatus();
         }
       });
     } else {
@@ -423,7 +463,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
         handle: 'luminartechnolab.com',
         tag: 'Visit us online',
         url: 'https://www.luminartechnolab.com/',
-        gradientColors: [Color(0xFF1E3A5F), Color(0xFF1565C0), Color(0xFF2196F3)],
+        gradientColors: [
+          Color(0xFF1E3A5F),
+          Color(0xFF1565C0),
+          Color(0xFF2196F3),
+        ],
         icon: Icons.language_rounded,
         accentIcon: Icons.open_in_new_rounded,
       ),
@@ -431,8 +475,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
         label: 'LinkedIn',
         handle: 'luminartechnolab',
         tag: 'Connect & network',
-        url: 'https://www.linkedin.com/company/luminartechnolab/posts/?feedView=all',
-        gradientColors: [Color(0xFF003C71), Color(0xFF0072B1), Color(0xFF0A88D1)],
+        url:
+            'https://www.linkedin.com/company/luminartechnolab/posts/?feedView=all',
+        gradientColors: [
+          Color(0xFF003C71),
+          Color(0xFF0072B1),
+          Color(0xFF0A88D1),
+        ],
         icon: Icons.work_rounded,
         accentIcon: Icons.people_rounded,
         badge: 'in',
@@ -442,7 +491,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
         handle: '@luminartechnolab',
         tag: 'Photos & Reels',
         url: 'https://www.instagram.com/luminartechnolab',
-        gradientColors: [Color(0xFF833AB4), Color(0xFFE1306C), Color(0xFFF77737)],
+        gradientColors: [
+          Color(0xFF833AB4),
+          Color(0xFFE1306C),
+          Color(0xFFF77737),
+        ],
         icon: Icons.camera_alt_rounded,
         accentIcon: Icons.favorite_rounded,
       ),
@@ -451,7 +504,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
         handle: '@LuminarTechnolab',
         tag: 'Tutorials & Demos',
         url: 'https://www.youtube.com/@LuminarTechnolab',
-        gradientColors: [Color(0xFF7F0000), Color(0xFFCC0000), Color(0xFFFF3D3D)],
+        gradientColors: [
+          Color(0xFF7F0000),
+          Color(0xFFCC0000),
+          Color(0xFFFF3D3D),
+        ],
         icon: Icons.play_circle_filled_rounded,
         accentIcon: Icons.subscriptions_rounded,
       ),
@@ -492,104 +549,114 @@ class _StudentDashboardState extends State<StudentDashboard> {
             );
           },
           child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6C5CE7), Color(0xFF9B8FFF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6C5CE7).withValues(alpha: 0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned(
-              right: -10,
-              bottom: -15,
-              child: Icon(
-                Icons.redeem_rounded,
-                size: 100,
-                color: Colors.white.withValues(alpha: 0.15),
+            width: double.infinity,
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF6C5CE7), Color(0xFF9B8FFF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
-                      SizedBox(width: 4),
-                      Text(
-                        'REFER & EARN',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Refer your friend,\nearn your pocket money!',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Invite Now',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF6C5CE7),
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 16,
-                        color: Color(0xFF6C5CE7),
-                      ),
-                    ],
-                  ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6C5CE7).withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-    );
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  right: -10,
+                  bottom: -15,
+                  child: Icon(
+                    Icons.redeem_rounded,
+                    size: 100,
+                    color: Colors.white.withValues(alpha: 0.15),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.star_rounded,
+                            color: Color(0xFFFFD700),
+                            size: 14,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'REFER & EARN',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Refer your friend,\nearn your pocket money!',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Invite Now',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF6C5CE7),
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 16,
+                            color: Color(0xFF6C5CE7),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }
@@ -714,6 +781,126 @@ class _StudentDashboardState extends State<StudentDashboard> {
       return DateFormat('MMM d').format(date);
     }
   }
+
+  // ============== BIRTHDAY CARD ==============
+  bool _isBirthday(DateTime? dob) {
+    if (dob == null) {
+      debugPrint('🎉 Birthday Check: DOB from Profile API is NULL!');
+      return false;
+    }
+
+    final now = DateTime.now();
+    debugPrint(
+      '🎉 Birthday Check: DOB = ${dob.month}/${dob.day} | Today = ${now.month}/${now.day}',
+    );
+    return dob.month == now.month && dob.day == now.day;
+  }
+
+  Widget _buildBirthdayCard(String name) {
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF758C), Color(0xFFFF7EB3)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF758C).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Background decorations
+          Positioned(
+            top: -20,
+            right: -20,
+            child: Text(
+              "🎈",
+              style: TextStyle(
+                fontSize: 80,
+                color: Colors.white.withOpacity(0.15),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -10,
+            right: 40,
+            child: Text(
+              "✨",
+              style: TextStyle(
+                fontSize: 50,
+                color: Colors.white.withOpacity(0.15),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 20,
+            left: 150,
+            child: Text(
+              "🎉",
+              style: TextStyle(
+                fontSize: 40,
+                color: Colors.white.withOpacity(0.15),
+              ),
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.25),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.cake_rounded,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Happy Birthday!',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Wishing you an amazing day and a wonderful year ahead, $name!',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ============================================================
@@ -782,7 +969,10 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
       children: [
         // ── Card PageView ─────────────────────────────────────
         SizedBox(
-          height: (MediaQuery.of(context).size.height * 0.42).clamp(290.0, 370.0),
+          height: (MediaQuery.of(context).size.height * 0.42).clamp(
+            290.0,
+            370.0,
+          ),
           child: PageView.builder(
             controller: _pageController,
             scrollDirection: Axis.horizontal,
@@ -1500,7 +1690,11 @@ class _SocialCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 2),
-                Icon(Icons.arrow_forward_rounded, size: 12, color: p.gradientColors.first),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 12,
+                  color: p.gradientColors.first,
+                ),
               ],
             ),
           ],
@@ -1703,7 +1897,10 @@ class _EnrollmentSelectionSheet extends StatelessWidget {
                           ),
                         ).then((_) {
                           if (context.mounted) {
-                            Provider.of<DashboardController>(context, listen: false).getNactetStatus();
+                            Provider.of<DashboardController>(
+                              context,
+                              listen: false,
+                            ).getNactetStatus();
                           }
                         });
                       },

@@ -57,7 +57,7 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
   Future<void> fetchInstagramImages({bool reset = false}) async {
     try {
       String token =
-          "IGAARYxzHq6nZABZAGFVT20xVmpnZA29hUmFzZAERhM3J4WTQ3WmpYMVhQRnoxSmdSYVhiQUpJYUpXem1ldzFFX1VabTFIOWQydEZAOTXU0aHBQTWhBbGZARR25PUEQ1VTlPYUl4dnZAEZAzVhNm10djdnOGlmTU5MVnNOcXZAMOEd3cUZABVQZDZD";
+          "IGAARYxzHq6nZABZAGFfckFSV3RUcHlHcy1QZAUxsQk85LU05QVhjYllIQzZAtdnpiM3ZAyRHRtNkI3X1JvYUlYVEE0LXdVTFhZAbU9rQWx0QXBwa2xoclNHNTZASUkEySjRfY1hYLXpFZA2liUnhmYlVFY09ZAMHR2aGxkby1acjdJc242bwZDZD";
 
       String? requestUrl =
           nextUrl ??
