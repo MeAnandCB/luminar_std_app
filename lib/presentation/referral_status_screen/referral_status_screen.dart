@@ -3,7 +3,9 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 import 'package:luminar_std/repository/referral_status/model/referred_students_model.dart';
 import 'package:luminar_std/repository/referral_status/service/referral_status_service.dart';
-
+import 'package:provider/provider.dart';
+import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
+import 'package:luminar_std/presentation/referral_screen/referral_screen.dart';
 class ReferralStatusScreen extends StatefulWidget {
   final String studentId;
 
@@ -112,6 +114,23 @@ class _ReferralStatusScreenState extends State<ReferralStatusScreen> {
             _buildTabBody(_isLoadingHistory, _historyData, _fetchHistory),
             _buildTabBody(_isLoadingEnrolled, _enrolledData, _fetchEnrolled),
           ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+            final profile = authProvider.studentData?.profile;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ReferralScreen(
+                  referrerName: profile?.fullName,
+                  referrerPhone: profile?.phone,
+                ),
+              ),
+            );
+          },
+          backgroundColor: AppColors.primary,
+          child: const Icon(Icons.add, color: Colors.white),
         ),
       ),
     );
@@ -277,13 +296,40 @@ class _ReferralStatusScreenState extends State<ReferralStatusScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Invite your friends to join our programs and start earning rewards!',
+              'Add your friends to get pocket money...',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey.shade600,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final profile = authProvider.studentData?.profile;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ReferralScreen(
+                      referrerName: profile?.fullName,
+                      referrerPhone: profile?.phone,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add, size: 20),
+              label: const Text('Add Referral', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                elevation: 2,
+              ),
             ),
           ],
         ),
