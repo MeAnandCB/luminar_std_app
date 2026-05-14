@@ -205,7 +205,7 @@ class FolderBrowserProvider with ChangeNotifier {
 
   // Load folder contents (subfolders and videos)
   Future<void> _loadFolderContents({
-    required String folderUid,
+    String? folderUid,
     required String folderName,
     int videoPage = 1,
     bool refresh = false,
@@ -280,14 +280,14 @@ class FolderBrowserProvider with ChangeNotifier {
 
   // Load next page of videos for current folder
   Future<void> loadNextVideoPage() async {
-    if (!_hasMoreVideos || _isLoadingMore || currentFolderUid == null) return;
+    if (!_hasMoreVideos || _isLoadingMore) return;
 
     _isLoadingMore = true;
     notifyListeners();
 
     await _loadFolderContents(
-      folderUid: currentFolderUid!,
-      folderName: currentFolderName ?? '',
+      folderUid: currentFolderUid,
+      folderName: currentFolderName ?? 'Root',
       videoPage: _currentVideoPage + 1,
     );
 

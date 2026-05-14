@@ -274,13 +274,6 @@ class _MyAppState extends State<MyApp> {
                 ),
               ),
               const SizedBox(height: 10),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(
-                  'Later',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-                ),
-              ),
             ],
           ),
         ),
