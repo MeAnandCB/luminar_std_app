@@ -52,7 +52,7 @@ class _ExamScreenState extends State<ExamScreen> {
     if (attemptUid != null && attemptUid.isNotEmpty) {
       final payload = {
         'records': [
-          {'attempt_uid': attemptUid, 'is_visible_to_student': true},
+          {'attempt_uid': attemptUid, 'is_visible_to_student': false},
         ],
       };
       debugPrint('══════════════════════════════════════════');
@@ -62,6 +62,7 @@ class _ExamScreenState extends State<ExamScreen> {
       final response = await ExamService().markVisibility(
         sessionUid: session.uid,
         attemptUid: attemptUid,
+        isVisibleToStudent: false,
       );
 
       if (!mounted) return; // widget may have been disposed during the await

@@ -75,6 +75,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   bool _isUploading = false;
   double _uploadProgress = 0.0;
   String? _uploadingFileName;
+  int _uploadCurrentIndex = 0;
+  int _uploadTotalFiles = 0;
   late FileUploadService _fileUploadService;
 
   bool _isPicking = false;
@@ -737,23 +739,20 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
-  // ── Gallery image picker ────────────────────────────────────────────────────
-  // Uses image_picker for JPEG/PNG/WEBP (with quality compression)
-  // Falls back to FilePicker for HEIC and other raw formats
   Future<void> _pickImages() async {
     if (_isPicking) return;
     setState(() => _isPicking = true);
     try {
       final picker = ImagePicker();
-      // Pick single image — goes to caption sheet before sending
-      final XFile? picked = await picker.pickImage(
-        source: ImageSource.gallery,
+      final List<XFile> pickedFiles = await picker.pickMultiImage(
         imageQuality: 90,
         maxWidth: 2048,
         maxHeight: 2048,
       );
-      if (picked == null) return;
-      if (mounted) _showImageCaptionSheet(File(picked.path));
+      if (pickedFiles.isEmpty) return;
+      
+      final files = pickedFiles.map((x) => File(x.path)).toList();
+      if (mounted) _showImageCaptionSheet(files);
     } on PlatformException catch (e) {
       debugPrint('[Picker] image gallery PlatformException: $e');
       // Fallback: use FilePicker which supports HEIC/WEBP/RAW
@@ -783,15 +782,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           'bmp',
         ],
         withData: false,
-        allowMultiple: false,
+        allowMultiple: true,
       );
       if (result == null || result.files.isEmpty) return;
-      final file = await _resolvePickedFile(result.files.single);
-      if (file == null) {
-        if (mounted) _showErrorSnackbar('Could not read image file.');
-        return;
+
+      final List<File> files = [];
+      for (final pf in result.files) {
+        final f = await _resolvePickedFile(pf);
+        if (f != null) files.add(f);
       }
-      if (mounted) _showImageCaptionSheet(file);
+      if (files.isEmpty) return;
+      
+      if (mounted) _showImageCaptionSheet(files);
     } catch (e) {
       debugPrint('[Picker] FilePicker image fallback error: $e');
       if (mounted) _showErrorSnackbar('Could not open gallery');
@@ -810,7 +812,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         maxHeight: 1920,
       );
       if (picked == null) return;
-      if (mounted) _showImageCaptionSheet(File(picked.path));
+      if (mounted) _showImageCaptionSheet([File(picked.path)]);
     } on PlatformException catch (e) {
       debugPrint('[Picker] PlatformException (_pickImage): $e');
       if (mounted) _showErrorSnackbar('Could not open camera');
@@ -821,18 +823,42 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _showImageCaptionSheet(File imageFile) {
+  void _showImageCaptionSheet(List<File> files) {
     _captionController.clear();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _ImageCaptionSheet(
-        imageFile: imageFile,
+        files: files,
         captionController: _captionController,
-        onSend: (caption) {
+        onSend: (finalFiles, caption) async {
           Navigator.pop(context);
-          _uploadAndSendFile(imageFile, 'image', caption: caption.trim());
+          if (finalFiles.isEmpty) return;
+          
+          if (mounted) {
+            setState(() {
+              _uploadCurrentIndex = 0;
+              _uploadTotalFiles = finalFiles.length;
+            });
+          }
+          
+          for (int i = 0; i < finalFiles.length; i++) {
+            if (!mounted) break;
+            setState(() => _uploadCurrentIndex = i + 1);
+            
+            // Only send caption on the FIRST file
+            final sendCaption = (i == 0) ? caption.trim() : '';
+            
+            await _uploadAndSendFile(finalFiles[i], 'file', caption: sendCaption);
+          }
+          
+          if (mounted) {
+            setState(() {
+              _uploadTotalFiles = 0;
+              _uploadCurrentIndex = 0;
+            });
+          }
         },
         onCancel: () => Navigator.pop(context),
       ),
@@ -850,7 +876,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         maxDuration: const Duration(minutes: 10),
       );
       if (picked == null) return;
-      await _uploadAndSendFile(File(picked.path), 'file');
+      if (mounted) _showImageCaptionSheet([File(picked.path)]);
     } on PlatformException catch (e) {
       debugPrint('[Picker] video: $e');
       _showErrorSnackbar('Could not open video picker');
@@ -869,19 +895,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         type: FileType.custom,
         allowedExtensions: extensions,
         withData: false,
-        allowMultiple: false,
+        allowMultiple: true,
       );
       if (result == null || result.files.isEmpty) return;
 
-      final pf = result.files.single;
-      final file = await _resolvePickedFile(pf);
-      if (file == null) {
-        _showErrorSnackbar('Could not read file. Try again.');
-        return;
+      final List<File> files = [];
+      for (final pf in result.files) {
+        final f = await _resolvePickedFile(pf);
+        if (f != null) files.add(f);
       }
+      if (files.isEmpty) return;
 
-      debugPrint('[Picker] resolved path: ${file.path}');
-      await _uploadAndSendFile(file, 'file');
+      if (mounted) _showImageCaptionSheet(files);
     } on PlatformException catch (e) {
       debugPrint('[Picker] custom ext $extensions: $e');
       _showErrorSnackbar('Could not open file picker');
@@ -902,25 +927,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
         withData: false,
-        allowMultiple: false,
+        allowMultiple: true,
       );
       if (result == null || result.files.isEmpty) return;
 
-      final pf = result.files.single;
-      final file = await _resolvePickedFile(pf);
-      if (file == null) {
-        _showErrorSnackbar('Could not read file. Try again.');
-        return;
+      final List<File> files = [];
+      for (final pf in result.files) {
+        final f = await _resolvePickedFile(pf);
+        if (f != null) files.add(f);
       }
+      if (files.isEmpty) return;
 
-      debugPrint('[Picker] any file resolved: ${file.path}');
-      final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
-
-      if (mimeType.startsWith('image/')) {
-        if (mounted) _showImageCaptionSheet(file);
-      } else {
-        await _uploadAndSendFile(file, 'file');
-      }
+      if (mounted) _showImageCaptionSheet(files);
     } on PlatformException catch (e) {
       debugPrint('[Picker] any file: $e');
       _showErrorSnackbar('Could not open file picker');
@@ -941,19 +959,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.audio,
         withData: false,
-        allowMultiple: false,
+        allowMultiple: true,
       );
       if (result == null || result.files.isEmpty) return;
 
-      final pf = result.files.single;
-      final file = await _resolvePickedFile(pf);
-      if (file == null) {
-        _showErrorSnackbar('Could not read audio file.');
-        return;
+      final List<File> files = [];
+      for (final pf in result.files) {
+        final f = await _resolvePickedFile(pf);
+        if (f != null) files.add(f);
       }
+      if (files.isEmpty) return;
 
-      debugPrint('[Picker] audio resolved: ${file.path}');
-      await _uploadAndSendFile(file, 'audio');
+      if (mounted) _showImageCaptionSheet(files);
     } on PlatformException catch (e) {
       debugPrint('[Picker] PlatformException (_pickAudio): $e');
     } catch (e) {
@@ -1362,6 +1379,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   // ── Upload progress overlay ────────────────────────────────────────────────
   Widget _buildUploadProgressOverlay() {
     if (!_isUploading) return const SizedBox.shrink();
+
+    final progressText = _uploadTotalFiles > 1 
+        ? 'Uploading $_uploadCurrentIndex/$_uploadTotalFiles: ${_uploadingFileName ?? "file"}…'
+        : 'Uploading ${_uploadingFileName ?? "file"}…';
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -1394,7 +1416,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Uploading ${_uploadingFileName ?? "file"}…',
+                  progressText,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -2621,7 +2643,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   Widget _buildImageContent(Message message) {
     if (message.uid.startsWith('upload_') && message.mediaUrl == null) {
       return Container(
-        height: 160,
+        height: 240,
+        width: 240,
         decoration: BoxDecoration(
           color: Colors.grey.shade200,
           borderRadius: BorderRadius.circular(10),
@@ -2653,7 +2676,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final url = message.mediaUrl;
     if (url == null) {
       return Container(
-        height: 120,
+        height: 240,
+        width: 240,
         decoration: BoxDecoration(
           color: Colors.grey.shade200,
           borderRadius: BorderRadius.circular(10),
@@ -2680,7 +2704,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(10),
                 child: Image.network(
                   url,
-                  width: double.infinity,
+                  width: 240,
+                  height: 240,
                   fit: BoxFit.cover,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
@@ -2689,7 +2714,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                               loadingProgress.expectedTotalBytes!
                         : null;
                     return Container(
-                      height: 180,
+                      height: 240,
+                      width: 240,
                       color: Colors.grey.shade200,
                       child: Center(
                         child: Column(
@@ -2720,7 +2746,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     );
                   },
                   errorBuilder: (_, __, ___) => Container(
-                    height: 120,
+                    height: 240,
+                    width: 240,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(10),
@@ -4610,13 +4637,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
 // ── Image caption bottom sheet ────────────────────────────────────────────────
 class _ImageCaptionSheet extends StatefulWidget {
-  final File imageFile;
+  final List<File> files;
   final TextEditingController captionController;
-  final void Function(String caption) onSend;
+  final void Function(List<File> finalFiles, String caption) onSend;
   final VoidCallback onCancel;
 
   const _ImageCaptionSheet({
-    required this.imageFile,
+    required this.files,
     required this.captionController,
     required this.onSend,
     required this.onCancel,
@@ -4627,10 +4654,38 @@ class _ImageCaptionSheet extends StatefulWidget {
 }
 
 class _ImageCaptionSheetState extends State<_ImageCaptionSheet> {
+  late List<File> _currentFiles;
+
   @override
   void initState() {
     super.initState();
+    _currentFiles = List.from(widget.files);
     widget.captionController.addListener(() => setState(() {}));
+  }
+
+  Widget _buildFilePreview(File file, {BoxFit fit = BoxFit.cover, double? width}) {
+    final ext = pathLib.extension(file.path).toLowerCase();
+    if (['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic'].contains(ext)) {
+      return Image.file(file, fit: fit, width: width);
+    } else if (['.mp4', '.mov', '.avi', '.mkv'].contains(ext)) {
+      return Container(
+        width: width,
+        color: Colors.black87,
+        child: const Icon(Icons.videocam_rounded, color: Colors.white, size: 32),
+      );
+    } else if (['.mp3', '.wav', '.aac', '.m4a'].contains(ext)) {
+      return Container(
+        width: width,
+        color: Colors.blue.shade100,
+        child: Icon(Icons.audiotrack_rounded, color: Colors.blue.shade600, size: 32),
+      );
+    } else {
+      return Container(
+        width: width,
+        color: Colors.grey.shade200,
+        child: Icon(Icons.insert_drive_file, color: Colors.grey.shade500, size: 32),
+      );
+    }
   }
 
   @override
@@ -4679,9 +4734,9 @@ class _ImageCaptionSheetState extends State<_ImageCaptionSheet> {
                     ),
                     onPressed: widget.onCancel,
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Send Image',
+                      _currentFiles.length > 1 ? 'Send ${_currentFiles.length} Files' : 'Send File',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
@@ -4694,23 +4749,93 @@ class _ImageCaptionSheetState extends State<_ImageCaptionSheet> {
               ),
             ),
 
-            // ── Image preview — shrinks when keyboard opens ───────────────
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
+            // ── Previews ───────────────────────────────────────────────
+            Container(
+              height: 80,
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              constraints: BoxConstraints(maxHeight: imageMaxHeight),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                color: Colors.black,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: Image.file(
-                  widget.imageFile,
-                  fit: BoxFit.contain,
-                  width: double.infinity,
-                ),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _currentFiles.length < 10 ? _currentFiles.length + 1 : _currentFiles.length,
+                itemBuilder: (context, index) {
+                  if (index == _currentFiles.length) {
+                    return GestureDetector(
+                      onTap: () async {
+                        try {
+                          final picker = ImagePicker();
+                          final pickedFiles = await picker.pickMultiImage(
+                            imageQuality: 90,
+                            maxWidth: 2048,
+                            maxHeight: 2048,
+                          );
+                          if (pickedFiles.isNotEmpty) {
+                            setState(() {
+                              for (var p in pickedFiles) {
+                                if (_currentFiles.length < 10) {
+                                  _currentFiles.add(File(p.path));
+                                }
+                              }
+                            });
+                          }
+                        } catch (e) {
+                          // ignore
+                        }
+                      },
+                      child: Container(
+                        width: 80,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.grey.shade200,
+                          border: Border.all(color: Colors.grey.shade400, width: 1, style: BorderStyle.solid),
+                        ),
+                        child: Icon(Icons.add, color: Colors.grey.shade600, size: 32),
+                      ),
+                    );
+                  }
+
+                  return Container(
+                    width: 80,
+                    margin: const EdgeInsets.only(right: 8),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.black12,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: _buildFilePreview(_currentFiles[index], fit: BoxFit.cover),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _currentFiles.removeAt(index);
+                                if (_currentFiles.isEmpty) {
+                                  Navigator.pop(context);
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.close, size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
 
@@ -4760,7 +4885,7 @@ class _ImageCaptionSheetState extends State<_ImageCaptionSheet> {
                   ),
                   const SizedBox(width: 10),
                   GestureDetector(
-                    onTap: () => widget.onSend(widget.captionController.text),
+                    onTap: () => widget.onSend(_currentFiles, widget.captionController.text),
                     child: Container(
                       width: 48,
                       height: 48,

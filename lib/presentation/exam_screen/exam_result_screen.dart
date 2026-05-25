@@ -458,12 +458,12 @@ class _HeroHeader extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${counterValue.value.toInt()}%',
+                                    '${counterValue.value.round()}%',
+                                    textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 44,
                                       fontWeight: FontWeight.w800,
-                                      height: 1,
                                     ),
                                   ),
                                   const Text(
@@ -619,7 +619,7 @@ class _TemplateBandsCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        '${band.minPercent.toInt()}–${band.maxPercent.toInt()}%',
+                        '${band.minPercent.round()}–${band.maxPercent.round()}%',
                         style: TextStyle(fontSize: 8, color: AppColors.textHint),
                         textAlign: TextAlign.center,
                       ),
@@ -877,7 +877,7 @@ class _CriterionScoresCard extends StatelessWidget {
                               ),
                             const Spacer(),
                             Text(
-                              '${(progress * 100).toInt()}%',
+                              '${(progress * 100).round()}%',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: barColor,
