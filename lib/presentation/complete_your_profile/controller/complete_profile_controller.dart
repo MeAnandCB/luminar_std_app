@@ -175,12 +175,19 @@ class CompleteProfileController extends ChangeNotifier {
 
       if (qRes.success && qRes.data != null) {
         _qualifications = qRes.data!.qualifications;
+        debugPrint('[AcademicDropdowns] ✅ qualifications loaded: ${_qualifications.length} items');
+      } else {
+        debugPrint('[AcademicDropdowns] ❌ qualifications FAILED [${qRes.statusCode}]: ${qRes.message}');
       }
+
       if (sRes.success && sRes.data != null) {
         _specializations = sRes.data!.specializations;
+        debugPrint('[AcademicDropdowns] ✅ specializations loaded: ${_specializations.length} items');
+      } else {
+        debugPrint('[AcademicDropdowns] ❌ specializations FAILED [${sRes.statusCode}]: ${sRes.message}');
       }
     } catch (e) {
-      debugPrint('Error fetching academic data: $e');
+      debugPrint('[AcademicDropdowns] ❌ exception: $e');
     } finally {
       _isLoadingAcademic = false;
       notifyListeners();
@@ -220,9 +227,64 @@ class CompleteProfileController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // ── Field audit: log every field value before building payload ──────────
+      bool _f(String? v) => v != null && v.trim().isNotEmpty;
+      String _fv(String label, String? v) =>
+          '  ${label.padRight(26)}: ${_f(v) ? "✓  $v" : "✗  MISSING / EMPTY"}';
+      String _bv(String label, bool? v) =>
+          '  ${label.padRight(26)}: ${v != null ? "✓  $v" : "✗  MISSING"}';
+      String _iv(String label, int? v) =>
+          '  ${label.padRight(26)}: ${v != null ? "✓  $v" : "✗  MISSING"}';
+      String _filev(String label, String? newPath, bool serverHas) {
+        if (newPath != null) return '  ${label.padRight(26)}: ✓  new file → $newPath';
+        if (serverHas)       return '  ${label.padRight(26)}: ✓  already on server';
+        return                      '  ${label.padRight(26)}: ✗  MISSING';
+      }
+
+      debugPrint('\n╔══════════════════════════════════════════════════════════╗');
+      debugPrint('║            COMPLETE PROFILE — FIELD AUDIT               ║');
+      debugPrint('╠══════════════════════════════════════════════════════════╣');
+      debugPrint('║  PERSONAL INFO                                           ║');
+      debugPrint(_fv('full_name',     fullName));
+      debugPrint(_fv('email',         email));
+      debugPrint(_fv('phone',         phone));
+      debugPrint(_fv('date_of_birth', dateOfBirth));
+      debugPrint(_iv('age',           age));
+      debugPrint(_fv('address',       address));
+      debugPrint(_fv('pincode',       pincode));
+      debugPrint(_fv('district',      district));
+      debugPrint('╠══════════════════════════════════════════════════════════╣');
+      debugPrint('║  ID PROOF                                                ║');
+      debugPrint(_filev('id_proof (front)', _idFrontPath, serverIdFront));
+      debugPrint(_filev('id_proof (back)',  _idBackPath,  serverIdBack));
+      debugPrint('╠══════════════════════════════════════════════════════════╣');
+      debugPrint('║  ACADEMIC INFO                                           ║');
+      debugPrint(_fv('qualification_id',   qualificationId));
+      debugPrint('  qualification_name    : ${qualificationName ?? "—"}');
+      debugPrint(_fv('college',            college));
+      debugPrint(_fv('pass_out_year',      passOutYear));
+      debugPrint(_fv('specialization',     specialization));
+      debugPrint(_fv('cgpa',               cgpa));
+      debugPrint(_bv('any_arrears',        anyArrears));
+      debugPrint(_fv('admission_date',     admissionDate));
+      debugPrint('╠══════════════════════════════════════════════════════════╣');
+      debugPrint('║  CAREER INFO                                             ║');
+      debugPrint(_fv('student_status',          studentStatus));
+      debugPrint(_fv('preferred_job_location',  preferredJobLocation));
+      debugPrint(_bv('placement_assistance',    placementAssistance));
+      debugPrint(_filev('resume',          _resumePath,   serverResume));
+      debugPrint('╠══════════════════════════════════════════════════════════╣');
+      debugPrint('║  PARENT INFO                                             ║');
+      debugPrint(_fv('parent_name',   parentName));
+      debugPrint(_fv('parent_phone',  parentPhone));
+      debugPrint('╠══════════════════════════════════════════════════════════╣');
+      debugPrint('║  FILES                                                   ║');
+      debugPrint(_filev('profile_pic', _profilePicPath, serverProfilePic));
+      debugPrint('╚══════════════════════════════════════════════════════════╝\n');
+      // ─────────────────────────────────────────────────────────────────────
+
       final Map<String, dynamic> deltaFields = {};
 
-      // Helper to add if changed or if initial is null
       void addIfChanged(String key, dynamic currentValue, dynamic initialValue) {
         if (currentValue != null && currentValue.toString() != initialValue?.toString()) {
           deltaFields[key] = currentValue;
@@ -247,9 +309,8 @@ class CompleteProfileController extends ChangeNotifier {
       addIfChanged('specialization', specialization, initialProfile?.academicInfo?.specialization);
       addIfChanged('cgpa', cgpa, initialProfile?.academicInfo?.cgpa);
       addIfChanged('admission_date', admissionDate, initialProfile?.academicInfo?.admissionDate);
-      // Always send any_arrears as explicit true/false boolean
       if (anyArrears != null) {
-        deltaFields['any_arrears'] = anyArrears! ? true : false;
+        deltaFields['any_arrears'] = anyArrears;
       }
 
       // Career
@@ -258,9 +319,8 @@ class CompleteProfileController extends ChangeNotifier {
         studentStatus,
         initialProfile?.academicInfo?.studentOrWorkingProfessional,
       );
-      // Always send placement_assistance as explicit true/false boolean
       if (placementAssistance != null) {
-        deltaFields['placement_assistance'] = placementAssistance! ? true : false;
+        deltaFields['placement_assistance'] = placementAssistance;
       }
       addIfChanged('preferred_job_location', preferredJobLocation, initialProfile?.placementInfo?.preferredJobLocation);
 
@@ -285,41 +345,68 @@ class CompleteProfileController extends ChangeNotifier {
       if (isAlumni != null) deltaFields['is_alumni'] = isAlumni;
       if (isPlaced != null) deltaFields['is_placed'] = isPlaced;
 
+      // ── Delta audit: what is being sent vs skipped ───────────────────────
+      const _allKeys = [
+        'full_name', 'email', 'phone', 'whatsapp_number', 'date_of_birth', 'age',
+        'address', 'pincode', 'district',
+        'qualification_id', 'college', 'pass_out_year', 'specialization', 'cgpa',
+        'any_arrears', 'admission_date',
+        'student_or_working_professional', 'preferred_job_location', 'placement_assistance',
+        'parent_name', 'parent_phone_number',
+      ];
+      debugPrint('\n╔══════════════════════════════════════════════════════════╗');
+      debugPrint('║            PAYLOAD DELTA (sent vs skipped)              ║');
+      debugPrint('╠══════════════════════════════════════════════════════════╣');
+      for (final key in _allKeys) {
+        if (deltaFields.containsKey(key)) {
+          debugPrint('  ➤ SENDING  $key = ${deltaFields[key]} (${deltaFields[key].runtimeType})');
+        } else {
+          debugPrint('  — skipped  $key  (unchanged or null)');
+        }
+      }
+      debugPrint('  id_proof        : ${_idFrontPath != null ? "➤ SENDING new file" : "— skipped"}');
+      debugPrint('  id_proof_2      : ${_idBackPath  != null ? "➤ SENDING new file" : "— skipped"}');
+      debugPrint('  profile_pic     : ${_profilePicPath != null ? "➤ SENDING new file" : "— skipped"}');
+      debugPrint('  resume          : ${_resumePath != null ? "➤ SENDING new file" : "— skipped"}');
+      debugPrint('╚══════════════════════════════════════════════════════════╝\n');
+      // ─────────────────────────────────────────────────────────────────────
+
       final profileStudentId = initialProfile?.personalInfo?.studentId;
 
-      debugPrint('===== COMPLETE PROFILE PATCH =====');
-      debugPrint('student_id : $profileStudentId');
-      debugPrint('endpoint   : /api/student/profile/$profileStudentId/update/');
-      if (deltaFields.isEmpty) {
-        debugPrint('deltaFields: (empty — no text fields changed)');
-      } else {
-        deltaFields.forEach((k, v) => debugPrint('  $k = $v (${v.runtimeType})'));
+      if (profileStudentId == null || profileStudentId.trim().isEmpty) {
+        throw Exception('Cannot submit profile: student ID is missing. Please restart the app and try again.');
       }
-      debugPrint('id_proof   : ${_idFrontPath ?? 'unchanged'}');
-      debugPrint('id_proof_2 : ${_idBackPath ?? 'unchanged'}');
-      debugPrint('profile_pic: ${_profilePicPath ?? 'unchanged'}');
-      debugPrint('resume     : ${_resumePath ?? 'unchanged'}');
-      debugPrint('==================================');
 
       if (deltaFields.isEmpty &&
           _idFrontPath == null &&
           _idBackPath == null &&
           _profilePicPath == null &&
           _resumePath == null) {
-        debugPrint('[CompleteProfile] Nothing changed — skipping PATCH');
+        debugPrint('[CompleteProfile] ⚠️  Nothing changed — skipping PATCH');
         _isSubmitting = false;
         notifyListeners();
         return;
       }
 
-      await _submissionService.submitProfile(
-        student_id: profileStudentId?.toString(),
+      final result = await _submissionService.submitProfile(
+        student_id: profileStudentId.toString(),
         fields: deltaFields,
         idFrontPath: _idFrontPath,
         idBackPath: _idBackPath,
         profilePicPath: _profilePicPath,
         resumePath: _resumePath,
       );
+
+      // ── Response audit ───────────────────────────────────────────────────
+      if (result.success) {
+        debugPrint('[CompleteProfile] ✅ PATCH success [${result.statusCode}]');
+        debugPrint('[CompleteProfile] response: ${result.data}');
+      } else {
+        debugPrint('[CompleteProfile] ❌ PATCH FAILED [${result.statusCode}]: ${result.message}');
+        debugPrint('[CompleteProfile] response data: ${result.data}');
+        throw Exception(result.message ?? 'Profile update failed (${result.statusCode})');
+      }
+      // ─────────────────────────────────────────────────────────────────────
     } catch (e) {
       LoggerUtils.error('submitProfile error: $e', tag: 'CompleteProfile', error: e);
       rethrow;

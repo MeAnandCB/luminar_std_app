@@ -331,131 +331,116 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                 flex: _isFullScreen ? 1 : 2,
                 child: _videoId.isEmpty
                     ? _buildErrorView()
-                    : YoutubePlayerBuilder(
-                        onExitFullScreen: () {
-                          SystemChrome.setPreferredOrientations([
-                            DeviceOrientation.portraitUp,
-                            DeviceOrientation.portraitDown,
-                          ]);
-                        },
-                        onEnterFullScreen: () {
-                          SystemChrome.setPreferredOrientations([
-                            DeviceOrientation.landscapeLeft,
-                            DeviceOrientation.landscapeRight,
-                          ]);
-                        },
-                        player: YoutubePlayer(
-                          controller: _controller,
-                          aspectRatio: 16 / 9,
-                          onReady: () {
-                            debugPrint('Player is ready');
-                          },
-                          onEnded: (metaData) {
-                            debugPrint('Video ended');
-                            _showVideoEndedDialog();
-                          },
-                          actionsPadding: const EdgeInsets.all(8),
-                          bottomActions: [
-                            CurrentPosition(),
-                            const SizedBox(width: 10),
-                            ProgressBar(
-                              isExpanded: true,
-                              colors: const ProgressBarColors(
-                                playedColor: Color(0xFF6C5CE7),
-                                handleColor: Color(0xFF6C5CE7),
-                                backgroundColor: Colors.grey,
+                    : Container(
+                        color: Colors.black,
+                        child: Stack(
+                          children: [
+                            Center(
+                              child: YoutubePlayer(
+                                controller: _controller,
+                                aspectRatio: 16 / 9,
+                                onReady: () {
+                                  debugPrint('Player is ready');
+                                },
+                                onEnded: (metaData) {
+                                  debugPrint('Video ended');
+                                  _showVideoEndedDialog();
+                                },
+                                actionsPadding: const EdgeInsets.all(8),
+                                bottomActions: [
+                                  CurrentPosition(),
+                                  const SizedBox(width: 10),
+                                  ProgressBar(
+                                    isExpanded: true,
+                                    colors: const ProgressBarColors(
+                                      playedColor: Color(0xFF6C5CE7),
+                                      handleColor: Color(0xFF6C5CE7),
+                                      backgroundColor: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  RemainingDuration(),
+                                  const PlaybackSpeedButton(),
+                                  FullScreenButton(),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            RemainingDuration(),
-                            const PlaybackSpeedButton(),
-                            FullScreenButton(),
-                          ],
-                        ),
-                        builder: (context, player) {
-                          return Container(
-                            color: Colors.black,
-                            child: Stack(
-                              children: [
-                                Center(child: player),
-                                // Double-tap seek overlays
-                                Positioned.fill(
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: GestureDetector(
-                                          behavior: HitTestBehavior.translucent,
-                                          onDoubleTap: _seekBackward,
-                                          child: const SizedBox.expand(),
+                            // Double-tap seek overlays — always present in both normal and full screen
+                            Positioned.fill(
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.translucent,
+                                      onDoubleTap: _seekBackward,
+                                      child: const SizedBox.expand(),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.translucent,
+                                      onDoubleTap: _seekForward,
+                                      child: const SizedBox.expand(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Backward indicator
+                            if (_showBackwardIndicator)
+                              _buildSeekIndicator(isForward: false),
+                            // Forward indicator
+                            if (_showForwardIndicator)
+                              _buildSeekIndicator(isForward: true),
+                            // Pause overlay — hides YouTube thumbnail, tap to resume
+                            // bottom: 48 leaves the controls bar visible
+                            if (_isPaused)
+                              Positioned(
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 48,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => _controller.play(),
+                                  child: Container(
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                    child: Center(
+                                      child: Container(
+                                        width: 68,
+                                        height: 68,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.92),
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.4),
+                                              blurRadius: 16,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.play_arrow_rounded,
+                                          color: Color(0xFF6C5CE7),
+                                          size: 42,
                                         ),
                                       ),
-                                      Expanded(
-                                        child: GestureDetector(
-                                          behavior: HitTestBehavior.translucent,
-                                          onDoubleTap: _seekForward,
-                                          child: const SizedBox.expand(),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
                                 ),
-                                // Backward indicator
-                                if (_showBackwardIndicator)
-                                  _buildSeekIndicator(isForward: false),
-                                // Forward indicator
-                                if (_showForwardIndicator)
-                                  _buildSeekIndicator(isForward: true),
-                                // Pause overlay — hides YouTube thumbnail, tap to resume
-                                // bottom: 48 leaves the controls bar visible
-                                if (_isPaused)
-                                  Positioned(
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 48,
-                                    child: GestureDetector(
-                                      behavior: HitTestBehavior.opaque,
-                                      onTap: () => _controller.play(),
-                                      child: Container(
-                                        color: Colors.black.withValues(alpha: 0.6),
-                                        child: Center(
-                                          child: Container(
-                                            width: 68,
-                                            height: 68,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withValues(alpha: 0.92),
-                                              shape: BoxShape.circle,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black.withValues(alpha: 0.4),
-                                                  blurRadius: 16,
-                                                  spreadRadius: 2,
-                                                ),
-                                              ],
-                                            ),
-                                            child: const Icon(
-                                              Icons.play_arrow_rounded,
-                                              color: Color(0xFF6C5CE7),
-                                              size: 42,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                              ),
+                            if (!_isPlayerReady)
+                              Container(
+                                color: Colors.black,
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFF6C5CE7),
                                   ),
-                                if (!_isPlayerReady)
-                                  Container(
-                                    color: Colors.black,
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        color: Color(0xFF6C5CE7),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          );
-                        },
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
               ),
             ],

@@ -205,9 +205,9 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                                       context: context,
                                     );
                                     if (context.mounted) {
-                                      context
-                                          .read<DashboardController>()
-                                          .clearDashboardData();
+                                      final dc = context.read<DashboardController>();
+                                      dc.markProfileJustCompleted();
+                                      dc.clearDashboardData();
                                     }
                                     if (context.mounted) {
                                       Navigator.pushAndRemoveUntil(

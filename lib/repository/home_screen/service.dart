@@ -21,12 +21,32 @@ class DashboardService {
         token: accessKey,
       );
 
+      // Extract profile_completed for debug logging
+      String profileCompletedDebug = 'N/A';
+      String topLevelKeys = 'not a map';
+      if (response.data is Map) {
+        final data = response.data as Map;
+        topLevelKeys = data.keys.toList().toString();
+        final dashboard = data['dashboard'];
+        if (dashboard is Map) {
+          final studentDetails = dashboard['student_details'];
+          if (studentDetails is Map) {
+            final basicInfo = studentDetails['basic_info'];
+            if (basicInfo is Map) {
+              final raw = basicInfo['profile_completed'];
+              profileCompletedDebug = '$raw (${raw.runtimeType})';
+            }
+          }
+        }
+      }
+
       developer.log(
         '─── Dashboard API Response ───\n'
-        '  status  : ${response.statusCode}\n'
-        '  success : ${response.success}\n'
-        '  message : ${response.message}\n'
-        '  data    : ${response.data}',
+        '  status             : ${response.statusCode}\n'
+        '  success            : ${response.success}\n'
+        '  message            : ${response.message}\n'
+        '  top-level keys     : $topLevelKeys\n'
+        '  profile_completed  : $profileCompletedDebug',
         name: 'DashboardService',
         error: response.success ? null : 'HTTP ${response.statusCode}',
       );

@@ -1578,8 +1578,16 @@ class StudentDetailsBasicInfo {
       return null;
     }
 
+    bool? parseBool(dynamic value) {
+      if (value == null) return null;
+      if (value is bool) return value;
+      if (value is int) return value != 0;
+      if (value is String) return value.toLowerCase() == 'true' || value == '1';
+      return null;
+    }
+
     return StudentDetailsBasicInfo(
-      studentId: json["student_id"],
+      studentId: json["student_id"]?.toString(),
       fullName: json["full_name"],
       email: json["email"],
       phone: json["phone"],
@@ -1587,7 +1595,7 @@ class StudentDetailsBasicInfo {
       profilePicture: json["profile_picture"],
       admissionDate: json["admission_date"] == null ? null : DateTime.parse(json["admission_date"]),
       daysSinceAdmission: toInt(json["days_since_admission"]),
-      profileCompleted: json['profile_completed'],
+      profileCompleted: parseBool(json['profile_completed']),
     );
   }
 

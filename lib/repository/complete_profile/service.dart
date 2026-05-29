@@ -1,15 +1,12 @@
+import 'dart:convert';
 import 'dart:developer' as developer;
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
-import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/repository/shared_pref.dart';
 
 class CompleteProfileService {
-  final ApiService _apiService = ApiService();
-
   Future<ApiResponse<Map<String, dynamic>>> submitProfile({
     required Map<String, dynamic> fields,
     String? idFrontPath,
@@ -31,7 +28,6 @@ class CompleteProfileService {
     fields.forEach((key, value) {
       if (value != null) {
         if (key == 'cgpa') {
-          // Avoid floating-point strings like "8.500000000000001" — API max_digits=4
           final d = double.tryParse(value.toString());
           if (d != null) {
             final formatted = d.toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), '');
@@ -48,79 +44,125 @@ class CompleteProfileService {
 
     if (idFrontPath != null) {
       final ext = idFrontPath.split('.').last.toLowerCase();
-      files.add(
-        await http.MultipartFile.fromPath(
-          'id_proof',
-          idFrontPath,
-          contentType: MediaType('image', ext == 'png' ? 'png' : 'jpeg'),
-        ),
-      );
+      files.add(await http.MultipartFile.fromPath(
+        'id_proof', idFrontPath,
+        contentType: MediaType('image', ext == 'png' ? 'png' : 'jpeg'),
+      ));
     }
     if (idBackPath != null) {
       final ext = idBackPath.split('.').last.toLowerCase();
-      files.add(
-        await http.MultipartFile.fromPath(
-          'id_proof_2',
-          idBackPath,
-          contentType: MediaType('image', ext == 'png' ? 'png' : 'jpeg'),
-        ),
-      );
+      files.add(await http.MultipartFile.fromPath(
+        'id_proof_2', idBackPath,
+        contentType: MediaType('image', ext == 'png' ? 'png' : 'jpeg'),
+      ));
     }
     if (profilePicPath != null) {
       final ext = profilePicPath.split('.').last.toLowerCase();
-      files.add(
-        await http.MultipartFile.fromPath(
-          'profile_pic',
-          profilePicPath,
-          contentType: MediaType('image', ext == 'png' ? 'png' : 'jpeg'),
-        ),
-      );
+      files.add(await http.MultipartFile.fromPath(
+        'profile_pic', profilePicPath,
+        contentType: MediaType('image', ext == 'png' ? 'png' : 'jpeg'),
+      ));
     }
     if (resumePath != null) {
-      files.add(
-        await http.MultipartFile.fromPath(
-          'resume',
-          resumePath,
-          contentType: MediaType('application', 'pdf'),
-        ),
-      );
+      files.add(await http.MultipartFile.fromPath(
+        'resume', resumePath,
+        contentType: MediaType('application', 'pdf'),
+      ));
     }
 
+    final endpoint = '${AppEndpoints.profileUpdate}$student_id/update/';
+    final uri = Uri.parse('${GlobalLinks.baseUrl}$endpoint');
+
+    // ── Request log ──────────────────────────────────────────────────────────
     developer.log(
       '\n'
       '╔══════════════════════════════════════════════════════════╗\n'
-      '║           📤  COMPLETE PROFILE PAYLOAD                  ║\n'
+      '║           📤  PROFILE UPDATE — REQUEST                  ║\n'
       '╠══════════════════════════════════════════════════════════╣\n'
-      '║  endpoint : ${AppEndpoints.profileUpdate}$student_id/update/\n'
-      '║  method   : PATCH (multipart)\n'
+      '  URL    : $uri\n'
+      '  METHOD : PATCH (multipart/form-data)\n'
       '╠══════════════════════════════════════════════════════════╣\n'
-      '║  TEXT FIELDS (${stringFields.length})${stringFields.isEmpty ? ' — none' : ''}\n'
-      '${stringFields.entries.map((e) => '║    ${e.key.padRight(26)}: ${e.value}').join('\n')}\n'
+      '  TEXT FIELDS (${stringFields.length})${stringFields.isEmpty ? " — none" : ""}\n'
+      '${stringFields.entries.map((e) => "    ${e.key.padRight(28)}: ${e.value}").join("\n")}\n'
       '╠══════════════════════════════════════════════════════════╣\n'
-      '║  FILES (${files.length})${files.isEmpty ? ' — none' : ''}\n'
-      '${files.isEmpty ? '║    (none)' : files.map((f) => '║    ${f.field.padRight(14)} → ${f.filename}').join('\n')}\n'
+      '  FILES (${files.length})${files.isEmpty ? " — none" : ""}\n'
+      '${files.isEmpty ? "    (none)" : files.map((f) => "    ${f.field.padRight(16)} → ${f.filename}").join("\n")}\n'
       '╚══════════════════════════════════════════════════════════╝',
-      name: '📤 Profile.CompletePayload',
+      name: 'ProfileUpdate.Request',
     );
+    // ─────────────────────────────────────────────────────────────────────────
 
     try {
-      final response = await _apiService.multipart(
-        endpoint: '${AppEndpoints.profileUpdate}$student_id/update/',
-        method: 'PATCH',
-        fields: stringFields,
-        files: files,
-        token: token,
-      );
+      final request = http.MultipartRequest('PATCH', uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..headers['Accept'] = 'application/json'
+        ..fields.addAll(stringFields)
+        ..files.addAll(files);
 
-      if (response.success) {
-        debugPrint('[CompleteProfile] PATCH success [${response.statusCode}]');
-        return ApiResponse.success(response.data, response.statusCode ?? 200);
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      final statusCode = response.statusCode;
+      final rawBody = response.body;
+
+      // ── Raw response log (always printed) ───────────────────────────────
+      developer.log(
+        '\n'
+        '╔══════════════════════════════════════════════════════════╗\n'
+        '║           📥  PROFILE UPDATE — RESPONSE                 ║\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '  STATUS  : $statusCode\n'
+        '  SUCCESS : ${statusCode >= 200 && statusCode < 300}\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '  RAW BODY:\n'
+        '$rawBody\n'
+        '╚══════════════════════════════════════════════════════════╝',
+        name: 'ProfileUpdate.Response',
+        level: 1000,
+      );
+      // ─────────────────────────────────────────────────────────────────────
+
+      if (statusCode >= 200 && statusCode < 300) {
+        final data = rawBody.isNotEmpty
+            ? (jsonDecode(rawBody) as Map<String, dynamic>)
+            : <String, dynamic>{};
+        return ApiResponse.success(data, statusCode);
       } else {
-        debugPrint('[CompleteProfile] PATCH FAILED [${response.statusCode}]: ${response.message}');
-        return response.cast<Map<String, dynamic>>();
+        String errorMsg = 'Server error ($statusCode)';
+        if (rawBody.isNotEmpty) {
+          try {
+            final json = jsonDecode(rawBody);
+            if (json is Map) {
+              if (json['detail'] != null) {
+                errorMsg = json['detail'].toString();
+              } else if (json['message'] != null) {
+                errorMsg = json['message'].toString();
+              } else {
+                // Collect all field-level errors
+                final fieldErrors = <String>[];
+                json.forEach((k, v) {
+                  if (v is List) {
+                    fieldErrors.add('$k: ${v.join(", ")}');
+                  } else {
+                    fieldErrors.add('$k: $v');
+                  }
+                });
+                if (fieldErrors.isNotEmpty) errorMsg = fieldErrors.join(' | ');
+              }
+            }
+          } catch (_) {
+            errorMsg = rawBody;
+          }
+        }
+        return ApiResponse.error(errorMsg, statusCode);
       }
     } catch (e, st) {
-      debugPrint('[CompleteProfile] PATCH exception: $e\n$st');
+      developer.log(
+        '❌ PATCH exception: $e',
+        name: 'ProfileUpdate.Response',
+        level: 1000,
+        error: e,
+        stackTrace: st,
+      );
       return ApiResponse.error(e.toString(), null);
     }
   }

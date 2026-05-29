@@ -607,11 +607,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Widget _buildChatTile(Chat chat, ChatProvider provider) {
     final hasUnread = chat.unreadCount > 0;
     final previewText = _buildPreviewText(chat);
-    final isIndividual = chat.chatType == ChatType.individual;
-    final isOnline =
-        isIndividual &&
-        chat.otherParticipant != null &&
-        provider.userOnlineStatus[chat.otherParticipant!.id] == true;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -672,21 +667,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      if (isOnline && isIndividual && previewText.isEmpty)
-                        Row(
-                          children: [
-                            Text(
-                              'Typing...',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppColors.primary,
-                                fontStyle: FontStyle.italic,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        )
-                      else if (previewText.isNotEmpty)
+                      if (previewText.isNotEmpty)
                         Text(
                           previewText,
                           maxLines: 2,

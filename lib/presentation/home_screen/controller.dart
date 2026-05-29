@@ -14,6 +14,7 @@ class DashboardController extends ChangeNotifier {
   Dashboard? _dashboard;
   DashBoardModel? _dashboardModel;
   NactetCheckDisplayResponse? _nactetStatus;
+  bool _skipProfileCompletionRedirect = false;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -84,13 +85,15 @@ class DashboardController extends ChangeNotifier {
             name: 'Dashboard',
           );
 
-          if (_dashboard?.studentDetails?.basicInfo?.profileCompleted != true) {
+          if (!_skipProfileCompletionRedirect &&
+              _dashboard?.studentDetails?.basicInfo?.profileCompleted != true) {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => ProfileCompletionScreen()),
               (route) => false,
             );
           }
+          _skipProfileCompletionRedirect = false;
           _error = null;
         } else {
           _error = 'No dashboard data available';
@@ -130,6 +133,10 @@ class DashboardController extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error fetching NACTET status: $e');
     }
+  }
+
+  void markProfileJustCompleted() {
+    _skipProfileCompletionRedirect = true;
   }
 
   // Clear dashboard data (useful for logout)

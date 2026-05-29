@@ -122,7 +122,10 @@ class ApiService {
     LoggerUtils.debug("$method (Multipart): $uri", tag: 'API');
     try {
       var request = http.MultipartRequest(method, uri);
-      request.headers.addAll(_headers(token));
+      // Exclude Content-Type — MultipartRequest sets multipart/form-data boundary automatically
+      final multipartHeaders = Map<String, String>.from(_headers(token))
+        ..remove('Content-Type');
+      request.headers.addAll(multipartHeaders);
       request.fields.addAll(fields);
       request.files.addAll(files);
 

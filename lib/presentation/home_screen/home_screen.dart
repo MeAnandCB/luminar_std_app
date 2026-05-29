@@ -259,11 +259,133 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   // ============== NACTET FORM NAVIGATION ==============
 
+  // Uses the status field returned directly by the NACTET check-display API —
+  // the same values (not_set / admission_fee_paid / demo_expired) as the
+  // dashboard enrollment status, so no UID cross-reference is needed.
+  bool _isPaymentMethodNotSet(NactetCheckDisplayEnrollment enrollment) {
+    final status = enrollment.status;
+    debugPrint('[NactetPayCheck] enrollment.status="$status"');
+    return status == 'not_set' ||
+        status == 'admission_fee_paid' ||
+        status == 'demo_expired';
+  }
+
+  // Compares admissionFee vs amountPaid from the dashboard financial data.
+  // Returns true only when the student has paid exactly the admission fee
+  // (i.e., no EMI instalments have been paid yet).
+  bool _isFirstEmiPending(BuildContext context, String enrollmentUid) {
+    final dashboard =
+        Provider.of<DashboardController>(context, listen: false).dashboard;
+    if (dashboard == null || enrollmentUid.isEmpty) return false;
+
+    final list = dashboard.enrollmentDetails?.enrollments ?? [];
+    for (final e in list) {
+      if ((e.basicInfo?.uid ?? '') == enrollmentUid) {
+        final admissionFee = e.batchInfo?.admissionFees ?? 0;
+        final amountPaid =
+            e.paymentDetails?.financialBreakdown?.amountPaid ?? 0;
+        debugPrint(
+          '[NactetPayCheck] admissionFee=$admissionFee  amountPaid=$amountPaid',
+        );
+        if (admissionFee > 0) return amountPaid == admissionFee;
+      }
+    }
+
+    // Also try matching by enrollment number as a fallback
+    final enrollmentFromDashboard = Provider.of<DashboardController>(
+      context,
+      listen: false,
+    ).enrollmentsFromDashboard;
+    for (final e in enrollmentFromDashboard) {
+      if (e.uid == enrollmentUid) {
+        // uid matched via enrollmentsFromDashboard — financial data already
+        // checked above through the raw dashboard list, so nothing more to do.
+        break;
+      }
+    }
+    return false;
+  }
+
+  void _showNactetBlockDialog(
+    BuildContext context, {
+    required String title,
+    required String message,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.account_balance_wallet_outlined,
+                color: Colors.orange,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, height: 1.5),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'OK, Got it',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _onNactetFormTap(
     BuildContext context,
     List<NactetCheckDisplayEnrollment> enrollments,
   ) {
     if (enrollments.length == 1) {
+      final uid = enrollments.first.enrollmentUid;
+
+      if (_isPaymentMethodNotSet(enrollments.first) ||
+          _isFirstEmiPending(context, uid)) {
+        _showNactetBlockDialog(
+          context,
+          title: 'Payment Required',
+          message:
+              'Full payment or first EMI payment is required to access the NACTET registration form.',
+        );
+        return;
+      }
       Navigator.push(
         context,
         MaterialPageRoute(
