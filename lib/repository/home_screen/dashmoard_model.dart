@@ -1032,13 +1032,22 @@ class PaymentSummary {
 
 class NotificationsSummary {
   NotificationsSummarySummary? summary;
+  JobNotificationsSummary? jobNotifications;
   List<dynamic>? recentNotifications;
   List<dynamic>? urgentNotifications;
 
-  NotificationsSummary({this.summary, this.recentNotifications, this.urgentNotifications});
+  NotificationsSummary({
+    this.summary,
+    this.jobNotifications,
+    this.recentNotifications,
+    this.urgentNotifications,
+  });
 
   factory NotificationsSummary.fromJson(Map<String, dynamic> json) => NotificationsSummary(
     summary: json["summary"] == null ? null : NotificationsSummarySummary.fromJson(json["summary"]),
+    jobNotifications: json["job_notifications"] == null
+        ? null
+        : JobNotificationsSummary.fromJson(json["job_notifications"]),
     recentNotifications: json["recent_notifications"] == null
         ? []
         : List<dynamic>.from(json["recent_notifications"]!.map((x) => x)),
@@ -1049,9 +1058,32 @@ class NotificationsSummary {
 
   Map<String, dynamic> toJson() => {
     "summary": summary?.toJson(),
+    "job_notifications": jobNotifications?.toJson(),
     "recent_notifications": recentNotifications == null ? [] : List<dynamic>.from(recentNotifications!.map((x) => x)),
     "urgent_notifications": urgentNotifications == null ? [] : List<dynamic>.from(urgentNotifications!.map((x) => x)),
   };
+}
+
+class JobNotificationsSummary {
+  int? unviewedCount;
+
+  JobNotificationsSummary({this.unviewedCount});
+
+  factory JobNotificationsSummary.fromJson(Map<String, dynamic> json) {
+    int? toInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is double) return value.round();
+      if (value is String) return int.tryParse(value);
+      return null;
+    }
+
+    return JobNotificationsSummary(
+      unviewedCount: toInt(json["unviewed_count"]),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {"unviewed_count": unviewedCount};
 }
 
 class NotificationsSummarySummary {
@@ -1059,8 +1091,15 @@ class NotificationsSummarySummary {
   int? unreadCount;
   int? urgentCount;
   int? notificationsToday;
+  int? unviewedJobNotificationsCount;
 
-  NotificationsSummarySummary({this.totalNotifications, this.unreadCount, this.urgentCount, this.notificationsToday});
+  NotificationsSummarySummary({
+    this.totalNotifications,
+    this.unreadCount,
+    this.urgentCount,
+    this.notificationsToday,
+    this.unviewedJobNotificationsCount,
+  });
 
   factory NotificationsSummarySummary.fromJson(Map<String, dynamic> json) {
     int? toInt(dynamic value) {
@@ -1076,6 +1115,7 @@ class NotificationsSummarySummary {
       unreadCount: toInt(json["unread_count"]),
       urgentCount: toInt(json["urgent_count"]),
       notificationsToday: toInt(json["notifications_today"]),
+      unviewedJobNotificationsCount: toInt(json["unviewed_job_notifications_count"]),
     );
   }
 
@@ -1084,6 +1124,7 @@ class NotificationsSummarySummary {
     "unread_count": unreadCount,
     "urgent_count": urgentCount,
     "notifications_today": notificationsToday,
+    "unviewed_job_notifications_count": unviewedJobNotificationsCount,
   };
 }
 
@@ -1093,16 +1134,29 @@ class QuickStats {
   Engagement? engagement;
   Alerts? alerts;
   int? unreadExams;
+  int? unviewedJobNotifications;
 
-  QuickStats({this.academic, this.financial, this.engagement, this.alerts, this.unreadExams});
+  QuickStats({
+    this.academic,
+    this.financial,
+    this.engagement,
+    this.alerts,
+    this.unreadExams,
+    this.unviewedJobNotifications,
+  });
 
-  factory QuickStats.fromJson(Map<String, dynamic> json) => QuickStats(
-    academic: json["academic"] == null ? null : Academic.fromJson(json["academic"]),
-    financial: json["financial"] == null ? null : Financial.fromJson(json["financial"]),
-    engagement: json["engagement"] == null ? null : Engagement.fromJson(json["engagement"]),
-    alerts: json["alerts"] == null ? null : Alerts.fromJson(json["alerts"]),
-    unreadExams: json["unread_exams"] is int ? json["unread_exams"] : int.tryParse(json["unread_exams"]?.toString() ?? '0') ?? 0,
-  );
+  factory QuickStats.fromJson(Map<String, dynamic> json) {
+    int toIntSafe(dynamic v) =>
+        v is int ? v : int.tryParse(v?.toString() ?? '0') ?? 0;
+    return QuickStats(
+      academic: json["academic"] == null ? null : Academic.fromJson(json["academic"]),
+      financial: json["financial"] == null ? null : Financial.fromJson(json["financial"]),
+      engagement: json["engagement"] == null ? null : Engagement.fromJson(json["engagement"]),
+      alerts: json["alerts"] == null ? null : Alerts.fromJson(json["alerts"]),
+      unreadExams: toIntSafe(json["unread_exams"]),
+      unviewedJobNotifications: toIntSafe(json["unviewed_job_notifications"]),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "academic": academic?.toJson(),
@@ -1110,6 +1164,7 @@ class QuickStats {
     "engagement": engagement?.toJson(),
     "alerts": alerts?.toJson(),
     "unread_exams": unreadExams,
+    "unviewed_job_notifications": unviewedJobNotifications,
   };
 }
 
@@ -1158,14 +1213,22 @@ class Academic {
 class Alerts {
   bool? hasPendingPayments;
   bool? hasOverdueEmis;
+  bool? hasUnviewedJobNotifications;
   bool? demoExpiringSoon;
   bool? paymentGraceExpired;
 
-  Alerts({this.hasPendingPayments, this.hasOverdueEmis, this.demoExpiringSoon, this.paymentGraceExpired});
+  Alerts({
+    this.hasPendingPayments,
+    this.hasOverdueEmis,
+    this.hasUnviewedJobNotifications,
+    this.demoExpiringSoon,
+    this.paymentGraceExpired,
+  });
 
   factory Alerts.fromJson(Map<String, dynamic> json) => Alerts(
     hasPendingPayments: json["has_pending_payments"],
     hasOverdueEmis: json["has_overdue_emis"],
+    hasUnviewedJobNotifications: json["has_unviewed_job_notifications"],
     demoExpiringSoon: json["demo_expiring_soon"],
     paymentGraceExpired: json["payment_grace_expired"],
   );
@@ -1173,6 +1236,7 @@ class Alerts {
   Map<String, dynamic> toJson() => {
     "has_pending_payments": hasPendingPayments,
     "has_overdue_emis": hasOverdueEmis,
+    "has_unviewed_job_notifications": hasUnviewedJobNotifications,
     "demo_expiring_soon": demoExpiringSoon,
     "payment_grace_expired": paymentGraceExpired,
   };

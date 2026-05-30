@@ -14,6 +14,7 @@ import 'package:luminar_std/presentation/test_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:luminar_std/presentation/referral_status_screen/referral_status_screen.dart';
+import 'package:luminar_std/presentation/jobs_screen/jobs_screen.dart';
 
 // ─── palette ─────────────────────────────────────────────────────────────────
 // ─── palette ─────────────────────────────────────────────────────────────────
@@ -63,6 +64,13 @@ const _kFeatures = [
     'Join your live class instantly',
     Color(0xFF10B981),
     Color(0xFF34D399),
+  ),
+  _Feature(
+    Icons.work_rounded,
+    'Jobs',
+    'Explore job openings shared with your batch',
+    Color(0xFF0F3460),
+    Color(0xFF1A6FA0),
   ),
   _Feature(
     Icons.payment_rounded,
@@ -133,6 +141,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
     final dashboard = context.watch<DashboardController>();
     final enrollments = dashboard.enrollmentsFromDashboard;
     final unreadExams = dashboard.unreadExamsCount;
+    final unviewedJobs = dashboard.unviewedJobNotificationsCount;
     _rebuildTabControllerIfNeeded(enrollments.length);
     final hasTabs = enrollments.length > 1 && _tabController != null;
 
@@ -152,6 +161,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
               enrollments,
               hasTabs,
               unreadExams,
+              unviewedJobs,
             ),
           ),
         ],
@@ -164,6 +174,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
     List enrollments,
     bool hasTabs,
     int unreadExams,
+    int unviewedJobs,
   ) {
     if (loading) return _ShimmerBody();
     if (enrollments.isEmpty) return const _EmptyState();
@@ -173,6 +184,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
         enrollment: enrollments[0],
         index: 0,
         unreadExams: unreadExams,
+        unviewedJobs: unviewedJobs,
       );
     }
 
@@ -184,6 +196,7 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
           enrollment: enrollments[i],
           index: i,
           unreadExams: unreadExams,
+          unviewedJobs: unviewedJobs,
         ),
       ),
     );
@@ -363,11 +376,13 @@ class _EnrollmentPage extends StatelessWidget {
     required this.enrollment,
     required this.index,
     this.unreadExams = 0,
+    this.unviewedJobs = 0,
   });
 
   final dynamic enrollment;
   final int index;
   final int unreadExams;
+  final int unviewedJobs;
 
   void _showAccessDenied(BuildContext context) {
     showDialog(
@@ -469,7 +484,7 @@ class _EnrollmentPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    AppConfig.hidePayments ? '6 features' : '7 features',
+                    AppConfig.hidePayments ? '7 features' : '8 features',
                     style: TextStyle(
                       fontSize: 11,
                       color: _kPrimary,
@@ -544,10 +559,20 @@ class _EnrollmentPage extends StatelessWidget {
                   );
                 },
               ),
+              // 4th — Jobs
+              SizedBox(height: 12),
+              _FeatureCard(
+                feature: _kFeatures[3],
+                badgeCount: unviewedJobs,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const JobsScreen()),
+                ),
+              ),
               if (!AppConfig.hidePayments) ...[
                 SizedBox(height: 12),
                 _FeatureCard(
-                  feature: _kFeatures[3],
+                  feature: _kFeatures[4],
                   onTap: () {
                     if (toEnrollDetails) {
                       Navigator.push(
@@ -575,7 +600,7 @@ class _EnrollmentPage extends StatelessWidget {
               ],
               SizedBox(height: 12),
               _FeatureCard(
-                feature: _kFeatures[4],
+                feature: _kFeatures[5],
                 badgeCount: unreadExams,
                 onTap: () {
                   if (!crmAccess) {
@@ -590,7 +615,7 @@ class _EnrollmentPage extends StatelessWidget {
               ),
               SizedBox(height: 12),
               _FeatureCard(
-                feature: _kFeatures[5],
+                feature: _kFeatures[6],
                 onTap: () {
                   if (!crmAccess) {
                     _showAccessDenied(context);
@@ -606,7 +631,7 @@ class _EnrollmentPage extends StatelessWidget {
               ),
               SizedBox(height: 12),
               _FeatureCard(
-                feature: _kFeatures[6],
+                feature: _kFeatures[7],
                 onTap: () {
                   final studentId = dashCtrl.dashboard?.studentDetails?.basicInfo?.studentId;
                   if (studentId == null || studentId.isEmpty) {

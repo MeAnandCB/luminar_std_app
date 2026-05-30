@@ -306,4 +306,18 @@ class DashboardController extends ChangeNotifier {
       _dashboard?.quickStats?.unreadExams ??
       _dashboardModel?.dashboard?.quickStats?.unreadExams ??
       0;
+
+  // Get unviewed job notifications count
+  int get unviewedJobNotificationsCount =>
+      _dashboard?.quickStats?.unviewedJobNotifications ??
+      _dashboardModel?.dashboard?.quickStats?.unviewedJobNotifications ??
+      0;
+
+  void decrementUnviewedJobNotifications() {
+    final stats = _dashboard?.quickStats;
+    if (stats != null && (stats.unviewedJobNotifications ?? 0) > 0) {
+      stats.unviewedJobNotifications = stats.unviewedJobNotifications! - 1;
+      notifyListeners();
+    }
+  }
 }

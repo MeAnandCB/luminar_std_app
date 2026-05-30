@@ -85,6 +85,16 @@ class AppEndpoints {
   static const String certificatesCreate = '/api/certificates/create/';
   static const String certificatesCheckDisplay =
       '/api/certificates/check-display/';
+
+  // Jobs
+  static const String jobNotifications =
+      '/api/student_portal/jobs/notifications/';
+  static const String jobDetail =
+      '/api/student_portal/jobs/'; // Suffix with {uid}/
+  static const String jobApply =
+      '/api/student_portal/jobs/'; // Suffix with {uid}/apply/
+  static const String jobApplicationDetail =
+      '/api/student_portal/jobs/applications/'; // Suffix with {application_uid}/
 }
 
 class GlobalLinks {
