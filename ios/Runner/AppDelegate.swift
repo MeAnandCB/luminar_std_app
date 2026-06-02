@@ -1,6 +1,5 @@
 import Flutter
 import UIKit
-import FirebaseCore
 import FirebaseMessaging
 import UserNotifications
 
@@ -10,7 +9,8 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    FirebaseApp.configure()
+    // Firebase is initialised by firebase_core in Dart (main.dart).
+    // Do NOT call FirebaseApp.configure() here — double init causes SIGABRT.
 
     UNUserNotificationCenter.current().delegate = self
 

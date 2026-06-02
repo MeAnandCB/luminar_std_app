@@ -183,7 +183,8 @@ class JobDetail {
       ),
       customFieldTemplateUid: json['custom_field_template_uid'],
       customFields: (json['custom_fields'] as List? ?? [])
-          .map((e) => JobCustomField.fromJson(e as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map(JobCustomField.fromJson)
           .toList()
         ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
     );
@@ -330,14 +331,17 @@ class JobApplicationDetail {
           ? PipelineStage.fromJson(currentStageJson, isCurrent: true)
           : null,
       pipelineStages: (json['pipeline_stages'] as List? ?? [])
-          .map((e) => PipelineStage.fromJson(e as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map(PipelineStage.fromJson)
           .toList()
         ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
       stageHistory: (json['stage_history'] as List? ?? [])
-          .map((e) => StageHistory.fromJson(e as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map(StageHistory.fromJson)
           .toList(),
       answers: (json['answers'] as List? ?? [])
-          .map((e) => ApplicationAnswer.fromJson(e as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map(ApplicationAnswer.fromJson)
           .toList(),
       resumeUrl: json['resume_url']?.toString(),
       resumeFile: json['resume_file']?.toString(),

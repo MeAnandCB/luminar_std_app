@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/main.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
+import 'package:luminar_std/presentation/jobs_screen/job_detail_screen.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
+import 'package:luminar_std/repository/jobs/model/job_notification_model.dart';
 import 'package:provider/provider.dart';
 
 /// Top-level background FCM handler — runs in an isolate (no BuildContext)
@@ -78,6 +81,9 @@ class FCMService {
   );
 
   bool _isInitialized = false;
+
+  // Stores notification data received before the navigator is ready
+  static Map<String, dynamic>? _pendingNavData;
 
   // ─── Public Init ──────────────────────────────────────────────────────────
 
@@ -215,7 +221,10 @@ class FCMService {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       LoggerUtils.info('FCM opened from background | Data: ${message.data}', tag: 'FCM');
       AppUtils.isDeepLinking = true;
-      _handleNotificationNavigation(message.data);
+      // Use post-frame callback so the navigator is guaranteed to be mounted
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleNotificationNavigation(message.data);
+      });
     });
   }
 
@@ -264,11 +273,61 @@ class FCMService {
 
   // ─── Navigation ───────────────────────────────────────────────────────────
 
+  /// Call this from the home screen after the widget tree is ready.
+  /// Executes any notification navigation that arrived before the navigator was mounted.
+  void processPendingNavigation() {
+    final data = _pendingNavData;
+    if (data == null) return;
+    _pendingNavData = null;
+    LoggerUtils.info('Processing pending notification navigation', tag: 'FCM');
+    _handleNotificationNavigation(data);
+  }
+
   void _handleNotificationNavigation(Map<String, dynamic> data) {
     final type = data['type'] as String?;
     final route = data['route'] as String?;
 
     LoggerUtils.info('Handling notification navigation: type=$type, route=$route', tag: 'FCM');
+
+    // ─── Special Type: job_notification ──────────────────────────────────────
+    if (type == 'job_notification' || type == 'job' || route == 'job' || route == 'jobs') {
+      final jobUid = data['job_uid']?.toString();
+      if (jobUid == null || jobUid.isEmpty) {
+        AppUtils.isDeepLinking = false;
+        return;
+      }
+
+      final context = navigatorKey.currentContext;
+      if (context == null) {
+        // Navigator not ready yet — park the data and let processPendingNavigation handle it
+        _pendingNavData = data;
+        LoggerUtils.warning('Job nav deferred: context not ready', tag: 'FCM');
+        return;
+      }
+
+      final notification = JobNotification(
+        uid: data['notification_uid']?.toString() ?? '',
+        jobUid: jobUid,
+        jobTitle: data['job_title']?.toString() ?? '',
+        companyName: data['company_name']?.toString() ?? '',
+        companyUid: data['company_uid']?.toString() ?? '',
+        batchName: data['batch_name']?.toString() ?? '',
+        isViewed: false,
+        createdAt: DateTime.now(),
+        timesShared: 0,
+        application: JobApplication(hasApplication: false),
+      );
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => JobDetailScreen(
+            jobUid: jobUid,
+            notification: notification,
+          ),
+        ),
+      );
+      AppUtils.isDeepLinking = false;
+      return;
+    }
 
     // ─── Special Type: chat_message ──────────────────────────────────────────
     if (type == 'chat_message') {
@@ -278,7 +337,8 @@ class FCMService {
         if (context != null) {
           Provider.of<ChatProvider>(context, listen: false).navigateToChat(chatUid);
         } else {
-          LoggerUtils.warning('Cannot navigate to chat: context is null', tag: 'FCM');
+          _pendingNavData = data;
+          LoggerUtils.warning('Chat nav deferred: context not ready', tag: 'FCM');
           AppUtils.isDeepLinking = false;
         }
       } else {
@@ -287,7 +347,7 @@ class FCMService {
       return;
     }
 
-    // ─── Route-based navigation (existing logic) ──────────────────────────────
+    // ─── Route-based navigation ───────────────────────────────────────────────
     if (route == null) return;
 
     switch (route) {

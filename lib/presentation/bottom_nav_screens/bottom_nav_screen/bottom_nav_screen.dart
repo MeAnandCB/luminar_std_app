@@ -35,8 +35,6 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    // 1. Handle terminated state FCM deep-linking
-    FCMService().handleInitialMessage();
     _currentIndex = widget.initialIndex;
 
     _fabController = AnimationController(
@@ -53,6 +51,9 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatProvider = Provider.of<ChatProvider>(context, listen: false);
       _loadData();
+      // Handle notifications after the navigator is mounted
+      FCMService().processPendingNavigation();
+      FCMService().handleInitialMessage();
     });
   }
 
