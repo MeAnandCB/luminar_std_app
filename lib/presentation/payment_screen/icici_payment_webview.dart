@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
@@ -30,7 +29,7 @@ class _IciciPaymentWebViewState extends State<IciciPaymentWebView> {
   InAppWebViewController? _webCtrl;
   int _progress = 0;
   bool _paymentDetected = false;
-  int _countdown = 15;
+  int _countdown = 5;
   Timer? _countdownTimer;
 
   // URL patterns that signal the payment flow ended
@@ -65,8 +64,6 @@ class _IciciPaymentWebViewState extends State<IciciPaymentWebView> {
     return _failurePatterns.any((p) => lower.contains(p));
   }
 
-  String _fmt(double amount) =>
-      NumberFormat('#,##,###').format(amount.toInt());
 
   void _onPaymentComplete({bool success = true}) {
     if (_paymentDetected) return;
@@ -279,99 +276,54 @@ class _IciciPaymentWebViewState extends State<IciciPaymentWebView> {
           ),
           const SizedBox(height: 28),
 
-          // Processing animation
+          // Countdown ring
           SizedBox(
-            width: 56,
-            height: 56,
-            child: CircularProgressIndicator(
-              value: _countdown / 15,
-              strokeWidth: 4,
-              backgroundColor: Colors.grey.shade200,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                const Color(0xFF9B1A1A),
-              ),
+            width: 72,
+            height: 72,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: _countdown / 5,
+                  strokeWidth: 5,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFF9B1A1A),
+                  ),
+                ),
+                Text(
+                  '$_countdown',
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF9B1A1A),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-
-          Text(
-            '$_countdown',
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF9B1A1A),
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
 
           const Text(
-            'Processing Payment',
+            'Please Wait',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1A1A1A),
             ),
           ),
-          const SizedBox(height: 6),
-          if (widget.amount > 0) ...[
-            Text(
-              '₹${_fmt(widget.amount)}',
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF9B1A1A),
-                letterSpacing: -0.5,
-              ),
-            ),
-            if (widget.discountApplied && widget.discountAmount > 0)
-              Container(
-                margin: const EdgeInsets.only(top: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '₹${_fmt(widget.discountAmount)} discount applied',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF10B981),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 8),
-          ],
+          const SizedBox(height: 10),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(
-              'Please wait while we confirm your payment with ICICI Bank. '
-              'Do not close the app.',
+              'We are confirming your payment.\nDo not close or refresh the app.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey.shade600,
-                height: 1.5,
+                color: Colors.grey.shade500,
+                height: 1.6,
               ),
             ),
-          ),
-          const SizedBox(height: 32),
-
-          // Steps
-          _ProcessingStep(
-            icon: Icons.lock_rounded,
-            label: 'Securing transaction',
-            done: _countdown < 12,
-          ),
-          _ProcessingStep(
-            icon: Icons.sync_rounded,
-            label: 'Confirming with ICICI Bank',
-            done: _countdown < 7,
-          ),
-          _ProcessingStep(
-            icon: Icons.check_circle_rounded,
-            label: 'Updating your account',
-            done: _countdown < 2,
           ),
         ],
       ),
@@ -380,53 +332,6 @@ class _IciciPaymentWebViewState extends State<IciciPaymentWebView> {
 }
 
 // ─── Processing step row ──────────────────────────────────────────────────────
-
-class _ProcessingStep extends StatelessWidget {
-  const _ProcessingStep({
-    required this.icon,
-    required this.label,
-    required this.done,
-  });
-  final IconData icon;
-  final String label;
-  final bool done;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 6),
-      child: Row(
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 400),
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: done
-                  ? const Color(0xFF10B981)
-                  : Colors.grey.shade200,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              done ? Icons.check_rounded : icon,
-              color: done ? Colors.white : Colors.grey.shade400,
-              size: 15,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: done ? FontWeight.w600 : FontWeight.w400,
-              color: done ? const Color(0xFF10B981) : Colors.grey.shade500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─── Mini ICICI painter (for AppBar + overlay icon) ──────────────────────────
 

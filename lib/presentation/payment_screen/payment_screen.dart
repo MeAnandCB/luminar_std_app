@@ -392,9 +392,8 @@ class _PaymentScreenState extends State<PaymentScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: Colors.purple),
-      ),
+      builder: (_) =>
+          const Center(child: CircularProgressIndicator(color: Colors.purple)),
     );
 
     try {
@@ -568,8 +567,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         // Use pendingAmount (what's actually owed) — matches what the backend
         // creates the Razorpay order for. totalAmount is the gross installment
         // value and differs when a partial payment has already been made.
-        nextDueAmount =
-            nextDueEmi.pendingAmount ?? nextDueEmi.totalAmount ?? 0;
+        nextDueAmount = nextDueEmi.pendingAmount ?? nextDueEmi.totalAmount ?? 0;
         nextDueDate = nextDueEmi?.dueDate ?? DateTime.now();
       }
     }
@@ -1865,8 +1863,8 @@ class _PaymentScreenState extends State<PaymentScreen>
   void handlePaymentErrorResponse(PaymentFailureResponse response) {
     final error = response.error ?? {};
     final reason = error['reason'] as String? ?? '';
-    final step   = error['step']   as String? ?? '';
-    final code   = response.code ?? -1;
+    final step = error['step'] as String? ?? '';
+    final code = response.code ?? -1;
 
     String title;
     String message;
@@ -1875,38 +1873,41 @@ class _PaymentScreenState extends State<PaymentScreen>
 
     // Razorpay code 0 = network error
     if (code == 0) {
-      icon      = Icons.wifi_off_rounded;
+      icon = Icons.wifi_off_rounded;
       iconColor = AppColors.statsOrange;
-      title     = 'No Internet Connection';
-      message   = 'Please check your connection and try again.';
+      title = 'No Internet Connection';
+      message = 'Please check your connection and try again.';
     }
     // User cancelled / closed the Razorpay sheet
     else if (reason == 'cancel' || reason == 'dismissed') {
-      icon      = Icons.cancel_outlined;
+      icon = Icons.cancel_outlined;
       iconColor = AppColors.textSecondary;
-      title     = 'Payment Cancelled';
-      message   = 'You closed the payment window. No amount was deducted.';
+      title = 'Payment Cancelled';
+      message = 'You closed the payment window. No amount was deducted.';
     }
     // Authentication / OTP failed
     else if (step == 'payment_authentication') {
-      icon      = Icons.lock_outline_rounded;
+      icon = Icons.lock_outline_rounded;
       iconColor = AppColors.error;
-      title     = 'Authentication Failed';
-      message   = 'Your bank declined the payment. Please verify your OTP or try a different card/UPI.';
+      title = 'Authentication Failed';
+      message =
+          'Your bank declined the payment. Please verify your OTP or try a different card/UPI.';
     }
     // Card / UPI not authorized
     else if (step == 'payment_authorization') {
-      icon      = Icons.credit_card_off_rounded;
+      icon = Icons.credit_card_off_rounded;
       iconColor = AppColors.error;
-      title     = 'Payment Not Authorized';
-      message   = 'Your bank did not authorize this transaction. Please try a different payment method.';
+      title = 'Payment Not Authorized';
+      message =
+          'Your bank did not authorize this transaction. Please try a different payment method.';
     }
     // Generic bad-request / declined
     else {
-      icon      = Icons.error_outline_rounded;
+      icon = Icons.error_outline_rounded;
       iconColor = AppColors.error;
-      title     = 'Payment Failed';
-      message   = 'Your payment could not be processed. Please try again or use a different payment method.';
+      title = 'Payment Failed';
+      message =
+          'Your payment could not be processed. Please try again or use a different payment method.';
     }
 
     _showPaymentResultDialog(
@@ -1923,7 +1924,8 @@ class _PaymentScreenState extends State<PaymentScreen>
       icon: Icons.check_circle_outline_rounded,
       iconColor: AppColors.statsGreen,
       title: 'Payment Successful',
-      message: 'Your payment has been received.\nPayment ID: ${response.paymentId ?? '—'}',
+      message:
+          'Your payment has been received.\nPayment ID: ${response.paymentId ?? '—'}',
       isSuccess: true,
     );
     Future.delayed(const Duration(seconds: 2), () {
@@ -1936,7 +1938,8 @@ class _PaymentScreenState extends State<PaymentScreen>
       icon: Icons.account_balance_wallet_outlined,
       iconColor: AppColors.primary,
       title: 'Wallet Selected',
-      message: '${response.walletName ?? 'External wallet'} was selected for payment.',
+      message:
+          '${response.walletName ?? 'External wallet'} was selected for payment.',
       isSuccess: true,
     );
   }
@@ -1996,7 +1999,9 @@ class _PaymentScreenState extends State<PaymentScreen>
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isSuccess ? AppColors.statsGreen : AppColors.primary,
+                  backgroundColor: isSuccess
+                      ? AppColors.statsGreen
+                      : AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -2048,8 +2053,7 @@ class _PaymentScreenState extends State<PaymentScreen>
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
-    final session =
-        await PaymentScreenService().getIciciSession(enrollmentId);
+    final session = await PaymentScreenService().getIciciSession(enrollmentId);
     if (!mounted) return;
     Navigator.pop(context);
 
@@ -2235,8 +2239,11 @@ class _GatewaySheet extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                Icon(Icons.payment_rounded,
-                    size: 16, color: AppColors.textSecondary),
+                Icon(
+                  Icons.payment_rounded,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'SELECT PAYMENT METHOD',
@@ -2253,7 +2260,9 @@ class _GatewaySheet extends StatelessWidget {
           const SizedBox(height: 8),
 
           Divider(
-              color: AppColors.borderColor.withValues(alpha: 0.5), height: 1),
+            color: AppColors.borderColor.withValues(alpha: 0.5),
+            height: 1,
+          ),
           const SizedBox(height: 4),
 
           // ── Gateway tiles ───────────────────────────────────────────────
@@ -2275,22 +2284,34 @@ class _GatewayTile extends StatelessWidget {
   final VoidCallback onTap;
 
   static const _kRazorpayBlue = Color(0xFF2C73D2);
-  static const _kIciciOrange  = Color(0xFFE87722);
+  static const _kIciciOrange = Color(0xFFE87722);
 
   Color get _brandColor {
     switch (gateway.id) {
-      case 'razorpay': return _kRazorpayBlue;
-      case 'icici':    return _kIciciOrange;
-      default:         return AppColors.primary;
+      case 'razorpay':
+        return _kRazorpayBlue;
+      case 'icici':
+        return _kIciciOrange;
+      default:
+        return AppColors.primary;
     }
   }
 
+  //TODO: Replace with actual logos if available
   Widget _icon() {
     switch (gateway.id) {
       case 'razorpay':
-        return const RazorpayLogoIcon(size: 38);
+        return CircleAvatar(
+          radius: 19,
+          backgroundColor: Color.fromARGB(255, 255, 255, 255),
+          child: Image.asset('assets/images/ray.jpeg', width: 45, height: 45),
+        );
       case 'icici':
-        return const IciciLogoIcon(size: 38);
+        return CircleAvatar(
+          radius: 19,
+          backgroundColor: Color.fromARGB(255, 255, 255, 255),
+          child: Image.asset('assets/images/icici.png', width: 30, height: 30),
+        );
       default:
         return Container(
           width: 38,
@@ -2299,7 +2320,11 @@ class _GatewayTile extends StatelessWidget {
             color: _brandColor.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(Icons.account_balance_rounded, color: _brandColor, size: 20),
+          child: Icon(
+            Icons.account_balance_rounded,
+            color: _brandColor,
+            size: 20,
+          ),
         );
     }
   }
@@ -2349,10 +2374,12 @@ class _GatewayTile extends StatelessWidget {
 
   String _subtitle() {
     switch (gateway.id) {
-      case 'razorpay': return 'Cards, UPI, Net Banking & Wallets';
-      case 'icici':    return 'ICICI Bank Net Banking & Cards';
-      default:         return 'Secure online payment';
+      case 'razorpay':
+        return 'Cards, UPI, Net Banking & Wallets';
+      case 'icici':
+        return 'ICICI Bank Net Banking & Cards';
+      default:
+        return 'Secure online payment';
     }
   }
 }
-

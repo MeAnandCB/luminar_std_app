@@ -1757,13 +1757,16 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                                   return;
                                 }
 
-                                final hasOnlyRazorpay = gateways.length == 1 &&
+                                final hasOnlyRazorpay =
+                                    gateways.length == 1 &&
                                     gateways.first.id == 'razorpay';
 
                                 Navigator.pop(context); // close confirm sheet
 
                                 if (hasOnlyRazorpay) {
-                                  _startRazorpayPayment(provider.paymentDetails!);
+                                  _startRazorpayPayment(
+                                    provider.paymentDetails!,
+                                  );
                                 } else {
                                   _showEnrollmentGatewaySheet(
                                     gateways,
@@ -1773,8 +1776,8 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                               } else {
                                 // ── EMI Payment ───────────────────────────
                                 // POST /api/student-enrollment/emi-confirm/
-                                final emiAmounts = _previewData
-                                        ?.installmentBreakdown.schedule
+                                final emiAmounts =
+                                    _previewData?.installmentBreakdown.schedule
                                         .map((i) => i.amount)
                                         .toList() ??
                                     [];
@@ -1816,7 +1819,9 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('EMI scheduled successfully!'),
+                                      content: Text(
+                                        'EMI scheduled successfully!',
+                                      ),
                                       backgroundColor: Colors.green,
                                     ),
                                   );
@@ -1853,9 +1858,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(
-                                    'Something went wrong: $e',
-                                  ),
+                                  content: Text('Something went wrong: $e'),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -1975,16 +1978,20 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     String userMessage;
     switch (response.code) {
       case Razorpay.PAYMENT_CANCELLED:
-        userMessage = 'Payment was cancelled. You can try again whenever you\'re ready.';
+        userMessage =
+            'Payment was cancelled. You can try again whenever you\'re ready.';
         break;
       case Razorpay.NETWORK_ERROR:
-        userMessage = 'No internet connection. Please check your network and try again.';
+        userMessage =
+            'No internet connection. Please check your network and try again.';
         break;
       case Razorpay.INVALID_OPTIONS:
-        userMessage = 'Something went wrong with the payment setup. Please contact support.';
+        userMessage =
+            'Something went wrong with the payment setup. Please contact support.';
         break;
       default:
-        userMessage = 'Payment could not be completed. Please try a different payment method or try again later.';
+        userMessage =
+            'Payment could not be completed. Please try a different payment method or try again later.';
     }
     _showPaymentResultSheet(
       isSuccess: false,
@@ -2038,7 +2045,8 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     _showPaymentResultSheet(
       isSuccess: null,
       title: 'Wallet Selected',
-      message: 'Proceeding with ${response.walletName}. Complete the payment in the wallet app.',
+      message:
+          'Proceeding with ${response.walletName}. Complete the payment in the wallet app.',
     );
   }
 
@@ -2057,18 +2065,18 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
         final Color iconBg = isSuccess == true
             ? AppColors.statsGreen.withValues(alpha: 0.12)
             : isSuccess == false
-                ? AppColors.error.withValues(alpha: 0.1)
-                : AppColors.primary.withValues(alpha: 0.1);
+            ? AppColors.error.withValues(alpha: 0.1)
+            : AppColors.primary.withValues(alpha: 0.1);
         final Color iconColor = isSuccess == true
             ? AppColors.statsGreen
             : isSuccess == false
-                ? AppColors.error
-                : AppColors.primary;
+            ? AppColors.error
+            : AppColors.primary;
         final IconData icon = isSuccess == true
             ? Icons.check_circle_rounded
             : isSuccess == false
-                ? Icons.cancel_rounded
-                : Icons.account_balance_wallet_rounded;
+            ? Icons.cancel_rounded
+            : Icons.account_balance_wallet_rounded;
 
         return Container(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
@@ -2158,10 +2166,12 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     List<PaymentGateway> gateways,
     RazorpayPaymentDetails details,
   ) {
-    final enrollmentUid = Provider.of<EnrollmentProvider>(
-      context,
-      listen: false,
-    ).enrollmentData?.enrollments[widget.index].uid ?? '';
+    final enrollmentUid =
+        Provider.of<EnrollmentProvider>(
+          context,
+          listen: false,
+        ).enrollmentData?.enrollments[widget.index].uid ??
+        '';
 
     showModalBottomSheet(
       context: context,
@@ -2197,8 +2207,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
-    final session =
-        await PaymentScreenService().getIciciSession(enrollmentId);
+    final session = await PaymentScreenService().getIciciSession(enrollmentId);
     if (!mounted) return;
     Navigator.pop(context);
 
@@ -2244,7 +2253,6 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
     };
     _razorpay.open(options);
   }
-
 }
 
 // ==================== EMI PREVIEW DETAILS WIDGET ====================
@@ -2721,10 +2729,7 @@ class _EnrollmentGatewaySheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '₹${amount.toStringAsFixed(0).replaceAllMapped(
-                              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                              (m) => '${m[1]},',
-                            )}',
+                        '₹${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
                         style: const TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
@@ -2756,8 +2761,11 @@ class _EnrollmentGatewaySheet extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                Icon(Icons.payment_rounded,
-                    size: 16, color: AppColors.textSecondary),
+                Icon(
+                  Icons.payment_rounded,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'SELECT PAYMENT METHOD',
@@ -2779,10 +2787,10 @@ class _EnrollmentGatewaySheet extends StatelessWidget {
           const SizedBox(height: 4),
 
           // ── Gateway tiles ───────────────────────────────────────────────
-          ...gateways.map((gw) => _EnrollmentGatewayTile(
-                gateway: gw,
-                onTap: () => onSelect(gw),
-              )),
+          ...gateways.map(
+            (gw) =>
+                _EnrollmentGatewayTile(gateway: gw, onTap: () => onSelect(gw)),
+          ),
 
           const SizedBox(height: 4),
         ],
@@ -2798,26 +2806,46 @@ class _EnrollmentGatewayTile extends StatelessWidget {
 
   Color get _brandColor {
     switch (gateway.id) {
-      case 'razorpay': return const Color(0xFF2C73D2);
-      case 'icici':    return const Color(0xFFE87722);
-      default:         return AppColors.primary;
+      case 'razorpay':
+        return const Color(0xFF2C73D2);
+      case 'icici':
+        return const Color(0xFFE87722);
+      default:
+        return AppColors.primary;
     }
   }
 
   String get _subtitle {
     switch (gateway.id) {
-      case 'razorpay': return 'Cards, UPI, Net Banking & Wallets';
-      case 'icici':    return 'ICICI Bank Net Banking & Cards';
-      default:         return 'Secure online payment';
+      case 'razorpay':
+        return 'Cards, UPI, Net Banking & Wallets';
+      case 'icici':
+        return 'ICICI Bank Net Banking & Cards';
+      default:
+        return 'Secure online payment';
     }
   }
 
   Widget _buildIcon() {
     switch (gateway.id) {
       case 'razorpay':
-        return const RazorpayLogoIcon(size: 38);
+        //TODO: Replace with official Razorpay logo when available (currently using a placeholder icon)
+        return CircleAvatar(
+          radius: 19,
+          backgroundColor: Color.fromARGB(255, 255, 255, 255),
+          child: Image.asset(
+            'assets/images/ray.jpeg',
+            fit: BoxFit.cover,
+            width: 45,
+            height: 45,
+          ),
+        );
       case 'icici':
-        return const IciciLogoIcon(size: 38);
+        return CircleAvatar(
+          radius: 19,
+          backgroundColor: Color.fromARGB(255, 255, 255, 255),
+          child: Image.asset('assets/images/icici.png', width: 30, height: 30),
+        );
       default:
         return Container(
           width: 38,
