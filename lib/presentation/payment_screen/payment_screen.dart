@@ -460,7 +460,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           if (gateway.id == 'razorpay') {
             _startEmiRazorpayPayment(details);
           } else if (gateway.id == 'icici') {
-            await _openIciciPayment(widget.uid);
+            await _openIciciEmiPayment(emi.uid ?? '');
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -2073,6 +2073,39 @@ class _PaymentScreenState extends State<PaymentScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to get ICICI payment URL.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _openIciciEmiPayment(String emiId) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    final session = await PaymentScreenService().getIciciEmiSession(emiId);
+    if (!mounted) return;
+    Navigator.pop(context);
+
+    if (session != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => IciciPaymentWebView(
+            paymentUrl: session.url,
+            amount: session.amount,
+            discountApplied: session.discountApplied,
+            discountAmount: session.discountAmount,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to get ICICI EMI payment URL.'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),

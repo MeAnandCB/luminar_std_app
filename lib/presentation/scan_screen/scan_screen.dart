@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'dart:developer' as developer;
+import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
@@ -330,9 +331,43 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   // ── Step 3: Validate batchId against enrollments ──────────────────────────
 
   void _validateAndSubmit(QRPayload payload) {
-    final enrollments = _dashboardData?.enrollmentDetails?.enrollments ?? [];
-    Enrollment? matched;
+    // ── Check 2: Required fields present ─────────────────────────────────────
+    if (payload.batchId.isEmpty || payload.startTime.isEmpty || payload.endTime.isEmpty) {
+      developer.log('Missing required fields in QR', name: 'QRScanner.validate', error: 'missing_fields');
+      _showResult(
+        success: false,
+        title: 'Incomplete QR Code',
+        message: 'QR code is missing required information.\nPlease scan the correct session QR.',
+      );
+      return;
+    }
 
+    // ── Check 3: Student ID available ────────────────────────────────────────
+    final studentId = _dashboardData?.studentDetails?.basicInfo?.studentId ?? '';
+    if (studentId.isEmpty) {
+      developer.log('Student ID unavailable', name: 'QRScanner.validate', error: 'no_student_id');
+      _showResult(
+        success: false,
+        title: 'Student Info Missing',
+        message: 'Unable to retrieve student information.\nPlease restart the app and try again.',
+      );
+      return;
+    }
+
+    // ── Check 4: Student has enrollments ─────────────────────────────────────
+    final enrollments = _dashboardData?.enrollmentDetails?.enrollments ?? [];
+    if (enrollments.isEmpty) {
+      developer.log('No enrollments found', name: 'QRScanner.validate', error: 'no_enrollments');
+      _showResult(
+        success: false,
+        title: 'No Enrollments',
+        message: 'You have no active batch enrollments.',
+      );
+      return;
+    }
+
+    // ── Check 5: Student enrolled in scanned batch ────────────────────────────
+    Enrollment? matched;
     for (final e in enrollments) {
       if (e.batchInfo?.uid == payload.batchId) {
         matched = e;
@@ -342,44 +377,104 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 
     if (matched == null) {
       developer.log(
-        'No matching batch for batchId: ${payload.batchId}',
+        'Batch not in student enrollments: ${payload.batchId}',
         name: 'QRScanner.validate',
-        error: 'batch_not_found',
+        error: 'not_enrolled',
       );
       _showResult(
         success: false,
-        title: 'Session Not Found',
-        message:
-            'This session does not belong to your enrolled batches.\nPlease verify you are scanning the correct QR.',
+        title: 'Not Enrolled',
+        message: 'You are not enrolled in this batch.\nPlease verify you are scanning the correct QR.',
       );
       return;
     }
 
+    // ── Check 6: Enrollment record found (uid non-empty) ─────────────────────
+    final enrollmentUid = matched.basicInfo?.uid ?? '';
+    if (enrollmentUid.isEmpty) {
+      developer.log('Matched enrollment has no UID', name: 'QRScanner.validate', error: 'missing_enrollment_uid');
+      _showResult(
+        success: false,
+        title: 'Enrollment Error',
+        message: 'Enrollment record not found for this batch.\nPlease contact support.',
+      );
+      return;
+    }
+
+    // ── Check 7: CRM access granted ──────────────────────────────────────────
     final bool crmAccess = matched.basicInfo?.crmAccess ?? true;
     if (!crmAccess) {
       _showAccessDenied();
       return;
     }
 
-    final studentId =
-        _dashboardData?.studentDetails?.basicInfo?.studentId ?? '';
+    // ── Check 8 & 9: Date and time window ────────────────────────────────────
+    final now      = DateTime.now().toUtc();
+    final startUtc = DateTime.tryParse(payload.startTime)?.toUtc();
+    final endUtc   = DateTime.tryParse(payload.endTime)?.toUtc();
 
     developer.log(
-      '─── Batch Matched ───\n'
-      '  batchName     : ${matched.batchInfo?.batchName}\n'
-      '  enrollmentUid : ${matched.basicInfo?.uid}\n'
-      '  studentId     : $studentId',
-      name: 'QRScanner.validate',
+      '─── Time Validation ───\n'
+      '  now       : $now\n'
+      '  startTime : $startUtc\n'
+      '  endTime   : $endUtc',
+      name: 'QRScanner.timeCheck',
     );
 
-    if (studentId.isEmpty) {
+    if (startUtc == null || endUtc == null) {
       _showResult(
         success: false,
-        title: 'Error',
-        message: 'Could not retrieve student information.',
+        title: 'Invalid QR Code',
+        message: 'The QR code contains an invalid time format.\nPlease scan the correct session QR.',
       );
       return;
     }
+
+    // Date check: local calendar date must match QR start date
+    final nowLocal   = now.toLocal();
+    final startLocal = startUtc.toLocal();
+    final todayDate  = DateTime(nowLocal.year, nowLocal.month, nowLocal.day);
+    final qrDate     = DateTime(startLocal.year, startLocal.month, startLocal.day);
+    if (todayDate != qrDate) {
+      _showResult(
+        success: false,
+        title: 'Wrong Date',
+        message:
+            'This QR is for ${DateFormat('dd MMM yyyy').format(startLocal)}.\n'
+            'Please scan today\'s session QR.',
+      );
+      return;
+    }
+
+    if (now.isBefore(startUtc)) {
+      _showResult(
+        success: false,
+        title: 'QR Not Yet Valid',
+        message:
+            'This QR code is not yet valid.\n'
+            'Session starts at ${DateFormat('hh:mm a').format(startLocal)}.',
+      );
+      return;
+    }
+
+    if (now.isAfter(endUtc)) {
+      _showResult(
+        success: false,
+        title: 'QR Code Expired',
+        message:
+            'This QR code has expired.\n'
+            'Session ended at ${DateFormat('hh:mm a').format(endUtc.toLocal())}.',
+      );
+      return;
+    }
+
+    developer.log(
+      '─── All Checks Passed ───\n'
+      '  batchName     : ${matched.batchInfo?.batchName}\n'
+      '  enrollmentUid : $enrollmentUid\n'
+      '  studentId     : $studentId',
+      name: 'QRScanner.validate',
+    );
 
     final sessionIdToUse =
         (payload.sessionId != null && payload.sessionId!.isNotEmpty)
@@ -429,12 +524,28 @@ class _QRScannerScreenState extends State<QRScannerScreen>
           attendanceProvider.loadAttendance();
         }
 
-        _showResult(
-          success: true,
-          title: 'Attendance Marked!',
-          message:
-              '🎉 Your attendance has been successfully recorded for\n$batchName.\nHave a great session!',
-        );
+        // created == false means attendance was already recorded in this session
+        final data = result['data'];
+        final alreadyMarked = data is Map && data['created'] == false;
+
+        if (alreadyMarked) {
+          final date = (data['date'] as String?) ?? '';
+          _showResult(
+            success: false,
+            title: 'Already Marked',
+            message:
+                'Your attendance for $batchName\nwas already recorded${date.isNotEmpty ? ' on $date' : ''}.',
+            overrideColor: const Color(0xFFFFA726),
+            overrideIcon: Icons.info_rounded,
+          );
+        } else {
+          _showResult(
+            success: true,
+            title: 'Attendance Marked!',
+            message:
+                '🎉 Your attendance has been successfully recorded for\n$batchName.\nHave a great session!',
+          );
+        }
       } else {
         // Show whatever the server returned
         final msg =
@@ -470,6 +581,8 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     required bool success,
     required String title,
     required String message,
+    Color? overrideColor,
+    IconData? overrideIcon,
   }) {
     showDialog(
       context: context,
@@ -478,6 +591,8 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         success: success,
         title: title,
         message: message,
+        overrideColor: overrideColor,
+        overrideIcon: overrideIcon,
         onPressed: () {
           Navigator.pop(context);
           // Clear scanned data and restart camera
@@ -832,17 +947,21 @@ class _ResultDialog extends StatelessWidget {
     required this.title,
     required this.message,
     required this.onPressed,
+    this.overrideColor,
+    this.overrideIcon,
   });
 
   final bool success;
   final String title;
   final String message;
   final VoidCallback onPressed;
+  final Color? overrideColor;
+  final IconData? overrideIcon;
 
   @override
   Widget build(BuildContext context) {
-    final color = success ? const Color(0xFF00C2A8) : const Color(0xFFFF5252);
-    final icon = success ? Icons.check_circle_rounded : Icons.error_rounded;
+    final color = overrideColor ?? (success ? const Color(0xFF00C2A8) : const Color(0xFFFF5252));
+    final icon  = overrideIcon  ?? (success ? Icons.check_circle_rounded : Icons.error_rounded);
 
     return Dialog(
       backgroundColor: Colors.transparent,

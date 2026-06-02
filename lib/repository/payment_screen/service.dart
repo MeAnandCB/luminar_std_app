@@ -66,6 +66,54 @@ class PaymentScreenService {
     return null;
   }
 
+  Future<({String url, double amount, bool discountApplied, double discountAmount})?> getIciciEmiSession(String emiId) async {
+    try {
+      final token = await AppUtils.getAccessKey();
+      final response = await _apiService.post(
+        endpoint: '${AppEndpoints.iciciEmi}$emiId/',
+        body: {},
+        token: token,
+      );
+
+      if (response.success && response.data != null) {
+        LoggerUtils.info(
+          '[ICICI-EMI] SUCCESS status=${response.statusCode}\n'
+          '[ICICI-EMI] response=${response.data}',
+          tag: 'ICICI-EMI',
+        );
+
+        final root = response.data as Map<String, dynamic>;
+        final payload = root['data'] is Map<String, dynamic>
+            ? root['data'] as Map<String, dynamic>
+            : root;
+
+        final url = payload['payment_url']?.toString() ??
+            payload['redirect_url']?.toString() ??
+            payload['url']?.toString() ?? '';
+
+        final discountInfo = payload['discount_info'] as Map<String, dynamic>? ?? {};
+        final amount = (payload['amount'] as num?)?.toDouble() ??
+            (discountInfo['discounted_pending_amount'] as num?)?.toDouble() ?? 0;
+        final discountApplied = discountInfo['discount_applied'] == true;
+        final discountAmount = (discountInfo['course_fees_discount'] as num?)?.toDouble() ?? 0;
+
+        LoggerUtils.info('[ICICI-EMI] url=$url  amount=$amount  discount=$discountApplied', tag: 'ICICI-EMI');
+
+        if (url.isEmpty) return null;
+        return (url: url, amount: amount, discountApplied: discountApplied, discountAmount: discountAmount);
+      } else {
+        LoggerUtils.error(
+          '[ICICI-EMI] FAILED status=${response.statusCode} message=${response.message}\n'
+          '[ICICI-EMI] response=${response.data}',
+          tag: 'ICICI-EMI',
+        );
+      }
+    } catch (e, st) {
+      LoggerUtils.error('[ICICI-EMI] exception', tag: 'ICICI-EMI', error: e, stackTrace: st);
+    }
+    return null;
+  }
+
   Future<String?> getIciciPaymentUrl(String enrollmentId) async {
     try {
       final token = await AppUtils.getAccessKey();

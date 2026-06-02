@@ -197,6 +197,26 @@ class NactetRegistrationController extends ChangeNotifier {
 
   void updateBranch(int locationId) {
     registrationModel.branch = locationId.toString();
+    final branchLabel = locations
+        .firstWhere(
+          (loc) => loc.id == locationId,
+          orElse: () => LocationModel(
+            id: locationId,
+            name: 'Unknown',
+            value: '',
+            isActive: true,
+          ),
+        )
+        .name;
+
+    LoggerUtils.debug(
+      'Branch selected: id=$locationId name=$branchLabel',
+      tag: 'NACTET',
+    );
+    LoggerUtils.debug(
+      'Partial payload after branch selection: ${registrationModel.toFields()}',
+      tag: 'NACTET',
+    );
     notifyListeners();
   }
 
@@ -337,6 +357,11 @@ class NactetRegistrationController extends ChangeNotifier {
           .toUpperCase();
       registrationModel.higherEducationalQualificationYearOfPassing =
           int.tryParse(higherQualYearController.text.trim());
+
+      LoggerUtils.debug(
+        'Final NACTET submit payload fields: ${registrationModel.toFields()}',
+        tag: 'NACTET',
+      );
 
       final response = await _service.submitRegistration(registrationModel);
 
