@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
+import 'package:luminar_std/presentation/payment_screen/gateway_icons.dart';
+import 'package:luminar_std/presentation/payment_screen/icici_payment_webview.dart';
+import 'package:luminar_std/repository/payment_screen/service.dart';
 import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -1731,20 +1734,40 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                             try {
                               if (selectedPaymentMethod == 0) {
                                 // ── Full Payment ──────────────────────────
-                                await provider.getPaymentDetails(
-                                  id: enrollmentUid,
-                                );
-                                if (!context.mounted) return;
-                                Navigator.pop(context);
+                                final results = await Future.wait([
+                                  provider.getPaymentDetails(id: enrollmentUid),
+                                  PaymentScreenService().fetchPaymentGateways(),
+                                ]);
 
-                                if (provider.paymentDetails != null) {
-                                  _startRazorpayPayment(provider.paymentDetails!);
-                                } else {
+                                if (!context.mounted) return;
+                                Navigator.pop(context); // dismiss loading
+
+                                final gateways =
+                                    results[1] as List<PaymentGateway>;
+
+                                if (provider.paymentDetails == null) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Failed to get payment details'),
+                                      content: Text(
+                                        'Failed to get payment details',
+                                      ),
                                       backgroundColor: Colors.red,
                                     ),
+                                  );
+                                  return;
+                                }
+
+                                final hasOnlyRazorpay = gateways.length == 1 &&
+                                    gateways.first.id == 'razorpay';
+
+                                Navigator.pop(context); // close confirm sheet
+
+                                if (hasOnlyRazorpay) {
+                                  _startRazorpayPayment(provider.paymentDetails!);
+                                } else {
+                                  _showEnrollmentGatewaySheet(
+                                    gateways,
+                                    provider.paymentDetails!,
                                   );
                                 }
                               } else {
@@ -2129,6 +2152,77 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
         );
       },
     );
+  }
+
+  void _showEnrollmentGatewaySheet(
+    List<PaymentGateway> gateways,
+    RazorpayPaymentDetails details,
+  ) {
+    final enrollmentUid = Provider.of<EnrollmentProvider>(
+      context,
+      listen: false,
+    ).enrollmentData?.enrollments[widget.index].uid ?? '';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _EnrollmentGatewaySheet(
+        gateways: gateways,
+        amount: details.amount is num
+            ? (details.amount as num).toDouble()
+            : double.tryParse(details.amount?.toString() ?? '0') ?? 0,
+        onSelect: (gateway) async {
+          Navigator.pop(context);
+          if (gateway.id == 'razorpay') {
+            _startRazorpayPayment(details);
+          } else if (gateway.id == 'icici') {
+            await _openIciciPayment(enrollmentUid);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${gateway.label} integration coming soon.'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _openIciciPayment(String enrollmentId) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    final session =
+        await PaymentScreenService().getIciciSession(enrollmentId);
+    if (!mounted) return;
+    Navigator.pop(context);
+
+    if (session != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => IciciPaymentWebView(
+            paymentUrl: session.url,
+            amount: session.amount,
+            discountApplied: session.discountApplied,
+            discountAmount: session.discountAmount,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to get ICICI payment URL.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _startRazorpayPayment(RazorpayPaymentDetails details) {
@@ -2546,5 +2640,246 @@ class EmiPreviewDetails extends StatelessWidget {
     } catch (e) {
       return '0';
     }
+  }
+}
+
+// ─── Payment Gateway Sheet (Enrollment) ──────────────────────────────────────
+
+class _EnrollmentGatewaySheet extends StatelessWidget {
+  const _EnrollmentGatewaySheet({
+    required this.gateways,
+    required this.amount,
+    required this.onSelect,
+  });
+
+  final List<PaymentGateway> gateways;
+  final double amount;
+  final void Function(PaymentGateway) onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.borderColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Payment summary ─────────────────────────────────────────────
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.primaryLight],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.flash_on_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Full Payment',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '₹${amount.toStringAsFixed(0).replaceAllMapped(
+                              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                              (m) => '${m[1]},',
+                            )}',
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Text(
+                  'ONE-TIME\nPAYMENT',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white60,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── Section label ───────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Icon(Icons.payment_rounded,
+                    size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 8),
+                Text(
+                  'SELECT PAYMENT METHOD',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Divider(
+            color: AppColors.borderColor.withValues(alpha: 0.5),
+            height: 1,
+          ),
+          const SizedBox(height: 4),
+
+          // ── Gateway tiles ───────────────────────────────────────────────
+          ...gateways.map((gw) => _EnrollmentGatewayTile(
+                gateway: gw,
+                onTap: () => onSelect(gw),
+              )),
+
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+}
+
+class _EnrollmentGatewayTile extends StatelessWidget {
+  const _EnrollmentGatewayTile({required this.gateway, required this.onTap});
+  final PaymentGateway gateway;
+  final VoidCallback onTap;
+
+  Color get _brandColor {
+    switch (gateway.id) {
+      case 'razorpay': return const Color(0xFF2C73D2);
+      case 'icici':    return const Color(0xFFE87722);
+      default:         return AppColors.primary;
+    }
+  }
+
+  String get _subtitle {
+    switch (gateway.id) {
+      case 'razorpay': return 'Cards, UPI, Net Banking & Wallets';
+      case 'icici':    return 'ICICI Bank Net Banking & Cards';
+      default:         return 'Secure online payment';
+    }
+  }
+
+  Widget _buildIcon() {
+    switch (gateway.id) {
+      case 'razorpay':
+        return const RazorpayLogoIcon(size: 38);
+      case 'icici':
+        return const IciciLogoIcon(size: 38);
+      default:
+        return Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: _brandColor,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(
+              gateway.label[0].toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            _buildIcon(),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    gateway.label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    _subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: AppColors.textSecondary,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

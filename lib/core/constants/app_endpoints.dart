@@ -51,6 +51,8 @@ class AppEndpoints {
   static const String razorpayFull =
       '/api/student-payments/full/'; // Suffix with {id}/
   static const String razorpayEmi = '/api/payments/emi/'; // Suffix with {id}/
+  static const String iciciFull =
+      '/api/student-payments/full/icici/'; // Suffix with {enrollment_id}/
 
   // Chat
   static const String chats = '/api/chats/';
@@ -86,6 +88,9 @@ class AppEndpoints {
   static const String certificatesCheckDisplay =
       '/api/certificates/check-display/';
 
+  // Payment Gateways
+  static const String paymentGateways = '/api/payment/gateways/';
+
   // Jobs
   static const String jobNotifications =
       '/api/student_portal/jobs/notifications/';
@@ -98,7 +103,8 @@ class AppEndpoints {
 }
 
 class GlobalLinks {
-  static const String baseUrl = 'https://api.crm.luminartechnohub.com';
+  static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
   // static const String baseUrl = 'http://192.168.1.46:8000';
-  static const String websocketUrl = 'wss://api.crm.luminartechnohub.com/ws/';
+  static const String websocketUrl =
+      'wss://api.crm.dev.luminartechnohub.com/ws/';
 }

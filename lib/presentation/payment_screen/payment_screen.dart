@@ -3,8 +3,9 @@
 import 'dart:convert';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'dart:io';
+import 'package:luminar_std/presentation/payment_screen/gateway_icons.dart';
+import 'package:luminar_std/presentation/payment_screen/icici_payment_webview.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:luminar_std/presentation/test_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -387,21 +388,27 @@ class _PaymentScreenState extends State<PaymentScreen>
   void _handlePayment(EmiInstallment emi) async {
     final provider = Provider.of<EnrollmentProvider>(context, listen: false);
 
-    // Show loading indicator
+    // Show loading while fetching both gateway list + EMI order details in parallel
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) =>
-          const Center(child: CircularProgressIndicator(color: Colors.purple)),
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: Colors.purple),
+      ),
     );
 
     try {
-      await provider.getEmiPaymentDetails(id: emi.uid ?? "");
-      Navigator.pop(context); // Dismiss loading
+      final results = await Future.wait([
+        provider.getEmiPaymentDetails(id: emi.uid ?? ''),
+        PaymentScreenService().fetchPaymentGateways(),
+      ]);
 
-      if (provider.emiResData != null) {
-        _startEmiRazorpayPayment(provider.emiResData!);
-      } else {
+      if (!mounted) return;
+      Navigator.pop(context); // dismiss loading
+
+      final gateways = results[1] as List<PaymentGateway>;
+
+      if (provider.emiResData == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -413,17 +420,59 @@ class _PaymentScreenState extends State<PaymentScreen>
             behavior: SnackBarBehavior.floating,
           ),
         );
+        return;
+      }
+
+      // If only Razorpay is available → skip the picker and go straight to checkout
+      final hasOnlyRazorpay =
+          gateways.length == 1 && gateways.first.id == 'razorpay';
+
+      if (hasOnlyRazorpay) {
+        _startEmiRazorpayPayment(provider.emiResData!);
+      } else {
+        _showGatewaySheet(gateways, provider.emiResData!, emi);
       }
     } catch (e) {
       if (mounted) Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Something went wrong. Please try again.'),
-          backgroundColor: AppColors.error,
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+          backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
       );
     }
+  }
+
+  void _showGatewaySheet(
+    List<PaymentGateway> gateways,
+    EmiResponseData details,
+    EmiInstallment emi,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _GatewaySheet(
+        gateways: gateways,
+        emi: emi,
+        onSelect: (gateway) async {
+          Navigator.pop(context);
+          if (gateway.id == 'razorpay') {
+            _startEmiRazorpayPayment(details);
+          } else if (gateway.id == 'icici') {
+            await _openIciciPayment(widget.uid);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${gateway.label} integration coming soon.'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 
   Widget _buildDetailItem(String label, String value, {Color? statusColor}) {
@@ -1993,6 +2042,40 @@ class _PaymentScreenState extends State<PaymentScreen>
     );
   }
 
+  Future<void> _openIciciPayment(String enrollmentId) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    final session =
+        await PaymentScreenService().getIciciSession(enrollmentId);
+    if (!mounted) return;
+    Navigator.pop(context);
+
+    if (session != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => IciciPaymentWebView(
+            paymentUrl: session.url,
+            amount: session.amount,
+            discountApplied: session.discountApplied,
+            discountAmount: session.discountAmount,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to get ICICI payment URL.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _startEmiRazorpayPayment(EmiResponseData details) {
     var options = {
       'key': details.key,
@@ -2013,3 +2096,263 @@ class _PaymentScreenState extends State<PaymentScreen>
     _razorpay.open(options);
   }
 }
+
+// ─── Payment Gateway Selection Sheet ─────────────────────────────────────────
+
+class _GatewaySheet extends StatelessWidget {
+  const _GatewaySheet({
+    required this.gateways,
+    required this.emi,
+    required this.onSelect,
+  });
+
+  final List<PaymentGateway> gateways;
+  final EmiInstallment emi;
+  final void Function(PaymentGateway) onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final amount = emi.pendingAmount ?? emi.totalAmount ?? 0;
+    final installNo = emi.installmentNumber?.toInt() ?? 0;
+    final dueDate = emi.dueDate;
+    final isOverdue = emi.isOverdue ?? false;
+    final dueFmt = dueDate != null
+        ? DateFormat('dd MMM yyyy').format(dueDate)
+        : '—';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // drag handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.borderColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Payment summary header ──────────────────────────────────────
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isOverdue
+                    ? [const Color(0xFFB71C1C), const Color(0xFFE53935)]
+                    : [AppColors.primary, AppColors.primaryLight],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    isOverdue
+                        ? Icons.warning_amber_rounded
+                        : Icons.receipt_long_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        installNo > 0
+                            ? 'EMI Installment #$installNo'
+                            : 'Payment Due',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '₹${NumberFormat('#,##,###').format(amount)}',
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      isOverdue ? 'OVERDUE' : 'DUE DATE',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white60,
+                        letterSpacing: 0.8,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      dueFmt,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── Gateway section label ───────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Icon(Icons.payment_rounded,
+                    size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 8),
+                Text(
+                  'SELECT PAYMENT METHOD',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Divider(
+              color: AppColors.borderColor.withValues(alpha: 0.5), height: 1),
+          const SizedBox(height: 4),
+
+          // ── Gateway tiles ───────────────────────────────────────────────
+          ...gateways.map(
+            (gw) => _GatewayTile(gateway: gw, onTap: () => onSelect(gw)),
+          ),
+
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+}
+
+class _GatewayTile extends StatelessWidget {
+  const _GatewayTile({required this.gateway, required this.onTap});
+
+  final PaymentGateway gateway;
+  final VoidCallback onTap;
+
+  static const _kRazorpayBlue = Color(0xFF2C73D2);
+  static const _kIciciOrange  = Color(0xFFE87722);
+
+  Color get _brandColor {
+    switch (gateway.id) {
+      case 'razorpay': return _kRazorpayBlue;
+      case 'icici':    return _kIciciOrange;
+      default:         return AppColors.primary;
+    }
+  }
+
+  Widget _icon() {
+    switch (gateway.id) {
+      case 'razorpay':
+        return const RazorpayLogoIcon(size: 38);
+      case 'icici':
+        return const IciciLogoIcon(size: 38);
+      default:
+        return Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: _brandColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(Icons.account_balance_rounded, color: _brandColor, size: 20),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            _icon(),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    gateway.label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    _subtitle(),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: AppColors.textSecondary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _subtitle() {
+    switch (gateway.id) {
+      case 'razorpay': return 'Cards, UPI, Net Banking & Wallets';
+      case 'icici':    return 'ICICI Bank Net Banking & Cards';
+      default:         return 'Secure online payment';
+    }
+  }
+}
+
