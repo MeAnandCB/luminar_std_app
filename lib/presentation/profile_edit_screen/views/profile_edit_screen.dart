@@ -19,8 +19,6 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _initialized = false;
-  String _whatsappCountryCode = '+91';
-  String _parentPhoneCountryCode = '+91';
 
   @override
   void initState() {
@@ -164,16 +162,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           editController.emailController,
                           keyboardType: TextInputType.emailAddress,
                         ),
-                        _buildTextField(
+                        _buildPhoneField(
                           'Phone Number',
                           editController.phoneController,
-                          keyboardType: TextInputType.phone,
+                          editController.phoneCountryCode,
+                          (code) => editController.phoneCountryCode = code,
                         ),
                         _buildPhoneField(
                           'WhatsApp Number',
                           editController.whatsappController,
-                          _whatsappCountryCode,
-                          (code) => setState(() => _whatsappCountryCode = code),
+                          editController.whatsappCountryCode,
+                          (code) => editController.whatsappCountryCode = code,
                         ),
                         _buildDatePicker('Date of Birth', editController.dobController, () async {
                           final date = await showDatePicker(
@@ -293,8 +292,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         _buildPhoneField(
                           'Parent/Guardian Phone',
                           editController.parentPhoneController,
-                          _parentPhoneCountryCode,
-                          (code) => setState(() => _parentPhoneCountryCode = code),
+                          editController.parentPhoneCountryCode,
+                          (code) => editController.parentPhoneCountryCode = code,
                         ),
                         _buildTextField('How did you hear about us?', editController.hearAboutController),
                       ],
@@ -440,14 +439,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     border: Border(right: BorderSide(color: AppColors.borderColor)),
                   ),
                   child: CountryCodePicker(
-                    onChanged: (code) {
-                      final dial = code.dialCode ?? '+91';
-                      onCountryChanged(dial);
-                      // Prepend country code to controller value
-                      final digits = controller.text.replaceFirst(RegExp(r'^\+\d+\s*'), '');
-                      controller.text = '$dial $digits';
-                    },
-                    initialSelection: 'IN',
+                    onChanged: (code) => onCountryChanged(code.dialCode ?? '+91'),
+                    initialSelection: countryCode,
                     favorite: const ['+91', '+1', '+44'],
                     showCountryOnly: false,
                     showOnlyCountryWhenClosed: false,
@@ -460,7 +453,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     controller: controller,
                     keyboardType: TextInputType.phone,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       border: InputBorder.none,

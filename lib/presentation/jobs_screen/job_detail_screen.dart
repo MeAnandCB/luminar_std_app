@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/jobs_screen/job_apply_sheet.dart';
 import 'package:luminar_std/repository/jobs/model/job_notification_model.dart';
@@ -155,8 +156,23 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   const SizedBox(height: 16),
                   _buildDescriptionCard(_detail!.job),
                   if (applied) ...[
+                    // 2. Application Status
                     const SizedBox(height: 16),
                     _buildApplicationStatusSection(gradient),
+                    // 3. Interviews
+                    if (_appDetail != null && _appDetail!.interviews.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _buildInterviewsSection(_appDetail!.interviews, gradient),
+                    ],
+                    // 4. Stage History
+                    if (_appDetail != null && _appDetail!.stageHistory.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _SectionCard(
+                        title: 'Stage History',
+                        icon: Icons.history_rounded,
+                        child: _buildStageHistory(_appDetail!.stageHistory),
+                      ),
+                    ],
                   ],
                 ]),
               ),
@@ -520,22 +536,352 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             ),
           ],
 
-          // ── Stage history timeline ───────────────────────────────
-          if (d.stageHistory.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Text(
-              'STAGE HISTORY',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textSecondary,
-                letterSpacing: 1.0,
+          // ── Resume ──────────────────────────────────────────────
+          if ((d.resumeFile ?? d.resumeUrl) != null) ...[
+            const SizedBox(height: 16),
+            _buildResumeExpansionTile(d.resumeFile ?? d.resumeUrl!, gradient),
+          ],
+
+          // ── Submitted answers ────────────────────────────────────
+          if (d.answers.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _buildAnswersExpansionTile(d.answers, gradient),
+          ],
+
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResumeExpansionTile(String url, List<Color> gradient) {
+    final fileName = url.split('/').last.split('?').first;
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.5)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () async {
+            final uri = Uri.tryParse(url);
+            if (uri != null && await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(9),
+                  decoration: BoxDecoration(
+                    color: gradient[0].withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.picture_as_pdf_rounded, color: gradient[0], size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Resume',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        fileName.isNotEmpty ? fileName : 'Tap to open',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.open_in_new_rounded, size: 16, color: gradient[0]),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInterviewsSection(List<JobInterview> interviews, List<Color> gradient) {
+    final dateFmt = DateFormat('dd MMM yyyy');
+    final timeFmt = DateFormat('hh:mm a');
+
+    return _SectionCard(
+      title: 'Interviews',
+      icon: Icons.event_note_rounded,
+      child: Column(
+        children: interviews.asMap().entries.map((entry) {
+          final iv = entry.value;
+          final isLast = entry.key == interviews.length - 1;
+          final attendanceColor = _attendanceColor(iv.attendance);
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: attendanceColor.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Header ─────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: gradient[0].withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            iv.isOnline ? Icons.videocam_rounded : Icons.location_on_rounded,
+                            color: gradient[0],
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Mode label — fully from API
+                              Text(
+                                iv.isOnline ? 'Online Interview' : 'Offline Interview',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              // Stage name badge — dynamic from API
+                              if (iv.stageName.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: gradient[0].withValues(alpha: 0.10),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    iv.stageName,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: gradient[0],
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Attendance badge — fully from API
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: attendanceColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: attendanceColor.withValues(alpha: 0.35)),
+                          ),
+                          child: Text(
+                            iv.attendance.replaceAll('_', ' ').toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: attendanceColor,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(height: 1, color: AppColors.borderColor.withValues(alpha: 0.4)),
+                  // ── Detail grid ─────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                    child: Wrap(
+                      spacing: 20,
+                      runSpacing: 8,
+                      children: [
+                        if (iv.scheduledAt != null) ...[
+                          _ivChip(Icons.calendar_today_rounded, dateFmt.format(iv.scheduledAt!.toLocal())),
+                          _ivChip(Icons.access_time_rounded, timeFmt.format(iv.scheduledAt!.toLocal())),
+                        ],
+                        if ((iv.location ?? '').isNotEmpty)
+                          _ivChip(Icons.place_rounded, iv.location!),
+                        if ((iv.meetingLink ?? '').isNotEmpty)
+                          _ivChip(Icons.link_rounded, 'Join Link'),
+                        if ((iv.score ?? '').isNotEmpty)
+                          _ivChip(Icons.star_rounded, 'Score: ${iv.score}'),
+                      ],
+                    ),
+                  ),
+                  if ((iv.feedback ?? '').isNotEmpty) ...[
+                    Divider(height: 1, color: AppColors.borderColor.withValues(alpha: 0.3)),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.comment_rounded, size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              iv.feedback!,
+                              style: TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            const SizedBox(height: 10),
-            _buildStageHistory(d.stageHistory),
-          ],
-        ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _ivChip(IconData icon, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: AppColors.textSecondary),
+        const SizedBox(width: 5),
+        Text(label, style: TextStyle(fontSize: 12, color: AppColors.textPrimary)),
+      ],
+    );
+  }
+
+  Color _attendanceColor(String attendance) {
+    switch (attendance.toLowerCase()) {
+      case 'attended':
+      case 'present':     return const Color(0xFF10B981);
+      case 'missed':
+      case 'absent':
+      case 'cancelled':   return const Color(0xFFEF4444);
+      case 'rescheduled': return const Color(0xFFF59E0B);
+      default:            return const Color(0xFF6366F1); // scheduled
+    }
+  }
+
+  Widget _buildAnswersExpansionTile(List<ApplicationAnswer> answers, List<Color> gradient) {
+    final visible = answers.where((a) => a.displayValue.isNotEmpty).toList();
+    if (visible.isEmpty) return const SizedBox.shrink();
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.5)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          leading: Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: gradient[0].withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.quiz_rounded, color: gradient[0], size: 20),
+          ),
+          title: Text(
+            'Your Answers',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          subtitle: Text(
+            '${visible.length} ${visible.length == 1 ? 'response' : 'responses'}',
+            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          ),
+          trailing: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
+          children: visible.map((a) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          a.label,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          a.displayValue,
+                          style: TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: gradient[0].withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      a.fieldType.replaceAll('_', ' '),
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: gradient[0],
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )).toList(),
+        ),
       ),
     );
   }

@@ -61,6 +61,9 @@ class _JobApplySheetState extends State<_JobApplySheet> {
   bool _loadingProfile = true;
   bool _isSubmitting = false;
 
+  // Per-field error messages — keyed by 'email','phone','resume', or field uid
+  final Map<String, String?> _errors = {};
+
   @override
   void initState() {
     super.initState();
@@ -71,7 +74,9 @@ class _JobApplySheetState extends State<_JobApplySheet> {
       if (f.fieldType == 'multi_select' || f.fieldType == 'single_select') {
         _selectAnswers[f.uid] = {};
       } else {
-        _textAnswers[f.uid] = TextEditingController();
+        final ctrl = TextEditingController();
+        ctrl.addListener(() => _clearError(f.uid));
+        _textAnswers[f.uid] = ctrl;
       }
     }
     _loadProfile();
@@ -116,38 +121,42 @@ class _JobApplySheetState extends State<_JobApplySheet> {
       _pickedFileName = file.name;
       _pickedBase64 = base64Encode(bytes);
       _resumeUrl = null;
+      _errors.remove('resume');
     });
   }
 
   bool _hasResume() => _resumeUrl != null || _pickedBase64 != null;
 
-  String? _validate() {
-    if (_emailCtrl.text.trim().isEmpty) return 'Email is required.';
-    if (_phoneCtrl.text.trim().isEmpty) return 'Phone number is required.';
-    if (!_hasResume()) return 'Please attach a resume.';
+  /// Validates all fields, populates [_errors], returns true if valid.
+  bool _validate() {
+    final next = <String, String?>{};
+    if (_emailCtrl.text.trim().isEmpty) next['email'] = 'Email is required.';
+    if (_phoneCtrl.text.trim().isEmpty) next['phone'] = 'Phone number is required.';
+    if (!_hasResume()) next['resume'] = 'Please attach a resume.';
     for (final f in widget.jobDetail.customFields) {
       if (!f.isRequired) continue;
       if (f.fieldType == 'multi_select' || f.fieldType == 'single_select') {
         if (_selectAnswers[f.uid]?.isEmpty ?? true) {
-          return '"${f.label}" is required.';
+          next[f.uid] = '${f.label} is required.';
         }
       } else {
         if (_textAnswers[f.uid]?.text.trim().isEmpty ?? true) {
-          return '"${f.label}" is required.';
+          next[f.uid] = '${f.label} is required.';
         }
       }
     }
-    return null;
+    setState(() => _errors
+      ..clear()
+      ..addAll(next));
+    return next.isEmpty;
+  }
+
+  void _clearError(String key) {
+    if (_errors.containsKey(key)) setState(() => _errors.remove(key));
   }
 
   void _showConfirmation() {
-    final err = _validate();
-    if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(err), backgroundColor: Colors.red),
-      );
-      return;
-    }
+    if (!_validate()) return;
 
     final answers = widget.jobDetail.customFields.map((f) {
       dynamic val;
@@ -265,6 +274,7 @@ class _JobApplySheetState extends State<_JobApplySheet> {
                           label: 'Full Name',
                           icon: Icons.person_rounded,
                           gradient: widget.gradient,
+                          readOnly: true,
                         ),
                         const SizedBox(height: 12),
                         _ApplyField(
@@ -273,6 +283,8 @@ class _JobApplySheetState extends State<_JobApplySheet> {
                           icon: Icons.email_rounded,
                           keyboardType: TextInputType.emailAddress,
                           gradient: widget.gradient,
+                          readOnly: true,
+                          errorText: _errors['email'],
                         ),
                         const SizedBox(height: 12),
                         _ApplyField(
@@ -281,6 +293,8 @@ class _JobApplySheetState extends State<_JobApplySheet> {
                           icon: Icons.phone_rounded,
                           keyboardType: TextInputType.phone,
                           gradient: widget.gradient,
+                          readOnly: true,
+                          errorText: _errors['phone'],
                         ),
                         const SizedBox(height: 20),
                         _SectionLabel(label: 'Resume *'),
@@ -290,6 +304,7 @@ class _JobApplySheetState extends State<_JobApplySheet> {
                           pickedFileName: _pickedFileName,
                           gradient: widget.gradient,
                           onPickFile: _pickFile,
+                          errorText: _errors['resume'],
                           onClear: () => setState(() {
                             _pickedFileName = null;
                             _pickedBase64 = null;
@@ -307,8 +322,11 @@ class _JobApplySheetState extends State<_JobApplySheet> {
                                 textController: _textAnswers[f.uid],
                                 selected: _selectAnswers[f.uid] ?? {},
                                 gradient: widget.gradient,
-                                onSelectChanged: (val) =>
-                                    setState(() => _selectAnswers[f.uid] = val),
+                                errorText: _errors[f.uid],
+                                onSelectChanged: (val) => setState(() {
+                                  _selectAnswers[f.uid] = val;
+                                  _errors.remove(f.uid);
+                                }),
                               ),
                             ),
                           ),
@@ -549,6 +567,8 @@ class _ApplyField extends StatelessWidget {
     required this.icon,
     required this.gradient,
     this.keyboardType,
+    this.readOnly = false,
+    this.errorText,
   });
 
   final TextEditingController controller;
@@ -556,40 +576,87 @@ class _ApplyField extends StatelessWidget {
   final IconData icon;
   final List<Color> gradient;
   final TextInputType? keyboardType;
+  final bool readOnly;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-        prefixIcon: Icon(icon, size: 18, color: gradient[0]),
-        filled: true,
-        fillColor: AppColors.cardBackground,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 14,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: AppColors.borderColor.withValues(alpha: 0.5),
+    final hasError = errorText != null && errorText!.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          readOnly: readOnly,
+          style: TextStyle(
+            fontSize: 14,
+            color: readOnly ? AppColors.textSecondary : AppColors.textPrimary,
+          ),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: TextStyle(
+              color: hasError ? Colors.red.shade600 : AppColors.textSecondary,
+              fontSize: 13,
+            ),
+            prefixIcon: Icon(
+              icon,
+              size: 18,
+              color: hasError
+                  ? Colors.red.shade400
+                  : readOnly
+                      ? AppColors.textSecondary
+                      : gradient[0],
+            ),
+            suffixIcon: readOnly
+                ? const Icon(Icons.lock_outline_rounded, size: 16, color: Colors.grey)
+                : hasError
+                    ? Icon(Icons.error_outline_rounded, size: 18, color: Colors.red.shade400)
+                    : null,
+            filled: true,
+            fillColor: hasError
+                ? Colors.red.withValues(alpha: 0.04)
+                : readOnly
+                    ? AppColors.surface
+                    : AppColors.cardBackground,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppColors.borderColor.withValues(alpha: 0.5)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: hasError
+                    ? Colors.red.shade400
+                    : AppColors.borderColor.withValues(alpha: readOnly ? 0.3 : 0.5),
+                width: hasError ? 1.5 : 1.0,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: hasError ? Colors.red.shade400 : readOnly ? AppColors.borderColor : gradient[0],
+                width: readOnly ? 1.0 : 1.5,
+              ),
+            ),
           ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: AppColors.borderColor.withValues(alpha: 0.5),
+        if (hasError) ...[
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const SizedBox(width: 4),
+              Icon(Icons.info_outline_rounded, size: 12, color: Colors.red.shade600),
+              const SizedBox(width: 4),
+              Text(
+                errorText!,
+                style: TextStyle(fontSize: 11, color: Colors.red.shade600),
+              ),
+            ],
           ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: gradient[0], width: 1.5),
-        ),
-      ),
+        ],
+      ],
     );
   }
 }
@@ -603,6 +670,7 @@ class _ResumeSection extends StatelessWidget {
     required this.gradient,
     required this.onPickFile,
     required this.onClear,
+    this.errorText,
   });
 
   final String? resumeUrl;
@@ -610,6 +678,7 @@ class _ResumeSection extends StatelessWidget {
   final List<Color> gradient;
   final VoidCallback onPickFile;
   final VoidCallback onClear;
+  final String? errorText;
 
   String get _displayName {
     if (pickedFileName != null) return pickedFileName!;
@@ -623,8 +692,11 @@ class _ResumeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasError = errorText != null && errorText!.isNotEmpty;
+
+    Widget card;
     if (_hasFile) {
-      return Container(
+      card = Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: gradient[0].withValues(alpha: 0.06),
@@ -639,11 +711,7 @@ class _ResumeSection extends StatelessWidget {
                 color: gradient[0].withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                Icons.description_rounded,
-                color: gradient[0],
-                size: 20,
-              ),
+              child: Icon(Icons.description_rounded, color: gradient[0], size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -652,20 +720,13 @@ class _ResumeSection extends StatelessWidget {
                 children: [
                   Text(
                     _displayName.isEmpty ? 'Resume attached' : _displayName,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     pickedFileName != null ? 'Newly uploaded' : 'From your profile',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -676,48 +737,61 @@ class _ResumeSection extends StatelessWidget {
                 foregroundColor: gradient[0],
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               ),
-              child: const Text(
-                'Change',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              ),
+              child: const Text('Change', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
       );
-    }
-
-    return GestureDetector(
-      onTap: onPickFile,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.borderColor.withValues(alpha: 0.5),
-            style: BorderStyle.solid,
+    } else {
+      card = GestureDetector(
+        onTap: onPickFile,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: hasError ? Colors.red.withValues(alpha: 0.04) : AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: hasError ? Colors.red.shade400 : AppColors.borderColor.withValues(alpha: 0.5),
+              width: hasError ? 1.5 : 1.0,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(Icons.upload_file_rounded, color: hasError ? Colors.red.shade400 : gradient[0], size: 32),
+              const SizedBox(height: 8),
+              Text(
+                'Upload Resume',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: hasError ? Colors.red.shade600 : gradient[0],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text('PDF, DOC or DOCX', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            ],
           ),
         ),
-        child: Column(
-          children: [
-            Icon(Icons.upload_file_rounded, color: gradient[0], size: 32),
-            const SizedBox(height: 8),
-            Text(
-              'Upload Resume',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: gradient[0],
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'PDF, DOC or DOCX',
-              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-            ),
-          ],
-        ),
-      ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        card,
+        if (hasError) ...[
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const SizedBox(width: 4),
+              Icon(Icons.info_outline_rounded, size: 12, color: Colors.red.shade600),
+              const SizedBox(width: 4),
+              Text(errorText!, style: TextStyle(fontSize: 11, color: Colors.red.shade600)),
+            ],
+          ),
+        ],
+      ],
     );
   }
 }
@@ -731,6 +805,7 @@ class _CustomFieldInput extends StatelessWidget {
     required this.selected,
     required this.gradient,
     required this.onSelectChanged,
+    this.errorText,
   });
 
   final JobCustomField field;
@@ -738,12 +813,17 @@ class _CustomFieldInput extends StatelessWidget {
   final Set<String> selected;
   final List<Color> gradient;
   final ValueChanged<Set<String>> onSelectChanged;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
+    final hasError = errorText != null && errorText!.isNotEmpty;
+    final isSelect = field.fieldType == 'multi_select' || field.fieldType == 'single_select';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ── Label ────────────────────────────────────────────────────────────
         Row(
           children: [
             Text(
@@ -751,22 +831,23 @@ class _CustomFieldInput extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: hasError ? Colors.red.shade700 : AppColors.textPrimary,
               ),
             ),
             if (field.isRequired)
-              const Text(
+              Text(
                 ' *',
                 style: TextStyle(
-                  color: Color(0xFFEF4444),
+                  color: hasError ? Colors.red.shade600 : const Color(0xFFEF4444),
                   fontWeight: FontWeight.bold,
                 ),
               ),
           ],
         ),
         const SizedBox(height: 8),
-        if (field.fieldType == 'multi_select' ||
-            field.fieldType == 'single_select')
+
+        // ── Input ────────────────────────────────────────────────────────────
+        if (isSelect)
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -786,31 +867,25 @@ class _CustomFieldInput extends StatelessWidget {
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    gradient:
-                        isOn ? LinearGradient(colors: gradient) : null,
+                    gradient: isOn ? LinearGradient(colors: gradient) : null,
                     color: isOn ? null : AppColors.cardBackground,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isOn
                           ? gradient[0]
-                          : AppColors.borderColor.withValues(alpha: 0.5),
-                      width: isOn ? 1.5 : 1,
+                          : hasError
+                              ? Colors.red.shade300
+                              : AppColors.borderColor.withValues(alpha: 0.5),
+                      width: isOn || hasError ? 1.5 : 1,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (isOn) ...[
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          color: Colors.white,
-                          size: 13,
-                        ),
+                        const Icon(Icons.check_circle_rounded, color: Colors.white, size: 13),
                         const SizedBox(width: 5),
                       ],
                       Text(
@@ -818,9 +893,7 @@ class _CustomFieldInput extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: isOn
-                              ? Colors.white
-                              : AppColors.textSecondary,
+                          color: isOn ? Colors.white : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -835,32 +908,46 @@ class _CustomFieldInput extends StatelessWidget {
             style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
             decoration: InputDecoration(
               hintText: 'Enter ${field.label.toLowerCase()}',
-              hintStyle:
-                  TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               filled: true,
-              fillColor: AppColors.cardBackground,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 12,
-              ),
+              fillColor: hasError ? Colors.red.withValues(alpha: 0.04) : AppColors.cardBackground,
+              suffixIcon: hasError
+                  ? Icon(Icons.error_outline_rounded, size: 18, color: Colors.red.shade400)
+                  : null,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(
-                  color: AppColors.borderColor.withValues(alpha: 0.5),
-                ),
+                borderSide: BorderSide(color: AppColors.borderColor.withValues(alpha: 0.5)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(
-                  color: AppColors.borderColor.withValues(alpha: 0.5),
+                  color: hasError ? Colors.red.shade400 : AppColors.borderColor.withValues(alpha: 0.5),
+                  width: hasError ? 1.5 : 1.0,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: gradient[0], width: 1.5),
+                borderSide: BorderSide(
+                  color: hasError ? Colors.red.shade400 : gradient[0],
+                  width: 1.5,
+                ),
               ),
             ),
           ),
+
+        // ── Inline error ─────────────────────────────────────────────────────
+        if (hasError) ...[
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const SizedBox(width: 4),
+              Icon(Icons.info_outline_rounded, size: 12, color: Colors.red.shade600),
+              const SizedBox(width: 4),
+              Text(errorText!, style: TextStyle(fontSize: 11, color: Colors.red.shade600)),
+            ],
+          ),
+        ],
       ],
     );
   }

@@ -320,4 +320,12 @@ class DashboardController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void decrementUnreadExams() {
+    final stats = _dashboard?.quickStats;
+    if (stats != null && (stats.unreadExams ?? 0) > 0) {
+      stats.unreadExams = stats.unreadExams! - 1;
+      notifyListeners();
+    }
+  }
 }

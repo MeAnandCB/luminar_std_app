@@ -23,7 +23,8 @@ class BottomNavScreen extends StatefulWidget {
   State<BottomNavScreen> createState() => _BottomNavScreenState();
 }
 
-class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProviderStateMixin {
+class _BottomNavScreenState extends State<BottomNavScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late int _currentIndex;
   late ChatProvider _chatProvider;
   bool _chatInitialized = false;
@@ -48,6 +49,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
       end: 0.88,
     ).animate(CurvedAnimation(parent: _fabController, curve: Curves.easeInOut));
 
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatProvider = Provider.of<ChatProvider>(context, listen: false);
       _loadData();
@@ -59,8 +61,19 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _fabController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      // Refresh dashboard when app comes back to foreground so
+      // new exams / jobs added on the backend are reflected immediately
+      Provider.of<DashboardController>(context, listen: false)
+          .getDashboardData(context: context, forceRefresh: true);
+    }
   }
 
   Future<void> _loadData() async {
@@ -132,6 +145,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
     context.watch<ThemeProvider>();
     final unreadCount = chatProv.totalUnreadCount;
     final unreadExams = context.select<DashboardController, int>((c) => c.unreadExamsCount);
+    final unviewedJobs = context.select<DashboardController, int>((c) => c.unviewedJobNotificationsCount);
     final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     // Use dashboard enrollment status — no separate enrollment API call needed
@@ -199,11 +213,11 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
       ),
 
       // ★ Creative bottom nav — compact, pill highlights, no Divider
-      bottomNavigationBar: _buildBottomNav(unreadCount, unreadExams),
+      bottomNavigationBar: _buildBottomNav(unreadCount, unreadExams, unviewedJobs),
     );
   }
 
-  Widget _buildBottomNav(int unreadCount, int unreadExams) {
+  Widget _buildBottomNav(int unreadCount, int unreadExams, int unviewedJobs) {
     return Container(
       // ★ Smaller height than default BottomAppBar
       height: 62,
@@ -251,7 +265,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _buildNavItem(2, Icons.wechat_rounded, 'Chat', badgeCount: unreadCount),
-                        _buildNavItem(3, Icons.menu_rounded, 'More', badgeCount: unreadExams),
+                        _buildNavItem(3, Icons.menu_rounded, 'More', badgeCount: unreadExams + unviewedJobs),
                       ],
                     ),
                   ),
@@ -289,6 +303,12 @@ class _BottomNavScreenState extends State<BottomNavScreen> with SingleTickerProv
           } else {
             _chatProvider.loadChats(showLoading: false);
           }
+        }
+        // Refresh dashboard counts when switching to More tab
+        // so new exams/jobs from the backend are reflected immediately
+        if (index == 3) {
+          Provider.of<DashboardController>(context, listen: false)
+              .getDashboardData(context: context, forceRefresh: true);
         }
       },
       behavior: HitTestBehavior.opaque,

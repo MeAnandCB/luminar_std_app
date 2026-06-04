@@ -47,6 +47,19 @@ class ProfileEditController extends ChangeNotifier {
   int? _qualificationId;
   int? _preferredLocationId;
 
+  // Country codes — stored separately from the digit-only controllers
+  String _phoneCountryCode = '+91';
+  String get phoneCountryCode => _phoneCountryCode;
+  set phoneCountryCode(String v) { _phoneCountryCode = v; notifyListeners(); }
+
+  String _whatsappCountryCode = '+91';
+  String get whatsappCountryCode => _whatsappCountryCode;
+  set whatsappCountryCode(String v) { _whatsappCountryCode = v; notifyListeners(); }
+
+  String _parentPhoneCountryCode = '+91';
+  String get parentPhoneCountryCode => _parentPhoneCountryCode;
+  set parentPhoneCountryCode(String v) { _parentPhoneCountryCode = v; notifyListeners(); }
+
   String _selectedStudentType = 'student';
   String get selectedStudentType => _selectedStudentType;
   set selectedStudentType(String value) {
@@ -82,8 +95,14 @@ class ProfileEditController extends ChangeNotifier {
     // Personal Info
     fullNameController.text = p?.fullName ?? '';
     emailController.text = p?.email ?? '';
-    phoneController.text = p?.phone ?? '';
-    whatsappController.text = p?.whatsappNumber ?? '';
+    _splitPhone(p?.phone ?? '', (code, digits) {
+      _phoneCountryCode = code;
+      phoneController.text = digits;
+    });
+    _splitPhone(p?.whatsappNumber ?? '', (code, digits) {
+      _whatsappCountryCode = code;
+      whatsappController.text = digits;
+    });
     _selectedDob = p?.dateOfBirth;
     dobController.text = _selectedDob != null ? DateFormat('yyyy-MM-dd').format(_selectedDob!) : '';
     ageController.text = p?.age?.toString() ?? '';
@@ -109,7 +128,10 @@ class ProfileEditController extends ChangeNotifier {
     _preferredLocationId = c?.preferredLocation?.id;
     preferredLocationController.text = c?.preferredLocation?.name ?? '';
     parentNameController.text = c?.parentName ?? '';
-    parentPhoneController.text = c?.parentPhone ?? '';
+    _splitPhone(c?.parentPhone ?? '', (code, digits) {
+      _parentPhoneCountryCode = code;
+      parentPhoneController.text = digits;
+    });
     hearAboutController.text = c?.howDidYouHear ?? '';
 
     // Placement Info
@@ -117,6 +139,64 @@ class ProfileEditController extends ChangeNotifier {
     preferredJobLocationController.text = pl?.preferredJobLocation ?? '';
 
     if (notify) notifyListeners();
+  }
+
+  /// Splits a stored phone string like "+918943382754" into ("+91", "8943382754").
+  /// Matches against known valid dial codes sorted longest-first so that
+  /// "+1684" (American Samoa, 4 chars) is tried before "+1" (USA),
+  /// and "+91" (India, 2 chars) wins over the non-existent "+918".
+  void _splitPhone(String raw, void Function(String code, String digits) out) {
+    final s = raw.trim();
+    if (!s.startsWith('+') || s.length < 2) {
+      out('+91', s);
+      return;
+    }
+
+    // Sorted longest-first to prevent prefix collisions
+    const _knownCodes = [
+      // ── NANP (+1 + 3-digit area) ──────────────────────────────────────────
+      '+1684','+1264','+1268','+1242','+1246','+1441','+1284','+1345',
+      '+1767','+1809','+1829','+1849','+1473','+1671','+1876','+1664',
+      '+1670','+1787','+1939','+1758','+1784','+1869','+1868','+1649','+1340',
+      // ── 3-digit codes ─────────────────────────────────────────────────────
+      '+213','+376','+244','+374','+994','+973','+880','+375','+229',
+      '+975','+387','+267','+246','+673','+359','+226','+257','+855',
+      '+237','+238','+236','+235','+269','+242','+243','+682','+506',
+      '+385','+357','+253','+240','+291','+372','+251','+679','+358',
+      '+241','+220','+995','+233','+299','+502','+224','+245','+509',
+      '+852','+354','+964','+353','+225','+962','+254','+686','+850',
+      '+965','+996','+856','+371','+961','+266','+231','+218','+423',
+      '+370','+352','+853','+389','+960','+223','+356','+692','+222',
+      '+230','+976','+382','+505','+227','+234','+683','+968','+680',
+      '+970','+507','+675','+595','+598','+998','+678','+677','+232',
+      '+421','+386','+249','+597','+268','+963','+886','+992','+255',
+      '+670','+228','+690','+676','+216','+993','+688','+256','+971',
+      '+260','+263','+591','+261','+265','+212','+258','+264','+674',
+      '+977','+380','+381','+385',
+      // ── 2-digit codes ─────────────────────────────────────────────────────
+      '+20','+27','+30','+31','+32','+33','+34','+36','+39',
+      '+40','+41','+43','+44','+45','+46','+47','+48','+49',
+      '+51','+52','+53','+54','+55','+56','+57','+58','+60',
+      '+61','+62','+63','+64','+65','+66','+81','+82','+84',
+      '+86','+90','+91','+92','+93','+94','+95','+98',
+      // ── 1-digit codes ─────────────────────────────────────────────────────
+      '+1','+7',
+    ];
+
+    for (final code in _knownCodes) {
+      if (s.startsWith(code)) {
+        out(code, s.substring(code.length));
+        return;
+      }
+    }
+
+    // Last-resort fallback — take up to 3 digits after '+'
+    final m = RegExp(r'^\+(\d{1,3})(.*)').firstMatch(s);
+    if (m != null) {
+      out('+${m.group(1)!}', m.group(2)!);
+    } else {
+      out('+91', s);
+    }
   }
 
   void updateDob(DateTime date) {
@@ -170,8 +250,11 @@ class ProfileEditController extends ChangeNotifier {
       final c = initialProfile?.contactInfo;
       final pl = initialProfile?.placementInfo;
 
-      // Only add editable fields (excluding name, email, phone)
-      addIfChanged('whatsapp_number', whatsappController.text, p?.whatsappNumber);
+      // Phone fields — join country code + digits, compare against stored full number
+      final fullPhone    = '$_phoneCountryCode${phoneController.text.trim()}';
+      final fullWhatsapp = '$_whatsappCountryCode${whatsappController.text.trim()}';
+      addIfChanged('phone',          fullPhone.length > _phoneCountryCode.length    ? fullPhone    : null, p?.phone);
+      addIfChanged('whatsapp_number', fullWhatsapp.length > _whatsappCountryCode.length ? fullWhatsapp : null, p?.whatsappNumber);
       addIfChanged(
         'date_of_birth',
         dobController.text,
@@ -201,7 +284,8 @@ class ProfileEditController extends ChangeNotifier {
       addIfChanged('pincode', pincodeController.text, c?.pincode);
       addIfChanged('preferred_location_id', _preferredLocationId, c?.preferredLocation?.id);
       addIfChanged('parent_name', parentNameController.text, c?.parentName);
-      addIfChanged('parent_phone_number', parentPhoneController.text, c?.parentPhone);
+      final fullParentPhone = '$_parentPhoneCountryCode${parentPhoneController.text.trim()}';
+      addIfChanged('parent_phone_number', fullParentPhone.length > _parentPhoneCountryCode.length ? fullParentPhone : null, c?.parentPhone);
       addIfChanged('how_did_you_hear', hearAboutController.text, c?.howDidYouHear);
 
       addIfChanged('placement_assistance', _placementAssistance, pl?.placementAssistance);

@@ -211,13 +211,6 @@ class _JobCard extends StatelessWidget {
     return _gradients[idx];
   }
 
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-  }
-
   String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
     if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
@@ -268,35 +261,10 @@ class _JobCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: gradient,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: gradient[0].withValues(alpha: 0.35),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            _initials(job.companyName),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
+                      _CompanyAvatar(
+                        name: job.companyName,
+                        logoUrl: job.companyLogo,
+                        gradient: gradient,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -536,6 +504,93 @@ class _StatusBadge extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Company avatar ───────────────────────────────────────────────────────────
+
+class _CompanyAvatar extends StatelessWidget {
+  const _CompanyAvatar({
+    required this.name,
+    required this.gradient,
+    this.logoUrl,
+  });
+
+  final String name;
+  final String? logoUrl;
+  final List<Color> gradient;
+
+  String _initials() {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final url = logoUrl;
+    if (url != null && url.isNotEmpty) {
+      return Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: gradient[0].withValues(alpha: 0.25),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Image.network(
+            url,
+            width: 48,
+            height: 48,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildInitials(),
+          ),
+        ),
+      );
+    }
+    return _buildInitials();
+  }
+
+  Widget _buildInitials() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: gradient[0].withValues(alpha: 0.35),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          _initials(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
     );
   }
 }

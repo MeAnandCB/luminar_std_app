@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/repository/exam_screen/model.dart';
 import 'package:luminar_std/repository/exam_screen/service.dart';
 import 'package:luminar_std/presentation/exam_screen/exam_result_screen.dart';
@@ -38,6 +39,10 @@ class _ExamScreenState extends State<ExamScreen> {
     // Mark seen locally right away so UI updates immediately
     if (!_seenUids.contains(session.uid)) {
       setState(() => _seenUids.add(session.uid));
+      // Decrement dashboard badge so bottom nav + more screen update instantly
+      if (mounted) {
+        context.read<DashboardController>().decrementUnreadExams();
+      }
     }
 
     // Navigate first so the user isn't blocked

@@ -35,6 +35,7 @@ class JobNotification {
   final String jobTitle;
   final String companyName;
   final String companyUid;
+  final String? companyLogo;
   final String batchName;
   final bool isViewed;
   final DateTime? viewedAt;
@@ -48,6 +49,7 @@ class JobNotification {
     required this.jobTitle,
     required this.companyName,
     required this.companyUid,
+    this.companyLogo,
     required this.batchName,
     required this.isViewed,
     this.viewedAt,
@@ -69,6 +71,7 @@ class JobNotification {
       jobTitle: _str(json['job_title']),
       companyName: _str(json['company_name']),
       companyUid: _str(json['company_uid']),
+      companyLogo: json['company_logo']?.toString(),
       batchName: _str(json['batch_name']),
       isViewed: json['is_viewed'] == true,
       viewedAt: _date(json['viewed_at']),
@@ -293,6 +296,54 @@ class JobApplicationDetailResponse {
   }
 }
 
+class JobInterview {
+  final String uid;
+  final String stageUid;
+  final String stageName;
+  final DateTime? scheduledAt;
+  final String mode;
+  final String? meetingLink;
+  final String? location;
+  final String attendance;
+  final String? feedback;
+  final String? score; // API returns as string e.g. "5.00"
+  final DateTime? createdAt;
+
+  JobInterview({
+    required this.uid,
+    required this.stageUid,
+    required this.stageName,
+    this.scheduledAt,
+    required this.mode,
+    this.meetingLink,
+    this.location,
+    required this.attendance,
+    this.feedback,
+    this.score,
+    this.createdAt,
+  });
+
+  bool get isOnline => mode.toLowerCase() == 'online';
+
+  static DateTime? _date(dynamic v) => v is String ? DateTime.tryParse(v) : null;
+
+  factory JobInterview.fromJson(Map<String, dynamic> json) {
+    return JobInterview(
+      uid: json['uid']?.toString() ?? '',
+      stageUid: json['stage_uid']?.toString() ?? '',
+      stageName: json['stage_name']?.toString() ?? '',
+      scheduledAt: _date(json['scheduled_at']),
+      mode: json['mode']?.toString() ?? 'offline',
+      meetingLink: json['meeting_link']?.toString(),
+      location: json['location']?.toString(),
+      attendance: json['attendance']?.toString() ?? 'scheduled',
+      feedback: json['feedback']?.toString(),
+      score: json['score']?.toString(),
+      createdAt: _date(json['created_at']),
+    );
+  }
+}
+
 class JobApplicationDetail {
   final String applicationUid;
   final String jobUid;
@@ -301,6 +352,7 @@ class JobApplicationDetail {
   final PipelineStage? currentStage;
   final List<PipelineStage> pipelineStages;
   final List<StageHistory> stageHistory;
+  final List<JobInterview> interviews;
   final List<ApplicationAnswer> answers;
   final String? resumeUrl;
   final String? resumeFile;
@@ -313,6 +365,7 @@ class JobApplicationDetail {
     this.currentStage,
     required this.pipelineStages,
     required this.stageHistory,
+    required this.interviews,
     required this.answers,
     this.resumeUrl,
     this.resumeFile,
@@ -338,6 +391,10 @@ class JobApplicationDetail {
       stageHistory: (json['stage_history'] as List? ?? [])
           .whereType<Map<String, dynamic>>()
           .map(StageHistory.fromJson)
+          .toList(),
+      interviews: (json['interviews'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(JobInterview.fromJson)
           .toList(),
       answers: (json['answers'] as List? ?? [])
           .whereType<Map<String, dynamic>>()
@@ -466,6 +523,7 @@ class ApplicationAnswer {
   final String key;
   final String fieldType;
   final String? valueText;
+  final List<String> valueJson;
 
   ApplicationAnswer({
     required this.uid,
@@ -474,9 +532,17 @@ class ApplicationAnswer {
     required this.key,
     required this.fieldType,
     this.valueText,
+    this.valueJson = const [],
   });
 
+  /// Human-readable display: joins multi-select list or returns text value.
+  String get displayValue {
+    if (valueJson.isNotEmpty) return valueJson.join(', ');
+    return valueText ?? '';
+  }
+
   factory ApplicationAnswer.fromJson(Map<String, dynamic> json) {
+    final rawJson = json['value_json'];
     return ApplicationAnswer(
       uid: json['uid']?.toString() ?? '',
       fieldUid: json['field_uid']?.toString() ?? '',
@@ -484,6 +550,9 @@ class ApplicationAnswer {
       key: json['key']?.toString() ?? '',
       fieldType: json['field_type']?.toString() ?? 'text',
       valueText: json['value_text']?.toString(),
+      valueJson: rawJson is List
+          ? rawJson.map((e) => e.toString()).toList()
+          : const [],
     );
   }
 }
