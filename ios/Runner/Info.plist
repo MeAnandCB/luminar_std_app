@@ -49,12 +49,14 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>Luminar Technolab will send you notifications for exam results, class schedules, job opportunities, payment reminders, and new chat messages.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Used to take photos and record videos</string>
+	<string>Luminar Technolab will access your camera to scan attendance QR codes, capture chat images, and update your profile photo.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Used to record video audio and voice messages</string>
+	<string>Luminar Technolab will access your microphone to record and send voice messages in chat.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Used to select photos and videos from your library</string>
+	<string>Luminar Technolab will access your photo library to select images for chat and update your profile photo.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
