@@ -35,6 +35,7 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   String _displayName = 'Loading...';
+  bool _showInstaSection = true;
 
   @override
   void initState() {
@@ -242,13 +243,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           const SizedBox(height: 14),
                           _buildReferralCard(),
                           const SizedBox(height: 28),
-                          _buildSectionHeading(
-                            'Latest Updates',
-                            'News & announcements',
+                          if (_showInstaSection) ...[
+                            _buildSectionHeading(
+                              'Latest Updates',
+                              'News & announcements',
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                          AdvancedInstaCarousel(
+                            onAvailabilityChanged: (hasContent) {
+                              if (mounted && _showInstaSection != hasContent) {
+                                setState(() => _showInstaSection = hasContent);
+                              }
+                            },
                           ),
-                          const SizedBox(height: 14),
-                          const AdvancedInstaCarousel(),
-                          const SizedBox(height: 28),
+                          if (_showInstaSection) const SizedBox(height: 28),
                           _buildSectionHeading(
                             'Follow Us',
                             'Stay connected with Luminar',

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.dart';
+import 'package:luminar_std/presentation/auth_screens/terms_screen/terms_agreement_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -136,8 +138,8 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) _ringCtrl.forward();
     });
 
-    // Navigate to login with fade transition
-    Timer(const Duration(milliseconds: 3500), () {
+    // Navigate to login (or terms agreement) with fade transition
+    Timer(const Duration(milliseconds: 3500), () async {
       if (!mounted) return;
       if (AppUtils.isDeepLinking) {
         debugPrint(
@@ -147,10 +149,18 @@ class _SplashScreenState extends State<SplashScreen>
         return;
       }
       AppUtils.appReady = true;
+
+      final prefs = await SharedPreferences.getInstance();
+      final hasAcceptedTerms =
+          prefs.getBool(TermsAgreementScreen.prefsKey) ?? false;
+      if (!mounted) return;
+
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const LoginScreen(),
+          pageBuilder: (_, __, ___) => hasAcceptedTerms
+              ? const LoginScreen()
+              : const TermsAgreementScreen(),
           transitionsBuilder: (_, anim, __, child) =>
               FadeTransition(opacity: anim, child: child),
           transitionDuration: const Duration(milliseconds: 700),
@@ -517,7 +527,7 @@ class _SplashScreenState extends State<SplashScreen>
               bottom: 24,
               right: 24,
               child: Text(
-                'V2 : 2.1.3',
+                'V2 : 2.1.4',
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.white.withValues(alpha: 0.38),

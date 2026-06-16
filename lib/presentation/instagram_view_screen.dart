@@ -11,7 +11,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 
 class AdvancedInstaCarousel extends StatefulWidget {
-  const AdvancedInstaCarousel({super.key});
+  /// Called once loading finishes, with `true` if the carousel has content
+  /// to show and `false` if it should (along with its section title) be
+  /// hidden — e.g. the Instagram access token expired or the request failed.
+  final ValueChanged<bool>? onAvailabilityChanged;
+
+  const AdvancedInstaCarousel({super.key, this.onAvailabilityChanged});
 
   @override
   State<AdvancedInstaCarousel> createState() => _AdvancedInstaCarouselState();
@@ -22,6 +27,7 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
   List<String> images = [];
   bool isLoading = true;
   bool isLoadingMore = false;
+  bool hasError = false;
   String? nextUrl;
   final int imagesPerPage = 15;
 
@@ -47,6 +53,8 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
     await fetchInstagramImages(reset: true);
     if (!mounted) return;
     setState(() => isLoading = false);
+
+    widget.onAvailabilityChanged?.call(!hasError && images.isNotEmpty);
 
     // Start preloading next batch immediately
     if (nextUrl != null) {
@@ -99,13 +107,27 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
           tag: 'Instagram',
         );
       } else {
+        // Includes expired/invalid access token (typically 400/401 with an
+        // OAuthException) — treat as unavailable so the section is hidden.
         LoggerUtils.error(
           "Instagram API error ${response.statusCode}: ${response.body}",
           tag: 'Instagram',
         );
+        if (reset) {
+          setState(() {
+            hasError = true;
+            images = [];
+          });
+        }
       }
     } catch (e) {
       LoggerUtils.error("Error fetching images: $e", tag: 'Instagram');
+      if (reset && mounted) {
+        setState(() {
+          hasError = true;
+          images = [];
+        });
+      }
     }
   }
 
@@ -189,8 +211,8 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
       return _buildShimmerLoader();
     }
 
-    if (images.isEmpty) {
-      return const SizedBox();
+    if (hasError || images.isEmpty) {
+      return const SizedBox.shrink();
     }
 
     return Column(

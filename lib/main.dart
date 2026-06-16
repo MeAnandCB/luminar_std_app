@@ -26,6 +26,7 @@ import 'package:luminar_std/presentation/splash_screen/splash_screen.dart';
 import 'package:luminar_std/repository/FCM/fcm_service.dart';
 import 'package:luminar_std/repository/attandance_screen/service.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
+import 'package:luminar_std/repository/chat_list_screen/service/blocked_users_service.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'package:luminar_std/core/theme/app_theme.dart';
@@ -87,6 +88,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => FolderBrowserProvider()),
         ChangeNotifierProvider(create: (_) => LiveClassController()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => BlockedUsersService()..load()),
         ChangeNotifierProvider(create: (_) => NactetRegistrationController()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
       ],

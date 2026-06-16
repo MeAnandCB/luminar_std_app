@@ -20,6 +20,8 @@ import 'package:luminar_std/repository/chat_list_screen/models/chat.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/message.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/user.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/api_service.dart';
+import 'package:luminar_std/repository/chat_list_screen/service/blocked_users_service.dart';
+import 'package:luminar_std/repository/chat_list_screen/service/report_service.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/websocket_service.dart';
 import 'package:mime/mime.dart';
 import 'package:open_filex/open_filex.dart';
@@ -123,7 +125,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final Map<String, AnimationController> _swipeReturnAnims = {};
   final Map<String, bool> _swipeTriggered = {};
 
-  List<Message> get _mainMessages => List.from(_messages);
+  List<Message> get _mainMessages {
+    final blockedUsers = context.watch<BlockedUsersService>();
+    return _messages
+        .where((m) => !blockedUsers.isBlocked(m.sender.id))
+        .toList();
+  }
 
   @override
   void initState() {
@@ -2031,6 +2038,27 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       await _deleteMessage(message);
                     },
                   ),
+                ] else ...[
+                  _messageOption(
+                    icon: Icons.flag_outlined,
+                    label: 'Report',
+                    color: Colors.red.shade600,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showReportDialog(message: message);
+                    },
+                  ),
+                  _messageOption(
+                    icon: Icons.block_outlined,
+                    label: context.read<BlockedUsersService>().isBlocked(message.sender.id)
+                        ? 'Unblock ${message.sender.fullName}'
+                        : 'Block ${message.sender.fullName}',
+                    color: Colors.red.shade600,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _toggleBlockUser(user: message.sender);
+                    },
+                  ),
                 ],
                 const SizedBox(height: 6),
               ],
@@ -2066,6 +2094,148 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── Report objectionable content / users ───────────────────────────────────
+  void _showReportDialog({Message? message}) {
+    const reasons = [
+      'Spam',
+      'Harassment or abuse',
+      'Hate speech',
+      'Inappropriate content',
+      'Other',
+    ];
+    String selectedReason = reasons.first;
+    final descController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(message != null ? 'Report message' : 'Report user'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ...reasons.map(
+                  (reason) => RadioListTile<String>(
+                    value: reason,
+                    groupValue: selectedReason,
+                    title: Text(reason, style: const TextStyle(fontSize: 14)),
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (value) =>
+                        setDialogState(() => selectedReason = value!),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: descController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'Additional details (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                final reportService = ReportService(token: widget.apiService.token);
+                final success = await reportService.submitReport(
+                  reason: selectedReason,
+                  description: descController.text.trim(),
+                  chatUid: widget.chat.uid,
+                  messageUid: message?.uid,
+                  messageContent: message?.content,
+                  reportedUserId:
+                      message?.sender.id ?? widget.chat.otherParticipant?.id,
+                  reportedUserName: message?.sender.fullName ??
+                      widget.chat.otherParticipant?.fullName,
+                );
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success
+                          ? 'Report submitted. Our team will review it within 24 hours.'
+                          : 'Could not submit report. Please try again.',
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Block / unblock the other participant ───────────────────────────────────
+  void _toggleBlockUser({User? user}) {
+    final other = user ?? widget.chat.otherParticipant;
+    if (other == null) return;
+
+    final blockedUsers = context.read<BlockedUsersService>();
+    final isBlocked = blockedUsers.isBlocked(other.id);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(isBlocked ? 'Unblock ${other.fullName}?' : 'Block ${other.fullName}?'),
+        content: Text(
+          isBlocked
+              ? 'You will start receiving messages from this user again.'
+              : 'You will no longer see messages from this user, and our team will be '
+                  'notified to review their conduct.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isBlocked ? AppColors.primary : Colors.red.shade600,
+            ),
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              if (isBlocked) {
+                await blockedUsers.unblockUser(other.id);
+              } else {
+                await blockedUsers.blockUser(other.id);
+                ReportService(token: widget.apiService.token).submitReport(
+                  reason: 'User blocked',
+                  description: 'User blocked this person from chat ${widget.chat.uid}.',
+                  chatUid: widget.chat.uid,
+                  reportedUserId: other.id,
+                  reportedUserName: other.fullName,
+                );
+              }
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(isBlocked ? 'User unblocked' : 'User blocked')),
+              );
+              // Only leave the chat if the user we just blocked is the sole
+              // participant of a 1:1 chat — group/batch chats stay open with
+              // that user's messages hidden.
+              final isOnlyParticipant = widget.chat.chatType == ChatType.individual &&
+                  widget.chat.otherParticipant?.id == other.id;
+              if (!isBlocked && isOnlyParticipant) Navigator.pop(context);
+            },
+            child: Text(isBlocked ? 'Unblock' : 'Block'),
+          ),
+        ],
       ),
     );
   }
@@ -4584,6 +4754,32 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ),
           ],
         ),
+        actions: [
+          if (widget.chat.chatType == ChatType.individual &&
+              widget.chat.otherParticipant != null)
+            PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert, color: AppColors.textPrimary),
+              onSelected: (value) {
+                if (value == 'report') _showReportDialog();
+                if (value == 'block') _toggleBlockUser();
+              },
+              itemBuilder: (context) {
+                final isBlocked = context.read<BlockedUsersService>().isBlocked(
+                      widget.chat.otherParticipant?.id,
+                    );
+                return [
+                  const PopupMenuItem(
+                    value: 'report',
+                    child: Text('Report user'),
+                  ),
+                  PopupMenuItem(
+                    value: 'block',
+                    child: Text(isBlocked ? 'Unblock user' : 'Block user'),
+                  ),
+                ];
+              },
+            ),
+        ],
       ),
       body: Stack(
         children: [

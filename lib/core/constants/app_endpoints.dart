@@ -72,6 +72,7 @@ class AppEndpoints {
       '/api/chats/'; // Suffix with {chatUid}/messages/mark-read/
   static const String bulkMessage = '/api/chats/messages/bulk/';
   static const String chatUnreadCount = '/api/chats/unread-count/';
+  static const String reportContent = '/api/chats/report/';
 
   // attandance
 

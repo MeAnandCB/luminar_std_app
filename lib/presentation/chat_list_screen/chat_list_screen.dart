@@ -5,6 +5,7 @@ import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provid
 import 'package:luminar_std/presentation/chat_screen/chat_screen.dart';
 import 'package:luminar_std/presentation/widgets/status_screens.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/chat.dart';
+import 'package:luminar_std/repository/chat_list_screen/service/blocked_users_service.dart';
 import 'package:provider/provider.dart';
 
 class ChatListScreen extends StatefulWidget {
@@ -41,9 +42,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   // ── Filter chats by search query ───────────────────────────────────────────
   List<Chat> _filteredChats(List<Chat> chats) {
-    if (_searchQuery.isEmpty) return chats;
+    final blockedUsers = context.read<BlockedUsersService>();
+    final visible = chats.where((chat) {
+      if (chat.chatType != ChatType.individual) return true;
+      return !blockedUsers.isBlocked(chat.otherParticipant?.id);
+    });
+
+    if (_searchQuery.isEmpty) return visible.toList();
     final q = _searchQuery.toLowerCase();
-    return chats.where((chat) {
+    return visible.where((chat) {
       if (chat.name.toLowerCase().contains(q)) return true;
       final preview = _buildPreviewText(chat).toLowerCase();
       return preview.contains(q);
