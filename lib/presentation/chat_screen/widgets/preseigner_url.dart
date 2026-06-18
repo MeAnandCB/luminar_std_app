@@ -178,11 +178,19 @@ class FileUploadService {
       mimeType = 'application/octet-stream';
     }
 
-    LoggerUtils.info('[Upload] File: $fileName', tag: 'Upload');
+    LoggerUtils.info(
+      '[Upload] File: $fileName, detected mimeType: $mimeType',
+      tag: 'Upload',
+    );
 
     onProgress?.call(0.05);
 
     final presigned = await getPresignedUrl(fileName: fileName, folder: folder);
+    LoggerUtils.info(
+      '[Upload] Backend presigned content_type: ${presigned.contentType} '
+      '(client detected: $mimeType) → finalUrl: ${presigned.finalUrl}',
+      tag: 'Upload',
+    );
     onProgress?.call(0.15);
 
     await _postToS3(

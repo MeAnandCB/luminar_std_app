@@ -17,6 +17,7 @@ class _JobsScreenState extends State<JobsScreen> {
   List<JobNotification> _jobs = [];
   bool _isLoading = true;
   String? _error;
+  int? _errorStatusCode;
 
   @override
   void initState() {
@@ -39,6 +40,7 @@ class _JobsScreenState extends State<JobsScreen> {
     } else {
       setState(() {
         _error = res.message ?? 'Failed to load jobs';
+        _errorStatusCode = res.statusCode;
         _isLoading = false;
       });
     }
@@ -56,7 +58,11 @@ class _JobsScreenState extends State<JobsScreen> {
           else if (_error != null)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: _ErrorView(error: _error!, onRetry: _loadJobs),
+              child: _ErrorView(
+                error: _error!,
+                onRetry: _loadJobs,
+                statusCode: _errorStatusCode,
+              ),
             )
           else if (_jobs.isEmpty)
             const SliverFillRemaining(
@@ -94,12 +100,16 @@ class _JobsScreenState extends State<JobsScreen> {
 
   Widget _buildAppBar() {
     return SliverAppBar(
-      expandedHeight: 140,
+      expandedHeight: 160,
       pinned: true,
       backgroundColor: const Color(0xFF1A1A2E),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
         onPressed: () => Navigator.pop(context),
+      ),
+      title: const Text(
+        'Jobs',
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
@@ -136,9 +146,12 @@ class _JobsScreenState extends State<JobsScreen> {
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 72, 20, 20),
+              Positioned(
+                bottom: 20,
+                left: 20,
+                right: 20,
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
@@ -181,11 +194,6 @@ class _JobsScreenState extends State<JobsScreen> {
             ],
           ),
         ),
-        title: const Text(
-          'Jobs',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
       ),
     );
   }
@@ -787,12 +795,66 @@ class _EmptyView extends StatelessWidget {
 // ─── Error ────────────────────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.error, required this.onRetry});
+  const _ErrorView({
+    required this.error,
+    required this.onRetry,
+    this.statusCode,
+  });
   final String error;
   final VoidCallback onRetry;
+  final int? statusCode;
+
+  bool get _isPaymentError =>
+      statusCode == 403 &&
+      (error.toLowerCase().contains('emi') ||
+          error.toLowerCase().contains('payment'));
 
   @override
   Widget build(BuildContext context) {
+    if (_isPaymentError) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF3E0),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.credit_card_off_rounded,
+                  size: 48,
+                  color: Color(0xFFE65100),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Access Restricted',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFE65100),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                error,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),

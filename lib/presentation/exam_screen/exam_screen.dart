@@ -136,7 +136,11 @@ class _ExamScreenState extends State<ExamScreen> {
               !snapshot.hasData ||
               !snapshot.data!.success ||
               snapshot.data!.data == null) {
-            return _ErrorState(onRetry: _retry);
+            return _ErrorState(
+              onRetry: _retry,
+              message: snapshot.data?.message,
+              statusCode: snapshot.data?.statusCode,
+            );
           }
 
           final sessions = snapshot.data!.data!.data;
@@ -529,36 +533,93 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.onRetry});
+  const _ErrorState({required this.onRetry, this.message, this.statusCode});
   final VoidCallback onRetry;
+  final String? message;
+  final int? statusCode;
+
+  bool get _isPaymentError =>
+      statusCode == 403 &&
+      (message?.toLowerCase().contains('emi') == true ||
+          message?.toLowerCase().contains('payment') == true);
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.error_outline, size: 56, color: AppColors.error),
-        const SizedBox(height: 16),
-        Text(
-          'Failed to load exams',
-          style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 16),
-        ElevatedButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh),
-          label: const Text('Retry'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+  Widget build(BuildContext context) {
+    if (_isPaymentError) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3E0),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.credit_card_off_rounded,
+                  size: 48,
+                  color: Color(0xFFE65100),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Access Restricted',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFE65100),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                message!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+              ),
+            ],
           ),
         ),
-      ],
-    ),
-  );
+      );
+    }
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.error_outline, size: 56, color: AppColors.error),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              message ?? 'Failed to load exams',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

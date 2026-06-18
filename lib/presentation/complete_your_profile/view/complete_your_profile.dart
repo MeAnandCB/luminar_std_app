@@ -13,7 +13,12 @@ import 'package:luminar_std/presentation/bottom_nav_screens/bottom_nav_screen/bo
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/complete_your_profile/controller/complete_profile_controller.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
+import 'package:luminar_std/core/constants/kerala_districts.dart';
 import 'package:provider/provider.dart';
+
+const String _kLocationDividerValue = '__divider__';
+const String _kOutOfState = 'Out of State';
+const String _kOutOfCountry = 'Out of Country';
 
 class ProfileCompletionScreen extends StatefulWidget {
   const ProfileCompletionScreen({super.key});
@@ -690,9 +695,9 @@ class PersonalInfoSectionState extends State<PersonalInfoSection>
   Widget _buildLocationFallbackDropdown(
     CompleteProfileController completeController,
   ) {
-    const options = ['Out of State', 'Out of Country'];
     return DropdownButtonFormField<String>(
       initialValue: _selectedLocationFallback,
+      isExpanded: true,
       decoration: InputDecoration(
         labelText: 'District*',
         prefixIcon: Icon(
@@ -703,18 +708,32 @@ class PersonalInfoSectionState extends State<PersonalInfoSection>
         labelStyle: TextStyle(color: AppColors.textSecondary),
       ),
       hint: Text(
-        'Select location type',
+        'Select your district',
         style: TextStyle(color: AppColors.textHint, fontSize: 13),
       ),
-      items: options
-          .map(
-            (o) => DropdownMenuItem(
-              value: o,
-              child: Text(o, style: TextStyle(fontSize: 14)),
-            ),
-          )
-          .toList(),
+      items: [
+        ...kKeralaDistricts.map(
+          (d) => DropdownMenuItem(
+            value: d,
+            child: Text(d, style: TextStyle(fontSize: 14)),
+          ),
+        ),
+        DropdownMenuItem(
+          value: _kLocationDividerValue,
+          enabled: false,
+          child: const Divider(height: 1),
+        ),
+        DropdownMenuItem(
+          value: _kOutOfState,
+          child: Text(_kOutOfState, style: TextStyle(fontSize: 14)),
+        ),
+        DropdownMenuItem(
+          value: _kOutOfCountry,
+          child: Text(_kOutOfCountry, style: TextStyle(fontSize: 14)),
+        ),
+      ],
       onChanged: (value) {
+        if (value == null || value == _kLocationDividerValue) return;
         setState(() {
           _selectedLocationFallback = value;
           completeController.district = value;

@@ -52,6 +52,14 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
     super.initState();
     _player.setReleaseMode(ReleaseMode.stop);
 
+    final urlExt = widget.url.contains('.')
+        ? widget.url.split('.').last.split('?').first
+        : '(none)';
+    debugPrint(
+      '[AudioPlayer] incoming voice message → url=${widget.url} '
+      'fileName=${widget.fileName} extFromUrl=$urlExt',
+    );
+
     _stateSub = _player.onPlayerStateChanged.listen((s) {
       if (!mounted) return;
       setState(() => _playerState = s);
@@ -95,6 +103,7 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
         throw Exception('HTTP ${response.statusCode}');
       }
 
+      final serverContentType = response.headers['content-type'] ?? '(none)';
       final dir = await getTemporaryDirectory();
       // Derive a safe filename
       final ext = widget.url.contains('.')
@@ -105,7 +114,11 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
 
       await File(path).writeAsBytes(response.bodyBytes, flush: true);
       _localPath = path;
-      debugPrint('[AudioPlayer] downloaded → $path');
+      debugPrint(
+        '[AudioPlayer] downloaded → $path '
+        '(extFromUrl=$ext, server Content-Type=$serverContentType, '
+        'bytes=${response.bodyBytes.length})',
+      );
       return path;
     } catch (e) {
       debugPrint('[AudioPlayer] download error: $e');
