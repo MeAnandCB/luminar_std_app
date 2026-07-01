@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 import 'dart:async';
 
+import 'package:luminar_std/core/services/app_update_service.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.dart';
 import 'package:luminar_std/presentation/auth_screens/terms_screen/terms_agreement_screen.dart';
@@ -149,6 +150,22 @@ class _SplashScreenState extends State<SplashScreen>
         return;
       }
       AppUtils.appReady = true;
+
+      // Wait for the forced-update check (shared with the app-wide update
+      // dialog) before leaving the splash screen, so we never navigate to
+      // Login/Terms underneath a pending "Update Available" dialog.
+      String? newVersion;
+      try {
+        newVersion = await AppUpdateService.checkForUpdate()
+            .timeout(const Duration(seconds: 6));
+      } catch (_) {
+        newVersion = null;
+      }
+      if (!mounted) return;
+      if (newVersion != null) {
+        // Update required — stay on splash; the dialog appears on top of it.
+        return;
+      }
 
       final prefs = await SharedPreferences.getInstance();
       final hasAcceptedTerms =
@@ -527,7 +544,7 @@ class _SplashScreenState extends State<SplashScreen>
               bottom: 24,
               right: 24,
               child: Text(
-                'V2 : 2.1.4',
+                'V2 : 2.1.5',
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.white.withValues(alpha: 0.38),

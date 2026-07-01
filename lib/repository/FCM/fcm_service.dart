@@ -14,7 +14,14 @@ import 'package:provider/provider.dart';
 /// Top-level background FCM handler — runs in an isolate (no BuildContext)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  LoggerUtils.info('Background FCM: ${message.notification?.title} | Data: ${message.data}', tag: 'FCM');
+  LoggerUtils.info(
+    'Background FCM message received\n'
+    '  messageId: ${message.messageId}\n'
+    '  notification.title: ${message.notification?.title}\n'
+    '  notification.body: ${message.notification?.body}\n'
+    '  data: ${jsonEncode(message.data)}',
+    tag: 'FCM',
+  );
 
   // For Android data-only messages that arrive in background/terminated state,
   // Firebase won't show a system notification automatically — we must do it here.
@@ -179,8 +186,13 @@ class FCMService {
   Future<String?> _getToken() async {
     try {
       if (Platform.isIOS) {
-        final apnsToken = await _messaging.getAPNSToken();
+        final apnsToken = await _waitForAPNSToken();
         LoggerUtils.info('APNs Token: $apnsToken', tag: 'FCM');
+        if (apnsToken == null) {
+          // No APNs token (e.g. simulator without push support, or not yet
+          // registered) — skip getToken() since it would just throw.
+          return null;
+        }
       }
 
       final String? token = await _messaging.getToken();
@@ -196,14 +208,46 @@ class FCMService {
     }
   }
 
+  /// On iOS, the APNs token is only available after the device finishes
+  /// registering with Apple's push service, which can take a moment after
+  /// launch. Poll briefly instead of failing on the first attempt.
+  Future<String?> _waitForAPNSToken() async {
+    for (var attempt = 0; attempt < 30; attempt++) {
+      final token = await _messaging.getAPNSToken();
+      if (token != null) return token;
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    LoggerUtils.warning('APNs token unavailable after retries (no push support on this device?)', tag: 'FCM');
+    return null;
+  }
+
   Future<String?> getToken() => _getToken();
 
   // ─── Message Handlers ─────────────────────────────────────────────────────
 
+  /// Dumps every field of an incoming [RemoteMessage] so the full payload
+  /// (notification + data + metadata) is visible while debugging FCM.
+  void _logMessage(String label, RemoteMessage message) {
+    final notification = message.notification;
+    LoggerUtils.info(
+      '$label\n'
+      '  messageId: ${message.messageId}\n'
+      '  from: ${message.from}\n'
+      '  sentTime: ${message.sentTime}\n'
+      '  ttl: ${message.ttl}\n'
+      '  category: ${message.category}\n'
+      '  collapseKey: ${message.collapseKey}\n'
+      '  notification.title: ${notification?.title}\n'
+      '  notification.body: ${notification?.body}\n'
+      '  data: ${jsonEncode(message.data)}',
+      tag: 'FCM',
+    );
+  }
+
   void _handleForegroundMessages() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       final notification = message.notification;
-      LoggerUtils.info('Foreground FCM: ${notification?.title} | Data: ${message.data}', tag: 'FCM');
+      _logMessage('Foreground FCM message received', message);
       if (notification != null) {
         // We use flutter_local_notifications for BOTH platforms to force sound
         // in the foreground even if the backend payload misses it.
@@ -219,7 +263,7 @@ class FCMService {
 
   void _handleBackgroundToOpenMessages() {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      LoggerUtils.info('FCM opened from background | Data: ${message.data}', tag: 'FCM');
+      _logMessage('FCM opened from background', message);
       AppUtils.isDeepLinking = true;
       // Use post-frame callback so the navigator is guaranteed to be mounted
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -231,7 +275,7 @@ class FCMService {
   Future<void> handleInitialMessage() async {
     final RemoteMessage? initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      LoggerUtils.info('FCM opened from terminated | Data: ${initialMessage.data}', tag: 'FCM');
+      _logMessage('FCM opened from terminated', initialMessage);
       AppUtils.isDeepLinking = true;
       await Future.delayed(const Duration(seconds: 1));
       _handleNotificationNavigation(initialMessage.data);

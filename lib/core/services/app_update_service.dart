@@ -14,8 +14,16 @@ class AppUpdateService {
   static String get storeUrl =>
       Platform.isIOS ? _iosStoreUrl : _androidStoreUrl;
 
+  static Future<String?>? _pendingCheck;
+
   /// Returns the store version string if an update is available, null otherwise.
-  static Future<String?> checkForUpdate() async {
+  /// The underlying network check is memoized so concurrent callers (e.g. the
+  /// splash screen and the app-wide update dialog) share a single request.
+  static Future<String?> checkForUpdate() {
+    return _pendingCheck ??= _performCheck();
+  }
+
+  static Future<String?> _performCheck() async {
     try {
       final info = await PackageInfo.fromPlatform();
       final currentVersion = info.version;

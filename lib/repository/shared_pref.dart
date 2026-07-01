@@ -69,16 +69,18 @@ class SharedPrefService {
     return prefs.getBool(keyIsLoggedIn) ?? false;
   }
 
-  // Clear all data (logout)
+  // Clear auth data on logout — only the keys this class owns.
+  // Must NOT use prefs.clear(): that wipes every key in SharedPreferences
+  // app-wide, including unrelated one-time flags like
+  // TermsAgreementScreen.prefsKey, which then incorrectly re-prompts the
+  // Terms of Use screen after every logout.
   static Future<void> clearAllData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-
-    // await prefs.remove(keyAccessToken);
-    // await prefs.remove(keyRefreshToken);
-    // await prefs.remove(keyFullName);
-    // await prefs.remove(keyUserData);
-    // await prefs.remove(keyIsLoggedIn);
-    LoggerUtils.info('🚪 User logged out, all data cleared', tag: 'SharedPref');
+    await prefs.remove(keyAccessToken);
+    await prefs.remove(keyRefreshToken);
+    await prefs.remove(keyFullName);
+    await prefs.remove(keyUserData);
+    await prefs.remove(keyIsLoggedIn);
+    LoggerUtils.info('🚪 User logged out, auth data cleared', tag: 'SharedPref');
   }
 }

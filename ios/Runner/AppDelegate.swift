@@ -9,21 +9,20 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Firebase is initialised by firebase_core in Dart (main.dart).
-    // Do NOT call FirebaseApp.configure() here — double init causes SIGABRT.
+    // GeneratedPluginRegistrant must run first: registering the firebase_core
+    // plugin is what triggers [FIRApp configure] natively. Touching
+    // Messaging.messaging() before this leaves the singleton unconfigured —
+    // it won't pick up the APNs token even after Firebase configures later.
+    GeneratedPluginRegistrant.register(with: self)
 
     UNUserNotificationCenter.current().delegate = self
 
-    // Request alert + badge + sound + time-sensitive permissions
-    let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound, .timeSensitive]
-    UNUserNotificationCenter.current().requestAuthorization(
-      options: authOptions,
-      completionHandler: { _, _ in }
-    )
+    // Notification permission is requested from Dart (FCMService._requestPermission).
+    // Requesting it here too would race the same system dialog and can leave
+    // the authorization status stuck at .notDetermined.
     application.registerForRemoteNotifications()
     Messaging.messaging().delegate = self
 
-    GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

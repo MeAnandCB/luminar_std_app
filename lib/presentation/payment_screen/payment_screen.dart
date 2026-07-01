@@ -60,7 +60,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     });
   }
 
-  Future<void> _initializeData() async {
+  Future<void> _initializeData({bool forceRefresh = false}) async {
     if (!mounted) return;
 
     setState(() {
@@ -74,8 +74,13 @@ class _PaymentScreenState extends State<PaymentScreen>
         listen: false,
       );
 
-      // getDashboardData is a no-op if data is already cached (C-1 guard)
-      await controller.getDashboardData(context: context);
+      // getDashboardData is a no-op if data is already cached (C-1 guard),
+      // so a forced refresh is required after a payment — otherwise the
+      // dashboard's financial summary/payment status silently stays stale.
+      await controller.getDashboardData(
+        context: context,
+        forceRefresh: forceRefresh,
+      );
 
       await _fetchEnrollmentDetails();
 
@@ -1929,7 +1934,7 @@ class _PaymentScreenState extends State<PaymentScreen>
       isSuccess: true,
     );
     Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) _initializeData();
+      if (mounted) _initializeData(forceRefresh: true);
     });
   }
 

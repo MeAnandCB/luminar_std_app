@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
-import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/nactet_registration/controller/nactet_registration_controller.dart';
@@ -1273,6 +1272,27 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     );
   }
 
+  /// Shows the exact backend error message for a failed registration submit.
+  /// Deliberately bypasses AppUtils.friendlyError, which truncates/replaces
+  /// any message over 80 chars (or containing words like "exception") with a
+  /// generic string — that hid the real validation reason for this form.
+  void _showSubmissionErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Submission Failed'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showConfirmationSheet(NactetRegistrationController controller) {
     final nactet = widget.nactetEnrollment;
     final String courseName;
@@ -1516,15 +1536,8 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
                                     if (mounted) setState(() {});
                                   } else if (controller.errorMessage != null &&
                                       mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          AppUtils.friendlyError(
-                                            controller.errorMessage!,
-                                          ),
-                                        ),
-                                        backgroundColor: Colors.red,
-                                      ),
+                                    _showSubmissionErrorDialog(
+                                      controller.errorMessage!,
                                     );
                                   }
                                 },
