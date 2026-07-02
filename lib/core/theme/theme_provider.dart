@@ -5,21 +5,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
+  static const String _variantKey = 'app_theme_variant';
+
   ThemeMode _themeMode = ThemeMode.light;
+  AppThemeVariant _variant = AppThemeVariant.luminar;
 
   ThemeProvider() {
-    _loadThemeMode();
-    // Listen to system brightness changes so system mode stays in sync
+    _loadPrefs();
     SchedulerBinding.instance.platformDispatcher.onPlatformBrightnessChanged =
         _onSystemBrightnessChanged;
   }
 
   ThemeMode get themeMode => _themeMode;
+  AppThemeVariant get variant => _variant;
 
   bool get isDarkMode {
     if (_themeMode == ThemeMode.dark) return true;
     if (_themeMode == ThemeMode.light) return false;
-    // System mode: reflect actual system brightness
     return SchedulerBinding.instance.platformDispatcher.platformBrightness ==
         Brightness.dark;
   }
@@ -33,20 +35,26 @@ class ThemeProvider extends ChangeNotifier {
 
   void _syncAppColors() {
     AppColors.updateTheme(isDarkMode);
+    AppColors.updateVariant(_variant);
   }
 
-  Future<void> _loadThemeMode() async {
+  Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Load theme mode
     final savedMode = prefs.getString(_themeKey);
-    if (savedMode != null) {
-      if (savedMode == 'light') {
-        _themeMode = ThemeMode.light;
-      } else if (savedMode == 'dark') {
-        _themeMode = ThemeMode.dark;
-      } else {
-        _themeMode = ThemeMode.system;
-      }
+    if (savedMode == 'dark') {
+      _themeMode = ThemeMode.dark;
+    } else if (savedMode == 'system') {
+      _themeMode = ThemeMode.system;
+    } else {
+      _themeMode = ThemeMode.light;
     }
+
+    // Load variant
+    final savedVariant = prefs.getString(_variantKey);
+    _variant = savedVariant == 'ocean' ? AppThemeVariant.ocean : AppThemeVariant.luminar;
+
     _syncAppColors();
     notifyListeners();
   }
@@ -58,26 +66,27 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
-    String modeString;
-    switch (mode) {
-      case ThemeMode.light:
-        modeString = 'light';
-        break;
-      case ThemeMode.dark:
-        modeString = 'dark';
-        break;
-      case ThemeMode.system:
-        modeString = 'system';
-        break;
-    }
+    final modeString = mode == ThemeMode.dark
+        ? 'dark'
+        : mode == ThemeMode.system
+            ? 'system'
+            : 'light';
     await prefs.setString(_themeKey, modeString);
   }
 
+  Future<void> setVariant(AppThemeVariant variant) async {
+    if (_variant == variant) return;
+    _variant = variant;
+    _syncAppColors();
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        _variantKey, variant == AppThemeVariant.ocean ? 'ocean' : 'luminar');
+  }
+
   void toggleTheme() {
-    if (_themeMode == ThemeMode.dark) {
-      setThemeMode(ThemeMode.light);
-    } else {
-      setThemeMode(ThemeMode.dark);
-    }
+    setThemeMode(
+        _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
   }
 }

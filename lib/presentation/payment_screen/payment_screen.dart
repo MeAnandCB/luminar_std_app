@@ -301,7 +301,7 @@ class _PaymentScreenState extends State<PaymentScreen>
               color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Center(
+            child: Center(
               child: Icon(Icons.school, color: AppColors.primary, size: 20),
             ),
           ),
@@ -1270,7 +1270,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                         color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.school,
                         color: AppColors.primary,
                         size: 24,

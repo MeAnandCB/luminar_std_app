@@ -358,7 +358,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
             body: Container(
               width: double.infinity,
               height: double.infinity,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: AppColors.splashGradient,
                   begin: Alignment.topLeft,

@@ -180,7 +180,7 @@ class PaymentTile extends StatelessWidget {
       margin: const EdgeInsets.only(left: 12),
       width: 24,
       height: 24,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primary,
         shape: BoxShape.circle,
       ),

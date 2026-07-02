@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/core/theme/theme_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 import 'dart:async';
@@ -197,15 +200,16 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF2A0E8F), Color(0xFF5A3ED9), Color(0xFF9B8FFF)],
+            colors: AppColors.splashGradient,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -366,9 +370,7 @@ class _SplashScreenState extends State<SplashScreen>
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(
-                                        0xFF6C5CE7,
-                                      ).withValues(alpha: 0.45),
+                                      color: AppColors.primary.withValues(alpha: 0.45),
                                       blurRadius: 40,
                                       spreadRadius: 8,
                                     ),
@@ -503,8 +505,8 @@ class _SplashScreenState extends State<SplashScreen>
                               widthFactor: value,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Colors.white, Color(0xFFD0CAFF)],
+                                  gradient: LinearGradient(
+                                    colors: [Colors.white, AppColors.primaryLighter],
                                   ),
                                   borderRadius: BorderRadius.circular(2),
                                   boxShadow: [

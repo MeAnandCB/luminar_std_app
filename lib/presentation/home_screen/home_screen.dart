@@ -9,6 +9,7 @@ import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_scre
 import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
+import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/home_screen/widget/header_card.dart';
 import 'package:luminar_std/presentation/global_widget/festival_overlay.dart';
@@ -149,14 +150,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       ),
                     ),
                   )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                : AppColors.variant == AppThemeVariant.ocean
+                    ? _buildOceanBody(
+                        dashboard: dashboard,
+                        studentName: studentName,
+                        dashboardProvider: dashboardProvider,
+                        profileProvider: profileProvider,
+                      )
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                         HeaderWidget(
                           courseName:
                               dashboard
@@ -693,15 +701,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
             width: double.infinity,
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6C5CE7), Color(0xFF9B8FFF)],
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.primaryLight],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6C5CE7).withValues(alpha: 0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -772,7 +780,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
@@ -780,14 +788,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF6C5CE7),
+                              color: AppColors.primary,
                             ),
                           ),
                           SizedBox(width: 4),
                           Icon(
                             Icons.arrow_forward_rounded,
                             size: 16,
-                            color: Color(0xFF6C5CE7),
+                            color: AppColors.primary,
                           ),
                         ],
                       ),
@@ -1241,6 +1249,693 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
     );
   }
+
+  // ══════════════════════════════════════════════════════
+  //  OCEAN THEME LAYOUT
+  // ══════════════════════════════════════════════════════
+
+  Widget _buildOceanBody({
+    required Dashboard? dashboard,
+    required String studentName,
+    required DashboardController dashboardProvider,
+    required ProfileController profileProvider,
+  }) {
+    final financial = dashboard?.financialSummary?.overview;
+    final enrollments = dashboard?.enrollmentDetails?.enrollments ?? [];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Flat teal header ──────────────────────────
+          _buildOceanHeader(studentName, dashboard),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
+
+                // ── Financial stats (horizontal scroll) ──
+                _buildOceanLabel('Financial Summary'),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 90,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    children: [
+                      _oceanStatChip('Total Fees',
+                          _formatCurrency(financial?.totalFeesAmount),
+                          Icons.account_balance_wallet_rounded,
+                          AppColors.statsBlue),
+                      _oceanStatChip('Paid',
+                          _formatCurrency(financial?.totalFeesPaid),
+                          Icons.check_circle_rounded,
+                          AppColors.statsGreen),
+                      _oceanStatChip('Pending',
+                          _formatCurrency(financial?.totalFeesPending),
+                          Icons.timer_rounded,
+                          AppColors.statsOrange),
+                      _oceanStatChip('Progress',
+                          '${financial?.paymentCompletionPercentage ?? 0}%',
+                          Icons.speed_rounded,
+                          AppColors.statsPurple),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+
+                // ── Enrollments as compact list ───────────
+                _buildOceanLabel('My Enrollments'),
+                const SizedBox(height: 12),
+                if (enrollments.isEmpty)
+                  _oceanEmptyCard('No enrollments found')
+                else
+                  ...enrollments.asMap().entries.map((entry) =>
+                    _oceanEnrollmentTile(entry.value, entry.key)),
+
+                const SizedBox(height: 28),
+
+                // ── Jobs + Referral side-by-side ──────────
+                _buildOceanLabel('Quick Access'),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _oceanJobsMiniCard(
+                          dashboardProvider.unviewedJobNotificationsCount),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: _oceanReferralMiniCard()),
+                  ],
+                ),
+
+                const SizedBox(height: 28),
+
+                // ── Social links ──────────────────────────
+                _buildOceanLabel('Connect With Us'),
+                const SizedBox(height: 12),
+                _buildSocialSection(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOceanHeader(String studentName, Dashboard? dashboard) {
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+    final initial = studentName.isNotEmpty ? studentName[0].toUpperCase() : 'S';
+    final courseName = dashboard?.enrollmentDetails?.enrollments?.isNotEmpty == true
+        ? dashboard!.enrollmentDetails!.enrollments!.first.courseInfo?.courseName ?? ''
+        : '';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 52, 20, 24),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  greeting,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  studentName,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.1,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (courseName.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.school_rounded,
+                            size: 12, color: Colors.white),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            courseName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProfileScreen(course: courseName),
+                  ),
+                ),
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.5), width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => _showOceanThemePicker(context),
+                child: Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.palette_rounded,
+                      color: Colors.white, size: 18),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showOceanThemePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setState) {
+          final tp = ctx.watch<ThemeProvider>();
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.borderColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text('App Theme',
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary)),
+                const SizedBox(height: 4),
+                Text('Choose a design for the entire app',
+                    style: TextStyle(
+                        fontSize: 13, color: AppColors.textSecondary)),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    _oceanThemeCard(
+                      context: context,
+                      themeProvider: tp,
+                      label: 'Luminar',
+                      subtitle: 'Purple classic',
+                      gradientColors: const [
+                        Color(0xFF6C5CE7),
+                        Color(0xFF8B7BF2)
+                      ],
+                      variant: AppThemeVariant.luminar,
+                    ),
+                    const SizedBox(width: 12),
+                    _oceanThemeCard(
+                      context: context,
+                      themeProvider: tp,
+                      label: 'Ocean',
+                      subtitle: 'Teal modern',
+                      gradientColors: const [
+                        Color(0xFF00897B),
+                        Color(0xFF26A69A)
+                      ],
+                      variant: AppThemeVariant.ocean,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _oceanThemeCard({
+    required BuildContext context,
+    required ThemeProvider themeProvider,
+    required String label,
+    required String subtitle,
+    required List<Color> gradientColors,
+    required AppThemeVariant variant,
+  }) {
+    final isActive = themeProvider.variant == variant;
+    final primary = gradientColors.first;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          themeProvider.setVariant(variant);
+          Navigator.pop(context);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isActive
+                ? primary.withValues(alpha: 0.07)
+                : AppColors.cardBackground,
+            border: Border.all(
+              color: isActive ? primary : AppColors.borderColor,
+              width: isActive ? 2 : 1,
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: gradientColors),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(label,
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary)),
+              const SizedBox(height: 2),
+              Text(subtitle,
+                  style: TextStyle(
+                      fontSize: 11, color: AppColors.textSecondary)),
+              if (isActive) ...[
+                const SizedBox(height: 10),
+                Row(children: [
+                  Icon(Icons.check_circle_rounded, color: primary, size: 15),
+                  const SizedBox(width: 4),
+                  Text('Active',
+                      style: TextStyle(
+                          color: primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600)),
+                ]),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOceanLabel(String label) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primary,
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: AppColors.primary.withValues(alpha: 0.15),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _oceanStatChip(
+      String label, String value, IconData icon, Color color) {
+    return Container(
+      width: 110,
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border(left: BorderSide(color: color, width: 3)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(icon, color: color, size: 18),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(value,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  )),
+              Text(label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textSecondary,
+                  )),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _oceanEnrollmentTile(dynamic enrollment, int index) {
+    final palettes = _oceanPalettes();
+    final color = palettes[index % palettes.length];
+    final courseName =
+        enrollment?.courseInfo?.courseName ?? 'No Course';
+    final batchName = enrollment?.batchInfo?.batchName ?? 'N/A';
+    final statusValue = enrollment?.status?.value ?? '';
+    final isActive = statusValue.contains('paid') || statusValue == 'active';
+
+    return GestureDetector(
+      onTap: () => Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+            builder: (_) => BottomNavScreen(initialIndex: 3)),
+        (r) => false,
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(14),
+          border: Border(left: BorderSide(color: color, width: 4)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadowLight,
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(courseName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        )),
+                    const SizedBox(height: 3),
+                    Text(batchName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        )),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (isActive ? AppColors.statsGreen : AppColors.statsOrange)
+                      .withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  isActive ? 'Active' : 'Pending',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isActive
+                        ? AppColors.statsGreen
+                        : AppColors.statsOrange,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Color> _oceanPalettes() => [
+        AppColors.primary,
+        AppColors.statsBlue,
+        AppColors.statsGreen,
+        AppColors.statsOrange,
+        const Color(0xFF7B1FA2),
+      ];
+
+  Widget _oceanJobsMiniCard(int unviewedCount) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const JobsScreen())),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderColor),
+          boxShadow: [
+            BoxShadow(
+                color: AppColors.shadowLight,
+                blurRadius: 6,
+                offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.work_rounded,
+                      color: AppColors.primary, size: 18),
+                ),
+                if (unviewedCount > 0) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF6B35),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text('$unviewedCount',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text('Jobs',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                )),
+            const SizedBox(height: 2),
+            Text('View openings',
+                style: TextStyle(
+                    fontSize: 11, color: AppColors.textSecondary)),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Text('Explore',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    )),
+                const SizedBox(width: 3),
+                Icon(Icons.arrow_forward_rounded,
+                    size: 13, color: AppColors.primary),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _oceanReferralMiniCard() {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => Consumer<AuthProvider>(
+                    builder: (ctx, auth, _) => ReferralScreen(
+                      referrerName: auth.studentData?.profile.fullName,
+                      referrerPhone: auth.studentData?.profile.phone,
+                    ),
+                  ))),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.25),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.redeem_rounded,
+                  color: Colors.white, size: 18),
+            ),
+            const SizedBox(height: 12),
+            const Text('Referral',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                )),
+            const SizedBox(height: 2),
+            Text('Refer & earn',
+                style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.8))),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Text('Start',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    )),
+                const SizedBox(width: 3),
+                const Icon(Icons.arrow_forward_rounded,
+                    size: 13, color: Colors.white),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _oceanEmptyCard(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderColor),
+      ),
+      child: Text(message,
+          style: TextStyle(color: AppColors.textSecondary),
+          textAlign: TextAlign.center),
+    );
+  }
 }
 
 // ============================================================
@@ -1429,12 +2124,12 @@ class _EnrollmentCardStackState extends State<_EnrollmentCardStack>
   Widget _buildEnrollmentCard(BuildContext context, int index) {
     final enrollment = widget.enrollments[index];
 
-    const cardPalettes = [
+    final cardPalettes = [
       [
-        Color(0xFF3D1FA3),
-        Color(0xFF6C5CE7),
-        Color(0xFF9B8FFF),
-      ], // Luminar Purple
+        AppColors.primaryDark,
+        AppColors.primary,
+        AppColors.primaryLighter,
+      ], // Theme primary
       [Color(0xFF0A3D62), Color(0xFF1565C0), Color(0xFF42A5F5)], // Royal Blue
       [Color(0xFF004D40), Color(0xFF00796B), Color(0xFF26A69A)], // Teal
       [Color(0xFF4A148C), Color(0xFF7B1FA2), Color(0xFFAB47BC)], // Violet

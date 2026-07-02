@@ -431,7 +431,7 @@ class ProfileHeader extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: percentage,
                   backgroundColor: AppColors.borderColor,
-                  valueColor: const AlwaysStoppedAnimation<Color>(
+                  valueColor: AlwaysStoppedAnimation<Color>(
                     AppColors.primary,
                   ),
                   minHeight: 8,

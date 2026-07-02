@@ -171,13 +171,9 @@ class _LoginScreenState extends State<LoginScreen>
                 child: Stack(
                   children: [
                     Container(
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF2A0E8F),
-                            Color(0xFF5A3ED9),
-                            Color(0xFF8B7BF2),
-                          ],
+                          colors: AppColors.splashGradient,
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -305,9 +301,7 @@ class _LoginScreenState extends State<LoginScreen>
                                               shape: BoxShape.circle,
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: const Color(
-                                                    0xFF6C5CE7,
-                                                  ).withValues(alpha: 0.5),
+                                                  color: AppColors.primary.withValues(alpha: 0.5),
                                                   blurRadius: 32,
                                                   spreadRadius: 6,
                                                 ),

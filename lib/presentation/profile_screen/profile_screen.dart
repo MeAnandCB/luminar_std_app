@@ -2203,3 +2203,92 @@ class IdCardBackgroundPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+// ── Theme picker card ────────────────────────────────────────────────────────
+
+class _ThemeCard extends StatelessWidget {
+  final String label;
+  final String subtitle;
+  final List<Color> gradientColors;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _ThemeCard({
+    required this.label,
+    required this.subtitle,
+    required this.gradientColors,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = gradientColors.first;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isActive
+                ? primary.withValues(alpha: 0.07)
+                : AppColors.cardBackground,
+            border: Border.all(
+              color: isActive ? primary : AppColors.borderColor,
+              width: isActive ? 2 : 1,
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: gradientColors),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              if (isActive) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded,
+                        color: primary, size: 15),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Active',
+                      style: TextStyle(
+                        color: primary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

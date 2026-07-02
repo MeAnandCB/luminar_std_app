@@ -1325,12 +1325,48 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     // Track sheet dismissal intent so .then() knows whether to reset
     bool editTapped = false;
     bool submitTapped = false;
+    bool discardConfirmed = false;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
+      builder: (sheetContext) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          final discard = await showDialog<bool>(
+            context: sheetContext,
+            builder: (dialogContext) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text('Discard registration?'),
+              content: const Text(
+                'Closing now will take you back to the home screen and '
+                'discard everything you entered. You will need to fill '
+                'the form again. Are you sure?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Keep Editing'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Discard'),
+                ),
+              ],
+            ),
+          );
+          if (discard == true && sheetContext.mounted) {
+            discardConfirmed = true;
+            Navigator.of(sheetContext).pop();
+          }
+        },
+        child: DraggableScrollableSheet(
         initialChildSize: 0.85,
         minChildSize: 0.5,
         maxChildSize: 0.95,
@@ -1575,10 +1611,20 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             ],
           ),
         ),
-      ),
+            ),
+          ),
     ).then((_) {
-      // Swiped away or tapped outside without submitting → reset the form
-      if (!editTapped && !submitTapped && !controller.isSuccess && mounted) {
+      if (discardConfirmed && mounted) {
+        // Confirmed discard on the final review sheet → wipe the form and
+        // go all the way back to the home screen instead of leaving the
+        // user stranded mid-form.
+        controller.reset();
+        Navigator.of(context).pop();
+      } else if (!editTapped &&
+          !submitTapped &&
+          !controller.isSuccess &&
+          mounted) {
+        // Fallback safety net for any other dismissal path.
         controller.reset();
       }
     });

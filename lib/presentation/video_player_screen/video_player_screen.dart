@@ -1,3 +1,4 @@
+import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -352,9 +353,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                                   const SizedBox(width: 10),
                                   ProgressBar(
                                     isExpanded: true,
-                                    colors: const ProgressBarColors(
-                                      playedColor: Color(0xFF6C5CE7),
-                                      handleColor: Color(0xFF6C5CE7),
+                                    colors: ProgressBarColors(
+                                      playedColor: AppColors.primary,
+                                      handleColor: AppColors.primary,
                                       backgroundColor: Colors.grey,
                                     ),
                                   ),
@@ -420,9 +421,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                                             ),
                                           ],
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.play_arrow_rounded,
-                                          color: Color(0xFF6C5CE7),
+                                          color: AppColors.primary,
                                           size: 42,
                                         ),
                                       ),
@@ -433,9 +434,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                             if (!_isPlayerReady)
                               Container(
                                 color: Colors.black,
-                                child: const Center(
+                                child: Center(
                                   child: CircularProgressIndicator(
-                                    color: Color(0xFF6C5CE7),
+                                    color: AppColors.primary,
                                   ),
                                 ),
                               ),
@@ -531,7 +532,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6C5CE7),
+                backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -551,13 +552,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: _isLiked
-              ? const Color(0xFF6C5CE7).withOpacity(0.2)
-              : Colors.white.withOpacity(0.1),
+              ? AppColors.primary.withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: _isLiked
-                ? const Color(0xFF6C5CE7)
-                : Colors.white.withOpacity(0.2),
+                ? AppColors.primary
+                : Colors.white.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -565,26 +566,26 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             _isLiking
-                ? const SizedBox(
+                ? SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFF6C5CE7),
+                      color: AppColors.primary,
                     ),
                   )
                 : Icon(
                     _isLiked
                         ? Icons.favorite_rounded
                         : Icons.favorite_border_rounded,
-                    color: _isLiked ? const Color(0xFF6C5CE7) : Colors.white70,
+                    color: _isLiked ? AppColors.primary : Colors.white70,
                     size: 18,
                   ),
             const SizedBox(width: 6),
             Text(
               _likeCount.toString(),
               style: TextStyle(
-                color: _isLiked ? const Color(0xFF6C5CE7) : Colors.white70,
+                color: _isLiked ? AppColors.primary : Colors.white70,
                 fontSize: 13,
                 fontWeight: _isLiked ? FontWeight.w600 : FontWeight.w400,
               ),
@@ -674,9 +675,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
               _controller.seekTo(Duration.zero);
               _controller.play();
             },
-            child: const Text(
+            child: Text(
               'Replay',
-              style: TextStyle(color: Color(0xFF6C5CE7)),
+              style: TextStyle(color: AppColors.primary),
             ),
           ),
         ],

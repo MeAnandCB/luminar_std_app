@@ -1,21 +1,42 @@
 import 'package:flutter/material.dart';
 
+enum AppThemeVariant { luminar, ocean }
+
 class AppColors {
   static bool _isDark = false;
+  static AppThemeVariant _variant = AppThemeVariant.luminar;
+
   static bool get isDark => _isDark;
+  static AppThemeVariant get variant => _variant;
 
   static void updateTheme(bool dark) {
     _isDark = dark;
+  }
+
+  static void updateVariant(AppThemeVariant v) {
+    _variant = v;
   }
 
   // Base Colors
   static Color get white => _isDark ? const Color(0xFF1E293B) : Colors.white;
   static Color get black => _isDark ? Colors.white : Colors.black;
 
-  // Primary Palette (Luminar Purple)
-  static const Color primary = Color(0xFF6C5CE7);
-  static const Color primaryLight = Color(0xFF8B7BF2);
-  static const Color primaryLighter = Color(0xFFA29BFE);
+  // Primary Palette — variant aware
+  static Color get primaryDark => _variant == AppThemeVariant.luminar
+      ? const Color(0xFF3D1FA3)
+      : const Color(0xFF004D40);
+
+  static Color get primary => _variant == AppThemeVariant.luminar
+      ? const Color(0xFF6C5CE7)
+      : const Color(0xFF00897B);
+
+  static Color get primaryLight => _variant == AppThemeVariant.luminar
+      ? const Color(0xFF8B7BF2)
+      : const Color(0xFF26A69A);
+
+  static Color get primaryLighter => _variant == AppThemeVariant.luminar
+      ? const Color(0xFFA29BFE)
+      : const Color(0xFF80CBC4);
 
   // Background / Surface
   static Color get scaffoldBackground =>
@@ -38,7 +59,9 @@ class AppColors {
   static const Color statsBlue = Color(0xFF0984E3);
   static const Color statsGreen = Color(0xFF00B894);
   static const Color statsOrange = Color(0xFFF39C12);
-  static const Color statsPurple = Color(0xFF6C5CE7);
+  static Color get statsPurple => _variant == AppThemeVariant.luminar
+      ? const Color(0xFF6C5CE7)
+      : const Color(0xFF00897B);
 
   // Text Colors
   static Color get textPrimary =>
@@ -50,26 +73,40 @@ class AppColors {
   static const Color textWhite = Colors.white;
   static const Color textWhite70 = Colors.white70;
 
-  // Gradients
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF6C5CE7), Color(0xFF8B7BF2)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-  static const LinearGradient primaryGradient1 = LinearGradient(
-    colors: [Color(0xFF8B7BF2), Color(0xFF6C5CE7)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  // Gradients — variant aware
+  static LinearGradient get primaryGradient =>
+      _variant == AppThemeVariant.luminar
+          ? const LinearGradient(
+              colors: [Color(0xFF6C5CE7), Color(0xFF8B7BF2)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            )
+          : const LinearGradient(
+              colors: [Color(0xFF00897B), Color(0xFF26A69A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            );
 
-  static const List<Color> splashGradient = [
-    Color(0xFF6C5CE7),
-    Color(0xFF8B7BF2),
-    Color(0xFFA29BFE),
-  ];
+  static LinearGradient get primaryGradient1 =>
+      _variant == AppThemeVariant.luminar
+          ? const LinearGradient(
+              colors: [Color(0xFF8B7BF2), Color(0xFF6C5CE7)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            )
+          : const LinearGradient(
+              colors: [Color(0xFF26A69A), Color(0xFF00897B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            );
+
+  static List<Color> get splashGradient =>
+      _variant == AppThemeVariant.luminar
+          ? const [Color(0xFF6C5CE7), Color(0xFF8B7BF2), Color(0xFFA29BFE)]
+          : const [Color(0xFF00695C), Color(0xFF00897B), Color(0xFF80CBC4)];
 
   static Color get info => const Color(0xFF0984E3);
-  static Color get notificationGlow => const Color(0xFF6C5CE7);
+  static Color get notificationGlow => primary;
   static Color get notificationIcon =>
       _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF2D3436);
 
@@ -88,42 +125,42 @@ class AppColors {
   // Bottom Navigation Bar Colors
   static Color get bottomNavBackground =>
       _isDark ? const Color(0xFF1E293B) : Colors.white;
-  static const Color bottomNavSelected = Color(0xFF6C5CE7);
+  static Color get bottomNavSelected => primary;
   static Color get bottomNavUnselected =>
       _isDark ? const Color(0xFF64748B) : const Color(0xFFB2BEC3);
 
-  // White Variants (methods to maintain compatibility)
-  static Color get whiteWithOpacity10 => white.withOpacity(0.1);
-  static Color get whiteWithOpacity20 => white.withOpacity(0.2);
-  static Color get whiteWithOpacity30 => white.withOpacity(0.3);
-  static Color get whiteWithOpacity50 => white.withOpacity(0.5);
-  static Color get whiteWithOpacity70 => white.withOpacity(0.7);
-  static Color get whiteWithOpacity80 => white.withOpacity(0.8);
-  static Color get whiteWithOpacity90 => white.withOpacity(0.9);
+  // White Variants
+  static Color get whiteWithOpacity10 => white.withValues(alpha: 0.1);
+  static Color get whiteWithOpacity20 => white.withValues(alpha: 0.2);
+  static Color get whiteWithOpacity30 => white.withValues(alpha: 0.3);
+  static Color get whiteWithOpacity50 => white.withValues(alpha: 0.5);
+  static Color get whiteWithOpacity70 => white.withValues(alpha: 0.7);
+  static Color get whiteWithOpacity80 => white.withValues(alpha: 0.8);
+  static Color get whiteWithOpacity90 => white.withValues(alpha: 0.9);
 
   // Background Shapes
   static Color shapeBackground(double opacity) {
-    return white.withOpacity(opacity);
+    return white.withValues(alpha: opacity);
   }
 
   // Particle Colors
-  static Color get particle => white.withOpacity(0.3);
+  static Color get particle => white.withValues(alpha: 0.3);
 
   // Loading Indicator
-  static Color get loadingBackground => white.withOpacity(0.2);
+  static Color get loadingBackground => white.withValues(alpha: 0.2);
   static Color get loadingProgress => white;
-  static Color get loadingShadow => white.withOpacity(0.5);
+  static Color get loadingShadow => white.withValues(alpha: 0.5);
 
   // Border Colors
-  static Color get borderLight => white.withOpacity(0.3);
-  static Color get borderLighter => white.withOpacity(0.5);
+  static Color get borderLight => white.withValues(alpha: 0.3);
+  static Color get borderLighter => white.withValues(alpha: 0.5);
 
   // Version Text
-  static Color get versionText => white.withOpacity(0.5);
+  static Color get versionText => white.withValues(alpha: 0.5);
 
   static const Color error = Color(0xFFD32F2F);
 
-  // Dark Mode Colors (Keeping for backward compatibility if needed, though getters are better)
+  // Dark Mode Colors (backward compatibility)
   static const Color darkScaffoldBackground = Color(0xFF0F172A);
   static const Color darkCardBackground = Color(0xFF1E293B);
   static const Color darkTextPrimary = Color(0xFFF8FAFC);

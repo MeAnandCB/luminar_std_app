@@ -33,13 +33,13 @@ String _to12h(String t) {
   return t;
 }
 
-// Per-index card palettes – matches home screen card colours
-const _kPalettes = [
-  [Color(0xFF3D1FA3), Color(0xFF6C5CE7)], // Purple
-  [Color(0xFF0A3D62), Color(0xFF1565C0)], // Royal Blue
-  [Color(0xFF00695C), Color(0xFF26A69A)], // Teal
-  [Color(0xFF4A148C), Color(0xFF7B1FA2)], // Violet
-  [Color(0xFF7B1A1A), Color(0xFFC62828)], // Crimson
+// Per-index card palettes – first entry tracks the app theme primary colour
+List<List<Color>> _kPalettes() => [
+  [AppColors.primaryDark, AppColors.primary],
+  [const Color(0xFF0A3D62), const Color(0xFF1565C0)],
+  [const Color(0xFF00695C), const Color(0xFF26A69A)],
+  [const Color(0xFF4A148C), const Color(0xFF7B1FA2)],
+  [const Color(0xFF7B1A1A), const Color(0xFFC62828)],
 ];
 
 class EnrollmentCard extends StatelessWidget {
@@ -67,7 +67,8 @@ class EnrollmentCard extends StatelessWidget {
       tag: 'Enrollment',
     );
 
-    final palette = _kPalettes[index % _kPalettes.length];
+    final palettes = _kPalettes();
+    final palette = palettes[index % palettes.length];
     final gradStart = palette[0];
     final gradEnd = palette[1];
     final statusColor = getStatusColor(enrollment.status.color);
