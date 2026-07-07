@@ -10,11 +10,11 @@ import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/live_class/view/live_class.dart';
 import 'package:luminar_std/presentation/payment_screen/payment_screen.dart';
 import 'package:luminar_std/presentation/exam_screen/exam_screen.dart';
-import 'package:luminar_std/presentation/test_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:luminar_std/presentation/referral_status_screen/referral_status_screen.dart';
 import 'package:luminar_std/presentation/jobs_screen/jobs_screen.dart';
+import 'package:luminar_std/presentation/laptop_scanner/screens/laptop_home_screen.dart';
 
 // ─── palette ─────────────────────────────────────────────────────────────────
 // ─── palette ─────────────────────────────────────────────────────────────────
@@ -99,6 +99,13 @@ const _kFeatures = [
     'Track the status of your referred leads',
     Color(0xFF8B5CF6),
     Color(0xFFA78BFA),
+  ),
+  _Feature(
+    Icons.laptop_mac_rounded,
+    'Take Laptop',
+    'Scan a QR code to check out or return a laptop',
+    Color(0xFF0369A1),
+    Color(0xFF0EA5E9),
   ),
 ];
 
@@ -551,7 +558,7 @@ class _EnrollmentPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    AppConfig.hidePayments ? '7 features' : '8 features',
+                    AppConfig.hidePayments ? '8 features' : '9 features',
                     style: TextStyle(
                       fontSize: 11,
                       color: _kPrimary,
@@ -714,6 +721,24 @@ class _EnrollmentPage extends StatelessWidget {
                     ),
                   );
                 },
+              ),
+              SizedBox(height: 12),
+              _FeatureCard(
+                feature: _kFeatures[8],
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) {
+                      final info = dashCtrl
+                          .dashboard?.studentDetails?.basicInfo;
+                      return LaptopHomeScreen(
+                        prefillName:      info?.fullName      ?? '',
+                        prefillStudentId: info?.studentId     ?? '',
+                        prefillBatch:     batchName,
+                      );
+                    },
+                  ),
+                ),
               ),
             ]),
           ),

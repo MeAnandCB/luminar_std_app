@@ -159,8 +159,9 @@ class _SplashScreenState extends State<SplashScreen>
       // Login/Terms underneath a pending "Update Available" dialog.
       String? newVersion;
       try {
-        newVersion = await AppUpdateService.checkForUpdate()
-            .timeout(const Duration(seconds: 6));
+        newVersion = await AppUpdateService.checkForUpdate().timeout(
+          const Duration(seconds: 6),
+        );
       } catch (_) {
         newVersion = null;
       }
@@ -370,7 +371,9 @@ class _SplashScreenState extends State<SplashScreen>
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.primary.withValues(alpha: 0.45),
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.45,
+                                      ),
                                       blurRadius: 40,
                                       spreadRadius: 8,
                                     ),
@@ -506,7 +509,10 @@ class _SplashScreenState extends State<SplashScreen>
                               child: Container(
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [Colors.white, AppColors.primaryLighter],
+                                    colors: [
+                                      Colors.white,
+                                      AppColors.primaryLighter,
+                                    ],
                                   ),
                                   borderRadius: BorderRadius.circular(2),
                                   boxShadow: [
@@ -546,7 +552,7 @@ class _SplashScreenState extends State<SplashScreen>
               bottom: 24,
               right: 24,
               child: Text(
-                'V2 : 2.1.5',
+                'V2 : 2.1.7',
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.white.withValues(alpha: 0.38),

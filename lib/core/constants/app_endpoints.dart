@@ -111,3 +111,16 @@ class GlobalLinks {
   static const String websocketUrl =
       'wss://api.crm.dev.luminartechnohub.com/ws/';
 }
+
+class LaptopApiConfig {
+  // Base URL of the DAMS backend (the Next.js asset-management app)
+  // static const String baseUrl = 'http://192.168.1.39:3001/api/mobile/laptops';
+
+  // Shared API key — ask whoever manages the DAMS server for the value of
+  // MOBILE_API_KEY in its .env.local. Do NOT commit the real value here.
+  // static const String apiKey = '471961b68070cd99afa85d7f950f91351274dc12bd180047';
+
+  static const String lookup = '/api/mobile/laptops/lookup';
+  static const String checkout = '/api/mobile/laptops/checkout';
+  static const String returnLaptop = '/api/mobile/laptops/return';
+}
