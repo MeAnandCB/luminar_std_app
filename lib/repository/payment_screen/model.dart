@@ -32,6 +32,7 @@ class EnrollmentDetailResponse {
   String? studentPhone;
   String? studentStatus;
   Batch? batch;
+  Branch? branch;
   AttendanceMode? attendanceMode;
   String? paymentType;
   String? paymentTypeDisplay;
@@ -87,6 +88,7 @@ class EnrollmentDetailResponse {
     this.statusColor,
     this.statusDescription,
     this.statusDisplay,
+    this.branch,
     this.source,
     this.sourceDisplay,
     this.enrollmentDate,
@@ -180,6 +182,12 @@ class EnrollmentDetailResponse {
       studentPhone: json["student_phone"],
       studentStatus: json["student_status"],
       batch: json["batch"] == null ? null : Batch.fromJson(json["batch"]),
+      // The exact shape of "branch" in this response hasn't been confirmed
+      // against a live payload yet — Branch.fromJson tolerates several
+      // likely shapes (nested object, flat branch_id/branch_name, or a bare
+      // id/name). Check the "EnrollmentDetail.RawBranch" log line at runtime
+      // and adjust Branch.fromJson if it doesn't match.
+      branch: Branch.fromJson(json),
       attendanceMode: json["attendance_mode"] == null
           ? null
           : AttendanceMode.fromJson(json["attendance_mode"]),
@@ -280,6 +288,7 @@ class EnrollmentDetailResponse {
     "student_phone": studentPhone,
     "student_status": studentStatus,
     "batch": batch?.toJson(),
+    "branch": branch?.toJson(),
     "attendance_mode": attendanceMode?.toJson(),
     "payment_type": paymentType,
     "payment_type_display": paymentTypeDisplay,
@@ -433,6 +442,49 @@ class Batch {
         ? []
         : List<dynamic>.from(trainerNames!.map((x) => x)),
   };
+}
+
+/// Branch/institution tied to the enrollment. The backend's exact JSON shape
+/// for this hasn't been confirmed yet, so parsing tolerates several likely
+/// forms: a nested `"branch": {"id": .., "name": ..}` object, flat
+/// `branch_id`/`branch_name` fields, `branch` nested under `batch`, or a
+/// bare scalar id/name. Verify against a live response and simplify once
+/// the real shape is known.
+class Branch {
+  final int? id;
+  final String? name;
+
+  Branch({this.id, this.name});
+
+  static int? _asInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    return int.tryParse(v.toString());
+  }
+
+  factory Branch.fromJson(Map<String, dynamic> enrollmentJson) {
+    final raw = enrollmentJson['branch'] ??
+        (enrollmentJson['batch'] is Map ? enrollmentJson['batch']['branch'] : null);
+
+    if (raw is Map<String, dynamic>) {
+      return Branch(id: _asInt(raw['id']), name: raw['name']?.toString());
+    }
+    if (raw != null) {
+      // Bare scalar — could be an id or a display name.
+      final asId = _asInt(raw);
+      return Branch(id: asId, name: asId == null ? raw.toString() : null);
+    }
+
+    final flatId = enrollmentJson['branch_id'];
+    final flatName = enrollmentJson['branch_name'];
+    if (flatId != null || flatName != null) {
+      return Branch(id: _asInt(flatId), name: flatName?.toString());
+    }
+
+    return Branch();
+  }
+
+  Map<String, dynamic> toJson() => {"id": id, "name": name};
 }
 
 class EmiInstallment {

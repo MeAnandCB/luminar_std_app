@@ -7,12 +7,16 @@ import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/repository/profile_screen/model/profile_model.dart';
 import 'package:luminar_std/repository/profile_screen/service/profile_screen_service.dart';
 import 'package:luminar_std/repository/pincode/service.dart';
+import 'package:luminar_std/repository/complete_profile/service.dart';
 
 class ProfileController extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   Profile? profile;
   ProfileModel? profileModel;
+
+  final CompleteProfileService _submissionService = CompleteProfileService();
+  bool _isUploadingResume = false;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -21,6 +25,7 @@ class ProfileController extends ChangeNotifier {
   ProfileModel? get profileModelData => profileModel;
   bool _isPincodeLoading = false;
   bool get isPincodeLoading => _isPincodeLoading;
+  bool get isUploadingResume => _isUploadingResume;
 
   Future<Profile?> getProfileData({required BuildContext context}) async {
     _isLoading = true;
@@ -84,6 +89,45 @@ class ProfileController extends ChangeNotifier {
   // Convenience method to refresh profile data
   Future<void> refreshProfile({required BuildContext context}) async {
     await getProfileData(context: context);
+  }
+
+  /// Uploads/replaces the resume file under the "resume" key and refreshes
+  /// the profile on success. Returns the exact backend error message on
+  /// failure (including field-specific validation_errors, if any).
+  Future<String?> uploadResume({
+    required BuildContext context,
+    required String resumePath,
+  }) async {
+    final studentId = profile?.personalInfo?.studentId;
+    if (studentId == null || studentId.trim().isEmpty) {
+      return 'Cannot upload resume: student ID is missing. Please restart the app and try again.';
+    }
+
+    _isUploadingResume = true;
+    notifyListeners();
+
+    try {
+      final result = await _submissionService.submitProfile(
+        student_id: studentId.toString(),
+        fields: const {},
+        resumePath: resumePath,
+      );
+
+      if (!result.success) {
+        return result.message ?? 'Failed to upload resume.';
+      }
+
+      if (context.mounted) {
+        await getProfileData(context: context);
+      }
+      return null;
+    } catch (e) {
+      LoggerUtils.error('uploadResume error: $e', tag: 'Profile');
+      return e.toString();
+    } finally {
+      _isUploadingResume = false;
+      notifyListeners();
+    }
   }
 
   // Metrics calculation

@@ -174,14 +174,20 @@ class LaptopApi {
     }
   }
 
-  Future<ActionResult> returnLaptop(String identifier, {String earlyReturnFeedback = ''}) async {
+  Future<ActionResult> returnLaptop(
+    String identifier, {
+    required String rackCode,
+    String earlyReturnFeedback = '',
+  }) async {
     final res = await _post('$_base/return', {
       'identifier': identifier,
+      'rackCode': rackCode,
       if (earlyReturnFeedback.isNotEmpty)
         'earlyReturnFeedback': earlyReturnFeedback,
     });
     return ActionResult.fromJson(res);
   }
+
 
   Future<Map<String, dynamic>> _post(
     String url,

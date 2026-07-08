@@ -38,6 +38,7 @@ class _ReturnSheetState extends State<ReturnSheet> {
     try {
       final res = await widget.api.returnLaptop(
         widget.result.asset.id,
+        rackCode: '',
         earlyReturnFeedback: feedback,
       );
       if (!mounted) return;

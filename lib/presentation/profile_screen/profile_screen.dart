@@ -18,6 +18,7 @@ import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:file_picker/file_picker.dart';
 
 // ── ID Card brand colours ──────────────────────────────────────────────────
 const _kCardDark = Color(0xFF1E163A);
@@ -876,6 +877,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profileProvider = Provider.of<ProfileController>(context);
     final String proof1 = profileProvider.profile?.personalInfo?.idProof ?? "";
     final String proof2 = profileProvider.profile?.personalInfo?.idProof2 ?? "";
+    final String resumeUrl = profileProvider.profile?.personalInfo?.resume?.toString() ?? "";
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -1418,6 +1420,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         _buildDocumentRow('ID Proof 1', "VIEW", proof1),
                         _buildDocumentRow('ID Proof 2', "VIEW", proof2),
+                        _buildResumeRow(profileProvider, resumeUrl),
                       ],
                     ),
 
@@ -1883,6 +1886,117 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadResume(ProfileController profileProvider) async {
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    final path = result?.files.single.path;
+    if (path == null || !mounted) return;
+
+    final errorMessage = await profileProvider.uploadResume(
+      context: context,
+      resumePath: path,
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(errorMessage ?? 'Resume uploaded successfully!'),
+        backgroundColor: errorMessage == null ? AppColors.statsGreen : Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  Widget _buildResumeRow(ProfileController profileProvider, String resumeUrl) {
+    final hasResume = resumeUrl.isNotEmpty;
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('Resume', style: AppTextStyles.statLabel),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (hasResume) ...[
+                GestureDetector(
+                  onTap: () => launchUrl(
+                    Uri.parse(resumeUrl),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.remove_red_eye_rounded, size: 14, color: AppColors.primary),
+                        SizedBox(width: 4),
+                        Text(
+                          'VIEW',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+              ],
+              GestureDetector(
+                onTap: profileProvider.isUploadingResume
+                    ? null
+                    : () => _pickAndUploadResume(profileProvider),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.statsOrange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: profileProvider.isUploadingResume
+                      ? SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.statsOrange,
+                          ),
+                        )
+                      : Row(
+                          children: [
+                            Icon(
+                              hasResume ? Icons.upload_file_rounded : Icons.add_circle_outline_rounded,
+                              size: 14,
+                              color: AppColors.statsOrange,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              hasResume ? 'CHANGE' : 'UPLOAD',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.statsOrange,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

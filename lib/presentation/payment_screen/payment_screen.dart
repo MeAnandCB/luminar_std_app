@@ -10,6 +10,7 @@ import 'package:luminar_std/presentation/test_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
+import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/enrollment_screen/controller/controller.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -2135,6 +2136,10 @@ class _PaymentScreenState extends State<PaymentScreen>
         'wallets': ['paytm'],
       },
     };
+    LoggerUtils.info(
+      'Razorpay checkout options: $options',
+      tag: 'Razorpay',
+    );
     _razorpay.open(options);
   }
 }

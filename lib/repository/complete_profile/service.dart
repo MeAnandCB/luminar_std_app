@@ -132,7 +132,18 @@ class CompleteProfileService {
           try {
             final json = jsonDecode(rawBody);
             if (json is Map) {
-              if (json['detail'] != null) {
+              // Field-specific validation errors, e.g.
+              // {"message":"User field validation failed","validation_errors":{"phone":"Phone too long (max 15 digits)"}}
+              final validationErrors = json['validation_errors'];
+              if (validationErrors is Map && validationErrors.isNotEmpty) {
+                final fieldErrors = validationErrors.entries
+                    .map((e) => e.value is List
+                        ? '${e.key}: ${(e.value as List).join(", ")}'
+                        : '${e.key}: ${e.value}')
+                    .join(' | ');
+                final base = json['message']?.toString() ?? json['detail']?.toString();
+                errorMsg = base != null ? '$base — $fieldErrors' : fieldErrors;
+              } else if (json['detail'] != null) {
                 errorMsg = json['detail'].toString();
               } else if (json['message'] != null) {
                 errorMsg = json['message'].toString();

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:flutter/services.dart';
-import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
@@ -286,6 +285,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           'Pincode',
                           editController.pincodeController,
                           keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(6),
+                          ],
                         ),
                         _buildTextField('Preferred Location', editController.preferredLocationController),
                         _buildTextField('Parent/Guardian Name', editController.parentNameController),
@@ -314,18 +317,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           (value) => editController.placementAssistance = value == 'Yes',
                         ),
                         _buildTextField('Preferred Job Location', editController.preferredJobLocationController),
+                        _buildResumeField(editController, profileController),
                       ],
                     ),
 
                     SizedBox(height: 16),
 
                     // Save Button
-                    if (editController.error != null)
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        child: Text(AppUtils.friendlyError(editController.error!), style: TextStyle(color: Colors.red)),
-                      ),
-
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20),
                       child: Container(
@@ -350,8 +348,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     context,
                                     profileController.profileData,
                                   );
-                                  if (success && mounted) {
+                                  if (!mounted) return;
+                                  if (success) {
                                     _showSuccessDialog();
+                                  } else {
+                                    _showErrorDialog(
+                                      editController.error ?? 'Failed to update profile.',
+                                    );
                                   }
                                 },
                           style: ElevatedButton.styleFrom(
@@ -475,6 +478,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     TextEditingController controller, {
     TextInputType? keyboardType,
     bool isEditable = true,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Padding(
       padding: EdgeInsets.only(bottom: 16),
@@ -493,6 +497,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               controller: controller,
               keyboardType: keyboardType,
               enabled: isEditable,
+              inputFormatters: inputFormatters,
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textPrimary,
@@ -504,6 +509,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 hintText: 'Enter $label',
                 hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResumeField(ProfileEditController editController, ProfileController profileController) {
+    final hasServerResume = profileController.profileData?.personalInfo?.resume != null;
+    final hasResume = editController.resumePath != null || hasServerResume;
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Resume', style: AppTextStyles.statLabel),
+          SizedBox(height: 6),
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderColor),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  hasResume ? Icons.description : Icons.upload_file,
+                  color: hasResume ? AppColors.statsGreen : AppColors.textHint,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    hasResume ? 'Resume selected' : 'Upload your resume (PDF)',
+                    style: TextStyle(
+                      color: hasResume ? AppColors.textPrimary : AppColors.textHint,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => editController.pickResume(),
+                  child: Text(hasResume ? 'Change' : 'Pick'),
+                ),
+              ],
             ),
           ),
         ],
@@ -653,6 +703,57 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Text('Done'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Shows the exact backend validation message (e.g. field-specific errors
+  /// from `validation_errors`) as-is, so the user sees precisely what failed
+  /// instead of a generic "Something went wrong" message.
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: EdgeInsets.all(24),
+          decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(32)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle),
+                child: Icon(Icons.error_rounded, color: Colors.red, size: 50),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Update Failed',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              ),
+              SizedBox(height: 8),
+              Text(
+                message,
+                style: AppTextStyles.bodyText,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: Text('OK'),
                 ),
               ),
             ],

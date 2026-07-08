@@ -30,10 +30,10 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
   bool _loading = true;
   String? _error;
 
-  static const _blue    = Color(0xFF0369A1);
-  static const _blueL   = Color(0xFF0EA5E9);
-  static const _green   = Color(0xFF10B981);
-  static const _red     = Color(0xFFEF4444);
+  static const _blue = Color(0xFF0369A1);
+  static const _blueL = Color(0xFF0EA5E9);
+  static const _green = Color(0xFF10B981);
+  static const _red = Color(0xFFEF4444);
 
   @override
   void initState() {
@@ -53,23 +53,35 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
 
   Future<void> _loadHistory() async {
     if (_api == null) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       if (widget.prefillStudentId.isEmpty) {
-        setState(() { _loading = false; });
+        setState(() {
+          _loading = false;
+        });
         return;
       }
       final data = await _api!.getHistory(widget.prefillStudentId);
       if (!mounted) return;
-      setState(() { _all = data; _loading = false; });
+      setState(() {
+        _all = data;
+        _loading = false;
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() { _error = e.message; _loading = false; });
+      setState(() {
+        _error = e.message;
+        _loading = false;
+      });
     }
   }
 
-  List<LoanHistoryEntry> get _active   => _all.where((e) => e.isActive).toList();
-  List<LoanHistoryEntry> get _returned => _all.where((e) => !e.isActive).toList();
+  List<LoanHistoryEntry> get _active => _all.where((e) => e.isActive).toList();
+  List<LoanHistoryEntry> get _returned =>
+      _all.where((e) => !e.isActive).toList();
 
   Future<void> _openScanner() async {
     if (_config == null) return;
@@ -77,38 +89,23 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => LaptopScanScreen(
-          prefillName:      widget.prefillName,
+          prefillName: widget.prefillName,
           prefillStudentId: widget.prefillStudentId,
-          prefillBatch:     widget.prefillBatch,
+          prefillBatch: widget.prefillBatch,
         ),
       ),
     );
     if (mounted) _loadHistory();
   }
 
-  Future<void> _openSettings() async {
-    if (_config == null) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => LaptopSettingsScreen(config: _config!)),
-    );
-    if (!mounted) return;
-    final updated = await AppConfigLap.load();
-    setState(() {
-      _config = updated;
-      _api = LaptopApi(updated);
-    });
-    _loadHistory();
-  }
-
   Future<void> _openHistory() async {
     if (_api == null) return;
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => LaptopHistoryScreen(
-        api: _api!,
-        studentId: widget.prefillStudentId,
-      )),
+      MaterialPageRoute(
+        builder: (_) =>
+            LaptopHistoryScreen(api: _api!, studentId: widget.prefillStudentId),
+      ),
     );
     if (mounted) _loadHistory();
   }
@@ -118,7 +115,9 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF1F5F9),
       body: RefreshIndicator(
         onRefresh: _loadHistory,
         color: _blue,
@@ -145,11 +144,13 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
                 ),
               ),
               if (_active.isEmpty)
-                SliverToBoxAdapter(child: _buildEmptyState(
-                  icon: Icons.check_circle_outline_rounded,
-                  color: _green,
-                  label: 'All laptops are in!',
-                ))
+                SliverToBoxAdapter(
+                  child: _buildEmptyState(
+                    icon: Icons.check_circle_outline_rounded,
+                    color: _green,
+                    label: 'All laptops are in!',
+                  ),
+                )
               else
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
@@ -159,7 +160,10 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
                 ),
               if (_active.length > 5)
                 SliverToBoxAdapter(
-                  child: _viewMoreBtn('View all ${_active.length} active', _openHistory),
+                  child: _viewMoreBtn(
+                    'View all ${_active.length} active',
+                    _openHistory,
+                  ),
                 ),
               SliverToBoxAdapter(
                 child: _buildSectionHeader(
@@ -171,11 +175,13 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
                 ),
               ),
               if (_returned.isEmpty)
-                SliverToBoxAdapter(child: _buildEmptyState(
-                  icon: Icons.inbox_rounded,
-                  color: Colors.grey,
-                  label: 'No returns yet',
-                ))
+                SliverToBoxAdapter(
+                  child: _buildEmptyState(
+                    icon: Icons.inbox_rounded,
+                    color: Colors.grey,
+                    label: 'No returns yet',
+                  ),
+                )
               else
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
@@ -202,7 +208,9 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
   SliverAppBar _buildAppBar(bool isDark) {
     return SliverAppBar(
       pinned: true,
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF1F5F9),
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
@@ -218,12 +226,6 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
           tooltip: 'History',
           onPressed: _openHistory,
         ),
-        IconButton(
-          icon: const Icon(Icons.settings_rounded),
-          tooltip: 'Settings',
-          onPressed: _openSettings,
-        ),
-        const SizedBox(width: 4),
       ],
     );
   }
@@ -290,8 +292,11 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
                         color: Colors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.laptop_mac_rounded,
-                          color: Colors.white, size: 22),
+                      child: const Icon(
+                        Icons.laptop_mac_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     const Text(
@@ -324,9 +329,9 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
   // ── Stats row ──────────────────────────────────────────────────────────────
 
   Widget _buildStatsRow(bool isDark) {
-    final total     = _all.length;
-    final outCount  = _active.length;
-    final retCount  = _returned.length;
+    final total = _all.length;
+    final outCount = _active.length;
+    final retCount = _returned.length;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
@@ -458,8 +463,10 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(label,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(width: 4),
             const Icon(Icons.arrow_forward_rounded, size: 15),
           ],
@@ -495,7 +502,8 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
                 backgroundColor: _blue,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
@@ -522,7 +530,9 @@ class _ActiveTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.18)),
+        border: Border.all(
+          color: const Color(0xFFEF4444).withValues(alpha: 0.18),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -558,27 +568,42 @@ class _ActiveTile extends StatelessWidget {
               children: [
                 Text(
                   loan.studentName.isNotEmpty ? loan.studentName : 'Unknown',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Row(
                   children: [
                     if (loan.studentId.isNotEmpty) ...[
-                      Icon(Icons.badge_rounded,
-                          size: 11, color: Colors.grey.shade500),
+                      Icon(
+                        Icons.badge_rounded,
+                        size: 11,
+                        color: Colors.grey.shade500,
+                      ),
                       const SizedBox(width: 3),
-                      Text(loan.studentId,
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.grey.shade500)),
+                      Text(
+                        loan.studentId,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
                       if (loan.batch.isNotEmpty)
-                        Text(' · ',
-                            style:
-                                TextStyle(color: Colors.grey.shade400)),
+                        Text(
+                          ' · ',
+                          style: TextStyle(color: Colors.grey.shade400),
+                        ),
                     ],
                     if (loan.batch.isNotEmpty)
-                      Text(loan.batch,
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.grey.shade500)),
+                      Text(
+                        loan.batch,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
                   ],
                 ),
               ],
@@ -633,7 +658,9 @@ class _ReturnedTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.18)),
+        border: Border.all(
+          color: const Color(0xFF10B981).withValues(alpha: 0.18),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -669,28 +696,44 @@ class _ReturnedTile extends StatelessWidget {
               children: [
                 Text(
                   loan.studentName.isNotEmpty ? loan.studentName : 'Unknown',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Icon(Icons.login_rounded,
-                        size: 11, color: Colors.grey.shade400),
+                    Icon(
+                      Icons.login_rounded,
+                      size: 11,
+                      color: Colors.grey.shade400,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       timeAgo(loan.checkOutAt.toLocal()),
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
                     if (loan.returnedAt != null) ...[
-                      Text(' → ',
-                          style: TextStyle(color: Colors.grey.shade400)),
-                      Icon(Icons.logout_rounded,
-                          size: 11, color: Colors.grey.shade400),
+                      Text(
+                        ' → ',
+                        style: TextStyle(color: Colors.grey.shade400),
+                      ),
+                      Icon(
+                        Icons.logout_rounded,
+                        size: 11,
+                        color: Colors.grey.shade400,
+                      ),
                       const SizedBox(width: 3),
                       Text(
                         timeAgo(loan.returnedAt!.toLocal()),
                         style: TextStyle(
-                            fontSize: 11, color: Colors.grey.shade500),
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
                       ),
                     ],
                   ],

@@ -8,23 +8,34 @@ import 'package:luminar_std/repository/nactet_registration/service/nactet_regist
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart';
 import 'package:luminar_std/repository/locations/model.dart';
 import 'package:luminar_std/repository/locations/service.dart';
+import 'package:luminar_std/repository/payment_screen/service.dart';
+import 'package:luminar_std/repository/shared_pref.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 
 class NactetRegistrationController extends ChangeNotifier {
   final NactetRegistrationService _service = NactetRegistrationService();
   final LocationsService _locationsService = LocationsService();
+  final PaymentScreenService _paymentService = PaymentScreenService();
   final NactetRegistrationModel registrationModel = NactetRegistrationModel();
 
   int currentStep = 0;
   bool isLoading = false;
   bool isCheckingStatus = false;
   bool isLoadingLocations = false;
+  bool isLoadingBranch = false;
   bool isSuccess = false;
   bool displayForm = true;
   bool confirmationChecked = false;
   String? errorMessage;
   String? fileSizeError;
   dynamic successData;
+
+  // Set once the branch has been auto-detected from the enrollment API, so
+  // the UI knows to show a locked/read-only branch display instead of the
+  // manual picker. If auto-detection fails, this stays false and the user
+  // falls back to picking manually so they're never stuck.
+  bool branchAutoDetected = false;
+  String? branchName;
 
   List<LocationModel> locations = [];
 
@@ -66,18 +77,20 @@ class NactetRegistrationController extends ChangeNotifier {
     }
   }
 
-  void init(
+  Future<void> init(
     Enrollment? enrollment,
     String? studentName,
     String? studentEmail,
     String? studentMobile,
-  ) {
-    fetchLocations();
+  ) async {
+    await fetchLocations();
     if (enrollment != null) {
       registrationModel.enrollment = enrollment.uid;
       registrationModel.course = 1;
       registrationModel.batch = enrollment.batch.uid;
       registrationModel.branch = null;
+
+      await _autoDetectBranch(enrollment.uid);
 
       // Auto-check if already filled
       checkRegistrationStatus(enrollment.uid);
@@ -87,20 +100,74 @@ class NactetRegistrationController extends ChangeNotifier {
   }
 
   /// Used when navigating from the multi-enrollment selection sheet.
-  void initFromNactetEnrollment(
+  Future<void> initFromNactetEnrollment(
     NactetCheckDisplayEnrollment enrollment,
     String? studentName,
     String? studentEmail,
     String? studentMobile,
-  ) {
+  ) async {
     registrationModel.enrollment = enrollment.enrollmentUid;
     registrationModel.course = enrollment.courseId;
     registrationModel.batch = enrollment.batchUid;
     registrationModel.branch = null;
 
-    fetchLocations();
+    await fetchLocations();
+    await _autoDetectBranch(enrollment.enrollmentUid);
     checkRegistrationStatus(enrollment.enrollmentUid);
     notifyListeners();
+  }
+
+  /// Auto-selects the branch from the enrollment detail API
+  /// (/api/enrollment/{uid}/) instead of requiring the student to pick it
+  /// manually. Falls back to leaving the branch unselected (manual chip
+  /// picker stays available in the UI) if the backend doesn't return
+  /// recognizable branch data.
+  Future<void> _autoDetectBranch(String enrollmentUid) async {
+    isLoadingBranch = true;
+    branchAutoDetected = false;
+    notifyListeners();
+
+    try {
+      final token = await SharedPrefService.getAccessToken();
+      if (token == null || token.isEmpty) return;
+
+      final response = await _paymentService.fetchEnrollmentDetails(
+        enrollmentUid,
+        token,
+      );
+      final branch = response.data?.branch;
+
+      developer.log(
+        'enrollment_uid=$enrollmentUid id=${branch?.id} name=${branch?.name}',
+        name: 'EnrollmentDetail.RawBranch',
+      );
+
+      if (branch?.id != null) {
+        registrationModel.branch = branch!.id.toString();
+        branchName = branch.name ??
+            locations
+                .where((l) => l.id == branch.id)
+                .map((l) => l.name)
+                .firstOrNull;
+        branchAutoDetected = true;
+      } else if (branch?.name != null && branch!.name!.trim().isNotEmpty) {
+        // No numeric id in the response — try to match the returned name
+        // against the fetched Locations list to recover an id.
+        final match = locations
+            .where((l) => l.name.toLowerCase() == branch.name!.toLowerCase())
+            .firstOrNull;
+        if (match != null) {
+          registrationModel.branch = match.id.toString();
+          branchName = match.name;
+          branchAutoDetected = true;
+        }
+      }
+    } catch (e) {
+      LoggerUtils.error('Branch auto-detect failed: $e', tag: 'NACTET');
+    } finally {
+      isLoadingBranch = false;
+      notifyListeners();
+    }
   }
 
   void toggleConfirmation() {
@@ -274,7 +341,7 @@ class NactetRegistrationController extends ChangeNotifier {
   }
 
   void nextStep() {
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       updateStep(currentStep + 1);
     }
   }
@@ -390,12 +457,21 @@ class NactetRegistrationController extends ChangeNotifier {
 
   void reset() {
     currentStep = 0;
+    // The PageController retains its last physical page across reopens since
+    // this controller is a long-lived, app-level singleton — without this,
+    // the PageView stays on the last-viewed step (e.g. step 4) even though
+    // currentStep and all the form fields below have been reset to step 1.
+    if (pageController.hasClients) {
+      pageController.jumpToPage(0);
+    }
     isSuccess = false;
     isLoading = false;
     confirmationChecked = false;
     errorMessage = null;
     fileSizeError = null;
     successData = null;
+    branchAutoDetected = false;
+    branchName = null;
     nameController.clear();
     guardianNameController.clear();
     dobController.clear();

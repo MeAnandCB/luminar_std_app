@@ -2251,6 +2251,10 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
         'wallets': ['paytm'],
       },
     };
+    LoggerUtils.info(
+      'Razorpay checkout options: $options',
+      tag: 'Razorpay',
+    );
     _razorpay.open(options);
   }
 }

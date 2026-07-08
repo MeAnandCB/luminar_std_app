@@ -8,6 +8,7 @@ import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 class ProfileEditController extends ChangeNotifier {
   final CompleteProfileService _submissionService = CompleteProfileService();
@@ -18,6 +19,9 @@ class ProfileEditController extends ChangeNotifier {
   final ImagePicker _picker = ImagePicker();
   String? _profilePicPath;
   String? get profilePicPath => _profilePicPath;
+
+  String? _resumePath;
+  String? get resumePath => _resumePath;
 
   String? _error;
   String? get error => _error;
@@ -231,6 +235,21 @@ class ProfileEditController extends ChangeNotifier {
     }
   }
 
+  Future<void> pickResume() async {
+    try {
+      final FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+      if (result != null && result.files.single.path != null) {
+        _resumePath = result.files.single.path;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error picking resume: $e');
+    }
+  }
+
   Future<bool> updateProfile(BuildContext context, Profile? initialProfile) async {
     _isSubmitting = true;
     _error = null;
@@ -291,7 +310,7 @@ class ProfileEditController extends ChangeNotifier {
       addIfChanged('placement_assistance', _placementAssistance, pl?.placementAssistance);
       addIfChanged('preferred_job_location', preferredJobLocationController.text, pl?.preferredJobLocation);
 
-      if (deltaFields.isEmpty && _profilePicPath == null) {
+      if (deltaFields.isEmpty && _profilePicPath == null && _resumePath == null) {
         _isSubmitting = false;
         notifyListeners();
         return true;
@@ -310,15 +329,22 @@ class ProfileEditController extends ChangeNotifier {
         '╠══════════════════════════════════════════════════════════╣\n'
         '║  FILES\n'
         '║    profile_pic : ${_profilePicPath ?? '(unchanged)'}\n'
+        '║    resume      : ${_resumePath ?? '(unchanged)'}\n'
         '╚══════════════════════════════════════════════════════════╝',
         name: '📤 Profile.EditPayload',
       );
 
-      await _submissionService.submitProfile(
+      final result = await _submissionService.submitProfile(
         student_id: p?.studentId.toString(),
         fields: deltaFields,
         profilePicPath: _profilePicPath,
+        resumePath: _resumePath,
       );
+
+      if (!result.success) {
+        _error = result.message ?? 'Failed to update profile.';
+        return false;
+      }
 
       // Refresh ProfileController
       if (context.mounted) {
