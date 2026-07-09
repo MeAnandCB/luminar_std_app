@@ -231,17 +231,28 @@ class PersonalInfo {
 class PlacementInfo {
   bool? placementAssistance;
   String? preferredJobLocation;
+  String? linkedinLink;
+  String? portfolioLink;
 
-  PlacementInfo({this.placementAssistance, this.preferredJobLocation});
+  PlacementInfo({
+    this.placementAssistance,
+    this.preferredJobLocation,
+    this.linkedinLink,
+    this.portfolioLink,
+  });
 
   factory PlacementInfo.fromJson(Map<String, dynamic> json) => PlacementInfo(
     placementAssistance: json["placement_assistance"],
     preferredJobLocation: json["preferred_job_location"],
+    linkedinLink: json["linkedin_link"],
+    portfolioLink: json["portfolio_link"],
   );
 
   Map<String, dynamic> toJson() => {
     "placement_assistance": placementAssistance,
     "preferred_job_location": preferredJobLocation,
+    "linkedin_link": linkedinLink,
+    "portfolio_link": portfolioLink,
   };
 }
 

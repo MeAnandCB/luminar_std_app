@@ -2032,11 +2032,15 @@ class CareerInfoSectionState extends State<CareerInfoSection>
   String? _currentStatus;
   bool _showStatusError = false;
   final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _linkedinController = TextEditingController();
+  final TextEditingController _portfolioController = TextEditingController();
   bool _interestedInPlacement = true;
 
   @override
   void dispose() {
     _locationController.dispose();
+    _linkedinController.dispose();
+    _portfolioController.dispose();
     super.dispose();
   }
 
@@ -2079,6 +2083,15 @@ class CareerInfoSectionState extends State<CareerInfoSection>
       if (_hasPlacementAssistance) {
         _interestedInPlacement = plInfo.placementAssistance!;
         completeController.placementAssistance = plInfo.placementAssistance;
+      }
+
+      if (_hasValue(plInfo.linkedinLink)) {
+        _linkedinController.text = plInfo.linkedinLink!;
+        completeController.linkedinLink = plInfo.linkedinLink;
+      }
+      if (_hasValue(plInfo.portfolioLink)) {
+        _portfolioController.text = plInfo.portfolioLink!;
+        completeController.portfolioLink = plInfo.portfolioLink;
       }
     }
 
@@ -2339,6 +2352,69 @@ class CareerInfoSectionState extends State<CareerInfoSection>
                               ],
                             ),
                           );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 16),
+
+                // Professional Links (separate, fully optional section)
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.borderColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Professional Links (Optional)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      CustomTextField(
+                        label: 'LinkedIn Profile',
+                        controller: _linkedinController,
+                        enabled: true,
+                        prefixIcon: Icons.link,
+                        keyboardType: TextInputType.url,
+                        onChanged: (value) {
+                          context.read<CompleteProfileController>().linkedinLink =
+                              value.trim().isEmpty ? null : value.trim();
+                        },
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return null;
+                          if (!value.trim().startsWith('http')) {
+                            return 'Enter a valid URL (starting with http:// or https://)';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16),
+                      CustomTextField(
+                        label: 'Portfolio Link',
+                        controller: _portfolioController,
+                        enabled: true,
+                        prefixIcon: Icons.public,
+                        keyboardType: TextInputType.url,
+                        onChanged: (value) {
+                          context.read<CompleteProfileController>().portfolioLink =
+                              value.trim().isEmpty ? null : value.trim();
+                        },
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return null;
+                          if (!value.trim().startsWith('http')) {
+                            return 'Enter a valid URL (starting with http:// or https://)';
+                          }
+                          return null;
                         },
                       ),
                     ],

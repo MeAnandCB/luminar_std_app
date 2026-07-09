@@ -97,6 +97,8 @@ class CompleteProfileController extends ChangeNotifier {
 
   bool? placementAssistance;
   String? preferredJobLocation;
+  String? linkedinLink;
+  String? portfolioLink;
 
   String? _parentName; String? get parentName => _parentName;
   set parentName(String? v) { _parentName = v; notifyListeners(); }
@@ -323,6 +325,8 @@ class CompleteProfileController extends ChangeNotifier {
         deltaFields['placement_assistance'] = placementAssistance;
       }
       addIfChanged('preferred_job_location', preferredJobLocation, initialProfile?.placementInfo?.preferredJobLocation);
+      addIfChanged('linkedin_link', linkedinLink, initialProfile?.placementInfo?.linkedinLink);
+      addIfChanged('portfolio_link', portfolioLink, initialProfile?.placementInfo?.portfolioLink);
 
       // Parent
       addIfChanged('parent_name', parentName, initialProfile?.contactInfo?.parentName);
@@ -352,6 +356,7 @@ class CompleteProfileController extends ChangeNotifier {
         'qualification_id', 'college', 'pass_out_year', 'specialization', 'cgpa',
         'any_arrears', 'admission_date',
         'student_or_working_professional', 'preferred_job_location', 'placement_assistance',
+        'linkedin_link', 'portfolio_link',
         'parent_name', 'parent_phone_number',
       ];
       debugPrint('\n╔══════════════════════════════════════════════════════════╗');

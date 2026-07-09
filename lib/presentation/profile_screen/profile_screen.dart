@@ -1367,11 +1367,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           profileProvider.profile?.contactInfo?.parentPhone ??
                               "",
                         ),
-                        _buildInfoRow(
-                          'How did you hear about us?  ',
-                          profileProvider.profile?.contactInfo?.howDidYouHear ??
-                              "",
-                        ),
                       ],
                     ),
 
@@ -1406,6 +1401,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ?.placementInfo
                                   ?.preferredJobLocation ??
                               "",
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 16),
+
+                    // ── Professional Links (optional) ───────────────────
+                    _buildSectionCard(
+                      title: 'Professional Links',
+                      icon: Icons.link_rounded,
+                      color: AppColors.primary,
+                      children: [
+                        _buildLinkRow(
+                          profileProvider,
+                          'LinkedIn Profile',
+                          field: 'linkedin_link',
+                          value: profileProvider.profile?.placementInfo?.linkedinLink,
+                        ),
+                        _buildLinkRow(
+                          profileProvider,
+                          'Portfolio Link',
+                          field: 'portfolio_link',
+                          value: profileProvider.profile?.placementInfo?.portfolioLink,
                         ),
                       ],
                     ),
@@ -1846,6 +1864,191 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Shows an optional profile link. If filled, offers "Open" plus an edit
+  /// icon; if not filled, offers an "Add" action. Both editing paths open an
+  /// inline dialog and save right here on the profile screen — no
+  /// navigation to the edit form.
+  Widget _buildLinkRow(
+    ProfileController profileProvider,
+    String label, {
+    required String field,
+    required String? value,
+  }) {
+    final hasValue = value != null && value.trim().isNotEmpty;
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: AppTextStyles.statLabel),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasValue) ...[
+                    GestureDetector(
+                      onTap: () => launchUrl(
+                        Uri.parse(value),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.open_in_new_rounded, size: 14, color: AppColors.primary),
+                            SizedBox(width: 4),
+                            Text(
+                              'OPEN',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                  ],
+                  GestureDetector(
+                    onTap: () => _showEditLinkDialog(
+                      profileProvider,
+                      label: label,
+                      field: field,
+                      currentValue: value,
+                    ),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.statsOrange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            hasValue ? Icons.edit_rounded : Icons.add_circle_outline_rounded,
+                            size: 14,
+                            color: AppColors.statsOrange,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            hasValue ? 'EDIT' : 'ADD',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.statsOrange,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Show the already-added link value itself, not just the action buttons.
+          if (hasValue)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: GestureDetector(
+                onTap: () => launchUrl(
+                  Uri.parse(value),
+                  mode: LaunchMode.externalApplication,
+                ),
+                child: Text(
+                  value,
+                  style: AppTextStyles.statValue.copyWith(
+                    fontSize: 12,
+                    color: AppColors.primary,
+                    decoration: TextDecoration.underline,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showEditLinkDialog(
+    ProfileController profileProvider, {
+    required String label,
+    required String field,
+    required String? currentValue,
+  }) async {
+    final textController = TextEditingController(text: currentValue ?? '');
+    final formKey = GlobalKey<FormState>();
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(label),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: textController,
+            keyboardType: TextInputType.url,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'https://...',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return null;
+              if (!v.trim().startsWith('http')) {
+                return 'Enter a valid URL (starting with http:// or https://)';
+              }
+              return null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.of(dialogContext).pop(true);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (saved != true || !mounted) return;
+
+    final errorMessage = await profileProvider.updateProfessionalLink(
+      context: context,
+      field: field,
+      value: textController.text.trim(),
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(errorMessage ?? '$label updated successfully!'),
+        backgroundColor: errorMessage == null ? AppColors.statsGreen : Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }

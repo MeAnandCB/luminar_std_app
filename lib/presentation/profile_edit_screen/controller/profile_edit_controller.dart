@@ -47,6 +47,8 @@ class ProfileEditController extends ChangeNotifier {
   final parentPhoneController = TextEditingController();
   final hearAboutController = TextEditingController();
   final preferredJobLocationController = TextEditingController();
+  final linkedinLinkController = TextEditingController();
+  final portfolioLinkController = TextEditingController();
 
   int? _qualificationId;
   int? _preferredLocationId;
@@ -141,6 +143,8 @@ class ProfileEditController extends ChangeNotifier {
     // Placement Info
     _placementAssistance = pl?.placementAssistance ?? true;
     preferredJobLocationController.text = pl?.preferredJobLocation ?? '';
+    linkedinLinkController.text = pl?.linkedinLink ?? '';
+    portfolioLinkController.text = pl?.portfolioLink ?? '';
 
     if (notify) notifyListeners();
   }
@@ -309,6 +313,8 @@ class ProfileEditController extends ChangeNotifier {
 
       addIfChanged('placement_assistance', _placementAssistance, pl?.placementAssistance);
       addIfChanged('preferred_job_location', preferredJobLocationController.text, pl?.preferredJobLocation);
+      addIfChanged('linkedin_link', linkedinLinkController.text, pl?.linkedinLink);
+      addIfChanged('portfolio_link', portfolioLinkController.text, pl?.portfolioLink);
 
       if (deltaFields.isEmpty && _profilePicPath == null && _resumePath == null) {
         _isSubmitting = false;
@@ -383,6 +389,8 @@ class ProfileEditController extends ChangeNotifier {
     parentPhoneController.dispose();
     hearAboutController.dispose();
     preferredJobLocationController.dispose();
+    linkedinLinkController.dispose();
+    portfolioLinkController.dispose();
     super.dispose();
   }
 }

@@ -323,6 +323,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                     SizedBox(height: 16),
 
+                    // Professional Links (Optional)
+                    _buildEditSection(
+                      title: 'Professional Links (Optional)',
+                      icon: Icons.link_rounded,
+                      color: AppColors.primary,
+                      children: [
+                        _buildTextField(
+                          'LinkedIn Profile',
+                          editController.linkedinLinkController,
+                          keyboardType: TextInputType.url,
+                        ),
+                        _buildTextField(
+                          'Portfolio Link',
+                          editController.portfolioLinkController,
+                          keyboardType: TextInputType.url,
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 16),
+
                     // Save Button
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20),

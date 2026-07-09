@@ -130,6 +130,49 @@ class ProfileController extends ChangeNotifier {
     }
   }
 
+  bool _isUpdatingLink = false;
+  bool get isUpdatingLink => _isUpdatingLink;
+
+  /// Updates a single professional-link field (e.g. "linkedin_link" or
+  /// "portfolio_link") in place on the profile screen, without navigating to
+  /// the edit form. Refreshes the profile on success. Returns the exact
+  /// backend error message on failure.
+  Future<String?> updateProfessionalLink({
+    required BuildContext context,
+    required String field,
+    required String value,
+  }) async {
+    final studentId = profile?.personalInfo?.studentId;
+    if (studentId == null || studentId.trim().isEmpty) {
+      return 'Cannot update profile: student ID is missing. Please restart the app and try again.';
+    }
+
+    _isUpdatingLink = true;
+    notifyListeners();
+
+    try {
+      final result = await _submissionService.submitProfile(
+        student_id: studentId.toString(),
+        fields: {field: value},
+      );
+
+      if (!result.success) {
+        return result.message ?? 'Failed to update $field.';
+      }
+
+      if (context.mounted) {
+        await getProfileData(context: context);
+      }
+      return null;
+    } catch (e) {
+      LoggerUtils.error('updateProfessionalLink error: $e', tag: 'Profile');
+      return e.toString();
+    } finally {
+      _isUpdatingLink = false;
+      notifyListeners();
+    }
+  }
+
   // Metrics calculation
   int get totalFields => 19;
 
