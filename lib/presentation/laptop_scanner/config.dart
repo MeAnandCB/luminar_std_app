@@ -7,7 +7,7 @@ class AppConfigLap {
   static const _baseUrlKey = 'baseUrl';
   static const _apiKeyKey = 'apiKey';
 
-  static const defaultBaseUrl = 'http://192.168.1.39:3000/api/mobile/laptops';
+  static const defaultBaseUrl = 'https://assets.luminartechnolab.com/api/mobile/laptops';
   static const defaultApiKey =
       '471961b68070cd99afa85d7f950f91351274dc12bd180047';
 

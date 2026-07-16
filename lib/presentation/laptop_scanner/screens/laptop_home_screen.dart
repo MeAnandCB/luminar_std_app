@@ -482,27 +482,46 @@ class _LaptopHomeScreenState extends State<LaptopHomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.wifi_off_rounded, size: 52, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: _blue.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.wifi_off_rounded, size: 32, color: _blue.withValues(alpha: 0.6)),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Connection lost',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            const SizedBox(height: 8),
             Text(
               _error!,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
+                fontSize: 13,
+                color: Colors.grey.shade500,
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
+            const SizedBox(height: 24),
+            TextButton.icon(
               onPressed: _loadHistory,
-              icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _blue,
-                foregroundColor: Colors.white,
+              icon: const Icon(Icons.refresh_rounded, size: 17),
+              label: const Text('Try again'),
+              style: TextButton.styleFrom(
+                foregroundColor: _blue,
+                textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: _blue.withValues(alpha: 0.3)),
                 ),
               ),
             ),
