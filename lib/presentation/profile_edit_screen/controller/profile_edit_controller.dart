@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
+import 'package:luminar_std/core/utils/picked_file_utils.dart';
 import 'package:luminar_std/repository/complete_profile/service.dart';
 import 'package:luminar_std/repository/profile_screen/model/profile_model.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
@@ -231,7 +232,10 @@ class ProfileEditController extends ChangeNotifier {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
       if (image != null) {
-        _profilePicPath = image.path;
+        // Persist out of image_picker's cache dir — Android can reclaim
+        // cache-dir files under storage pressure before "Save Changes" is
+        // tapped, causing a PathNotFoundException at upload time.
+        _profilePicPath = await PickedFileUtils.persist(image.path);
         notifyListeners();
       }
     } catch (e) {
@@ -246,7 +250,7 @@ class ProfileEditController extends ChangeNotifier {
         allowedExtensions: ['pdf'],
       );
       if (result != null && result.files.single.path != null) {
-        _resumePath = result.files.single.path;
+        _resumePath = await PickedFileUtils.persist(result.files.single.path!);
         notifyListeners();
       }
     } catch (e) {

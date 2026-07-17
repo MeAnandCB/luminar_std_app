@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
+import 'package:luminar_std/core/utils/picked_file_utils.dart';
 import 'package:luminar_std/repository/academic_info/model.dart';
 import 'package:luminar_std/repository/academic_info/service.dart';
 import 'package:luminar_std/repository/complete_profile/service.dart';
@@ -162,8 +163,18 @@ class CompleteProfileController extends ChangeNotifier {
 
   void notifyProgress() => notifyListeners();
 
-  void setResume(String? path) {
-    _resumePath = path;
+  Future<void> setResume(String? path) async {
+    if (path == null) {
+      _resumePath = null;
+      notifyListeners();
+      return;
+    }
+    try {
+      _resumePath = await PickedFileUtils.persist(path);
+    } catch (e) {
+      debugPrint('Error persisting resume file: $e');
+      _resumePath = path;
+    }
     notifyListeners();
   }
 
@@ -200,10 +211,15 @@ class CompleteProfileController extends ChangeNotifier {
     try {
       final XFile? image = await _picker.pickImage(source: source, imageQuality: 70);
       if (image != null) {
+        // Persist out of image_picker's cache dir — this form submits much
+        // later (final review step), and Android can reclaim cache-dir
+        // files under storage pressure in the meantime, causing a
+        // PathNotFoundException at upload time.
+        final persistedPath = await PickedFileUtils.persist(image.path);
         if (isFront) {
-          _idFrontPath = image.path;
+          _idFrontPath = persistedPath;
         } else {
-          _idBackPath = image.path;
+          _idBackPath = persistedPath;
         }
         notifyListeners();
       }
@@ -216,7 +232,8 @@ class CompleteProfileController extends ChangeNotifier {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
       if (image != null) {
-        _profilePicPath = image.path;
+        final persistedPath = await PickedFileUtils.persist(image.path);
+        _profilePicPath = persistedPath;
         notifyListeners();
       }
     } catch (e) {

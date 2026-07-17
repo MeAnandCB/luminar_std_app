@@ -2337,7 +2337,7 @@ class CareerInfoSectionState extends State<CareerInfoSection>
 
                                     if (result != null &&
                                         result.files.single.path != null) {
-                                      completeController.setResume(
+                                      await completeController.setResume(
                                         result.files.single.path,
                                       );
                                     }
