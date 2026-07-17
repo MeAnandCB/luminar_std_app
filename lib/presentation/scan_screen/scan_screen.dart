@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'dart:developer' as developer;
 import 'package:intl/intl.dart';
@@ -6,11 +7,13 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
+import 'package:luminar_std/core/utils/device_time_utils.dart';
 
 import 'package:luminar_std/presentation/attandance_screen/controller/attandance_controller.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart' show openAppSettings;
 import 'package:provider/provider.dart';
 
 // NOTE: Adjust these import paths to match your project structure
@@ -147,6 +150,14 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   bool _dashboardLoaded = false;
   bool _dashboardError = false;
 
+  // Gates the whole flow: attendance validity is checked against
+  // DateTime.now(), so a manually-set device clock causes valid QR codes to
+  // read as "not yet valid" / "expired". If auto time is off, we block
+  // before the dashboard/camera even loads rather than let scans fail with
+  // a confusing time-mismatch error.
+  bool _checkingAutoTime = true;
+  bool _autoTimeDisabled = false;
+
   // Pre-fetched token — avoids storage read on every scan
   String? _cachedToken;
 
@@ -161,18 +172,31 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     );
     // Camera stays paused until dashboard data is loaded
     _controller.stop();
+    // Rebuild when the camera's own state changes (e.g. permission denied)
+    // so the surrounding overlay (scan frame, zoom controls, status hint) —
+    // which are separate Stack layers, not part of MobileScanner's
+    // errorBuilder — can hide themselves instead of rendering on top of
+    // the error view.
+    _controller.addListener(_onCameraStateChanged);
     // Pre-fetch token in parallel with dashboard load
     AppUtils.getAccessKey().then((t) => _cachedToken = t);
-    _loadDashboardData();
+    _checkAutoTimeThenLoad();
+  }
+
+  void _onCameraStateChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed &&
-        _dashboardLoaded &&
-        !_detected &&
-        !_isLoading) {
-      _safeStart();
+    if (state == AppLifecycleState.resumed) {
+      if (_autoTimeDisabled) {
+        // User likely came back from Settings after enabling it — re-check
+        // automatically instead of making them tap something.
+        _checkAutoTimeThenLoad();
+      } else if (_dashboardLoaded && !_detected && !_isLoading) {
+        _safeStart();
+      }
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
       _controller.stop();
@@ -182,8 +206,29 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _controller.removeListener(_onCameraStateChanged);
     _controller.dispose();
     super.dispose();
+  }
+
+  // ── Step 0: Auto time check — gates everything below ──────────────────────
+
+  Future<void> _checkAutoTimeThenLoad() async {
+    if (mounted) setState(() => _checkingAutoTime = true);
+    final enabled = await DeviceTimeUtils.isAutoTimeEnabled();
+    if (!mounted) return;
+    if (!enabled) {
+      setState(() {
+        _checkingAutoTime = false;
+        _autoTimeDisabled = true;
+      });
+      return;
+    }
+    setState(() {
+      _checkingAutoTime = false;
+      _autoTimeDisabled = false;
+    });
+    _loadDashboardData();
   }
 
   // ── Step 1: Load dashboard data, then start camera ───────────────────────────
@@ -452,7 +497,12 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         title: 'QR Not Yet Valid',
         message:
             'This QR code is not yet valid.\n'
-            'Session starts at ${DateFormat('hh:mm a').format(startLocal)}.',
+            'Session starts at ${DateFormat('hh:mm a').format(startLocal)}.\n\n'
+            'If your device time is set manually and isn\'t accurate, this '
+            'can happen even during a valid session — the attendance QR '
+            'refreshes every 60 seconds. Please check that "Set time '
+            'automatically" is on in your device settings.',
+        showTimeSettingsHint: true,
       );
       return;
     }
@@ -463,7 +513,12 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         title: 'QR Code Expired',
         message:
             'This QR code has expired.\n'
-            'Session ended at ${DateFormat('hh:mm a').format(endUtc.toLocal())}.',
+            'Session ended at ${DateFormat('hh:mm a').format(endUtc.toLocal())}.\n\n'
+            'If your device time is set manually and isn\'t accurate, this '
+            'can happen even during a valid session — the attendance QR '
+            'refreshes every 60 seconds. Please check that "Set time '
+            'automatically" is on in your device settings.',
+        showTimeSettingsHint: true,
       );
       return;
     }
@@ -558,7 +613,13 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         _showResult(
           success: false,
           title: 'Attendance Failed (${result['statusCode']})',
-          message: msg.toString(),
+          message:
+              '${msg.toString()}\n\n'
+              'The attendance QR refreshes every 60 seconds — if your '
+              'device time is set manually and isn\'t accurate, scans can '
+              'fail like this even during a valid session. Please check '
+              'that "Set time automatically" is on in your device settings.',
+          showTimeSettingsHint: true,
         );
       }
     } catch (e) {
@@ -583,6 +644,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     required String message,
     Color? overrideColor,
     IconData? overrideIcon,
+    bool showTimeSettingsHint = false,
   }) {
     showDialog(
       context: context,
@@ -603,8 +665,33 @@ class _QRScannerScreenState extends State<QRScannerScreen>
           });
           _safeStart();
         },
+        // iOS has no API to open Date & Time settings or check the auto-time
+        // toggle, so there's nothing useful for this button to do there —
+        // show the warning text only, no dead-end button.
+        onCheckTimeSettings: (showTimeSettingsHint && Platform.isAndroid)
+            ? _openDateSettings
+            : null,
       ),
     );
+  }
+
+  // Wraps DeviceTimeUtils.openDateSettings with a visible fallback — if the
+  // native channel call fails (e.g. app was hot-reloaded instead of fully
+  // rebuilt after a native code change), tell the user instead of the
+  // button silently doing nothing.
+  Future<void> _openDateSettings() async {
+    final opened = await DeviceTimeUtils.openDateSettings();
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Couldn't open Settings automatically. Please open your "
+            'device\'s Date & Time settings manually.',
+          ),
+          backgroundColor: Color(0xFFFF5252),
+        ),
+      );
+    }
   }
 
   Future<void> _toggleFlash() async {
@@ -631,6 +718,29 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   @override
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
+
+    if (_checkingAutoTime) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF00C2A8), strokeWidth: 3),
+        ),
+      );
+    }
+
+    if (_autoTimeDisabled) {
+      return _AutoTimeRequiredView(
+        onOpenSettings: _openDateSettings,
+        onRetry: _checkAutoTimeThenLoad,
+      );
+    }
+
+    // The camera's own error state (e.g. permission denied) — everything
+    // below other than the top bar and the error view itself must hide
+    // when this is set, since MobileScanner's errorBuilder only replaces
+    // the camera-feed layer, not the rest of the Stack.
+    final hasCameraError = _controller.value.error != null;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -640,10 +750,18 @@ class _QRScannerScreenState extends State<QRScannerScreen>
             controller: _controller,
             onDetect: _onDetect,
             fit: BoxFit.cover,
+            errorBuilder: (context, error) {
+              if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
+                return _CameraPermissionDeniedView(onRetry: _safeStart);
+              }
+              return _CameraErrorView(
+                message: error.errorDetails?.message ?? error.errorCode.message,
+              );
+            },
           ),
 
           // Scan frame overlay
-          const _ScanOverlay(),
+          if (!hasCameraError) const _ScanOverlay(),
 
           // Top bar
           SafeArea(
@@ -671,7 +789,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                   _CircleBtn(
                     icon: _isFlashOn ? Icons.flash_on : Icons.flash_off,
                     active: _isFlashOn,
-                    onTap: _dashboardLoaded ? _toggleFlash : () {},
+                    onTap: (_dashboardLoaded && !hasCameraError) ? _toggleFlash : () {},
                   ),
                 ],
               ),
@@ -679,7 +797,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
           ),
 
           // Full-screen loading overlay (dashboard fetch OR API call)
-          if (_isLoading || (!_dashboardLoaded && !_dashboardError))
+          if (!hasCameraError && (_isLoading || (!_dashboardLoaded && !_dashboardError)))
             Container(
               color: Colors.black,
               child: Center(
@@ -703,7 +821,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
             ),
 
           // Dashboard error state
-          if (_dashboardError)
+          if (!hasCameraError && _dashboardError)
             Container(
               color: Colors.black87,
               child: Center(
@@ -748,7 +866,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
             ),
 
           // Bottom status hint + zoom controls
-          if (!_isLoading && !_dashboardError)
+          if (!hasCameraError && !_isLoading && !_dashboardError)
             Positioned(
               bottom: 40,
               left: 0,
@@ -908,6 +1026,240 @@ class _OverlayPainter extends CustomPainter {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Camera Permission Denied — shown in place of the camera feed via
+// MobileScanner's errorBuilder when the OS camera permission isn't granted.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CameraPermissionDeniedView extends StatelessWidget {
+  const _CameraPermissionDeniedView({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 84,
+                height: 84,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.no_photography_rounded,
+                  color: Color(0xFFFF5252),
+                  size: 42,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Camera Permission Required',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Luminar Technolab needs camera access to scan attendance '
+                'QR codes.\n\nPlease grant camera permission in your device '
+                'settings, then come back to scan.',
+                style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.6),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: openAppSettings,
+                  icon: const Icon(Icons.settings_rounded, size: 18),
+                  label: const Text('Open App Settings'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00C2A8),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: onRetry,
+                child: const Text(
+                  "I've granted it — Retry",
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white38, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Camera Error — generic fallback for any other MobileScanner error
+// (e.g. unsupported device, camera already in use).
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CameraErrorView extends StatelessWidget {
+  const _CameraErrorView({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline_rounded, color: Color(0xFFFF5252), size: 52),
+              const SizedBox(height: 16),
+              const Text(
+                'Camera Error',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Go Back', style: TextStyle(color: Colors.white70)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Auto Time Required — blocks scanning until the device's automatic
+// date/time is on, since attendance validity is checked against the
+// device clock.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AutoTimeRequiredView extends StatelessWidget {
+  const _AutoTimeRequiredView({required this.onOpenSettings, required this.onRetry});
+
+  final VoidCallback onOpenSettings;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 84,
+                height: 84,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFA726).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.access_time_filled_rounded,
+                  color: Color(0xFFFFA726),
+                  size: 42,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Turn On Automatic Date & Time',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Your device time is set manually, which can make valid '
+                'attendance QR codes appear expired or not yet active.\n\n'
+                'Please turn on "Set time automatically" in your device '
+                'settings, then come back to scan again.',
+                style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.6),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: onOpenSettings,
+                  icon: const Icon(Icons.settings_rounded, size: 18),
+                  label: const Text('Open Date & Time Settings'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00C2A8),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: onRetry,
+                child: const Text(
+                  "I've enabled it — Retry",
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white38, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Circle Button (same as before)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -949,6 +1301,7 @@ class _ResultDialog extends StatelessWidget {
     required this.onPressed,
     this.overrideColor,
     this.overrideIcon,
+    this.onCheckTimeSettings,
   });
 
   final bool success;
@@ -957,6 +1310,7 @@ class _ResultDialog extends StatelessWidget {
   final VoidCallback onPressed;
   final Color? overrideColor;
   final IconData? overrideIcon;
+  final VoidCallback? onCheckTimeSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -1038,6 +1392,17 @@ class _ResultDialog extends StatelessWidget {
                 child: const Text('Close'),
               ),
             ),
+            if (onCheckTimeSettings != null) ...[
+              const SizedBox(height: 10),
+              TextButton.icon(
+                onPressed: onCheckTimeSettings,
+                icon: const Icon(Icons.settings_rounded, size: 16, color: Colors.white70),
+                label: const Text(
+                  'Check Time Settings',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              ),
+            ],
           ],
         ),
       ),
