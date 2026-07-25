@@ -297,8 +297,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           editController.parentPhoneController,
                           editController.parentPhoneCountryCode,
                           (code) => editController.parentPhoneCountryCode = code,
+                          isEditable: false,
+                          onDisabledTap: _showParentPhoneLockedDialog,
                         ),
-                        _buildTextField('How did you hear about us?', editController.hearAboutController),
                       ],
                     ),
 
@@ -365,6 +366,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           onPressed: editController.isSubmitting
                               ? null
                               : () async {
+                                  if (_samePhoneNumber(
+                                    '${editController.phoneCountryCode} ${editController.phoneController.text}',
+                                    '${editController.parentPhoneCountryCode} ${editController.parentPhoneController.text}',
+                                  )) {
+                                    _showErrorDialog(
+                                      'Your contact number and parent/guardian '
+                                      'number cannot be the same. Please '
+                                      'provide your parent/guardian\'s number '
+                                      'or use a different contact number.',
+                                    );
+                                    return;
+                                  }
+
                                   final success = await editController.updateProfile(
                                     context,
                                     profileController.profileData,
@@ -441,8 +455,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String label,
     TextEditingController controller,
     String countryCode,
-    ValueChanged<String> onCountryChanged,
-  ) {
+    ValueChanged<String> onCountryChanged, {
+    bool isEditable = true,
+    VoidCallback? onDisabledTap,
+  }) {
+    final field = Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+      ),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              border: Border(right: BorderSide(color: AppColors.borderColor)),
+            ),
+            child: CountryCodePicker(
+              enabled: isEditable,
+              onChanged: (code) => onCountryChanged(code.dialCode ?? '+91'),
+              initialSelection: countryCode,
+              favorite: const ['+91', '+1', '+44'],
+              showCountryOnly: false,
+              showOnlyCountryWhenClosed: false,
+              alignLeft: false,
+              textStyle: TextStyle(color: AppColors.textPrimary, fontSize: 13),
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              enabled: isEditable,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: InputBorder.none,
+                hintText: 'Enter number',
+                hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -450,45 +508,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         children: [
           Text(label, style: AppTextStyles.statLabel),
           const SizedBox(height: 6),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.borderColor),
+          if (isEditable)
+            field
+          else
+            GestureDetector(
+              onTap: onDisabledTap,
+              behavior: HitTestBehavior.opaque,
+              child: AbsorbPointer(child: field),
             ),
-            child: Row(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border(right: BorderSide(color: AppColors.borderColor)),
-                  ),
-                  child: CountryCodePicker(
-                    onChanged: (code) => onCountryChanged(code.dialCode ?? '+91'),
-                    initialSelection: countryCode,
-                    favorite: const ['+91', '+1', '+44'],
-                    showCountryOnly: false,
-                    showOnlyCountryWhenClosed: false,
-                    alignLeft: false,
-                    textStyle: TextStyle(color: AppColors.textPrimary, fontSize: 13),
-                  ),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      border: InputBorder.none,
-                      hintText: 'Enter number',
-                      hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -678,6 +705,67 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Compares two phone numbers by digits only, ignoring formatting/spacing
+  /// differences in the dial code prefix (e.g. "+91 9876543210" vs
+  /// "91 9876543210").
+  bool _samePhoneNumber(String? a, String? b) {
+    final digitsA = (a ?? '').replaceAll(RegExp(r'\D'), '');
+    final digitsB = (b ?? '').replaceAll(RegExp(r'\D'), '');
+    if (digitsA.isEmpty || digitsB.isEmpty) return false;
+    return digitsA == digitsB;
+  }
+
+  void _showParentPhoneLockedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: EdgeInsets.all(24),
+          decoration: BoxDecoration(color: AppColors.cardBackground, borderRadius: BorderRadius.circular(32)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                child: Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 50),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Parent/Guardian Number Locked',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'The parent/guardian phone number cannot be changed from '
+                'profile edit. Please contact support if it needs to be '
+                'updated.',
+                style: AppTextStyles.bodyText,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: Text('OK'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

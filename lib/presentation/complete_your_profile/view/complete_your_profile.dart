@@ -154,6 +154,19 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
                             : () async {
                                 if (!_validateCurrentPage()) return;
 
+                                if (_samePhoneNumber(
+                                  completeController.phone,
+                                  completeController.parentPhone,
+                                )) {
+                                  _showErrorDialog(
+                                    'Your contact number and parent/guardian '
+                                    'number cannot be the same. Please '
+                                    'provide your parent/guardian\'s number '
+                                    'or use a different contact number.',
+                                  );
+                                  return;
+                                }
+
                                 final shouldSubmit =
                                     await showModalBottomSheet<bool>(
                                   context: context,
@@ -270,6 +283,16 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
         ],
       ),
     );
+  }
+
+  /// Compares two phone numbers by digits only, ignoring formatting/spacing
+  /// differences in the dial code prefix (e.g. "+91 9876543210" vs
+  /// "91 9876543210").
+  bool _samePhoneNumber(String? a, String? b) {
+    final digitsA = (a ?? '').replaceAll(RegExp(r'\D'), '');
+    final digitsB = (b ?? '').replaceAll(RegExp(r'\D'), '');
+    if (digitsA.isEmpty || digitsB.isEmpty) return false;
+    return digitsA == digitsB;
   }
 
   /// Shows the exact backend validation message (e.g. field-specific errors
