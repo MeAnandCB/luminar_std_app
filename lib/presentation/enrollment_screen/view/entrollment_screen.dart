@@ -48,6 +48,11 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   EmiPreviewResponse? _previewData;
   bool _isLoadingPreview = false;
   String? _errorMessage;
+  // Guards the Confirm button below: checked at the top of the handler
+  // itself (not just via a loading dialog), so a double-tap landing before
+  // the dialog's first frame renders can't fire a second order-creation /
+  // EMI-confirm request.
+  bool _isConfirmingPayment = false;
   final PaymentDetailsApiService _apiService = PaymentDetailsApiService();
   late Razorpay _razorpay;
 
@@ -1716,7 +1721,12 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                           ],
                         ),
                         child: ElevatedButton(
-                          onPressed: () async {
+                          onPressed: _isConfirmingPayment
+                              ? null
+                              : () async {
+                            if (_isConfirmingPayment) return;
+                            setState(() => _isConfirmingPayment = true);
+
                             final enrollmentUid = provider
                                 .enrollmentData!
                                 .enrollments[widget.index]
@@ -1862,6 +1872,10 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                                   backgroundColor: Colors.red,
                                 ),
                               );
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isConfirmingPayment = false);
+                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -2202,35 +2216,42 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   Future<void> _openIciciPayment(String enrollmentId) async {
+    if (_isConfirmingPayment) return;
+    setState(() => _isConfirmingPayment = true);
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
-    final session = await PaymentScreenService().getIciciSession(enrollmentId);
-    if (!mounted) return;
-    Navigator.pop(context);
+    try {
+      final session =
+          await PaymentScreenService().getIciciSession(enrollmentId);
+      if (!mounted) return;
+      Navigator.pop(context);
 
-    if (session != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => IciciPaymentWebView(
-            paymentUrl: session.url,
-            amount: session.amount,
-            discountApplied: session.discountApplied,
-            discountAmount: session.discountAmount,
+      if (session != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => IciciPaymentWebView(
+              paymentUrl: session.url,
+              amount: session.amount,
+              discountApplied: session.discountApplied,
+              discountAmount: session.discountAmount,
+            ),
           ),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to get ICICI payment URL.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to get ICICI payment URL.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isConfirmingPayment = false);
     }
   }
 

@@ -71,7 +71,9 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
           nextUrl ??
           "https://graph.instagram.com/me/media?fields=id,media_type,media_url&access_token=$token&limit=$imagesPerPage";
 
-      final response = await http.get(Uri.parse(requestUrl));
+      final response = await http
+          .get(Uri.parse(requestUrl))
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         // Parse in a background isolate
@@ -91,7 +93,10 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
           }
         });
 
-        // Pre-cache images in a non-blocking way
+        // Pre-cache images in a non-blocking way — guarded by the `mounted`
+        // check above, but re-check per-iteration since this loop can span
+        // several event-loop turns via `precacheImage`'s async work.
+        if (!mounted) return;
         for (String url in newImages) {
           precacheImage(CachedNetworkImageProvider(url), context).catchError((
             e,
@@ -140,7 +145,9 @@ class _AdvancedInstaCarouselState extends State<AdvancedInstaCarousel>
       String token =
           "IGAARYxzHq6nZABZAFk2WGM1eG9DT1FwOGl5a09ZAZAkZAiRzJzd1MwWm9QcFVud09KT0dZAakhxVTRVc2MyZAHplSjNEcUh0YjV5eEtlUWVWNUp5SmswZAHdWLWptOG1Xa3QyXzgwNXpGa2xKcjM2V0d2alhsXzZAudjBjOU56Qkp3U2d1VQZDZD";
 
-      final response = await http.get(Uri.parse(nextUrl!));
+      final response = await http
+          .get(Uri.parse(nextUrl!))
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         // Parse in a background isolate

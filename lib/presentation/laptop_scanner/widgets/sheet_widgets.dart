@@ -119,3 +119,93 @@ class AssetHeader extends StatelessWidget {
     );
   }
 }
+
+// ── Accessory type → icon ──────────────────────────────────────────────────
+
+IconData accessoryIcon(String type) {
+  switch (type) {
+    case 'charger':
+      return Icons.power_rounded;
+    case 'mouse':
+      return Icons.mouse_rounded;
+    case 'keyboard':
+      return Icons.keyboard_rounded;
+    case 'bag':
+      return Icons.work_outline_rounded;
+    default:
+      return Icons.cable_rounded;
+  }
+}
+
+// ── Full-sheet success confirmation ────────────────────────────────────────
+//
+// Full success bounces in with Curves.elasticOut (a little overshoot/pop);
+// partial success (bounce: false) just fades in — calmer, distinct feel.
+
+class SuccessBurst extends StatelessWidget {
+  const SuccessBurst({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.color = const Color(0xFF10B981),
+    this.bounce = true,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Color color;
+  final bool bounce;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = CircleAvatar(
+      radius: 32,
+      backgroundColor: color,
+      child: const Icon(Icons.check_rounded, color: Colors.white, size: 36),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          bounce
+              ? TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) =>
+                      Transform.scale(scale: value, child: child),
+                  child: icon,
+                )
+              : TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                  builder: (context, value, child) =>
+                      Opacity(opacity: value, child: child),
+                  child: icon,
+                ),
+          const SizedBox(height: 18),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              subtitle!,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

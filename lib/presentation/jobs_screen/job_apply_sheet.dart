@@ -3,10 +3,11 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/repository/jobs/model/job_notification_model.dart';
 import 'package:luminar_std/repository/jobs/service/jobs_service.dart';
-import 'package:luminar_std/repository/profile_screen/service/profile_screen_service.dart';
 
 Future<bool> showJobApplySheet(
   BuildContext context, {
@@ -46,7 +47,6 @@ class _JobApplySheet extends StatefulWidget {
 
 class _JobApplySheetState extends State<_JobApplySheet> {
   final _service = JobsService();
-  final _profileService = ProfileScreenService();
 
   late final TextEditingController _nameCtrl;
   late final TextEditingController _emailCtrl;
@@ -93,9 +93,15 @@ class _JobApplySheetState extends State<_JobApplySheet> {
 
   Future<void> _loadProfile() async {
     try {
-      final res = await _profileService.getProfileData();
-      if (res.success && res.data?.profile?.personalInfo != null) {
-        final p = res.data!.profile!.personalInfo!;
+      // Share the cached fetch instead of hitting the profile endpoint
+      // again — most of the time this sheet opens right after the profile
+      // screen or home dashboard has already loaded it.
+      final profileController = context.read<ProfileController>();
+      if (profileController.profileData == null) {
+        await profileController.getProfileData(context: context);
+      }
+      final p = profileController.profileData?.personalInfo;
+      if (p != null) {
         _nameCtrl.text = p.fullName ?? '';
         _emailCtrl.text = p.email ?? '';
         _phoneCtrl.text = p.phone ?? '';

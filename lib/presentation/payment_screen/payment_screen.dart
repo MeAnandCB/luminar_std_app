@@ -2,7 +2,6 @@
 
 import 'dart:convert';
 import 'package:luminar_std/core/theme/theme_provider.dart';
-import 'dart:io';
 import 'package:luminar_std/presentation/payment_screen/gateway_icons.dart';
 import 'package:luminar_std/presentation/payment_screen/icici_payment_webview.dart';
 import 'package:flutter/material.dart';
@@ -17,12 +16,9 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/repository/payment_screen/model.dart';
 import 'package:luminar_std/repository/payment_screen/service.dart';
 import 'package:luminar_std/repository/razorpay/model/emi_res_model.dart';
-import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // Define enums locally if needed
 enum TransactionStatus { completed, failed, pending }
@@ -48,6 +44,11 @@ class _PaymentScreenState extends State<PaymentScreen>
   bool _isLoading = true;
   String? _errorMessage;
   late Razorpay _razorpay;
+  // Guards _handlePayment/_openIciciPayment/_openIciciEmiPayment: checked at
+  // the top of each handler itself, not just via the loading dialog, so a
+  // double-tap landing before the dialog's first frame renders can't fire a
+  // second EMI/order-creation request.
+  bool _isProcessingPayment = false;
 
   @override
   void initState() {
@@ -392,6 +393,9 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   void _handlePayment(EmiInstallment emi) async {
+    if (_isProcessingPayment) return;
+    setState(() => _isProcessingPayment = true);
+
     final provider = Provider.of<EnrollmentProvider>(context, listen: false);
 
     // Show loading while fetching both gateway list + EMI order details in parallel
@@ -446,6 +450,8 @@ class _PaymentScreenState extends State<PaymentScreen>
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } finally {
+      if (mounted) setState(() => _isProcessingPayment = false);
     }
   }
 
@@ -1642,202 +1648,33 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   Future<void> _downloadReceipt(PaymentTransaction txn) async {
-    try {
-      final data = _paymentData;
-      final dateFormat = DateFormat('dd/MM/yyyy');
-      final currencyFormat = NumberFormat.currency(
-        locale: 'en_IN',
-        symbol: '₹',
-      );
+    final receiptUrl = AppUtils.getAbsoluteUrl(txn.pdfFile as String?);
 
-      final pdf = pw.Document();
-
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(32),
-          build: (pw.Context context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                // ── Header ──
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.all(20),
-                  decoration: pw.BoxDecoration(
-                    color: PdfColor.fromHex('6C5CE7'),
-                    borderRadius: pw.BorderRadius.circular(12),
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'LUMINAR TECHNOHUB',
-                        style: pw.TextStyle(
-                          fontSize: 22,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.white,
-                        ),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        'Payment Receipt',
-                        style: pw.TextStyle(
-                          fontSize: 14,
-                          color: PdfColors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 24),
-
-                // ── Receipt Info ──
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'Receipt No: ${txn.transactionId ?? txn.uid ?? 'N/A'}',
-                      style: pw.TextStyle(
-                        fontSize: 11,
-                        color: PdfColors.grey700,
-                      ),
-                    ),
-                    pw.Text(
-                      'Date: ${dateFormat.format(txn.paymentDate ?? DateTime.now())}',
-                      style: pw.TextStyle(
-                        fontSize: 11,
-                        color: PdfColors.grey700,
-                      ),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 16),
-                pw.Divider(color: PdfColors.grey300),
-                pw.SizedBox(height: 16),
-
-                // ── Student Details ──
-                pw.Text(
-                  'Student Details',
-                  style: pw.TextStyle(
-                    fontSize: 13,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-                pw.SizedBox(height: 10),
-                _pdfRow('Student Name', data?.studentName ?? 'N/A'),
-                _pdfRow('Student ID', data?.studentId ?? 'N/A'),
-                _pdfRow('Course', data?.batch?.courseName ?? 'N/A'),
-                _pdfRow('Batch', data?.batch?.batchName ?? 'N/A'),
-                pw.SizedBox(height: 16),
-                pw.Divider(color: PdfColors.grey300),
-                pw.SizedBox(height: 16),
-
-                // ── Payment Details ──
-                pw.Text(
-                  'Payment Details',
-                  style: pw.TextStyle(
-                    fontSize: 13,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-                pw.SizedBox(height: 10),
-                _pdfRow(
-                  'Amount Paid',
-                  currencyFormat.format(_getNumericAmount(txn.amount)),
-                ),
-                _pdfRow(
-                  'Payment Method',
-                  txn.paymentMethodDisplay ?? txn.paymentMethod ?? 'N/A',
-                ),
-                _pdfRow('Status', txn.status?.toUpperCase() ?? 'N/A'),
-                if ((txn.transactionId ?? '').isNotEmpty)
-                  _pdfRow('Transaction ID', txn.transactionId!),
-                pw.SizedBox(height: 16),
-                pw.Divider(color: PdfColors.grey300),
-                pw.SizedBox(height: 16),
-
-                // ── Fee Summary ──
-                pw.Text(
-                  'Fee Summary',
-                  style: pw.TextStyle(
-                    fontSize: 13,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-                pw.SizedBox(height: 10),
-                _pdfRow(
-                  'Total Course Fee',
-                  currencyFormat.format(
-                    _getNumericAmount(data?.originalCourseFees),
-                  ),
-                ),
-                _pdfRow(
-                  'Total Paid',
-                  currencyFormat.format(
-                    _getNumericAmount(data?.totalAmountPaid),
-                  ),
-                ),
-                _pdfRow(
-                  'Balance Due',
-                  currencyFormat.format(
-                    _getNumericAmount(data?.totalPendingAmount),
-                  ),
-                ),
-                pw.SizedBox(height: 32),
-
-                // ── Footer ──
-                pw.Center(
-                  child: pw.Text(
-                    'This is a computer-generated receipt and does not require a signature.',
-                    style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
-                    textAlign: pw.TextAlign.center,
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      );
-
-      final bytes = await pdf.save();
-      final dir = await getApplicationDocumentsDirectory();
-      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-      final file = File('${dir.path}/receipt_$timestamp.pdf');
-      await file.writeAsBytes(bytes);
-
+    if (receiptUrl == null || receiptUrl.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white, size: 18),
-                const SizedBox(width: 10),
-                const Expanded(child: Text('Receipt saved successfully')),
-                TextButton(
-                  onPressed: () => OpenFilex.open(file.path),
-                  child: const Text(
-                    'OPEN',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.statsGreen,
+            content: const Text('Receipt is not available for this payment yet.'),
+            backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 5),
           ),
         );
       }
+      return;
+    }
+
+    try {
+      final launched = await launchUrl(
+        Uri.parse(receiptUrl),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) throw Exception('Could not launch receipt URL');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-              'Failed to download receipt. Please try again.',
+              'Failed to open receipt. Please try again.',
             ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
@@ -1845,25 +1682,6 @@ class _PaymentScreenState extends State<PaymentScreen>
         );
       }
     }
-  }
-
-  pw.Widget _pdfRow(String label, String value) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.only(bottom: 6),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text(
-            label,
-            style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
-          ),
-          pw.Text(
-            value,
-            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
-          ),
-        ],
-      ),
-    );
   }
 
   void handlePaymentErrorResponse(PaymentFailureResponse response) {
@@ -2087,11 +1905,21 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   Future<void> _openIciciEmiPayment(String emiId) async {
+    if (_isProcessingPayment) return;
+    setState(() => _isProcessingPayment = true);
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
+    try {
+      await _openIciciEmiPaymentInner(emiId);
+    } finally {
+      if (mounted) setState(() => _isProcessingPayment = false);
+    }
+  }
+
+  Future<void> _openIciciEmiPaymentInner(String emiId) async {
     final session = await PaymentScreenService().getIciciEmiSession(emiId);
     if (!mounted) return;
     Navigator.pop(context);

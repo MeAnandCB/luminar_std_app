@@ -40,38 +40,105 @@ class WebSocketService {
 
   bool _isDisposed = false;
 
+  // ── Liveness tracking ────────────────────────────────────────────────────
+  // `_channel != null` used to be the only signal `isConnected` had, which
+  // stays true forever once set — a NAT/idle-timeout drop, or the OS killing
+  // the socket while foregrounded, fires neither `onDone` nor `onError`, so
+  // the app would believe it was live indefinitely. A heartbeat + staleness
+  // check gives it a real signal, and a capped-backoff timer means recovery
+  // no longer depends on the user backgrounding/resuming the app.
+  Timer? _heartbeatTimer;
+  Timer? _reconnectTimer;
+  DateTime? _lastActivityAt;
+  int _reconnectAttempts = 0;
+  static const _heartbeatInterval = Duration(seconds: 25);
+  static const _staleThreshold = Duration(seconds: 75); // ~3 missed heartbeats
+  static const _maxReconnectDelaySeconds = 30;
+
   void connect() {
     if (_isDisposed) return;
+    _reconnectTimer?.cancel();
     try {
       _channel = WebSocketChannel.connect(Uri.parse(url));
 
       _channel!.stream.listen(
         (message) {
+          _lastActivityAt = DateTime.now();
           _handleMessage(message);
         },
-        onDone: () {
-          if (!_isDisposed) {
-            onDisconnected?.call();
-          }
-        },
+        onDone: _handleConnectionLost,
         onError: (error) {
           if (!_isDisposed) {
             _errorController.add(error.toString());
             onError?.call(error.toString());
           }
+          _handleConnectionLost();
         },
       );
 
+      _lastActivityAt = DateTime.now();
+      _reconnectAttempts = 0;
+      _startHeartbeat();
       onConnected?.call();
     } catch (e) {
       if (!_isDisposed) {
         _errorController.add(e.toString());
         onError?.call(e.toString());
       }
+      _scheduleReconnect();
     }
   }
 
-  void disconnect() {
+  /// Connection dropped for reasons outside our control (server closed it,
+  /// network dropped it, or the heartbeat found no activity for
+  /// [_staleThreshold]) — as opposed to [disconnect], an intentional,
+  /// no-reconnect close (e.g. logout).
+  void _handleConnectionLost() {
+    if (_isDisposed) return;
+    _teardownChannel();
+    onDisconnected?.call();
+    _scheduleReconnect();
+  }
+
+  void _startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) {
+      if (_isDisposed || _channel == null) return;
+      final since = DateTime.now().difference(_lastActivityAt ?? DateTime.now());
+      if (since > _staleThreshold) {
+        debugPrint('[WS] No activity for ${since.inSeconds}s — treating connection as dead');
+        _handleConnectionLost();
+        return;
+      }
+      // Lightweight app-level ping. If the server doesn't recognize the
+      // action this is a harmless no-op — the staleness check above (driven
+      // by ANY inbound traffic, including real messages) is what matters.
+      try {
+        _channel?.sink.add(json.encode({'action': 'ping'}));
+      } catch (_) {
+        _handleConnectionLost();
+      }
+    });
+  }
+
+  void _stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+  }
+
+  void _scheduleReconnect() {
+    if (_isDisposed) return;
+    _reconnectTimer?.cancel();
+    final shift = _reconnectAttempts.clamp(0, 4);
+    final delaySeconds = (5 * (1 << shift)).clamp(5, _maxReconnectDelaySeconds);
+    _reconnectAttempts++;
+    _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
+      if (!_isDisposed && _channel == null) connect();
+    });
+  }
+
+  void _teardownChannel() {
+    _stopHeartbeat();
     try {
       _channel?.sink.close(1000); // 1000 = normalClosure
     } catch (e) {
@@ -80,8 +147,14 @@ class WebSocketService {
     _channel = null;
   }
 
+  void disconnect() {
+    _reconnectTimer?.cancel();
+    _teardownChannel();
+  }
+
   void dispose() {
     _isDisposed = true;
+    _reconnectTimer?.cancel();
     disconnect();
     _messageController.close();
     _localMessageController.close();

@@ -19,6 +19,7 @@ class FestivalThemeInfo {
 }
 
 class FestivalDateManager {
+  // Legacy list kept for backward compatibility
   static final List<String> onamDays = [
     "Happy Atham!",
     "Happy Chithira!",
@@ -28,9 +29,37 @@ class FestivalDateManager {
     "Happy Thrikketta!",
     "Happy Moolam!",
     "Happy Pooradam!",
-    "Happy Uthradam!",
+    "Happy Uthradom!",
     "Happy Thiruvonam!",
   ];
+
+  // Onam Atham dates by year (update annually)
+  static final Map<int, DateTime> _athamDates = {
+    2025: DateTime(2025, 8, 22),
+    2026: DateTime(2026, 9, 10), // approximate — confirm when official
+  };
+
+  /// Returns how many days into Onam we are (0 = Atham, 9 = Thiruvonam).
+  /// Returns -1...-7 for teaser period before Atham.
+  /// Returns null if not in Onam season.
+  static int? getOnamDayOffset() {
+    final now   = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final atham = _athamDates[now.year];
+    if (atham == null) return null;
+    final diff = today.difference(atham).inDays;
+    if (diff >= 0 && diff < 10) return diff;       // active days 0-9
+    if (diff >= -7 && diff < 0) return diff;       // teaser -7 to -1
+    return null;
+  }
+
+  /// Returns a day-specific title for the overlay banner during Onam.
+  static String getOnamDayTitle() {
+    final offset = getOnamDayOffset();
+    if (offset == null) return 'Happy Onam!';
+    if (offset < 0) return 'Onam is Coming!';
+    return onamDays[offset];
+  }
 
   static FestivalThemeInfo getCurrentThemeInfo() {
     final now = DateTime.now();
@@ -39,7 +68,7 @@ class FestivalDateManager {
     if (now.month == 8 && now.day == 15) {
       return FestivalThemeInfo(theme: FestivalTheme.independenceDay);
     }
-    // Christmas: Dec 25
+    // Christmas: Dec 24-26
     if (now.month == 12 && now.day >= 24 && now.day <= 26) {
       return FestivalThemeInfo(theme: FestivalTheme.christmas);
     }
@@ -54,6 +83,13 @@ class FestivalDateManager {
     // Vishu: April 14
     if (now.month == 4 && now.day == 14) {
       return FestivalThemeInfo(theme: FestivalTheme.vishu);
+    }
+    // Onam: 10-day window + 7-day teaser
+    if (getOnamDayOffset() != null) {
+      return FestivalThemeInfo(
+        theme: FestivalTheme.onam,
+        titleOverride: getOnamDayTitle(),
+      );
     }
 
     return FestivalThemeInfo(theme: FestivalTheme.none);

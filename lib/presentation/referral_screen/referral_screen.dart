@@ -43,8 +43,12 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
   Future<void> _fetchAcademicData() async {
     try {
-      final qRes = await _academicService.getQualifications();
-      final cRes = await _academicService.getPublicCourses();
+      // Kick off both requests before awaiting either, so they run in
+      // parallel instead of one blocking the other.
+      final qFuture = _academicService.getQualifications();
+      final cFuture = _academicService.getPublicCourses();
+      final qRes = await qFuture;
+      final cRes = await cFuture;
       if (mounted) {
         setState(() {
           if (qRes.success && qRes.data != null) {
@@ -75,6 +79,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
   }
 
   void _submitForm() async {
+    if (_isSubmitting) return;
     if (_formKey.currentState!.validate()) {
       setState(() => _isSubmitting = true);
 
@@ -88,8 +93,6 @@ class _ReferralScreenState extends State<ReferralScreen> {
         'email': _emailController.text.trim(),
         'secret': 'luminar',
       };
-
-      print('Submitting Payload: $payload');
 
       try {
         final response = await ApiService().post(
@@ -268,7 +271,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _submitForm,
+                    onPressed: _isSubmitting ? null : _submitForm,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,

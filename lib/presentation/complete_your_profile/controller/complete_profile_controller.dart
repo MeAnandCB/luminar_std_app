@@ -183,8 +183,12 @@ class CompleteProfileController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final qRes = await _academicService.getQualifications();
-      final sRes = await _academicService.getSpecializations();
+      // Kick off both requests before awaiting either, so they run in
+      // parallel instead of one blocking the other.
+      final qFuture = _academicService.getQualifications();
+      final sFuture = _academicService.getSpecializations();
+      final qRes = await qFuture;
+      final sRes = await sFuture;
 
       if (qRes.success && qRes.data != null) {
         _qualifications = qRes.data!.qualifications;

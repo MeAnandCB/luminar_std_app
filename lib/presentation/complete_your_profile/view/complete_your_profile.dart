@@ -1,5 +1,6 @@
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/services.dart';
 
@@ -61,11 +62,16 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Provider.of<ProfileController>(
+      final profileController = Provider.of<ProfileController>(
         context,
         listen: false,
-      ).getProfileData(context: context);
-      setState(() {});
+      );
+      // Share the cached fetch instead of re-hitting the profile endpoint
+      // every time this screen opens.
+      if (profileController.profileData == null) {
+        await profileController.getProfileData(context: context);
+      }
+      if (mounted) setState(() {});
     });
   }
 
@@ -616,10 +622,49 @@ class PersonalInfoSectionState extends State<PersonalInfoSection>
   bool _showLocationFallback = false;
   String? _selectedLocationFallback;
 
+  // Debounces the pincode lookup (was firing on every keystroke at length
+  // 6) and guards against an older, slower response overwriting a newer
+  // one's result once the user has kept editing.
+  Timer? _pincodeDebounce;
+  int _pincodeRequestSeq = 0;
+
   bool _hasValue(String? value) => value != null && value.trim().isNotEmpty;
+
+  /// Runs the actual pincode→district lookup after the debounce delay.
+  /// [requestSeq] is captured at schedule-time — if the user has edited the
+  /// field again since (bumping `_pincodeRequestSeq`), this result is stale
+  /// and is discarded instead of overwriting whatever the newer edit is
+  /// showing.
+  Future<void> _lookupDistrict(
+    String pincode,
+    int requestSeq,
+    CompleteProfileController completeController,
+  ) async {
+    final district = await context
+        .read<ProfileController>()
+        .getDistrictFromPincode(pincode);
+    if (!mounted || requestSeq != _pincodeRequestSeq) return;
+
+    if (district != null) {
+      setState(() {
+        _districtController.text = district;
+        completeController.district = district;
+        _showLocationFallback = false;
+      });
+    } else {
+      // Pincode not found — show Out of State / Out of Country picker
+      setState(() {
+        _districtController.clear();
+        completeController.district = null;
+        _showLocationFallback = true;
+        _selectedLocationFallback = null;
+      });
+    }
+  }
 
   @override
   void dispose() {
+    _pincodeDebounce?.cancel();
     _fullNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -1115,10 +1160,15 @@ class PersonalInfoSectionState extends State<PersonalInfoSection>
                         prefixIcon: Icons.pin_drop_outlined,
                         keyboardType: TextInputType.number,
                         maxLength: 6,
-                        onChanged: (value) async {
+                        onChanged: (value) {
                           final completeController = context
                               .read<CompleteProfileController>();
                           completeController.pincode = value;
+
+                          // Any edit invalidates a pending debounced lookup
+                          // and any in-flight one (via the sequence bump).
+                          _pincodeDebounce?.cancel();
+                          _pincodeRequestSeq++;
 
                           // Reset district when pincode is being edited
                           if (value.length < 6) {
@@ -1131,31 +1181,24 @@ class PersonalInfoSectionState extends State<PersonalInfoSection>
                             return;
                           }
 
-                          // Auto-fill district based on pincode
+                          // Auto-fill district based on pincode — debounced
+                          // so rapid edits while length stays 6 don't fire a
+                          // lookup per keystroke.
                           if (value.length == 6) {
                             setState(() {
                               _districtController.text = 'Loading...';
                               _showLocationFallback = false;
                               _selectedLocationFallback = null;
                             });
-                            final district = await context
-                                .read<ProfileController>()
-                                .getDistrictFromPincode(value);
-                            if (district != null) {
-                              setState(() {
-                                _districtController.text = district;
-                                completeController.district = district;
-                                _showLocationFallback = false;
-                              });
-                            } else {
-                              // Pincode not found — show Out of State / Out of Country picker
-                              setState(() {
-                                _districtController.clear();
-                                completeController.district = null;
-                                _showLocationFallback = true;
-                                _selectedLocationFallback = null;
-                              });
-                            }
+                            final requestSeq = _pincodeRequestSeq;
+                            _pincodeDebounce = Timer(
+                              const Duration(milliseconds: 400),
+                              () => _lookupDistrict(
+                                value,
+                                requestSeq,
+                                completeController,
+                              ),
+                            );
                           }
                         },
                         validator: (value) {

@@ -398,6 +398,7 @@ class NactetRegistrationController extends ChangeNotifier {
   }
 
   Future<bool> submit(BuildContext context) async {
+    if (isLoading) return false;
     isLoading = true;
     errorMessage = null;
     notifyListeners();

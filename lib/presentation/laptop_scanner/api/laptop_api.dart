@@ -25,13 +25,30 @@ class LaptopLoan {
   final String batch;
   final DateTime checkOutAt;
   final bool isEarlyReturn;
+  final int accessoryCount;
 
   LaptopLoan.fromJson(Map<String, dynamic> j)
     : studentName   = j['studentName']   ?? '',
       studentId     = j['studentId']     ?? '',
       batch         = j['batch']         ?? '',
       checkOutAt    = DateTime.tryParse(j['checkOutAt'] ?? '') ?? DateTime.now(),
-      isEarlyReturn = j['isEarlyReturn'] == true;
+      isEarlyReturn = j['isEarlyReturn'] == true,
+      accessoryCount = (j['accessoryCount'] ?? 0) as int;
+}
+
+class AccessoryInfo {
+  final String id;
+  final String assetTag;
+  final String name;
+  final String type; // charger | mouse | keyboard | bag | other
+  final String status;
+
+  AccessoryInfo.fromJson(Map<String, dynamic> j)
+    : id = j['id'] ?? '',
+      assetTag = j['assetTag'] ?? '',
+      name = j['name'] ?? '',
+      type = j['type'] ?? '',
+      status = j['status'] ?? '';
 }
 
 class LaptopCounts {
@@ -54,26 +71,70 @@ class LaptopCounts {
 }
 
 class LookupResult {
-  final String state; // 'available' | 'assigned'
-  final LaptopAsset asset;
-  final LaptopLoan? loan;
+  final String itemType; // 'laptop' | 'accessory'
+  final String? state; // laptop only: 'available' | 'assigned'
+  final LaptopAsset? asset;
+  final LaptopLoan? loan; // laptop only, null when available
+  final AccessoryInfo? accessory;
   final LaptopCounts counts;
 
+  bool get isLaptop => itemType == 'laptop';
+  bool get isAccessory => itemType == 'accessory';
+
   LookupResult.fromJson(Map<String, dynamic> j)
-    : state = j['state'] ?? '',
-      asset = LaptopAsset.fromJson(j['asset'] as Map<String, dynamic>),
+    : itemType = j['itemType'] ?? 'laptop',
+      state = j['state'] as String?,
+      asset = j['asset'] != null
+          ? LaptopAsset.fromJson(j['asset'] as Map<String, dynamic>)
+          : null,
       loan = j['loan'] != null
           ? LaptopLoan.fromJson(j['loan'] as Map<String, dynamic>)
+          : null,
+      accessory = j['accessory'] != null
+          ? AccessoryInfo.fromJson(j['accessory'] as Map<String, dynamic>)
           : null,
       counts = j['counts'] != null
           ? LaptopCounts.fromJson(j['counts'] as Map<String, dynamic>)
           : LaptopCounts.empty;
 }
 
-class ActionResult {
+class CheckedOutItem {
+  final String kind; // 'laptop' | 'accessory'
+  final String name;
+  final String assetTag;
+
+  bool get isLaptop => kind == 'laptop';
+
+  CheckedOutItem.fromJson(Map<String, dynamic> j)
+    : kind = j['kind'] ?? j['itemType'] ?? '',
+      name = j['name'] ?? '',
+      assetTag = j['assetTag'] ?? '';
+}
+
+class CheckoutActionResult {
   final LaptopCounts counts;
-  ActionResult.fromJson(Map<String, dynamic> j)
+  final List<CheckedOutItem> items;
+
+  CheckoutActionResult.fromJson(Map<String, dynamic> j)
     : counts = j['counts'] != null
+          ? LaptopCounts.fromJson(j['counts'] as Map<String, dynamic>)
+          : LaptopCounts.empty,
+      items = (j['items'] as List?)
+              ?.map((e) => CheckedOutItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [];
+}
+
+class ReturnActionResult {
+  final String status; // 'returned' | 'partial'
+  final LaptopCounts counts;
+
+  bool get isFullyReturned => status == 'returned';
+
+  ReturnActionResult.fromJson(Map<String, dynamic> j)
+    : status = (j['loan'] as Map<String, dynamic>?)?['status'] as String? ??
+          'returned',
+      counts = j['counts'] != null
           ? LaptopCounts.fromJson(j['counts'] as Map<String, dynamic>)
           : LaptopCounts.empty;
 }
@@ -132,19 +193,21 @@ class LaptopApi {
     return LookupResult.fromJson(res);
   }
 
-  Future<ActionResult> checkout({
+  Future<CheckoutActionResult> checkout({
     required String identifier,
+    required List<String> accessoryIdentifiers,
     required String studentName,
     required String studentId,
     String batch = '',
   }) async {
     final res = await _post('$_base/checkout', {
       'identifier':  identifier,
+      'accessoryIdentifiers': accessoryIdentifiers,
       'studentName': studentName,
       'studentId':   studentId,
       if (batch.isNotEmpty) 'batch': batch,
     });
-    return ActionResult.fromJson(res);
+    return CheckoutActionResult.fromJson(res);
   }
 
   Future<List<LoanHistoryEntry>> getHistory(String studentId) async {
@@ -174,18 +237,20 @@ class LaptopApi {
     }
   }
 
-  Future<ActionResult> returnLaptop(
-    String identifier, {
-    required String rackCode,
-    String earlyReturnFeedback = '',
+  /// [identifiers] is whatever's being physically handed back right now —
+  /// can be just the laptop, just some accessories, or everything.
+  Future<ReturnActionResult> returnItems({
+    required List<String> identifiers,
+    String? rackCode,
+    String? earlyReturnFeedback,
   }) async {
     final res = await _post('$_base/return', {
-      'identifier': identifier,
-      'rackCode': rackCode,
-      if (earlyReturnFeedback.isNotEmpty)
+      'identifiers': identifiers,
+      if (rackCode != null && rackCode.isNotEmpty) 'rackCode': rackCode,
+      if (earlyReturnFeedback != null && earlyReturnFeedback.isNotEmpty)
         'earlyReturnFeedback': earlyReturnFeedback,
     });
-    return ActionResult.fromJson(res);
+    return ReturnActionResult.fromJson(res);
   }
 
 

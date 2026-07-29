@@ -86,15 +86,17 @@ class AttendanceService {
       name: 'AttendanceService.request',
     );
 
-    final response = await http.post(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $resolvedToken',
-      },
-      body: jsonEncode(payload),
-    );
+    final response = await http
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $resolvedToken',
+          },
+          body: jsonEncode(payload),
+        )
+        .timeout(const Duration(seconds: 20));
 
     developer.log(
       '─── Attendance Response ───\n'

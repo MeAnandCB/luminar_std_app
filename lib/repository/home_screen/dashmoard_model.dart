@@ -529,6 +529,9 @@ class BatchInfo {
   bool? isCompleted;
   int? admissionFees;
   Sessions? sessions;
+  BatchLocation? location;
+  BatchBuilding? building;
+  BatchClassroom? classroom;
 
   BatchInfo({
     this.uid,
@@ -545,6 +548,9 @@ class BatchInfo {
     this.isCompleted,
     this.admissionFees,
     this.sessions,
+    this.location,
+    this.building,
+    this.classroom,
   });
 
   factory BatchInfo.fromJson(Map<String, dynamic> json) {
@@ -571,6 +577,9 @@ class BatchInfo {
       isCompleted: json["is_completed"],
       admissionFees: toInt(json["admission_fees"]),
       sessions: json["sessions"] == null ? null : Sessions.fromJson(json["sessions"]),
+      location: json["location"] == null ? null : BatchLocation.fromJson(json["location"]),
+      building: json["building"] == null ? null : BatchBuilding.fromJson(json["building"]),
+      classroom: json["classroom"] == null ? null : BatchClassroom.fromJson(json["classroom"]),
     );
   }
 
@@ -593,7 +602,61 @@ class BatchInfo {
     "is_completed": isCompleted,
     "admission_fees": admissionFees,
     "sessions": sessions?.toJson(),
+    "location": location?.toJson(),
+    "building": building?.toJson(),
+    "classroom": classroom?.toJson(),
   };
+}
+
+/// Location of the batch (e.g. Cochin, Calicut)
+class BatchLocation {
+  int? id;
+  String? name;   // e.g. "Cochin"
+  String? value;  // e.g. "cochin"
+
+  BatchLocation({this.id, this.name, this.value});
+
+  factory BatchLocation.fromJson(Map<String, dynamic> json) => BatchLocation(
+        id: json["id"],
+        name: json["name"],
+        value: json["value"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "id": id,
+        "name": name,
+        "value": value,
+      };
+}
+
+/// Building of the batch
+class BatchBuilding {
+  int? id;
+  String? name;
+
+  BatchBuilding({this.id, this.name});
+
+  factory BatchBuilding.fromJson(Map<String, dynamic> json) => BatchBuilding(
+        id: json["id"],
+        name: json["name"],
+      );
+
+  Map<String, dynamic> toJson() => {"id": id, "name": name};
+}
+
+/// Classroom of the batch
+class BatchClassroom {
+  int? id;
+  String? name;
+
+  BatchClassroom({this.id, this.name});
+
+  factory BatchClassroom.fromJson(Map<String, dynamic> json) => BatchClassroom(
+        id: json["id"],
+        name: json["name"],
+      );
+
+  Map<String, dynamic> toJson() => {"id": id, "name": name};
 }
 
 class Sessions {

@@ -13,7 +13,7 @@ class LiveClassController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool _islinkLoading = false;
 
-  bool get islinkLoading => _isLoading;
+  bool get islinkLoading => _islinkLoading;
 
   //get live class details
   Future<void> getLiveClassDetails() async {
@@ -40,7 +40,7 @@ class LiveClassController extends ChangeNotifier {
   //classlinkLoading
 
   Future<void> getLiveClassLinkDetails({required String id}) async {
-    _isLoading = true;
+    _islinkLoading = true;
     notifyListeners();
 
     try {
@@ -55,7 +55,7 @@ class LiveClassController extends ChangeNotifier {
     } catch (e) {
       print(e.toString());
     } finally {
-      _isLoading = false;
+      _islinkLoading = false;
       notifyListeners();
     }
   }

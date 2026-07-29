@@ -46,10 +46,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      await Provider.of<ProfileController>(
+      final profileController = Provider.of<ProfileController>(
         context,
         listen: false,
-      ).getProfileData(context: context);
+      );
+      // Share the cached fetch instead of re-hitting the profile endpoint
+      // every time this screen opens.
+      if (profileController.profileData == null) {
+        await profileController.getProfileData(context: context);
+      }
     });
   }
 

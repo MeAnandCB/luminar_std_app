@@ -24,7 +24,6 @@ import 'package:luminar_std/presentation/complete_your_profile/controller/comple
 import 'package:luminar_std/presentation/nactet_registration/controller/nactet_registration_controller.dart';
 import 'package:luminar_std/presentation/splash_screen/splash_screen.dart';
 import 'package:luminar_std/repository/FCM/fcm_service.dart';
-import 'package:luminar_std/repository/attandance_screen/service.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/blocked_users_service.dart';
 import 'package:provider/provider.dart';
@@ -83,7 +82,6 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ProfileController()),
         ChangeNotifierProvider(create: (_) => CompleteProfileController()),
         ChangeNotifierProvider(create: (_) => EnrollmentProvider()),
-        Provider<AttendanceService1>(create: (_) => AttendanceService1()),
         ChangeNotifierProvider(create: (_) => GalleryProvider()),
         ChangeNotifierProvider(create: (_) => FolderBrowserProvider()),
         ChangeNotifierProvider(create: (_) => LiveClassController()),

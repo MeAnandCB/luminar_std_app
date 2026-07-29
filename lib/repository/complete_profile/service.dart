@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
@@ -73,23 +74,25 @@ class CompleteProfileService {
     final endpoint = '${AppEndpoints.profileUpdate}$student_id/update/';
     final uri = Uri.parse('${GlobalLinks.baseUrl}$endpoint');
 
-    // ── Request log ──────────────────────────────────────────────────────────
-    developer.log(
-      '\n'
-      '╔══════════════════════════════════════════════════════════╗\n'
-      '║           📤  PROFILE UPDATE — REQUEST                  ║\n'
-      '╠══════════════════════════════════════════════════════════╣\n'
-      '  URL    : $uri\n'
-      '  METHOD : PATCH (multipart/form-data)\n'
-      '╠══════════════════════════════════════════════════════════╣\n'
-      '  TEXT FIELDS (${stringFields.length})${stringFields.isEmpty ? " — none" : ""}\n'
-      '${stringFields.entries.map((e) => "    ${e.key.padRight(28)}: ${e.value}").join("\n")}\n'
-      '╠══════════════════════════════════════════════════════════╣\n'
-      '  FILES (${files.length})${files.isEmpty ? " — none" : ""}\n'
-      '${files.isEmpty ? "    (none)" : files.map((f) => "    ${f.field.padRight(16)} → ${f.filename}").join("\n")}\n'
-      '╚══════════════════════════════════════════════════════════╝',
-      name: 'ProfileUpdate.Request',
-    );
+    // ── Request log — debug-only: fields/files include ID docs, phone, etc. ──
+    if (kDebugMode) {
+      developer.log(
+        '\n'
+        '╔══════════════════════════════════════════════════════════╗\n'
+        '║           📤  PROFILE UPDATE — REQUEST                  ║\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '  URL    : $uri\n'
+        '  METHOD : PATCH (multipart/form-data)\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '  TEXT FIELDS (${stringFields.length})${stringFields.isEmpty ? " — none" : ""}\n'
+        '${stringFields.entries.map((e) => "    ${e.key.padRight(28)}: ${e.value}").join("\n")}\n'
+        '╠══════════════════════════════════════════════════════════╣\n'
+        '  FILES (${files.length})${files.isEmpty ? " — none" : ""}\n'
+        '${files.isEmpty ? "    (none)" : files.map((f) => "    ${f.field.padRight(16)} → ${f.filename}").join("\n")}\n'
+        '╚══════════════════════════════════════════════════════════╝',
+        name: 'ProfileUpdate.Request',
+      );
+    }
     // ─────────────────────────────────────────────────────────────────────────
 
     try {
@@ -99,26 +102,29 @@ class CompleteProfileService {
         ..fields.addAll(stringFields)
         ..files.addAll(files);
 
-      final streamedResponse = await request.send();
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 60));
       final response = await http.Response.fromStream(streamedResponse);
       final statusCode = response.statusCode;
       final rawBody = response.body;
 
-      // ── Raw response log (always printed) ───────────────────────────────
-      developer.log(
-        '\n'
-        '╔══════════════════════════════════════════════════════════╗\n'
-        '║           📥  PROFILE UPDATE — RESPONSE                 ║\n'
-        '╠══════════════════════════════════════════════════════════╣\n'
-        '  STATUS  : $statusCode\n'
-        '  SUCCESS : ${statusCode >= 200 && statusCode < 300}\n'
-        '╠══════════════════════════════════════════════════════════╣\n'
-        '  RAW BODY:\n'
-        '$rawBody\n'
-        '╚══════════════════════════════════════════════════════════╝',
-        name: 'ProfileUpdate.Response',
-        level: 1000,
-      );
+      // ── Raw response log — debug-only, body may include PII ─────────────
+      if (kDebugMode) {
+        developer.log(
+          '\n'
+          '╔══════════════════════════════════════════════════════════╗\n'
+          '║           📥  PROFILE UPDATE — RESPONSE                 ║\n'
+          '╠══════════════════════════════════════════════════════════╣\n'
+          '  STATUS  : $statusCode\n'
+          '  SUCCESS : ${statusCode >= 200 && statusCode < 300}\n'
+          '╠══════════════════════════════════════════════════════════╣\n'
+          '  RAW BODY:\n'
+          '$rawBody\n'
+          '╚══════════════════════════════════════════════════════════╝',
+          name: 'ProfileUpdate.Response',
+          level: 1000,
+        );
+      }
       // ─────────────────────────────────────────────────────────────────────
 
       if (statusCode >= 200 && statusCode < 300) {

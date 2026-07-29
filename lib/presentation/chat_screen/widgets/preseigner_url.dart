@@ -83,11 +83,13 @@ class FileUploadService {
 
     LoggerUtils.info('[Upload] POST $url', tag: 'Upload');
 
-    final response = await http.post(
-      Uri.parse(url),
-      headers: _authHeaders,
-      body: payload,
-    );
+    final response = await http
+        .post(
+          Uri.parse(url),
+          headers: _authHeaders,
+          body: payload,
+        )
+        .timeout(const Duration(seconds: 20));
 
     LoggerUtils.info('[Upload] Presigned status: ${response.statusCode}', tag: 'Upload');
 
@@ -144,7 +146,7 @@ class FileUploadService {
       ),
     );
 
-    final streamed = await request.send();
+    final streamed = await request.send().timeout(const Duration(seconds: 60));
     final responseBody = await streamed.stream.bytesToString();
 
     LoggerUtils.info('[Upload] S3 response status: ${streamed.statusCode}', tag: 'Upload');

@@ -11,6 +11,16 @@ import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.
 class ApiService {
   final String baseUrl = GlobalLinks.baseUrl;
 
+  // No server-side or OS-level timeout is guaranteed for a stalled
+  // connection, so every request below is bounded client-side — otherwise
+  // a server that accepts a connection but never responds hangs the
+  // awaiting screen/button forever. 20s matches the app's other
+  // well-behaved call sites (laptop_api.dart, app_update_service.dart).
+  static const Duration _timeout = Duration(seconds: 20);
+  // File uploads legitimately take longer than a plain JSON call, but still
+  // need a ceiling — this was previously completely unbounded.
+  static const Duration _uploadTimeout = Duration(seconds: 60);
+
   // Track the last time we redirected to Login due to session expiry
   // to avoid infinite loops from multiple concurrent requests.
   static DateTime? _lastRedirectTime;
@@ -36,7 +46,8 @@ class ApiService {
     final uri = _buildUri(endpoint, queryParams);
     LoggerUtils.debug("GET: $uri", tag: 'API');
     try {
-      final response = await http.get(uri, headers: _headers(token));
+      final response =
+          await http.get(uri, headers: _headers(token)).timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.error(e.toString(), null);
@@ -53,7 +64,9 @@ class ApiService {
     final uri = _buildUri(endpoint, queryParams);
     LoggerUtils.debug("POST: $uri", tag: 'API');
     try {
-      final response = await http.post(uri, headers: _headers(token), body: jsonEncode(body));
+      final response = await http
+          .post(uri, headers: _headers(token), body: jsonEncode(body))
+          .timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.error(e.toString(), null);
@@ -70,7 +83,9 @@ class ApiService {
     final uri = _buildUri(endpoint, queryParams);
     LoggerUtils.debug("PUT: $uri", tag: 'API');
     try {
-      final response = await http.put(uri, headers: _headers(token), body: jsonEncode(body));
+      final response = await http
+          .put(uri, headers: _headers(token), body: jsonEncode(body))
+          .timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.error(e.toString(), null);
@@ -87,7 +102,9 @@ class ApiService {
     final uri = _buildUri(endpoint, queryParams);
     LoggerUtils.debug("PATCH: $uri", tag: 'API');
     try {
-      final response = await http.patch(uri, headers: _headers(token), body: jsonEncode(body));
+      final response = await http
+          .patch(uri, headers: _headers(token), body: jsonEncode(body))
+          .timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.error(e.toString(), null);
@@ -103,7 +120,8 @@ class ApiService {
     final uri = _buildUri(endpoint, queryParams);
     LoggerUtils.debug("DELETE: $uri", tag: 'API');
     try {
-      final response = await http.delete(uri, headers: _headers(token));
+      final response =
+          await http.delete(uri, headers: _headers(token)).timeout(_timeout);
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.error(e.toString(), null);
@@ -129,7 +147,7 @@ class ApiService {
       request.fields.addAll(fields);
       request.files.addAll(files);
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(_uploadTimeout);
       final response = await http.Response.fromStream(streamedResponse);
 
       return _handleResponse(response);

@@ -203,24 +203,13 @@ class ChatApiService {
     final response = await _apiService.delete(
       endpoint: '${AppEndpoints.reactions}$chatUid/messages/$messageUid/reactions/',
       token: token,
-      queryParams: {'emoji': emoji}, // emoji usually goes in body for delete if using http.delete with body, but ApiService delete handles queryParams
+      queryParams: {'emoji': emoji},
     );
-    // Note: The original code used body for DELETE. http.delete(..., body: json.encode({'emoji': emoji})).
-    // Standard delete usually doesn't have a body. I'll stick to queryParams if the backend supports it, 
-    // or I might need to update ApiService to support body in DELETE if necessary.
-    // Let's check original removeReaction.
-    /*
-      final response = await http.delete(
-        Uri.parse('$baseUrl/api/chats/$chatUid/messages/$messageUid/reactions/'),
-        headers: _headers,
-        body: json.encode({'emoji': emoji}),
-      );
-    */
-    // Since http package's delete DOES support a body, I should update ApiService.delete to support body too.
-    // But for now let's use post/delete with whatever ApiService has.
-    
-    // Actually, I'll update ApiService to support body in delete.
-    return ApiResponse.success(null, response.statusCode ?? 200);
+
+    if (response.success) {
+      return ApiResponse.success(null, response.statusCode ?? 200);
+    }
+    return ApiResponse.error(response.message ?? "Failed to remove reaction", response.statusCode);
   }
 
   // ── Total unread count ─────────────────────────────────────────────────────
