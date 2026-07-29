@@ -201,7 +201,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   _buildStatsSection(
                                     provider.attendanceData!.summary,
                                   ),
-                                _buildLegend(),
+                                _buildLegend(
+                                  showRecording:
+                                      (provider.attendanceData?.summary
+                                                  .recording ??
+                                              0) >
+                                          0,
+                                ),
                                 _buildRecordsHeader(provider),
                               ],
                             ),
@@ -844,9 +850,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
@@ -875,17 +884,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ),
               const SizedBox(width: 10),
               _buildStatChip(
-                'Online',
-                summary.online,
+                'Present',
+                summary.totalDays - summary.absent,
                 AppColors.statsGreen,
-                Icons.wifi_rounded,
-              ),
-              const SizedBox(width: 10),
-              _buildStatChip(
-                'Offline',
-                summary.offline,
-                AppColors.textSecondary,
-                Icons.wifi_off_rounded,
+                Icons.check_circle_rounded,
               ),
             ],
           ),
@@ -893,31 +895,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           Row(
             children: [
               _buildStatChip(
-                'Recording',
-                summary.recording,
-                AppColors.statsOrange,
-                Icons.videocam_rounded,
-              ),
-              const SizedBox(width: 10),
-              _buildStatChip(
                 'Absent',
                 summary.absent,
                 AppColors.error,
                 Icons.person_off_rounded,
               ),
-              const SizedBox(width: 10),
-              _buildStatChip(
-                'Present',
-                summary.totalDays - summary.absent,
-                AppColors.statsBlue,
-                Icons.check_circle_rounded,
-              ),
+              if (summary.recording > 0) ...[
+                const SizedBox(width: 10),
+                _buildStatChip(
+                  'Recording',
+                  summary.recording,
+                  AppColors.statsOrange,
+                  Icons.videocam_rounded,
+                ),
+              ],
             ],
           ),
-          if (summary.totalDays > 0) ...[
-            const SizedBox(height: 16),
-            _buildAttendanceBar(summary),
-          ],
         ],
       ),
     );
@@ -958,61 +951,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Widget _buildAttendanceBar(AttendanceSummary summary) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Attendance Rate',
-          style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            height: 8,
-            child: Row(
-              children: [
-                if (summary.online > 0)
-                  Flexible(
-                    flex: summary.online,
-                    child: Container(color: AppColors.statsGreen),
-                  ),
-                if (summary.offline > 0)
-                  Flexible(
-                    flex: summary.offline,
-                    child: Container(color: AppColors.textSecondary),
-                  ),
-                if (summary.recording > 0)
-                  Flexible(
-                    flex: summary.recording,
-                    child: Container(color: AppColors.statsOrange),
-                  ),
-                if (summary.absent > 0)
-                  Flexible(
-                    flex: summary.absent,
-                    child: Container(color: AppColors.error),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          '${(100 - summary.absentPercentage).toStringAsFixed(1)}% present rate',
-          style: TextStyle(
-            fontSize: 12,
-            color: AppColors.statsGreen,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
   // ─── Legend ───────────────────────────────────────────────────────────────
 
-  Widget _buildLegend() {
+  Widget _buildLegend({required bool showRecording}) {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -1024,10 +965,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildLegendItem('Online', AppColors.statsGreen),
-          _buildLegendItem('Offline', AppColors.textSecondary),
-          _buildLegendItem('Recording', AppColors.statsOrange),
+          _buildLegendItem('Present', AppColors.statsGreen),
           _buildLegendItem('Absent', AppColors.error),
+          if (showRecording)
+            _buildLegendItem('Recording', AppColors.statsOrange),
         ],
       ),
     );

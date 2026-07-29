@@ -3,8 +3,10 @@ import 'package:luminar_std/presentation/auth_screens/forgot_password/forgot_pas
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
 import 'dart:math' as math;
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
+import 'package:luminar_std/repository/credential_storage.dart';
 import '../../bottom_nav_screens/bottom_nav_screen/bottom_nav_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -30,6 +32,7 @@ class _LoginScreenState extends State<LoginScreen>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _rememberMe = false;
 
   // Field focus tracking for animated borders
   final FocusNode _emailFocus = FocusNode();
@@ -39,6 +42,7 @@ class _LoginScreenState extends State<LoginScreen>
   void initState() {
     super.initState();
     _checkAutoLogin();
+    _loadRememberedCredentials();
 
     _entryCtrl = AnimationController(
       vsync: this,
@@ -106,6 +110,19 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  Future<void> _loadRememberedCredentials() async {
+    final isRemembered = await CredentialStorage.isRemembered();
+    if (!isRemembered || !mounted) return;
+    final identifier = await CredentialStorage.getIdentifier();
+    final password = await CredentialStorage.getPassword();
+    if (!mounted) return;
+    setState(() {
+      _rememberMe = true;
+      _emailController.text = identifier ?? '';
+      _passwordController.text = password ?? '';
+    });
+  }
+
   @override
   void dispose() {
     _entryCtrl.dispose();
@@ -136,17 +153,46 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _handleLogin() async {
     if (_formKey.currentState?.validate() ?? false) {
+      final identifier = _emailController.text.toLowerCase().trim();
+      final password = _passwordController.text.trim();
+
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       authProvider.clearError();
       final success = await authProvider.login(
         context: context,
-        identifier: _emailController.text.toLowerCase().trim(),
-        password: _passwordController.text.trim(),
+        identifier: identifier,
+        password: password,
       );
+      if (success) {
+        // Update remembered credentials to match whatever was just used to
+        // sign in, so a later username/password change stays in sync.
+        if (_rememberMe) {
+          await CredentialStorage.saveCredentials(
+            identifier: identifier,
+            password: password,
+          );
+        } else {
+          await CredentialStorage.clearCredentials();
+        }
+      }
       if (success && mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => BottomNavScreen()),
+        );
+      }
+    }
+  }
+
+  Future<void> _openHelpLink() async {
+    final uri = Uri.parse('https://student.luminartechnolab.com');
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) throw Exception('Could not launch $uri');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open the link. Please try again.')),
         );
       }
     }
@@ -504,35 +550,90 @@ class _LoginScreenState extends State<LoginScreen>
                                               ),
                                             ),
 
-                                          // Forgot password
-                                          Align(
-                                            alignment: Alignment.centerRight,
-                                            child: TextButton(
-                                              onPressed: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        ForgotPasswordScreen(),
+                                          // Remember me + Forgot password
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment
+                                                    .spaceBetween,
+                                            children: [
+                                              GestureDetector(
+                                                onTap: () => setState(() {
+                                                  _rememberMe = !_rememberMe;
+                                                }),
+                                                behavior: HitTestBehavior
+                                                    .opaque,
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 22,
+                                                      height: 22,
+                                                      child: Checkbox(
+                                                        value: _rememberMe,
+                                                        onChanged: (v) =>
+                                                            setState(() {
+                                                          _rememberMe =
+                                                              v ?? false;
+                                                        }),
+                                                        activeColor:
+                                                            AppColors.primary,
+                                                        materialTapTargetSize:
+                                                            MaterialTapTargetSize
+                                                                .shrinkWrap,
+                                                        visualDensity:
+                                                            VisualDensity
+                                                                .compact,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(4),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      'Remember me',
+                                                      style: TextStyle(
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: AppColors
+                                                            .textSecondary,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (_) =>
+                                                          ForgotPasswordScreen(),
+                                                    ),
+                                                  );
+                                                },
+                                                style: TextButton.styleFrom(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    vertical: 4,
+                                                    horizontal: 0,
                                                   ),
-                                                );
-                                              },
-                                              style: TextButton.styleFrom(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                  vertical: 4,
-                                                  horizontal: 0,
+                                                ),
+                                                child: Text(
+                                                  'Forgot Password?',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight:
+                                                        FontWeight.w600,
+                                                    color: AppColors.primary,
+                                                  ),
                                                 ),
                                               ),
-                                              child: Text(
-                                                'Forgot Password?',
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: AppColors.primary,
-                                                ),
-                                              ),
-                                            ),
+                                            ],
                                           ),
 
                                           const SizedBox(height: 16),
@@ -577,6 +678,29 @@ class _LoginScreenState extends State<LoginScreen>
                                                           Icon(Icons.arrow_forward_rounded, size: 20),
                                                         ],
                                                       ),
+                                              ),
+                                            ),
+                                          ),
+
+                                          const SizedBox(height: 12),
+
+                                          // Trouble logging in? — opens the
+                                          // student portal help page.
+                                          Center(
+                                            child: TextButton.icon(
+                                              onPressed: _openHelpLink,
+                                              icon: Icon(
+                                                Icons.help_outline_rounded,
+                                                size: 17,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                              label: Text(
+                                                'Facing an issue logging in?',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppColors.textSecondary,
+                                                ),
                                               ),
                                             ),
                                           ),
