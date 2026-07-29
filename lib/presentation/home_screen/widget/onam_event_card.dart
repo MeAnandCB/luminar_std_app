@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -112,8 +113,25 @@ class OnamEventHelper {
     return LuminarBranch.unknown;
   }
 
-  static OnamEventInfo? getEventForBranch(LuminarBranch branch) =>
-      _events[branch];
+  /// Returns null (hiding the card) once the branch is unknown, or once its
+  /// event date has passed — applies to every branch uniformly since each
+  /// resolves through this same lookup, not just Calicut.
+  static OnamEventInfo? getEventForBranch(LuminarBranch branch) {
+    final event = _events[branch];
+    if (event == null || _hasEventPassed(event.date)) return null;
+    return event;
+  }
+
+  /// Card stays visible through the event day itself, hides starting the
+  /// day after. Parses the plain display string ("20 August 2026") rather
+  /// than requiring a separate DateTime field on OnamEventInfo.
+  static bool _hasEventPassed(String date) {
+    final eventDate = DateFormat('d MMMM yyyy').tryParse(date);
+    if (eventDate == null) return false; // unparsable — fail open, keep showing
+    final today = DateTime.now();
+    final todayDateOnly = DateTime(today.year, today.month, today.day);
+    return todayDateOnly.isAfter(eventDate);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -662,17 +680,17 @@ class _OnamNoticeCardState extends State<OnamNoticeCard>
   static const _programs = [
     _ProgramItem(
       icon: '🎭', title: 'Cultural Programs',
-      subtitle: 'Traditional Thiruvathira, Kaikottikali & folk arts',
+      subtitle: 'A students\' cultural program celebrating tradition',
       accentHex: 'FFB300',
     ),
     _ProgramItem(
       icon: '🍛', title: 'Onam Sadhya',
-      subtitle: 'Grand 26-dish feast served on banana leaf',
+      subtitle: 'A traditional Kerala Onam Sadhya feast',
       accentHex: 'FF6F00',
     ),
     _ProgramItem(
       icon: '🎵', title: 'Music Events',
-      subtitle: 'Live Onapattukal, classical & fusion performances',
+      subtitle: 'A vibrant music show to close the celebrations',
       accentHex: 'E64A19',
     ),
   ];

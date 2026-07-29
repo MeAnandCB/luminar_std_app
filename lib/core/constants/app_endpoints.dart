@@ -106,8 +106,8 @@ class AppEndpoints {
 }
 
 class GlobalLinks {
-  // static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
-  static const String baseUrl = 'http://192.168.1.35:8000';
+   static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
+  //static const String baseUrl = 'http://192.168.1.35:8000';
   static const String websocketUrl =
       'wss://api.crm.dev.luminartechnohub.com/ws/';
 }
