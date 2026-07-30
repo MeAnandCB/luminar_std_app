@@ -5,10 +5,12 @@ import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/app_text_styles.dart';
+import 'package:luminar_std/main.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.dart';
 import 'package:luminar_std/presentation/profile_edit_screen/views/profile_edit_screen.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
+import 'package:luminar_std/repository/shared_pref.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:provider/provider.dart';
@@ -94,23 +96,102 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context) => Center(child: CircularProgressIndicator()),
     );
 
+    // Grabbed up front — these are app-wide providers (not scoped to this
+    // screen), so they stay valid to call on after we've already navigated
+    // away and this screen's context is gone.
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.logout();
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    final dashboardController = Provider.of<DashboardController>(context, listen: false);
+    final profileController = Provider.of<ProfileController>(context, listen: false);
 
-    if (context.mounted) {
-      Provider.of<ChatProvider>(context, listen: false).reset();
-      Provider.of<DashboardController>(context, listen: false).clearDashboardData();
-      Provider.of<ProfileController>(context, listen: false).clearProfileData();
+    bool apiSuccess = false;
+    try {
+      // A hard ceiling on top of AuthProvider.logout()'s own try/catch: that
+      // guards against a *thrown* error, but not against the call simply
+      // never completing (e.g. a plugin channel stall). Without this, the
+      // loading dialog could stay on screen forever with no way out except
+      // force-restarting the app.
+      apiSuccess = await authProvider.logout().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => false,
+      );
+    } catch (e) {
+      // AuthProvider.logout() already wipes local session data even on
+      // failure and shouldn't throw, but if something upstream does, the
+      // user must still be signed out locally and sent to Login below.
+      debugPrint('Logout error: $e');
     }
 
-    if (context.mounted) {
-      Navigator.pop(context);
-      Navigator.pushAndRemoveUntil(
-        context,
+    // Belt-and-suspenders: if the 15s timeout above fired, the in-flight
+    // logout() call may not have reached its own clearAllData() yet. This
+    // guarantees the device is never left holding a stale token just
+    // because the server call stalled.
+    try {
+      await SharedPrefService.clearAllData();
+    } catch (e) {
+      debugPrint('Fallback clearAllData error: $e');
+    }
+
+    // Navigate to Login right away — don't let the dashboard/chat/profile
+    // cleanup below hold up the redirect. Goes through the app-wide
+    // navigatorKey rather than this screen's own `context`, so it can't be
+    // silently skipped by a stale/false `context.mounted` read after the
+    // awaits above (same pattern main.dart uses for its global dialogs).
+    final navState = navigatorKey.currentState;
+    debugPrint(
+      '[Logout] Navigating. context.mounted=${context.mounted}, '
+      'navigatorKey.currentState=${navState != null}',
+    );
+    if (navState != null) {
+      if (navState.canPop()) {
+        navState.pop();
+      }
+      navState.pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
         (route) => false,
       );
+      debugPrint('[Logout] pushAndRemoveUntil issued');
+    } else {
+      debugPrint('[Logout] navigatorKey.currentState is null — cannot navigate');
     }
+
+    // Best-effort cleanup, now that the user is already back at Login — a
+    // failure in any one of these (e.g. an already torn-down websocket)
+    // must never block the redirect that already happened above.
+    try {
+      chatProvider.reset();
+    } catch (e) {
+      debugPrint('ChatProvider reset error: $e');
+    }
+    try {
+      dashboardController.clearDashboardData();
+    } catch (e) {
+      debugPrint('DashboardController clear error: $e');
+    }
+    try {
+      profileController.clearProfileData();
+    } catch (e) {
+      debugPrint('ProfileController clear error: $e');
+    }
+
+    // Local session data is already wiped by authProvider.logout() at this
+    // point regardless of the API result — this snackbar only reflects
+    // whether the server was told about it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final snackBarContext = navigatorKey.currentContext;
+      if (snackBarContext == null) return;
+      ScaffoldMessenger.of(snackBarContext).showSnackBar(
+        SnackBar(
+          content: Text(
+            apiSuccess
+                ? 'Logged out successfully'
+                : 'Logged out. Could not reach the server.',
+          ),
+          backgroundColor: apiSuccess ? AppColors.statsGreen : AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    });
   }
 
   // ─── Student ID Card bottom sheet ──────────────────────────────────────────

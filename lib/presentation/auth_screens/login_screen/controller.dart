@@ -110,16 +110,69 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> logout() async {
+  /// Calls the logout API, then always wipes the locally stored session
+  /// (tokens + user data) — even if the API call fails or there's no
+  /// connectivity — so the device never stays signed in when the user has
+  /// asked to log out. Returns whether the server-side logout succeeded, so
+  /// the UI can reflect the right status.
+  Future<bool> logout() async {
+    bool apiSuccess = false;
     try {
       LoggerUtils.info('🚪 Logging out...', tag: 'Auth');
-      await SharedPrefService.clearAllData();
-      _loginResponse = null;
-      notifyListeners();
-      LoggerUtils.info('✅ Logout successful', tag: 'Auth');
+      final accessToken = await SharedPrefService.getAccessToken();
+      final refreshToken = await SharedPrefService.getRefreshToken();
+
+      // Best-effort — sending this lets the backend unregister the push
+      // token for this device so it stops getting this account's
+      // notifications (matters on shared devices). Bounded short so a
+      // stalled APNs/token fetch can't drag out the whole logout.
+      String? fcmToken;
+      try {
+        fcmToken = await FCMService().getToken().timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => null,
+        );
+      } catch (e) {
+        LoggerUtils.warning('⚠️ Could not fetch FCM token for logout: $e', tag: 'Auth');
+      }
+
+      if (accessToken != null && accessToken.isNotEmpty) {
+        final response = await _apiService.logout(
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+          fcmToken: fcmToken,
+        );
+        apiSuccess = response.success;
+        if (apiSuccess) {
+          LoggerUtils.info('✅ Logout API succeeded', tag: 'Auth');
+        } else {
+          LoggerUtils.warning(
+            '⚠️ Logout API failed: ${response.message}',
+            tag: 'Auth',
+          );
+        }
+      }
     } catch (e) {
-      LoggerUtils.error('❌ Logout error: $e', tag: 'Auth');
+      LoggerUtils.error('❌ Logout API error: $e', tag: 'Auth');
     }
+
+    // Invalidate the local FCM instance token too, regardless of the API
+    // outcome — belt-and-suspenders so this device can't keep receiving the
+    // previous account's pushes even if the backend call failed. A fresh
+    // token is generated automatically next time something needs one (e.g.
+    // the next login).
+    try {
+      await FCMService().deleteToken();
+    } catch (e) {
+      LoggerUtils.error('❌ FCM token delete error: $e', tag: 'Auth');
+    }
+
+    await SharedPrefService.clearAllData();
+    _loginResponse = null;
+    notifyListeners();
+    LoggerUtils.info('✅ Local session cleared', tag: 'Auth');
+
+    return apiSuccess;
   }
 
   Future<bool> checkLoginStatus() async {

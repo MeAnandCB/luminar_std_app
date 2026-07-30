@@ -1,6 +1,7 @@
 class AppEndpoints {
   // Auth
   static const String login = '/api/auth/student/login/';
+  static const String logout = '/api/auth/student/logout/';
   static const String forgotPasswordSendOtp =
       '/api/auth/forgot-password/send-otp/';
   static const String forgotPasswordVerifyOtp =
@@ -109,7 +110,7 @@ class GlobalLinks {
    static const String baseUrl = 'https://api.crm.luminartechnohub.com';
   //static const String baseUrl = 'http://192.168.1.35:8000';
   static const String websocketUrl =
-      'wss://api.crm .luminartechnohub.com/ws/';
+      'wss://api.crm.luminartechnohub.com/ws/';
 }
 
 class LaptopApiConfig {

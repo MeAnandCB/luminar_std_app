@@ -376,24 +376,37 @@ class NactetRegistrationController extends ChangeNotifier {
           return;
         }
 
+        // Read the bytes now, while the picker's cache copy is still
+        // guaranteed to exist. This form is a multi-step wizard — by the
+        // time the user reaches submit, Android may have already evicted
+        // the file_picker cache entry, so re-reading the path later can
+        // throw PathNotFoundException.
+        final fileBytes = await File(filePath).readAsBytes();
+
         switch (type) {
           case 'basic':
             registrationModel.basicDocPath = filePath;
+            registrationModel.basicDocBytes = fileBytes;
             break;
           case 'higher':
             registrationModel.higherDocPath = filePath;
+            registrationModel.higherDocBytes = fileBytes;
             break;
           case 'id':
             registrationModel.idProofPath = filePath;
+            registrationModel.idProofBytes = fileBytes;
             break;
           case 'photo':
             registrationModel.photoPath = filePath;
+            registrationModel.photoBytes = fileBytes;
             break;
         }
         notifyListeners();
       }
     } catch (e) {
       LoggerUtils.error('Error picking file: $e', tag: 'NACTET');
+      fileSizeError = 'Could not read the selected file. Please try again.';
+      notifyListeners();
     }
   }
 
@@ -500,6 +513,10 @@ class NactetRegistrationController extends ChangeNotifier {
     registrationModel.higherDocPath = null;
     registrationModel.idProofPath = null;
     registrationModel.photoPath = null;
+    registrationModel.basicDocBytes = null;
+    registrationModel.higherDocBytes = null;
+    registrationModel.idProofBytes = null;
+    registrationModel.photoBytes = null;
     registrationModel.course = null;
     registrationModel.batch = null;
     notifyListeners();

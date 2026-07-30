@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as path;
@@ -20,6 +22,15 @@ class NactetRegistrationModel {
   String? higherDocPath;
   String? idProofPath;
   String? photoPath;
+  // The picker's cache copy of a document isn't guaranteed to survive until
+  // submit — this is a multi-step wizard, and Android can evict the
+  // file_picker cache folder in the meantime (low storage, OS cleanup, the
+  // plugin purging old sessions). Bytes are captured immediately on pick so
+  // submit never has to re-read a path that may no longer exist.
+  Uint8List? basicDocBytes;
+  Uint8List? higherDocBytes;
+  Uint8List? idProofBytes;
+  Uint8List? photoBytes;
   int? course;
   String? batch;
 
@@ -74,26 +85,26 @@ class NactetRegistrationModel {
   Future<List<http.MultipartFile>> toFiles() async {
     final List<http.MultipartFile> files = [];
 
-    if (basicDocPath != null) {
-      files.add(await _createMultipartFile(
-          'basic_educational_qualification_document', basicDocPath!));
+    if (basicDocPath != null && basicDocBytes != null) {
+      files.add(_createMultipartFile(
+          'basic_educational_qualification_document', basicDocPath!, basicDocBytes!));
     }
-    if (higherDocPath != null) {
-      files.add(await _createMultipartFile(
-          'higher_educational_qualification_document', higherDocPath!));
+    if (higherDocPath != null && higherDocBytes != null) {
+      files.add(_createMultipartFile(
+          'higher_educational_qualification_document', higherDocPath!, higherDocBytes!));
     }
-    if (idProofPath != null) {
-      files.add(await _createMultipartFile('id_proof_document', idProofPath!));
+    if (idProofPath != null && idProofBytes != null) {
+      files.add(_createMultipartFile('id_proof_document', idProofPath!, idProofBytes!));
     }
-    if (photoPath != null) {
-      files.add(await _createMultipartFile('passport_size_photo', photoPath!));
+    if (photoPath != null && photoBytes != null) {
+      files.add(_createMultipartFile('passport_size_photo', photoPath!, photoBytes!));
     }
 
     return files;
   }
 
-  Future<http.MultipartFile> _createMultipartFile(
-      String fieldName, String filePath) async {
+  http.MultipartFile _createMultipartFile(
+      String fieldName, String filePath, Uint8List bytes) {
     final extension = path.extension(filePath).toLowerCase().replaceAll('.', '');
     MediaType contentType;
 
@@ -105,9 +116,10 @@ class NactetRegistrationModel {
       contentType = MediaType('image', 'jpeg');
     }
 
-    return await http.MultipartFile.fromPath(
+    return http.MultipartFile.fromBytes(
       fieldName,
-      filePath,
+      bytes,
+      filename: path.basename(filePath),
       contentType: contentType,
     );
   }

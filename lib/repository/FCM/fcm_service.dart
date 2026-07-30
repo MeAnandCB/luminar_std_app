@@ -223,6 +223,20 @@ class FCMService {
 
   Future<String?> getToken() => _getToken();
 
+  /// Invalidates the local FCM instance token on logout — belt-and-suspenders
+  /// alongside telling the backend to unregister it, so even if the backend
+  /// call fails, this device can't keep receiving the previous account's
+  /// pushes. A fresh token is generated automatically the next time
+  /// something calls getToken() (e.g. the next login).
+  Future<void> deleteToken() async {
+    try {
+      await _messaging.deleteToken();
+      LoggerUtils.info('FCM token deleted (logout)', tag: 'FCM');
+    } catch (e) {
+      LoggerUtils.error('Error deleting FCM token: $e', tag: 'FCM');
+    }
+  }
+
   // ─── Message Handlers ─────────────────────────────────────────────────────
 
   /// Dumps every field of an incoming [RemoteMessage] so the full payload
