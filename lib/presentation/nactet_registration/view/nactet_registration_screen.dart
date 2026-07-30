@@ -8,7 +8,6 @@ import 'package:luminar_std/presentation/enrollment_screen/controller/controller
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
 import 'package:luminar_std/repository/nactet_registration/model/nactet_check_display_model.dart';
 import 'package:provider/provider.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:intl/intl.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 
@@ -95,24 +94,26 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             ? Column(
                 children: [
                   const SizedBox(height: 20),
-                  _buildStepIndicator(controller),
-                  const SizedBox(height: 20),
                   _buildCourseInfoBanner(context),
                   const SizedBox(height: 10),
                   Expanded(
-                    child: PageView(
-                      controller: controller.pageController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        _buildStep1(controller),
-                        _buildStep2(controller),
-                        _buildStep3(controller),
-                        _buildStep4(controller),
-                        _buildStep5(controller),
-                      ],
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildPersonalSection(controller),
+                          const SizedBox(height: 32),
+                          _buildEducationSection(controller),
+                          const SizedBox(height: 32),
+                          _buildDocumentsSection(controller),
+                          const SizedBox(height: 32),
+                          _buildCourseSection(controller),
+                        ],
+                      ),
                     ),
                   ),
-                  _buildBottomNavigation(controller),
+                  _buildSubmitBar(controller),
                 ],
               )
             : _buildUnavailableView(controller),
@@ -224,55 +225,6 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     );
   }
 
-  Widget _buildStepIndicator(NactetRegistrationController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Overall Progress',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              Text(
-                controller.isSuccess
-                    ? '1 / submitted'
-                    : '${controller.currentStep + 1} / 5 tasks',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: controller.isSuccess
-                  ? 1.0
-                  : (controller.currentStep + 1) / 5,
-              backgroundColor: Colors.grey.withValues(alpha: 0.1),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                controller.isSuccess
-                    ? AppColors.statusActive
-                    : AppColors.primary,
-              ),
-              minHeight: 6,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCourseInfoBanner(BuildContext context) {
     // Prefer nactetEnrollment (from selection sheet) over EnrollmentProvider
     final nactet = widget.nactetEnrollment;
@@ -331,10 +283,8 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
 
   // --- Step Content ---
 
-  Widget _buildStep1(NactetRegistrationController controller) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
+  Widget _buildPersonalSection(NactetRegistrationController controller) {
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(Icons.business, 'INSTITUTION & PERSONAL DETAILS'),
@@ -342,6 +292,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           _buildLabel('Institution (Branch) *'),
           const SizedBox(height: 10),
           _buildBranchField(controller),
+          _buildFieldError(controller.fieldErrors['branch']),
           const SizedBox(height: 20),
           _buildLabel('Name of the Candidate *'),
           const SizedBox(height: 8),
@@ -352,6 +303,8 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           _buildTextField(
             controller.nameController,
             'FULL NAME AS ON DOCUMENTS',
+            errorText: controller.fieldErrors['name'],
+            onEdited: () => controller.clearFieldError('name'),
           ),
           const SizedBox(height: 20),
           _buildLabel('Guardian Name *'),
@@ -359,6 +312,8 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           _buildTextField(
             controller.guardianNameController,
             'Father / Mother / Guardian full name',
+            errorText: controller.fieldErrors['guardian'],
+            onEdited: () => controller.clearFieldError('guardian'),
           ),
           const SizedBox(height: 20),
           _buildLabel('Gender *'),
@@ -372,10 +327,12 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
               _buildGenderChip('Prefer not to say', 'O', controller),
             ],
           ),
+          _buildFieldError(controller.fieldErrors['gender']),
           const SizedBox(height: 20),
           _buildLabel('Date of Birth *'),
           const SizedBox(height: 10),
           _buildDateField(context, controller),
+          _buildFieldError(controller.fieldErrors['dob']),
           const SizedBox(height: 20),
           _buildLabel('Permanent Address *'),
           const SizedBox(height: 10),
@@ -383,11 +340,14 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             controller.addressController,
             'House No, Street, City, State, PIN Code',
             maxLines: 3,
+            errorText: controller.fieldErrors['address'],
+            onEdited: () => controller.clearFieldError('address'),
           ),
           const SizedBox(height: 20),
           _buildLabel('Mobile No *'),
           const SizedBox(height: 10),
           _buildPhoneField(controller),
+          _buildFieldError(controller.fieldErrors['mobile']),
           const SizedBox(height: 20),
           _buildLabel('Email *'),
           const SizedBox(height: 10),
@@ -396,17 +356,16 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             'your@email.com',
             keyboardType: TextInputType.emailAddress,
             capitalize: false,
+            errorText: controller.fieldErrors['email'],
+            onEdited: () => controller.clearFieldError('email'),
           ),
           const SizedBox(height: 40),
         ],
-      ),
-    );
+      );
   }
 
-  Widget _buildStep2(NactetRegistrationController controller) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
+  Widget _buildEducationSection(NactetRegistrationController controller) {
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(Icons.school, 'EDUCATIONAL QUALIFICATION'),
@@ -423,6 +382,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
               _buildBasicQualChip('OTHER', controller),
             ],
           ),
+          _buildFieldError(controller.fieldErrors['basicQual']),
           const SizedBox(height: 20),
           _buildLabel('Basic Qualification — Year of Passing *'),
           const SizedBox(height: 10),
@@ -430,6 +390,8 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             controller.basicQualYearController,
             'e.g. 2018',
             keyboardType: TextInputType.number,
+            errorText: controller.fieldErrors['basicQualYear'],
+            onEdited: () => controller.clearFieldError('basicQualYear'),
           ),
           const SizedBox(height: 20),
           _buildLabel('Highest Educational Qualification *'),
@@ -441,6 +403,8 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           _buildTextField(
             controller.higherQualController,
             'Degree — University Name',
+            errorText: controller.fieldErrors['higherQual'],
+            onEdited: () => controller.clearFieldError('higherQual'),
           ),
           const SizedBox(height: 20),
           _buildLabel('Year of Passing *'),
@@ -449,16 +413,15 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             controller.higherQualYearController,
             'e.g. 2024',
             keyboardType: TextInputType.number,
+            errorText: controller.fieldErrors['higherQualYear'],
+            onEdited: () => controller.clearFieldError('higherQualYear'),
           ),
         ],
-      ),
-    );
+      );
   }
 
-  Widget _buildStep3(NactetRegistrationController controller) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
+  Widget _buildDocumentsSection(NactetRegistrationController controller) {
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(Icons.upload_file, 'DOCUMENT UPLOAD'),
@@ -473,6 +436,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           ),
           const SizedBox(height: 10),
           _buildFileUploadBox('basic', controller),
+          _buildFieldError(controller.fieldErrors['basicDoc']),
           const SizedBox(height: 20),
           _buildLabel('Highest Educational Qualification Document *'),
           _buildHint(
@@ -480,16 +444,19 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           ),
           const SizedBox(height: 10),
           _buildFileUploadBox('higher', controller),
+          _buildFieldError(controller.fieldErrors['higherDoc']),
           const SizedBox(height: 20),
           _buildLabel('ID Proof (Aadhaar / Driving Licence) *'),
           _buildHint('PDF or image (JPG, PNG)'),
           const SizedBox(height: 10),
           _buildFileUploadBox('id', controller),
+          _buildFieldError(controller.fieldErrors['idProof']),
           const SizedBox(height: 20),
           _buildLabel('Passport Size Photograph *'),
           _buildHint('JPG or PNG supported'),
           const SizedBox(height: 10),
           _buildFileUploadBox('photo', controller),
+          _buildFieldError(controller.fieldErrors['photo']),
           if (controller.fileSizeError != null) ...[
             const SizedBox(height: 12),
             Container(
@@ -515,11 +482,10 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
             ),
           ],
         ],
-      ),
-    );
+      );
   }
 
-  Widget _buildStep4(NactetRegistrationController controller) {
+  Widget _buildCourseSection(NactetRegistrationController controller) {
     // Prefer nactetEnrollment when navigating from selection sheet
     final nactet = widget.nactetEnrollment;
     final String courseName;
@@ -541,9 +507,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       enrollmentNumber = enrollment?.enrollmentNumber ?? 'N/A';
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(Icons.assignment_turned_in, 'COURSE DETAILS'),
@@ -604,9 +568,9 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
               ],
             ),
           ),
+          _buildFieldError(controller.fieldErrors['confirmation']),
         ],
-      ),
-    );
+      );
   }
 
   // --- Helper Widgets ---
@@ -650,12 +614,36 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     );
   }
 
+  /// Inline error shown directly under a field — used for the custom
+  /// widgets (chips, date/phone pickers, file uploads, the confirmation
+  /// checkbox) that can't use TextField's built-in errorText.
+  Widget _buildFieldError(String? error) {
+    if (error == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline, size: 14, color: Colors.red),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              error,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPhoneField(NactetRegistrationController controller) {
+    final hasError = controller.fieldErrors['mobile'] != null;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: hasError ? Colors.red : AppColors.borderColor),
       ),
       child: Row(
         children: [
@@ -684,6 +672,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
               onChanged: (value) {
                 controller.registrationModel.mobileNumber =
                     '${controller.mobileCountryCode}${value.trim()}';
+                controller.clearFieldError('mobile');
               },
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               autofillHints: const [],
@@ -710,9 +699,12 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
     bool capitalize = true,
+    String? errorText,
+    VoidCallback? onEdited,
   }) {
     return TextField(
       controller: controller,
+      onChanged: onEdited == null ? null : (_) => onEdited(),
       maxLines: maxLines,
       keyboardType: keyboardType,
       textCapitalization: capitalize
@@ -736,6 +728,9 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: AppColors.textHint, fontSize: 13),
+        errorText: errorText,
+        errorMaxLines: 2,
+        errorStyle: const TextStyle(color: Colors.red, fontSize: 11.5),
         filled: true,
         fillColor: AppColors.cardBackground,
         contentPadding: const EdgeInsets.symmetric(
@@ -755,6 +750,14 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
           borderSide: BorderSide(
             color: AppColors.primary.withValues(alpha: 0.5),
           ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
       ),
     );
@@ -942,6 +945,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     BuildContext context,
     NactetRegistrationController controller,
   ) {
+    final hasError = controller.fieldErrors['dob'] != null;
     return GestureDetector(
       onTap: () async {
         final date = await showDatePicker(
@@ -959,7 +963,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.borderColor),
+          border: Border.all(color: hasError ? Colors.red : AppColors.borderColor),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1007,6 +1011,14 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     }
 
     final bool hasFile = path != null;
+    const errorKeys = {
+      'basic': 'basicDoc',
+      'higher': 'higherDoc',
+      'id': 'idProof',
+      'photo': 'photo',
+    };
+    final bool hasError =
+        !hasFile && controller.fieldErrors[errorKeys[type]] != null;
 
     return GestureDetector(
       onTap: () => controller.pickFile(type),
@@ -1019,8 +1031,12 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
               : AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: hasFile ? AppColors.primary : AppColors.borderColor,
-            style: hasFile
+            color: hasFile
+                ? AppColors.primary
+                : hasError
+                ? Colors.red
+                : AppColors.borderColor,
+            style: hasFile || hasError
                 ? BorderStyle.solid
                 : BorderStyle.none, // Need dotted border ideally
           ),
@@ -1142,8 +1158,6 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
       physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
-          const SizedBox(height: 20),
-          _buildStepIndicator(controller),
           const SizedBox(height: 60),
 
           // --- Success Icon ---
@@ -1336,162 +1350,16 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     );
   }
 
-  /// Final review step (step 5). Replaces the old "Review & Confirm" modal
-  /// bottom sheet — it's now a normal page in the PageView so it behaves
-  /// like every other step. There is deliberately no way back from here
-  /// (see _buildBottomNavigation): the user either submits or cancels the
-  /// whole form via the top-bar close button.
-  Widget _buildStep5(NactetRegistrationController controller) {
-    final nactet = widget.nactetEnrollment;
-    final String courseName;
-    final String batchName;
-    final String enrollmentNumber;
-
-    if (nactet != null) {
-      courseName = nactet.courseName;
-      batchName = nactet.batchName;
-      enrollmentNumber = nactet.enrollmentNumber;
-    } else {
-      final ep = Provider.of<EnrollmentProvider>(context);
-      final enr = ep.enrollmentDataRes?.enrollments.isNotEmpty == true
-          ? ep.enrollmentDataRes!.enrollments.first
-          : null;
-      courseName = enr?.course.courseName ?? 'N/A';
-      batchName = enr?.batch.batchName ?? 'N/A';
-      enrollmentNumber = enr?.enrollmentNumber ?? 'N/A';
+  Future<void> _confirmAndSubmit(NactetRegistrationController controller) async {
+    final error = controller.validateForm();
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: Colors.red),
+      );
+      return;
     }
 
-    final m = controller.registrationModel;
-    final branchName =
-        controller.locations
-            .where((l) => l.id.toString() == m.branch)
-            .map((l) => l.name)
-            .firstOrNull ??
-        m.branch ??
-        'N/A';
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.assignment_turned_in_outlined,
-                color: AppColors.primary,
-                size: 20,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'Review & Confirm',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Please review all details before submitting.',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 16),
-          _buildSheetSection('PERSONAL DETAILS', [
-            _buildSheetRow(
-              'Name',
-              controller.nameController.text.isNotEmpty
-                  ? controller.nameController.text
-                  : '—',
-            ),
-            _buildSheetRow(
-              'Guardian Name',
-              controller.guardianNameController.text.isNotEmpty
-                  ? controller.guardianNameController.text
-                  : '—',
-            ),
-            _buildSheetRow('Gender', m.gender ?? '—'),
-            _buildSheetRow(
-              'Date of Birth',
-              controller.dobController.text.isNotEmpty
-                  ? controller.dobController.text
-                  : '—',
-            ),
-            _buildSheetRow(
-              'Address',
-              controller.addressController.text.isNotEmpty
-                  ? controller.addressController.text
-                  : '—',
-            ),
-            _buildSheetRow(
-              'Mobile',
-              controller.mobileController.text.isNotEmpty
-                  ? controller.mobileController.text
-                  : '—',
-            ),
-            _buildSheetRow(
-              'Email',
-              controller.emailController.text.isNotEmpty
-                  ? controller.emailController.text
-                  : '—',
-            ),
-          ]),
-          const SizedBox(height: 16),
-          _buildSheetSection('EDUCATIONAL QUALIFICATION', [
-            _buildSheetRow(
-              'Basic Qualification',
-              m.basicEducationalQualification ?? '—',
-            ),
-            _buildSheetRow(
-              'Basic Qual Year',
-              controller.basicQualYearController.text.isNotEmpty
-                  ? controller.basicQualYearController.text
-                  : '—',
-            ),
-            _buildSheetRow(
-              'Higher Qualification',
-              controller.higherQualController.text.isNotEmpty
-                  ? controller.higherQualController.text
-                  : '—',
-            ),
-            _buildSheetRow(
-              'Higher Qual Year',
-              controller.higherQualYearController.text.isNotEmpty
-                  ? controller.higherQualYearController.text
-                  : '—',
-            ),
-          ]),
-          const SizedBox(height: 16),
-          _buildSheetSection('COURSE & ENROLLMENT', [
-            _buildSheetRow('Branch', branchName),
-            _buildSheetRow('Course', courseName),
-            _buildSheetRow('Batch', batchName),
-            _buildSheetRow('Enrollment No.', enrollmentNumber),
-          ]),
-          const SizedBox(height: 16),
-          _buildSheetSection('DOCUMENTS', [
-            _buildSheetRow(
-              'Basic Qual Doc',
-              m.basicDocPath?.split('/').last ?? '—',
-            ),
-            _buildSheetRow(
-              'Higher Qual Doc',
-              m.higherDocPath?.split('/').last ?? '—',
-            ),
-            _buildSheetRow('ID Proof', m.idProofPath?.split('/').last ?? '—'),
-            _buildSheetRow(
-              'Passport Photo',
-              m.photoPath?.split('/').last ?? '—',
-            ),
-          ]),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _confirmAndSubmit(NactetRegistrationController controller) async {
+    controller.logFormSnapshot();
     final success = await controller.submit(context);
     if (success) {
       if (mounted) setState(() {});
@@ -1500,63 +1368,7 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
     }
   }
 
-  Widget _buildSheetSection(String title, List<Widget> rows) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textSecondary.withValues(alpha: 0.5),
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...rows,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSheetRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 130,
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.right,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigation(NactetRegistrationController controller) {
+  Widget _buildSubmitBar(NactetRegistrationController controller) {
     final bottomPadding = MediaQuery.of(context).padding.bottom + 12.0;
     return SafeArea(
       top: false,
@@ -1574,150 +1386,55 @@ class _NactetRegistrationScreenState extends State<NactetRegistrationScreen> {
         ),
         child: Row(
           children: [
-            // Left action (Back / Cancel) — hidden on the final review step
-            // (step 5): once here the user can only submit or cancel the
-            // whole form, not step back through the wizard.
-            Flexible(
-              flex: 0,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 110),
-                child: controller.currentStep == 4
-                    ? const SizedBox.shrink()
-                    : controller.currentStep > 0
-                    ? TextButton.icon(
-                        onPressed: controller.previousStep,
-                        icon: const Icon(Icons.arrow_back, size: 18),
-                        label: const Text('Back'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.textSecondary,
-                        ),
-                      )
-                    : TextButton(
-                        onPressed: () {
-                          controller.reset();
-                          Navigator.pop(context);
-                        },
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
-                      ),
+            TextButton(
+              onPressed: () {
+                controller.reset();
+                Navigator.pop(context);
+              },
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: AppColors.textSecondary),
               ),
             ),
-
-            // Center indicator
+            const SizedBox(width: 12),
             Expanded(
-              child: Center(
-                child: AnimatedSmoothIndicator(
-                  activeIndex: controller.currentStep,
-                  count: 5,
-                  effect: ScrollingDotsEffect(
-                    activeDotColor: AppColors.primary,
-                    dotColor: AppColors.primary.withValues(alpha: 0.2),
-                    dotHeight: 8,
-                    dotWidth: 8,
+              child: ElevatedButton(
+                onPressed: controller.isLoading
+                    ? null
+                    : () => _confirmAndSubmit(controller),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.statusActive,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-              ),
-            ),
-
-            // Right action (Next / Review & Submit)
-            Flexible(
-              flex: 0,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 160),
-                child: controller.currentStep < 4
-                    ? ElevatedButton(
-                        onPressed: () {
-                          final error = controller.validateStep(
-                            controller.currentStep,
-                          );
-                          if (error != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(error),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-                          controller.logStep(controller.currentStep);
-                          controller.nextStep();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            children: const [
-                              Text(
-                                'Next',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(
-                                Icons.arrow_forward_ios,
-                                size: 12,
-                                color: Colors.white,
-                              ),
-                            ],
-                          ),
+                child: controller.isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
                         ),
                       )
-                    : ElevatedButton(
-                        onPressed: controller.isLoading
-                            ? null
-                            : () => _confirmAndSubmit(controller),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.statusActive,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.check_circle_outline,
+                            size: 18,
+                            color: Colors.white,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                          SizedBox(width: 8),
+                          Text(
+                            'Confirm & Submit',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        child: controller.isLoading
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Row(
-                                  children: const [
-                                    Icon(
-                                      Icons.check_circle_outline,
-                                      size: 18,
-                                      color: Colors.white,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Confirm & Submit',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                        ],
                       ),
               ),
             ),

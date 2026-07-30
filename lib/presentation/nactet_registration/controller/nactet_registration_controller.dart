@@ -18,7 +18,6 @@ class NactetRegistrationController extends ChangeNotifier {
   final PaymentScreenService _paymentService = PaymentScreenService();
   final NactetRegistrationModel registrationModel = NactetRegistrationModel();
 
-  int currentStep = 0;
   bool isLoading = false;
   bool isCheckingStatus = false;
   bool isLoadingLocations = false;
@@ -29,6 +28,19 @@ class NactetRegistrationController extends ChangeNotifier {
   String? errorMessage;
   String? fileSizeError;
   dynamic successData;
+
+  /// Per-field validation errors, keyed by field name (e.g. 'name', 'email',
+  /// 'basicDoc'), populated by [validateForm]. The single-page form has no
+  /// per-step gate anymore, so this is what lets each field show its own
+  /// inline error instead of only a generic top-level message.
+  Map<String, String> fieldErrors = {};
+
+  void clearFieldError(String key) {
+    if (fieldErrors.containsKey(key)) {
+      fieldErrors.remove(key);
+      notifyListeners();
+    }
+  }
 
   // Set once the branch has been auto-detected from the enrollment API, so
   // the UI knows to show a locked/read-only branch display instead of the
@@ -47,8 +59,6 @@ class NactetRegistrationController extends ChangeNotifier {
   }
 
   static const int _maxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
-
-  final PageController pageController = PageController();
 
   // Controllers for text fields to pre-fill and manage state
   final nameController = TextEditingController();
@@ -172,94 +182,140 @@ class NactetRegistrationController extends ChangeNotifier {
 
   void toggleConfirmation() {
     confirmationChecked = !confirmationChecked;
+    clearFieldError('confirmation');
     notifyListeners();
   }
 
-  /// Returns an error message if the current step is invalid, null if valid.
-  String? validateStep(int step) {
-    switch (step) {
-      case 0:
-        if (registrationModel.branch == null)
-          return 'Please select your branch';
-        final name = nameController.text.trim();
-        if (name.isEmpty) return 'Please enter your full name';
-        if (name.length < 2) return 'Name must be at least 2 characters';
-        if (!RegExp(r'^[A-Za-z\s]+$').hasMatch(name))
-          return 'Name should contain letters only';
-        final guardian = guardianNameController.text.trim();
-        if (guardian.isEmpty) return 'Please enter guardian name';
-        if (guardian.length < 2)
-          return 'Guardian name must be at least 2 characters';
-        if (!RegExp(r'^[A-Za-z\s]+$').hasMatch(guardian))
-          return 'Guardian name should contain letters only';
-        if (registrationModel.gender == null)
-          return 'Please select your gender';
-        if (dobController.text.trim().isEmpty)
-          return 'Please select your date of birth';
-        if (addressController.text.trim().isEmpty)
-          return 'Please enter your permanent address';
-        final digits = mobileController.text.trim().replaceAll(
-          RegExp(r'\D'),
-          '',
-        );
-        if (digits.isEmpty) return 'Please enter your mobile number';
-        if (digits.length < 7) return 'Mobile number must be at least 7 digits';
-        if (digits.length > 15)
-          return 'Mobile number must not exceed 15 digits';
-        if (emailController.text.trim().isEmpty)
-          return 'Please enter your email';
-        if (!RegExp(
-          r'^[^@\s]+@[^@\s]+\.[^@\s]{2,}$',
-        ).hasMatch(emailController.text.trim())) {
-          return 'Please enter a valid email address';
-        }
-        return null;
-      case 1:
-        if (registrationModel.basicEducationalQualification == null) {
-          return 'Please select basic educational qualification';
-        }
-        if (basicQualYearController.text.trim().isEmpty) {
-          return 'Please enter basic qualification year of passing';
-        }
-        final basicYear = int.tryParse(basicQualYearController.text.trim());
-        if (basicYear == null ||
-            basicYear < 1950 ||
-            basicYear > DateTime.now().year + 5) {
-          return 'Please enter a valid year (1950–${DateTime.now().year + 5})';
-        }
-        if (higherQualController.text.trim().isEmpty) {
-          return 'Please enter your highest educational qualification';
-        }
-        if (higherQualYearController.text.trim().isEmpty) {
-          return 'Please enter year of passing for highest qualification';
-        }
-        final higherYear = int.tryParse(higherQualYearController.text.trim());
-        if (higherYear == null ||
-            higherYear < 1950 ||
-            higherYear > DateTime.now().year + 5) {
-          return 'Please enter a valid year (1950–${DateTime.now().year + 5})';
-        }
-        return null;
-      case 2:
-        if (registrationModel.basicDocPath == null) {
-          return 'Please upload your basic qualification document';
-        }
-        if (registrationModel.higherDocPath == null) {
-          return 'Please upload your highest qualification document';
-        }
-        if (registrationModel.idProofPath == null)
-          return 'Please upload your ID proof';
-        if (registrationModel.photoPath == null)
-          return 'Please upload your passport size photo';
-        return null;
-      case 3:
-        if (!confirmationChecked) {
-          return 'Please confirm that all information is accurate before submitting';
-        }
-        return null;
-      default:
-        return null;
+  /// Field order the form is laid out in — used to pick which error to
+  /// surface in the top-level SnackBar (the first one the user would
+  /// actually scroll past), since [fieldErrors] itself is unordered.
+  static const List<String> _fieldOrder = [
+    'branch', 'name', 'guardian', 'gender', 'dob', 'address', 'mobile',
+    'email', 'basicQual', 'basicQualYear', 'higherQual', 'higherQualYear',
+    'basicDoc', 'higherDoc', 'idProof', 'photo', 'confirmation',
+  ];
+
+  /// Validates the entire single-page form, populating [fieldErrors] so
+  /// every invalid field can show its own inline error — not just the
+  /// first one found. Returns the first error message (in field order) for
+  /// the top-level SnackBar, or null if the form is valid.
+  String? validateForm() {
+    final errors = <String, String>{};
+
+    // ── Institution & personal details ──────────────────────────────────
+    if (registrationModel.branch == null) {
+      errors['branch'] = 'Please select your branch';
     }
+
+    final name = nameController.text.trim();
+    if (name.isEmpty) {
+      errors['name'] = 'Please enter your full name';
+    } else if (name.length < 2) {
+      errors['name'] = 'Name must be at least 2 characters';
+    } else if (!RegExp(r'^[A-Za-z\s]+$').hasMatch(name)) {
+      errors['name'] = 'Name should contain letters only';
+    }
+
+    final guardian = guardianNameController.text.trim();
+    if (guardian.isEmpty) {
+      errors['guardian'] = 'Please enter guardian name';
+    } else if (guardian.length < 2) {
+      errors['guardian'] = 'Guardian name must be at least 2 characters';
+    } else if (!RegExp(r'^[A-Za-z\s]+$').hasMatch(guardian)) {
+      errors['guardian'] = 'Guardian name should contain letters only';
+    }
+
+    if (registrationModel.gender == null) {
+      errors['gender'] = 'Please select your gender';
+    }
+
+    if (dobController.text.trim().isEmpty) {
+      errors['dob'] = 'Please select your date of birth';
+    }
+
+    if (addressController.text.trim().isEmpty) {
+      errors['address'] = 'Please enter your permanent address';
+    }
+
+    final digits = mobileController.text.trim().replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) {
+      errors['mobile'] = 'Please enter your mobile number';
+    } else if (digits.length < 7) {
+      errors['mobile'] = 'Mobile number must be at least 7 digits';
+    } else if (digits.length > 15) {
+      errors['mobile'] = 'Mobile number must not exceed 15 digits';
+    }
+
+    final email = emailController.text.trim();
+    if (email.isEmpty) {
+      errors['email'] = 'Please enter your email';
+    } else if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]{2,}$').hasMatch(email)) {
+      errors['email'] = 'Please enter a valid email address';
+    }
+
+    // ── Educational qualification ───────────────────────────────────────
+    if (registrationModel.basicEducationalQualification == null) {
+      errors['basicQual'] = 'Please select basic educational qualification';
+    }
+
+    final basicYearText = basicQualYearController.text.trim();
+    if (basicYearText.isEmpty) {
+      errors['basicQualYear'] = 'Please enter year of passing';
+    } else {
+      final basicYear = int.tryParse(basicYearText);
+      if (basicYear == null ||
+          basicYear < 1950 ||
+          basicYear > DateTime.now().year + 5) {
+        errors['basicQualYear'] =
+            'Enter a valid year (1950–${DateTime.now().year + 5})';
+      }
+    }
+
+    if (higherQualController.text.trim().isEmpty) {
+      errors['higherQual'] = 'Please enter your highest educational qualification';
+    }
+
+    final higherYearText = higherQualYearController.text.trim();
+    if (higherYearText.isEmpty) {
+      errors['higherQualYear'] = 'Please enter year of passing';
+    } else {
+      final higherYear = int.tryParse(higherYearText);
+      if (higherYear == null ||
+          higherYear < 1950 ||
+          higherYear > DateTime.now().year + 5) {
+        errors['higherQualYear'] =
+            'Enter a valid year (1950–${DateTime.now().year + 5})';
+      }
+    }
+
+    // ── Documents ────────────────────────────────────────────────────────
+    if (registrationModel.basicDocPath == null) {
+      errors['basicDoc'] = 'Please upload this document';
+    }
+    if (registrationModel.higherDocPath == null) {
+      errors['higherDoc'] = 'Please upload this document';
+    }
+    if (registrationModel.idProofPath == null) {
+      errors['idProof'] = 'Please upload your ID proof';
+    }
+    if (registrationModel.photoPath == null) {
+      errors['photo'] = 'Please upload your passport size photo';
+    }
+
+    // ── Confirmation ─────────────────────────────────────────────────────
+    if (!confirmationChecked) {
+      errors['confirmation'] =
+          'Please confirm that all information is accurate before submitting';
+    }
+
+    fieldErrors = errors;
+    notifyListeners();
+
+    if (errors.isEmpty) return null;
+    for (final key in _fieldOrder) {
+      if (errors.containsKey(key)) return errors[key];
+    }
+    return errors.values.first;
   }
 
   void updateBranch(int locationId) {
@@ -284,6 +340,7 @@ class NactetRegistrationController extends ChangeNotifier {
       'Partial payload after branch selection: ${registrationModel.toFields()}',
       tag: 'NACTET',
     );
+    clearFieldError('branch');
     notifyListeners();
   }
 
@@ -293,6 +350,7 @@ class NactetRegistrationController extends ChangeNotifier {
 
   void updateGender(String gender) {
     registrationModel.gender = gender;
+    clearFieldError('gender');
     notifyListeners();
   }
 
@@ -321,35 +379,15 @@ class NactetRegistrationController extends ChangeNotifier {
 
   void updateBasicQual(String qual) {
     registrationModel.basicEducationalQualification = qual;
+    clearFieldError('basicQual');
     notifyListeners();
   }
 
   void updateDateOfBirth(String dob) {
     registrationModel.dateOfBirth = dob;
     dobController.text = dob;
+    clearFieldError('dob');
     notifyListeners();
-  }
-
-  void updateStep(int step) {
-    currentStep = step;
-    pageController.animateToPage(
-      step,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-    notifyListeners();
-  }
-
-  void nextStep() {
-    if (currentStep < 4) {
-      updateStep(currentStep + 1);
-    }
-  }
-
-  void previousStep() {
-    if (currentStep > 0) {
-      updateStep(currentStep - 1);
-    }
   }
 
   Future<void> pickFile(String type) async {
@@ -377,28 +415,32 @@ class NactetRegistrationController extends ChangeNotifier {
         }
 
         // Read the bytes now, while the picker's cache copy is still
-        // guaranteed to exist. This form is a multi-step wizard — by the
-        // time the user reaches submit, Android may have already evicted
-        // the file_picker cache entry, so re-reading the path later can
-        // throw PathNotFoundException.
+        // guaranteed to exist. Time can pass between picking a document and
+        // hitting submit, and Android may evict the file_picker cache entry
+        // in the meantime, so re-reading the path later can throw
+        // PathNotFoundException.
         final fileBytes = await File(filePath).readAsBytes();
 
         switch (type) {
           case 'basic':
             registrationModel.basicDocPath = filePath;
             registrationModel.basicDocBytes = fileBytes;
+            clearFieldError('basicDoc');
             break;
           case 'higher':
             registrationModel.higherDocPath = filePath;
             registrationModel.higherDocBytes = fileBytes;
+            clearFieldError('higherDoc');
             break;
           case 'id':
             registrationModel.idProofPath = filePath;
             registrationModel.idProofBytes = fileBytes;
+            clearFieldError('idProof');
             break;
           case 'photo':
             registrationModel.photoPath = filePath;
             registrationModel.photoBytes = fileBytes;
+            clearFieldError('photo');
             break;
         }
         notifyListeners();
@@ -470,19 +512,12 @@ class NactetRegistrationController extends ChangeNotifier {
   }
 
   void reset() {
-    currentStep = 0;
-    // The PageController retains its last physical page across reopens since
-    // this controller is a long-lived, app-level singleton — without this,
-    // the PageView stays on the last-viewed step (e.g. step 4) even though
-    // currentStep and all the form fields below have been reset to step 1.
-    if (pageController.hasClients) {
-      pageController.jumpToPage(0);
-    }
     isSuccess = false;
     isLoading = false;
     confirmationChecked = false;
     errorMessage = null;
     fileSizeError = null;
+    fieldErrors = {};
     successData = null;
     branchAutoDetected = false;
     branchName = null;
@@ -522,14 +557,14 @@ class NactetRegistrationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void logStep(int step) {
+  void logFormSnapshot() {
     final m = registrationModel;
     developer.log(
       '\n'
       '╔══════════════════════════════════════════════════════════╗\n'
-      '║        📋  NACTET FORM — STEP $step COMPLETED              ║\n'
+      '║        📋  NACTET FORM — READY TO SUBMIT                  ║\n'
       '╠══════════════════════════════════════════════════════════╣\n'
-      '║  STEP 1 — PERSONAL\n'
+      '║  PERSONAL\n'
       '║    branch              : ${m.branch ?? '—'}\n'
       '║    name                : ${nameController.text}\n'
       '║    guardian_name       : ${guardianNameController.text}\n'
@@ -541,25 +576,25 @@ class NactetRegistrationController extends ChangeNotifier {
       '║    mobile_full         : $_mobileCountryCode${mobileController.text}\n'
       '║    email               : ${emailController.text}\n'
       '╠══════════════════════════════════════════════════════════╣\n'
-      '║  STEP 2 — EDUCATION\n'
+      '║  EDUCATION\n'
       '║    basic_qual          : ${m.basicEducationalQualification ?? '—'}\n'
       '║    basic_qual_year     : ${basicQualYearController.text}\n'
       '║    higher_qual         : ${higherQualController.text}\n'
       '║    higher_qual_year    : ${higherQualYearController.text}\n'
       '╠══════════════════════════════════════════════════════════╣\n'
-      '║  STEP 3 — DOCUMENTS\n'
+      '║  DOCUMENTS\n'
       '║    basic_doc           : ${m.basicDocPath?.split('/').last ?? '—'}\n'
       '║    higher_doc          : ${m.higherDocPath?.split('/').last ?? '—'}\n'
       '║    id_proof            : ${m.idProofPath?.split('/').last ?? '—'}\n'
       '║    passport_photo      : ${m.photoPath?.split('/').last ?? '—'}\n'
       '╠══════════════════════════════════════════════════════════╣\n'
-      '║  STEP 4 — COURSE\n'
+      '║  COURSE\n'
       '║    enrollment          : ${m.enrollment ?? '—'}\n'
       '║    course              : ${m.course ?? '—'}\n'
       '║    batch               : ${m.batch ?? '—'}\n'
       '║    confirmed           : $confirmationChecked\n'
       '╚══════════════════════════════════════════════════════════╝',
-      name: '📋 NACTET.Step$step',
+      name: '📋 NACTET.Submit',
     );
   }
 
@@ -574,7 +609,6 @@ class NactetRegistrationController extends ChangeNotifier {
     basicQualYearController.dispose();
     higherQualController.dispose();
     higherQualYearController.dispose();
-    pageController.dispose();
     super.dispose();
   }
 }

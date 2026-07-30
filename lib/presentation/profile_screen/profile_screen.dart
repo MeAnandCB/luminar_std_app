@@ -1319,14 +1319,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Arrears Status',
                           profileProvider.profile?.academicInfo?.anyArrears ==
                                   true
-                              ? 'No Arrears (Papers Cleared)'
-                              : 'Has Arrears',
+                              ? 'Has Arrears'
+                              : 'No Arrears (Papers Cleared)',
                           isSuccess:
                               profileProvider
-                                  .profile
-                                  ?.academicInfo
-                                  ?.anyArrears ??
-                              false,
+                                      .profile
+                                      ?.academicInfo
+                                      ?.anyArrears !=
+                                  true,
                         ),
                       ],
                     ),
@@ -1530,102 +1530,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     SizedBox(height: 20),
 
-                    // ── App Theme (attractive new design) ───────────────
+                    // ── App Theme (single compact card) ─────────────────
                     Consumer<ThemeProvider>(
                       builder: (context, themeProvider, child) {
                         return Container(
                           margin: EdgeInsets.symmetric(horizontal: 20),
-                          padding: EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: AppColors.cardBackground,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withOpacity(0.1),
-                                blurRadius: 20,
-                                offset: const Offset(0, 5),
+                                color: AppColors.primary.withOpacity(0.08),
+                                blurRadius: 14,
+                                offset: const Offset(0, 4),
                               ),
                             ],
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
                             children: [
-                              // Section header
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      Icons.brightness_6_rounded,
-                                      color: AppColors.primary,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text(
-                                    'App Theme',
-                                    style: AppTextStyles.sectionTitle,
-                                  ),
-                                ],
+                              Icon(
+                                Icons.brightness_6_rounded,
+                                color: AppColors.primary,
+                                size: 18,
                               ),
-                              SizedBox(height: 16),
-
-                              // System Default
-                              _buildThemeOption(
-                                label: 'System Default',
-                                subtitle: 'Follows your device setting',
+                              const SizedBox(width: 10),
+                              Text(
+                                'App Theme',
+                                style: AppTextStyles.sectionTitle.copyWith(
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const Spacer(),
+                              _buildThemeSegment(
                                 icon: Icons.settings_suggest_rounded,
-                                selectedBg: [
-                                  Color(0xFFF7F5FF),
-                                  Color(0xFFEDE9FE),
-                                ],
-                                iconColor: AppColors.primary,
-                                iconBg: AppColors.primary.withOpacity(0.12),
-                                isDark: false,
-                                isSelected:
+                                selected:
                                     themeProvider.themeMode == ThemeMode.system,
                                 onTap: () => themeProvider.setThemeMode(
                                   ThemeMode.system,
                                 ),
                               ),
-                              SizedBox(height: 10),
-
-                              // Light Mode
-                              _buildThemeOption(
-                                label: 'Light Mode',
-                                subtitle: 'Bright & clean interface',
+                              const SizedBox(width: 6),
+                              _buildThemeSegment(
                                 icon: Icons.light_mode_rounded,
-                                selectedBg: [
-                                  Color(0xFFFFFBF0),
-                                  Color(0xFFFEF3C7),
-                                ],
-                                iconColor: Color(0xFFF59E0B),
-                                iconBg: Color(0xFFF59E0B).withOpacity(0.15),
-                                isDark: false,
-                                isSelected:
+                                selected:
                                     themeProvider.themeMode == ThemeMode.light,
                                 onTap: () =>
                                     themeProvider.setThemeMode(ThemeMode.light),
                               ),
-                              SizedBox(height: 10),
-
-                              // Dark Mode
-                              _buildThemeOption(
-                                label: 'Dark Mode',
-                                subtitle: 'Easy on the eyes',
+                              const SizedBox(width: 6),
+                              _buildThemeSegment(
                                 icon: Icons.dark_mode_rounded,
-                                selectedBg: [
-                                  Color(0xFF1E163A),
-                                  Color(0xFF2E2075),
-                                ],
-                                iconColor: Color(0xFFB8AAFF),
-                                iconBg: Colors.white.withOpacity(0.10),
-                                isDark: true,
-                                isSelected:
+                                selected:
                                     themeProvider.themeMode == ThemeMode.dark,
                                 onTap: () =>
                                     themeProvider.setThemeMode(ThemeMode.dark),
@@ -2303,114 +2259,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ─── Attractive theme option tile ──────────────────────────────────────────
 
-  Widget _buildThemeOption({
-    required String label,
-    required String subtitle,
+  /// Small, single-button theme segment — replaces the old full-width
+  /// gradient option rows so the three modes (system/light/dark) fit as one
+  /// compact row inside a single card instead of three stacked cards.
+  Widget _buildThemeSegment({
     required IconData icon,
-    required List<Color> selectedBg,
-    required Color iconColor,
-    required Color iconBg,
-    required bool isDark,
-    required bool isSelected,
+    required bool selected,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isSelected
-                ? selectedBg
-                : isDark
-                ? [const Color(0xFF1E163A), const Color(0xFF1E163A)]
-                : [AppColors.cardBackground, AppColors.cardBackground],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? (isDark
-                      ? Colors.white.withOpacity(0.12)
-                      : AppColors.primary.withOpacity(0.22))
-                : (isDark
-                      ? Colors.white.withOpacity(0.06)
-                      : AppColors.borderColor.withOpacity(0.3)),
-            width: isSelected ? 1.5 : 1,
-          ),
+          color: selected
+              ? AppColors.primary
+              : AppColors.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: Row(
-          children: [
-            // Icon box
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: iconColor, size: 20),
-            ),
-            SizedBox(width: 14),
-            // Labels
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : AppColors.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.45)
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Animated check circle
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected
-                    ? AppColors.primary
-                    : (isDark
-                          ? Colors.white.withOpacity(0.08)
-                          : Colors.black.withOpacity(0.06)),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primary
-                      : (isDark
-                            ? Colors.white.withOpacity(0.15)
-                            : Colors.black.withOpacity(0.10)),
-                  width: 1.5,
-                ),
-              ),
-              child: isSelected
-                  ? const Icon(
-                      Icons.check_rounded,
-                      color: Colors.white,
-                      size: 13,
-                    )
-                  : null,
-            ),
-          ],
+        child: Icon(
+          icon,
+          size: 17,
+          color: selected ? Colors.white : AppColors.textSecondary,
         ),
       ),
     );
