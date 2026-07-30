@@ -25,6 +25,7 @@ import 'package:luminar_std/repository/nactet_registration/model/nactet_check_di
 import 'package:luminar_std/presentation/jobs_screen/jobs_screen.dart';
 import 'package:luminar_std/presentation/referral_screen/referral_screen.dart';
 import 'package:luminar_std/presentation/home_screen/widget/onam_event_card.dart';
+import 'package:luminar_std/presentation/home_screen/widget/birthday_card.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -227,14 +228,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         }),
 
                         // ── BIRTHDAY CARD ──────────────────────────────────────────
+                        // Dashboard data is always loaded on this screen; the
+                        // ProfileController's copy only gets fetched once the
+                        // user visits the Profile tab, so relying on it alone
+                        // left the card never showing for anyone who hadn't
+                        // been there yet this session. Dashboard's DOB is
+                        // checked first, falling back to Profile's.
                         if (_isBirthday(
-                          profileProvider
-                              .profileData
-                              ?.personalInfo
-                              ?.dateOfBirth,
+                          dashboard?.studentDetails?.personalInfo?.dateOfBirth ??
+                              profileProvider.profileData?.personalInfo?.dateOfBirth,
                         )) ...[
                           const SizedBox(height: 20),
-                          _buildBirthdayCard(studentName.split(' ').first),
+                          BirthdayCard(name: studentName.split(' ').first),
                         ],
 
                         if (dashboardProvider.shouldShowNactetBanner) ...[
@@ -1173,112 +1178,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
       '🎉 Birthday Check: DOB = ${dob.month}/${dob.day} | Today = ${now.month}/${now.day}',
     );
     return dob.month == now.month && dob.day == now.day;
-  }
-
-  Widget _buildBirthdayCard(String name) {
-    return Container(
-      width: double.infinity,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFF758C), Color(0xFFFF7EB3)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF758C).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Background decorations
-          Positioned(
-            top: -20,
-            right: -20,
-            child: Text(
-              "🎈",
-              style: TextStyle(
-                fontSize: 80,
-                color: Colors.white.withOpacity(0.15),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -10,
-            right: 40,
-            child: Text(
-              "✨",
-              style: TextStyle(
-                fontSize: 50,
-                color: Colors.white.withOpacity(0.15),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 20,
-            left: 150,
-            child: Text(
-              "🎉",
-              style: TextStyle(
-                fontSize: 40,
-                color: Colors.white.withOpacity(0.15),
-              ),
-            ),
-          ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.25),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.cake_rounded,
-                    size: 40,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Happy Birthday!',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Wishing you an amazing day and a wonderful year ahead, $name!',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   // ══════════════════════════════════════════════════════
