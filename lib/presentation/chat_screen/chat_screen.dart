@@ -93,6 +93,91 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   // ── All chats (for forward sheet) ─────────────────────────────────────────
   List<Chat> _allChats = [];
 
+  // ── Multi-select message mode (long-press to start) ───────────────────────
+  bool _isSelectionMode = false;
+  final Set<String> _selectedMessageUids = {};
+
+  void _enterSelectionMode(String uid) {
+    setState(() {
+      _isSelectionMode = true;
+      _selectedMessageUids
+        ..clear()
+        ..add(uid);
+    });
+  }
+
+  void _toggleMessageSelection(String uid) {
+    setState(() {
+      if (_selectedMessageUids.contains(uid)) {
+        _selectedMessageUids.remove(uid);
+      } else {
+        _selectedMessageUids.add(uid);
+      }
+      if (_selectedMessageUids.isEmpty) _isSelectionMode = false;
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedMessageUids.clear();
+    });
+  }
+
+  Future<void> _forwardSelectedMessages() async {
+    final selected =
+        _messages.where((m) => _selectedMessageUids.contains(m.uid)).toList()
+          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    if (selected.isEmpty) return;
+
+    final result = await showForwardSheet(
+      context: context,
+      messages: selected,
+      allChats: _allChats,
+      apiService: widget.apiService,
+    );
+
+    if (!mounted) return;
+    _exitSelectionMode();
+    if (result == null) return;
+
+    if (result.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_outline,
+                color: Colors.white,
+                size: 18,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                selected.length > 1
+                    ? '${selected.length} messages forwarded'
+                    : 'Message forwarded',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF1A1A2E),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } else if (result.successCount > 0) {
+      _showErrorSnackbar(
+        'Some messages could not be forwarded to: ${result.failedChatNames.join(", ")}',
+      );
+    } else {
+      _showErrorSnackbar(
+        'Forward failed: ${result.error ?? "Unknown error"}',
+      );
+    }
+  }
+
   // ── Edit state ─────────────────────────────────────────────────────────────
   Message? _editingMessage;
   bool _isEditing = false;
@@ -1958,7 +2043,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
                     final result = await showForwardSheet(
                       context: context,
-                      message: message,
+                      messages: [message],
                       allChats: _allChats,
                       apiService: widget.apiService,
                     );
@@ -1970,16 +2055,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Row(
-                            children: const [
-                              Icon(
+                            children: [
+                              const Icon(
                                 Icons.check_circle_outline,
                                 color: Colors.white,
                                 size: 18,
                               ),
-                              SizedBox(width: 10),
+                              const SizedBox(width: 10),
                               Text(
-                                'Message forwarded',
-                                style: TextStyle(
+                                result.successCount > 1
+                                    ? 'Message forwarded to ${result.successCount} chats'
+                                    : 'Message forwarded',
+                                style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1994,6 +2081,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           margin: const EdgeInsets.all(16),
                           duration: const Duration(seconds: 3),
                         ),
+                      );
+                    } else if (result.successCount > 0) {
+                      _showErrorSnackbar(
+                        'Forwarded to ${result.successCount} chat${result.successCount > 1 ? "s" : ""}, '
+                        'failed for ${result.failedChatNames.join(", ")}',
                       );
                     } else {
                       _showErrorSnackbar(
@@ -2461,6 +2553,48 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ],
       );
     }
+  }
+
+  // ── Selection-mode app bar (long-press a message to enter) ────────────────
+  PreferredSizeWidget _buildSelectionAppBar() {
+    final count = _selectedMessageUids.length;
+    final singleSelected = count == 1
+        ? _messages.firstWhere((m) => m.uid == _selectedMessageUids.first)
+        : null;
+
+    return AppBar(
+      backgroundColor: AppColors.cardBackground,
+      elevation: 0.5,
+      shadowColor: AppColors.shadowLight,
+      leading: IconButton(
+        icon: Icon(Icons.close, color: AppColors.textPrimary),
+        onPressed: _exitSelectionMode,
+      ),
+      title: Text(
+        '$count selected',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      actions: [
+        if (singleSelected != null)
+          IconButton(
+            icon: Icon(Icons.more_vert, color: AppColors.textPrimary),
+            tooltip: 'More options',
+            onPressed: () {
+              _exitSelectionMode();
+              _showMessageOptions(context, singleSelected);
+            },
+          ),
+        IconButton(
+          icon: Icon(Icons.forward_rounded, color: AppColors.textPrimary),
+          tooltip: 'Forward',
+          onPressed: count == 0 ? null : _forwardSelectedMessages,
+        ),
+      ],
+    );
   }
 
   Widget _buildTicks(Message message) {
@@ -3809,8 +3943,20 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         widget.chat.chatType == ChatType.group ||
         widget.chat.chatType == ChatType.batch;
 
+    final isSelected = _selectedMessageUids.contains(message.uid);
+
     final bubble = GestureDetector(
-      onLongPress: () => _showMessageOptions(context, message),
+      behavior: _isSelectionMode ? HitTestBehavior.opaque : HitTestBehavior.deferToChild,
+      onLongPress: () {
+        if (_isSelectionMode) {
+          _toggleMessageSelection(message.uid);
+        } else {
+          _enterSelectionMode(message.uid);
+        }
+      },
+      onTap: _isSelectionMode
+          ? () => _toggleMessageSelection(message.uid)
+          : null,
       child: Padding(
         padding: EdgeInsets.only(
           top: 2,
@@ -4009,7 +4155,44 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       ),
     );
 
+    if (_isSelectionMode) {
+      return Container(
+        color: isSelected
+            ? const Color(0xFF7B9FD4).withValues(alpha: 0.08)
+            : Colors.transparent,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 40,
+              child: Center(child: _buildSelectionCheckbox(isSelected)),
+            ),
+            Expanded(child: bubble),
+          ],
+        ),
+      );
+    }
+
     return _buildSwipeToReply(message, bubble);
+  }
+
+  Widget _buildSelectionCheckbox(bool selected) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: selected ? const Color(0xFF7B9FD4) : Colors.transparent,
+        border: Border.all(
+          color: selected ? const Color(0xFF7B9FD4) : Colors.grey.shade400,
+          width: 1.5,
+        ),
+      ),
+      child: selected
+          ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+          : null,
+    );
   }
 
   // ── Message area ───────────────────────────────────────────────────────────
@@ -4725,7 +4908,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       // We set this to false to prevent the background image from shrinking
       // when the keyboard appears. We handle the padding manually below.
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(
+      appBar: _isSelectionMode
+          ? _buildSelectionAppBar()
+          : AppBar(
         backgroundColor: AppColors.cardBackground,
         elevation: 0.5,
         shadowColor: AppColors.shadowLight,

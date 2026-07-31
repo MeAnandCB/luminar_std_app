@@ -8,12 +8,34 @@ import 'package:luminar_std/repository/chat_list_screen/service/api_service.dart
 
 // ── Forward result returned to the caller ─────────────────────────────────────
 class ForwardResult {
-  final bool success;
+  final bool success; // true only if every chat succeeded
+  final int successCount;
+  final int failureCount;
+  final List<String> failedChatNames;
   final String? error;
-  const ForwardResult({required this.success, this.error});
+
+  const ForwardResult({
+    required this.success,
+    this.successCount = 0,
+    this.failureCount = 0,
+    this.failedChatNames = const [],
+    this.error,
+  });
 }
 
-// ── Forward API service (bulk endpoint) ───────────────────────────────────────
+// ── Forward progress while sending one by one ─────────────────────────────────
+class ForwardProgress {
+  final int sentCount;
+  final int total;
+  final Chat currentChat;
+  const ForwardProgress({
+    required this.sentCount,
+    required this.total,
+    required this.currentChat,
+  });
+}
+
+// ── Forward API service (sends one message per chat, sequentially) ───────────
 class ForwardMessageService {
   final ChatApiService apiService;
   final ApiService _apiService = ApiService();
@@ -21,52 +43,65 @@ class ForwardMessageService {
   ForwardMessageService({required this.apiService});
 
   Future<ForwardResult> forwardMessage({
-    required Message message,
+    required List<Message> messages,
     required List<Chat> selectedChats,
+    void Function(ForwardProgress progress)? onProgress,
   }) async {
-    final chatUids = selectedChats.map((c) => c.uid).toList();
-    final userIds = selectedChats
-        .where(
-          (c) =>
-              c.chatType == ChatType.individual && c.otherParticipant != null,
-        )
-        .map((c) => c.otherParticipant!.id)
-        .toSet()
-        .toList();
+    var completed = 0;
+    final total = messages.length * selectedChats.length;
+    var chatsSucceeded = 0;
+    final failedChatNames = <String>[];
 
-    final body = <String, dynamic>{
-      'chat_uids': chatUids,
-      'batch_uids': <String>[],
-      'user_ids': userIds,
-      'content': _resolveForwardContent(message),
-      'message_type': message.isImage
-          ? 'image'
-          : message.isAudio
-          ? 'audio'
-          : message.isFile
-          ? 'file'
-          : 'text',
-    };
+    // Sequential: one chat at a time, and within a chat, one message at a
+    // time in original order — mirrors forwarding them manually, one by one.
+    for (final chat in selectedChats) {
+      var chatOk = true;
+      for (final message in messages) {
+        onProgress?.call(
+          ForwardProgress(sentCount: completed, total: total, currentChat: chat),
+        );
 
-    if (message.mediaUrl != null) {
-      body['attachment_url'] = message.mediaUrl;
-      body['file'] = message.mediaUrl;
-      body['file_url'] = message.mediaUrl;
-      body['file_name'] = message.fileName ?? '';
+        final body = <String, dynamic>{
+          'content': _resolveForwardContent(message),
+          'message_type': message.isImage
+              ? 'image'
+              : message.isAudio
+              ? 'audio'
+              : message.isFile
+              ? 'file'
+              : 'text',
+        };
+        if (message.mediaUrl != null) {
+          body['attachment_url'] = message.mediaUrl;
+          body['file'] = message.mediaUrl;
+          body['file_url'] = message.mediaUrl;
+          body['file_name'] = message.fileName ?? '';
+        }
+
+        final response = await _apiService.post(
+          endpoint: '${AppEndpoints.sendMessage}${chat.uid}/messages/send/',
+          token: apiService.token,
+          body: body,
+        );
+
+        completed++;
+        if (!response.success) chatOk = false;
+      }
+      if (chatOk) {
+        chatsSucceeded++;
+      } else {
+        failedChatNames.add(chat.name);
+      }
     }
 
-    final response = await _apiService.post(
-      endpoint: AppEndpoints.bulkMessage,
-      token: apiService.token,
-      body: body,
-    );
-
-    if (response.success) {
-      return const ForwardResult(success: true);
-    }
     return ForwardResult(
-      success: false,
-      error: response.message ?? 'Unknown error',
+      success: failedChatNames.isEmpty,
+      successCount: chatsSucceeded,
+      failureCount: failedChatNames.length,
+      failedChatNames: failedChatNames,
+      error: failedChatNames.isEmpty
+          ? null
+          : 'Failed to send to: ${failedChatNames.join(", ")}',
     );
   }
 
@@ -83,13 +118,13 @@ class ForwardMessageService {
 
 // ── Forward Sheet ─────────────────────────────────────────────────────────────
 class ForwardMessageSheet extends StatefulWidget {
-  final Message message;
+  final List<Message> messages;
   final List<Chat> allChats;
   final ChatApiService apiService;
 
   const ForwardMessageSheet({
     super.key,
-    required this.message,
+    required this.messages,
     required this.allChats,
     required this.apiService,
   });
@@ -104,6 +139,7 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isSending = false;
+  ForwardProgress? _progress;
   late ForwardMessageService _forwardService;
 
   @override
@@ -140,19 +176,29 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
 
   Future<void> _send() async {
     if (_selectedUids.isEmpty || _isSending) return;
-    setState(() => _isSending = true);
+    setState(() {
+      _isSending = true;
+      _progress = null;
+    });
 
     final selected = widget.allChats
         .where((c) => _selectedUids.contains(c.uid))
         .toList();
 
     final result = await _forwardService.forwardMessage(
-      message: widget.message,
+      messages: widget.messages,
       selectedChats: selected,
+      onProgress: (progress) {
+        if (!mounted) return;
+        setState(() => _progress = progress);
+      },
     );
 
     if (!mounted) return;
-    setState(() => _isSending = false);
+    setState(() {
+      _isSending = false;
+      _progress = null;
+    });
     Navigator.pop(context, result);
   }
 
@@ -202,7 +248,8 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
 
   // ── Message preview card ───────────────────────────────────────────────────
   Widget _buildMessagePreview() {
-    final msg = widget.message;
+    if (widget.messages.length > 1) return _buildMultiMessagePreview();
+    final msg = widget.messages.first;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(12),
@@ -300,6 +347,49 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
     );
   }
 
+  // ── Multiple messages preview card ────────────────────────────────────────
+  Widget _buildMultiMessagePreview() {
+    final count = widget.messages.length;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderColor),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 36,
+            decoration: BoxDecoration(
+              color: const Color(0xFF7B9FD4),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Icon(
+            Icons.forward_to_inbox_rounded,
+            size: 20,
+            color: const Color(0xFF7B9FD4),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '$count messages selected',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -339,7 +429,9 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'Forward Message',
+                  widget.messages.length > 1
+                      ? 'Forward ${widget.messages.length} Messages'
+                      : 'Forward Message',
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -640,13 +732,30 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
                   ),
                 ),
                 child: _isSending
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            _progress == null
+                                ? 'Sending…'
+                                : 'Sending to ${_progress!.currentChat.name} '
+                                      '(${_progress!.sentCount + 1}/${_progress!.total})…',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -684,7 +793,7 @@ class _ForwardMessageSheetState extends State<ForwardMessageSheet>
 // ── Convenience function ───────────────────────────────────────────────────────
 Future<ForwardResult?> showForwardSheet({
   required BuildContext context,
-  required Message message,
+  required List<Message> messages,
   required List<Chat> allChats,
   required ChatApiService apiService,
 }) {
@@ -697,7 +806,7 @@ Future<ForwardResult?> showForwardSheet({
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: ForwardMessageSheet(
-        message: message,
+        messages: messages,
         allChats: allChats,
         apiService: apiService,
       ),

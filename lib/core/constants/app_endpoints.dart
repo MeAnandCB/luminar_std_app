@@ -104,13 +104,18 @@ class AppEndpoints {
       '/api/student_portal/jobs/'; // Suffix with {uid}/apply/
   static const String jobApplicationDetail =
       '/api/student_portal/jobs/applications/'; // Suffix with {application_uid}/
+
+  // Student Tasks
+  static const String studentTasksMy = '/api/student-tasks/my/';
+  static const String studentTaskSubmit =
+      '/api/student-tasks/assignments/'; // Suffix with {assignment_uid}/submissions/create/
 }
 
 class GlobalLinks {
-   static const String baseUrl = 'https://api.crm.luminartechnohub.com';
-  //static const String baseUrl = 'http://192.168.1.35:8000';
+  //static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
+  static const String baseUrl = 'http://192.168.1.53:8000';
   static const String websocketUrl =
-      'wss://api.crm.luminartechnohub.com/ws/';
+      'wss://api.crm.dev.luminartechnohub.com/ws/';
 }
 
 class LaptopApiConfig {

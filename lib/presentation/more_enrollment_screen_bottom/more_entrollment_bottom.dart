@@ -15,6 +15,9 @@ import 'package:shimmer/shimmer.dart';
 import 'package:luminar_std/presentation/referral_status_screen/referral_status_screen.dart';
 import 'package:luminar_std/presentation/jobs_screen/jobs_screen.dart';
 import 'package:luminar_std/presentation/laptop_scanner/screens/laptop_home_screen.dart';
+import 'package:luminar_std/presentation/class_task/views/class_task_screen.dart';
+import 'package:luminar_std/repository/class_task/class_task_service.dart';
+import 'package:luminar_std/repository/exam_screen/service.dart';
 
 // ─── palette ─────────────────────────────────────────────────────────────────
 // ─── palette ─────────────────────────────────────────────────────────────────
@@ -57,6 +60,13 @@ const _kFeatures = [
     'Watch your recorded class videos',
     Color(0xFF3B82F6),
     Color(0xFF60A5FA),
+  ),
+  _Feature(
+    Icons.assignment_turned_in_rounded,
+    'Class Task',
+    'View and submit your class tasks',
+    Color(0xFF6366F1),
+    Color(0xFF818CF8),
   ),
   _Feature(
     Icons.videocam_rounded,
@@ -378,7 +388,7 @@ class _TabBar extends StatelessWidget {
 // ENROLLMENT PAGE  (course card + feature list)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _EnrollmentPage extends StatelessWidget {
+class _EnrollmentPage extends StatefulWidget {
   const _EnrollmentPage({
     required this.enrollment,
     required this.index,
@@ -390,6 +400,61 @@ class _EnrollmentPage extends StatelessWidget {
   final int index;
   final int unreadExams;
   final int unviewedJobs;
+
+  @override
+  State<_EnrollmentPage> createState() => _EnrollmentPageState();
+}
+
+class _EnrollmentPageState extends State<_EnrollmentPage> {
+  final ClassTaskService _taskService = ClassTaskService();
+  int _pendingTaskCount = 0;
+  int _pendingExamCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPendingTasks();
+    _fetchPendingExams();
+  }
+
+  @override
+  void didUpdateWidget(covariant _EnrollmentPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enrollment?.batch?.uid != widget.enrollment?.batch?.uid) {
+      _fetchPendingTasks();
+      _fetchPendingExams();
+    }
+  }
+
+  Future<void> _fetchPendingTasks() async {
+    final batchId = widget.enrollment?.batch?.uid ?? '';
+    final res = await _taskService.getMyTasks(batchUid: batchId);
+    if (!mounted) return;
+    if (res.success && res.data != null) {
+      final unsubmitted = res.data!.assignments.where((a) {
+        final status = a.status.toUpperCase();
+        return status == 'NOT_SUBMITTED';
+      }).toList();
+
+      setState(() {
+        _pendingTaskCount = unsubmitted.length;
+      });
+    }
+  }
+
+  Future<void> _fetchPendingExams() async {
+    try {
+      final res = await ExamService().fetchExamSessions();
+      if (!mounted) return;
+      if (res.success && res.data != null) {
+        final unreadList =
+            res.data!.data.where((s) => s.isVisibleToStudent).toList();
+        setState(() {
+          _pendingExamCount = unreadList.length;
+        });
+      }
+    } catch (_) {}
+  }
 
   void _showAccessDenied(BuildContext context) {
     showDialog(
@@ -422,6 +487,11 @@ class _EnrollmentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enrollment = widget.enrollment;
+    final index = widget.index;
+    final unreadExams = widget.unreadExams;
+    final unviewedJobs = widget.unviewedJobs;
+
     final batchId = enrollment.batch?.uid ?? '';
     final batchName = enrollment.batch?.batchName ?? 'Batch';
     final enrollId = enrollment.uid ?? '';
@@ -558,7 +628,7 @@ class _EnrollmentPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    AppConfig.hidePayments ? '8 features' : '9 features',
+                    AppConfig.hidePayments ? '9 features' : '10 features',
                     style: TextStyle(
                       fontSize: 11,
                       color: _kPrimary,
@@ -611,17 +681,31 @@ class _EnrollmentPage extends StatelessWidget {
                   );
                 },
               ),
-              // SizedBox(height: 12),
-              // _FeatureCard(
-              //   feature: _kFeatures[2],
-              //   onTap: () => Navigator.push(
-              //     context,
-              //     MaterialPageRoute(builder: (_) => DemoScreen()),
-              //   ),
-              // ),
+              // 3rd — Class Task
               SizedBox(height: 12),
               _FeatureCard(
                 feature: _kFeatures[2],
+                badgeCount: _pendingTaskCount,
+                onTap: () async {
+                  if (!crmAccess) {
+                    _showAccessDenied(context);
+                    return;
+                  }
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ClassTaskScreen(
+                        batchUid: batchId,
+                        batchName: batchName,
+                      ),
+                    ),
+                  );
+                  _fetchPendingTasks();
+                },
+              ),
+              SizedBox(height: 12),
+              _FeatureCard(
+                feature: _kFeatures[3],
                 onTap: () {
                   if (!crmAccess) {
                     _showAccessDenied(context);
@@ -633,10 +717,10 @@ class _EnrollmentPage extends StatelessWidget {
                   );
                 },
               ),
-              // 4th — Jobs
+              // 5th — Jobs
               SizedBox(height: 12),
               _FeatureCard(
-                feature: _kFeatures[3],
+                feature: _kFeatures[4],
                 badgeCount: unviewedJobs,
                 onTap: () => Navigator.push(
                   context,
@@ -646,7 +730,7 @@ class _EnrollmentPage extends StatelessWidget {
               if (!AppConfig.hidePayments) ...[
                 SizedBox(height: 12),
                 _FeatureCard(
-                  feature: _kFeatures[4],
+                  feature: _kFeatures[5],
                   onTap: () {
                     if (toEnrollDetails) {
                       Navigator.push(
@@ -674,22 +758,23 @@ class _EnrollmentPage extends StatelessWidget {
               ],
               SizedBox(height: 12),
               _FeatureCard(
-                feature: _kFeatures[5],
-                badgeCount: unreadExams,
-                onTap: () {
+                feature: _kFeatures[6],
+                badgeCount: _pendingExamCount > 0 ? _pendingExamCount : unreadExams,
+                onTap: () async {
                   if (!crmAccess) {
                     _showAccessDenied(context);
                     return;
                   }
-                  Navigator.push(
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const ExamScreen()),
                   );
+                  _fetchPendingExams();
                 },
               ),
               SizedBox(height: 12),
               _FeatureCard(
-                feature: _kFeatures[6],
+                feature: _kFeatures[7],
                 onTap: () {
                   if (!crmAccess) {
                     _showAccessDenied(context);
@@ -705,7 +790,7 @@ class _EnrollmentPage extends StatelessWidget {
               ),
               SizedBox(height: 12),
               _FeatureCard(
-                feature: _kFeatures[7],
+                feature: _kFeatures[8],
                 onTap: () {
                   final studentId = dashCtrl.dashboard?.studentDetails?.basicInfo?.studentId;
                   if (studentId == null || studentId.isEmpty) {
@@ -724,7 +809,7 @@ class _EnrollmentPage extends StatelessWidget {
               ),
               SizedBox(height: 12),
               _FeatureCard(
-                feature: _kFeatures[8],
+                feature: _kFeatures[9],
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
