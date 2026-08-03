@@ -179,10 +179,10 @@ class StudentProfile {
       whatsappNumber: json['whatsapp_number'] ?? '',
       profilePicture: json['profile_picture'] ?? '',
       dateOfBirth: json['date_of_birth'] ?? '',
-      age: json['age'] ?? 0,
+      age: (json['age'] as num?)?.toInt() ?? 0,
       qualification: Qualification.fromJson(json['qualification'] ?? {}),
       college: json['college'] ?? '',
-      passOutYear: json['pass_out_year'] ?? 0,
+      passOutYear: (json['pass_out_year'] as num?)?.toInt() ?? 0,
       specialization: json['specialization'] ?? '',
       cgpa: (json['cgpa'] ?? 0.0).toDouble(),
       anyArrears: json['any_arrears'] ?? false,
@@ -340,9 +340,9 @@ class EnrollmentSummary {
 
   factory EnrollmentSummary.fromJson(Map<String, dynamic> json) {
     return EnrollmentSummary(
-      totalEnrollments: json['total_enrollments'] ?? 0,
-      activeEnrollments: json['active_enrollments'] ?? 0,
-      completedEnrollments: json['completed_enrollments'] ?? 0,
+      totalEnrollments: (json['total_enrollments'] as num?)?.toInt() ?? 0,
+      activeEnrollments: (json['active_enrollments'] as num?)?.toInt() ?? 0,
+      completedEnrollments: (json['completed_enrollments'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -452,10 +452,10 @@ class ReferralInfo {
 
   factory ReferralInfo.fromJson(Map<String, dynamic> json) {
     return ReferralInfo(
-      totalReferrals: json['total_referrals'] ?? 0,
-      totalRewardsEarned: json['total_rewards_earned'] ?? 0,
-      pendingRewardsCount: json['pending_rewards_count'] ?? 0,
-      paidRewardsCount: json['paid_rewards_count'] ?? 0,
+      totalReferrals: (json['total_referrals'] as num?)?.toInt() ?? 0,
+      totalRewardsEarned: (json['total_rewards_earned'] as num?)?.toInt() ?? 0,
+      pendingRewardsCount: (json['pending_rewards_count'] as num?)?.toInt() ?? 0,
+      paidRewardsCount: (json['paid_rewards_count'] as num?)?.toInt() ?? 0,
       canRefer: json['can_refer'] ?? false,
     );
   }
@@ -518,10 +518,10 @@ class QuickStats {
 
   factory QuickStats.fromJson(Map<String, dynamic> json) {
     return QuickStats(
-      daysSinceAdmission: json['days_since_admission'] ?? 0,
-      activeBatchesCount: json['active_batches_count'] ?? 0,
-      pendingEmiCount: json['pending_emi_count'] ?? 0,
-      completedCoursesCount: json['completed_courses_count'] ?? 0,
+      daysSinceAdmission: (json['days_since_admission'] as num?)?.toInt() ?? 0,
+      activeBatchesCount: (json['active_batches_count'] as num?)?.toInt() ?? 0,
+      pendingEmiCount: (json['pending_emi_count'] as num?)?.toInt() ?? 0,
+      completedCoursesCount: (json['completed_courses_count'] as num?)?.toInt() ?? 0,
     );
   }
 

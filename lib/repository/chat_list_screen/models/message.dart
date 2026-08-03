@@ -266,7 +266,7 @@ class Reaction {
 
   factory Reaction.fromJson(Map<String, dynamic> json) => Reaction(
     emoji: json['emoji']?.toString() ?? '',
-    userId: json['user_id'] as int? ?? 0,
+    userId: Message._parseInt(json['user_id']) ?? 0,
     userName: json['user_name']?.toString() ?? '',
     createdAt: DateTime.parse(
       json['created_at']?.toString() ?? DateTime.now().toIso8601String(),

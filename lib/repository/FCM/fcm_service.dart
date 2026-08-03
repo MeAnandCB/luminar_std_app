@@ -272,6 +272,20 @@ class FCMService {
           payload: jsonEncode(message.data),
         );
       }
+
+      // The bottom-nav chat badge only gets live updates from the WebSocket,
+      // which doesn't connect until the user opens the Chat tab at least once
+      // this session. Before that (or if the socket's briefly reconnecting),
+      // this FCM push is the only signal a new message arrived — nudge the
+      // badge to refresh from both possible sources (see totalUnreadCount).
+      if (message.data['type'] == 'chat_message') {
+        final context = navigatorKey.currentContext;
+        if (context != null) {
+          final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+          chatProvider.fetchUnreadCountOnly();
+          chatProvider.loadChats(showLoading: false);
+        }
+      }
     });
   }
 

@@ -10,8 +10,8 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'],
-      fullName: json['full_name'],
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      fullName: json['full_name']?.toString() ?? '',
       email: json['email'],
       profilePic: AppUtils.getAbsoluteUrl(json['profile_pic'] ?? json['profile_picture']),
     );

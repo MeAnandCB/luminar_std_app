@@ -112,8 +112,10 @@ class AppEndpoints {
 }
 
 class GlobalLinks {
-  //static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
-  static const String baseUrl = 'http://192.168.1.53:8000';
+  static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
+  //static const String baseUrl = 'http://192.168.1.53:8000';
+  // Prod has no /ws/chat/ route yet (returns 404) — chat WebSocket stays on
+  // dev until that's deployed, even though REST (baseUrl) is on prod.
   static const String websocketUrl =
       'wss://api.crm.dev.luminartechnohub.com/ws/';
 }

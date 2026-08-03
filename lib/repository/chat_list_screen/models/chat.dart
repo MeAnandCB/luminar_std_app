@@ -69,8 +69,8 @@ class Chat {
     return Chat(
       uid: json['uid']?.toString() ?? '',
       chatType: type,
-      participant1: json['participant_1'],
-      participant2: json['participant_2'],
+      participant1: (json['participant_1'] as num?)?.toInt(),
+      participant2: (json['participant_2'] as num?)?.toInt(),
       batch: json['batch']?.toString(),
       batchName: json['batch_name'],
       createdAt: DateTime.parse(json['created_at']),
@@ -79,7 +79,7 @@ class Chat {
           ? DateTime.parse(json['last_message_at'])
           : null,
       lastMessagePreview: json['last_message_preview'],
-      unreadCount: json['unread_count'] ?? 0,
+      unreadCount: (json['unread_count'] as num?)?.toInt() ?? 0,
       otherParticipant: json['other_participant'] != null
           ? User.fromJson(json['other_participant'])
           : null,

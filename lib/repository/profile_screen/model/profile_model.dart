@@ -70,7 +70,7 @@ class AcademicInfo {
   factory AcademicInfo.fromJson(Map<String, dynamic> json) => AcademicInfo(
     qualification: json["qualification"] == null ? null : Qualification.fromJson(json["qualification"]),
     college: json["college"],
-    passOutYear: json["pass_out_year"],
+    passOutYear: (json["pass_out_year"] as num?)?.toInt(),
     specialization: json["specialization"],
     admissionDate: json["admission_date"] == null ? null : DateTime.parse(json["admission_date"]),
     cgpa: json["cgpa"],
@@ -204,7 +204,7 @@ class PersonalInfo {
     phone: json["phone"],
     whatsappNumber: json["whatsapp_number"],
     dateOfBirth: json["date_of_birth"] == null ? null : DateTime.parse(json["date_of_birth"]),
-    age: json["age"],
+    age: (json["age"] as num?)?.toInt(),
     idProof: json["id_proof"],
     idProof2: json["id_proof_2"],
     resume: json["resume"],
