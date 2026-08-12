@@ -51,6 +51,7 @@ class WebSocketService {
   Timer? _reconnectTimer;
   DateTime? _lastActivityAt;
   int _reconnectAttempts = 0;
+  bool _isReady = false;
   static const _heartbeatInterval = Duration(seconds: 25);
   static const _staleThreshold = Duration(seconds: 75); // ~3 missed heartbeats
   static const _maxReconnectDelaySeconds = 30;
@@ -59,11 +60,13 @@ class WebSocketService {
     if (_isDisposed) return;
     _reconnectTimer?.cancel();
     try {
-      _channel = WebSocketChannel.connect(Uri.parse(url));
+      final channel = WebSocketChannel.connect(Uri.parse(url));
+      _channel = channel;
 
-      _channel!.stream.listen(
+      channel.stream.listen(
         (message) {
           _lastActivityAt = DateTime.now();
+          debugPrint('[WS Received]: $message');
           _handleMessage(message);
         },
         onDone: _handleConnectionLost,
@@ -76,10 +79,28 @@ class WebSocketService {
         },
       );
 
-      _lastActivityAt = DateTime.now();
-      _reconnectAttempts = 0;
-      _startHeartbeat();
-      onConnected?.call();
+      // `WebSocketChannel.connect` returns immediately without waiting for
+      // the HTTP upgrade to actually succeed — firing onConnected here used
+      // to give a false "connected" signal (isWsConnected = true, heartbeat
+      // started) even when the server rejected the handshake, since failure
+      // only surfaced later via the stream's onDone/onError. `ready` makes
+      // both success and failure explicit and immediate instead.
+      channel.ready
+          .then((_) {
+            if (_isDisposed || _channel != channel) return;
+            _isReady = true;
+            _lastActivityAt = DateTime.now();
+            _reconnectAttempts = 0;
+            _startHeartbeat();
+            onConnected?.call();
+          })
+          .catchError((error) {
+            if (_isDisposed || _channel != channel) return;
+            debugPrint('[WS] Handshake failed: $error');
+            _errorController.add(error.toString());
+            onError?.call(error.toString());
+            _handleConnectionLost();
+          });
     } catch (e) {
       if (!_isDisposed) {
         _errorController.add(e.toString());
@@ -139,6 +160,7 @@ class WebSocketService {
 
   void _teardownChannel() {
     _stopHeartbeat();
+    _isReady = false;
     try {
       _channel?.sink.close(1000); // 1000 = normalClosure
     } catch (e) {
@@ -182,7 +204,7 @@ class WebSocketService {
     final response = await apiService.deleteMessage(chatUid, messageUid);
 
     if (response.success) {
-      if (_channel != null) {
+      if (isConnected) {
         final deleteEvent = {
           'type': 'message_deleted',
           'chat_uid': chatUid,
@@ -202,7 +224,7 @@ class WebSocketService {
     final response = await apiService.sendReaction(chatUid, messageUid, emoji);
 
     if (response.success) {
-      if (_channel != null) {
+      if (isConnected) {
         final reactionEvent = {
           'type': 'message_reaction',
           'chat_uid': chatUid,
@@ -239,6 +261,7 @@ class WebSocketService {
         final chatUid = data['chat_uid']?.toString();
         final messageUid = data['message_uid']?.toString();
         if (chatUid != null && messageUid != null) {
+          debugPrint('[WS Chat Message Deleted]: Chat: $chatUid, Msg: $messageUid');
           _deleteController.add({'chat_uid': chatUid, 'message_uid': messageUid});
           onMessageDeleted?.call(chatUid, messageUid);
         }
@@ -246,6 +269,7 @@ class WebSocketService {
       }
 
       if (data is Map<String, dynamic> && data['type'] == 'message_reaction') {
+        debugPrint('[WS Chat Reaction]: ${data['emoji']} on Msg ${data['message_uid']} by User ${data['user_name']}');
         _reactionController.add({
           'chat_uid': data['chat_uid'],
           'message_uid': data['message_uid'],
@@ -267,10 +291,14 @@ class WebSocketService {
             messageData['chat'] = messageData['chat_uid'];
           }
           final receivedMessage = Message.fromJson(messageData);
+          debugPrint('[WS Chat Message]: Sender: ${receivedMessage.sender.fullName}, Message: "${receivedMessage.content}", Chat: ${receivedMessage.chatId}');
           _messageController.add(receivedMessage);
           onMessageReceived?.call(receivedMessage);
           return;
-        } catch (e) {}
+        } catch (e) {
+          debugPrint('[WS] Failed to parse incoming message, dropped: $e');
+          _errorController.add('Failed to parse message: $e');
+        }
       }
 
       if (data is Map<String, dynamic>) {
@@ -281,15 +309,15 @@ class WebSocketService {
             final messageData = data['data'] ?? data;
             if (messageData is Map<String, dynamic>) {
               try {
-                // Always prefer chat_uid (UUID) so Message.chatId stores the
-                // same string as Chat.uid, enabling correct matching.
                 if (messageData.containsKey('chat_uid')) {
                   messageData['chat'] = messageData['chat_uid'];
                 }
                 final receivedMessage = Message.fromJson(messageData);
+                debugPrint('[WS Chat Message]: Sender: ${receivedMessage.sender.fullName}, Message: "${receivedMessage.content}", Chat: ${receivedMessage.chatId}');
                 _messageController.add(receivedMessage);
                 onMessageReceived?.call(receivedMessage);
               } catch (e) {
+                debugPrint('[WS] Failed to parse message event, dropped: $e');
                 _errorController.add('Failed to parse message: $e');
               }
             }
@@ -348,11 +376,11 @@ class WebSocketService {
   }
 
   void updateUserStatus(bool isOnline) {
-    if (_channel != null && currentUser.id != 0) {
+    if (isConnected && currentUser.id != 0) {
       final statusMessage = jsonEncode({'action': 'presence', 'user_id': currentUser.id, 'online': isOnline});
       _channel!.sink.add(statusMessage);
     }
   }
 
-  bool get isConnected => _channel != null;
+  bool get isConnected => _channel != null && _isReady;
 }

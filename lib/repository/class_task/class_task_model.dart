@@ -67,6 +67,8 @@ class StudentTaskInfo {
   final String description;
   final String? dueAt;
   final int maxAttempts;
+  final List<TaskAttachmentInfo> attachments;
+  final int attachmentsCount;
 
   StudentTaskInfo({
     required this.taskUid,
@@ -74,15 +76,25 @@ class StudentTaskInfo {
     required this.description,
     this.dueAt,
     required this.maxAttempts,
+    required this.attachments,
+    required this.attachmentsCount,
   });
 
   factory StudentTaskInfo.fromJson(Map<String, dynamic> json) {
+    var attList = json['attachments'] as List? ?? [];
+    List<TaskAttachmentInfo> attachments = attList
+        .map((i) => TaskAttachmentInfo.fromJson(i as Map<String, dynamic>))
+        .toList();
+
     return StudentTaskInfo(
       taskUid: json['task_uid']?.toString() ?? json['uid']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Untitled Task',
       description: json['description']?.toString() ?? '',
       dueAt: json['due_at']?.toString(),
       maxAttempts: (json['max_attempts'] as num?)?.toInt() ?? 1,
+      attachments: attachments,
+      attachmentsCount:
+          (json['attachments_count'] as num?)?.toInt() ?? attachments.length,
     );
   }
 }

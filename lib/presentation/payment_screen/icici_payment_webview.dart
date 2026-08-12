@@ -29,6 +29,7 @@ class _IciciPaymentWebViewState extends State<IciciPaymentWebView> {
   InAppWebViewController? _webCtrl;
   int _progress = 0;
   bool _paymentDetected = false;
+  bool _paymentSucceeded = false;
   int _countdown = 5;
   Timer? _countdownTimer;
 
@@ -67,7 +68,16 @@ class _IciciPaymentWebViewState extends State<IciciPaymentWebView> {
 
   void _onPaymentComplete({bool success = true}) {
     if (_paymentDetected) return;
-    setState(() => _paymentDetected = true);
+    setState(() {
+      _paymentDetected = true;
+      _paymentSucceeded = success;
+    });
+
+    // Only auto-redirect on success. A failed/cancelled payment needs the
+    // user to consciously see it failed and choose to retry or leave —
+    // silently treating it the same as success left them thinking they'd
+    // paid when they hadn't.
+    if (!success) return;
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) {
@@ -80,6 +90,18 @@ class _IciciPaymentWebViewState extends State<IciciPaymentWebView> {
         _navigateHome();
       }
     });
+  }
+
+  // ── Retry: reload the original payment URL and go back to the webview ─────
+  void _retryPayment() {
+    setState(() {
+      _paymentDetected = false;
+      _paymentSucceeded = false;
+      _progress = 0;
+    });
+    _webCtrl?.loadUrl(
+      urlRequest: URLRequest(url: WebUri(widget.paymentUrl)),
+    );
   }
 
   void _navigateHome() {
@@ -252,6 +274,8 @@ class _IciciPaymentWebViewState extends State<IciciPaymentWebView> {
   }
 
   Widget _buildProcessingOverlay() {
+    if (!_paymentSucceeded) return _buildFailureOverlay();
+
     return Container(
       color: Colors.white,
       child: Column(
@@ -305,7 +329,7 @@ class _IciciPaymentWebViewState extends State<IciciPaymentWebView> {
           const SizedBox(height: 24),
 
           const Text(
-            'Please Wait',
+            'Payment Successful',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -323,6 +347,92 @@ class _IciciPaymentWebViewState extends State<IciciPaymentWebView> {
                 color: Colors.grey.shade500,
                 height: 1.6,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Failed / cancelled payment: clear messaging + explicit next step ──────
+  // Deliberately does NOT auto-redirect — a user whose payment failed needs
+  // to consciously see that before deciding what to do next, not get carried
+  // along by the same countdown used for a successful payment.
+  Widget _buildFailureOverlay() {
+    return Container(
+      color: Colors.white,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFFFFEBEE),
+            ),
+            child: const Icon(
+              Icons.close_rounded,
+              color: Color(0xFFD32F2F),
+              size: 44,
+            ),
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            'Payment Not Completed',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 48),
+            child: Text(
+              'Your payment was not completed — it may have been declined or '
+              'cancelled. No amount has been confirmed as paid.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade500,
+                height: 1.6,
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _navigateHome,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Back to Dashboard'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _retryPayment,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF9B1A1A),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Try Again'),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

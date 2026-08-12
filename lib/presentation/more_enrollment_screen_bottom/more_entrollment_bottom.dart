@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -628,7 +629,7 @@ class _EnrollmentPageState extends State<_EnrollmentPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    AppConfig.hidePayments ? '9 features' : '10 features',
+                    '${(AppConfig.hidePayments ? 9 : 10) - (kDebugMode ? 0 : 1)} features',
                     style: TextStyle(
                       fontSize: 11,
                       color: _kPrimary,
@@ -807,24 +808,30 @@ class _EnrollmentPageState extends State<_EnrollmentPage> {
                   );
                 },
               ),
-              SizedBox(height: 12),
-              _FeatureCard(
-                feature: _kFeatures[9],
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) {
-                      final info = dashCtrl
-                          .dashboard?.studentDetails?.basicInfo;
-                      return LaptopHomeScreen(
-                        prefillName:      info?.fullName      ?? '',
-                        prefillStudentId: info?.studentId     ?? '',
-                        prefillBatch:     batchName,
-                      );
-                    },
+              // "Take Laptop" is a dev-only tool (hardcoded LAN endpoint,
+              // no working way to configure it for real users) — kept out
+              // of production builds until it has a real backend + a
+              // functioning settings screen.
+              if (kDebugMode) ...[
+                SizedBox(height: 12),
+                _FeatureCard(
+                  feature: _kFeatures[9],
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) {
+                        final info = dashCtrl
+                            .dashboard?.studentDetails?.basicInfo;
+                        return LaptopHomeScreen(
+                          prefillName:      info?.fullName      ?? '',
+                          prefillStudentId: info?.studentId     ?? '',
+                          prefillBatch:     batchName,
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
+              ],
             ]),
           ),
         ),

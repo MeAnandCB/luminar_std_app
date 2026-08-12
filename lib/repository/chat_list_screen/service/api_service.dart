@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
@@ -55,7 +56,18 @@ class ChatApiService {
       } else {
         results = [];
       }
-      final messages = results.map((m) => Message.fromJson(m as Map<String, dynamic>)).toList();
+      // Per-item, not .map(...).toList() — one malformed record used to take
+      // the whole conversation's history down (an uncaught throw inside
+      // .map() aborts the entire list), showing a full-screen error for
+      // messages that were otherwise perfectly loadable.
+      final messages = <Message>[];
+      for (final m in results) {
+        try {
+          messages.add(Message.fromJson(m as Map<String, dynamic>));
+        } catch (e) {
+          debugPrint('[ChatApiService] Skipped malformed message record: $e');
+        }
+      }
       return ApiResponse.success(messages, response.statusCode ?? 200);
     }
     return ApiResponse.error(response.message ?? "Failed to load messages", response.statusCode);

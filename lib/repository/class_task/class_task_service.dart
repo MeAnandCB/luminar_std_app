@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
@@ -29,6 +30,8 @@ class ClassTaskService {
         token: token,
         queryParams: queryParams.isNotEmpty ? queryParams : null,
       );
+
+      debugPrint('[ClassTaskService] getMyTasks response: ${response.data}');
 
       if (response.success && response.data != null) {
         return ApiResponse.success(

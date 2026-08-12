@@ -51,6 +51,19 @@ class Message {
   bool get isAudio => messageType == 'audio';
   bool get isFile => messageType == 'file';
   bool get isText => messageType == 'text';
+
+  static const _videoExtensions = {
+    'mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi', '3gp', 'wmv',
+  };
+
+  // The backend rejects 'video' as a message_type, so video uploads are sent
+  // (and echoed back) as messageType 'file' — detect them by extension too.
+  bool get isVideoFile {
+    if (isVideo) return true;
+    if (!isFile || fileName == null) return false;
+    final ext = fileName!.contains('.') ? fileName!.split('.').last.toLowerCase() : '';
+    return _videoExtensions.contains(ext);
+  }
   bool get hasMedia => file != null || fileUrl != null;
   bool get hasReply => replyTo != null && replyTo!.isNotEmpty;
   bool get hasReactions => reactions != null && reactions!.isNotEmpty;
@@ -106,7 +119,18 @@ class Message {
     return Message(
       uid: json['uid']?.toString() ?? '',
       chatId: (json['chat_uid'] ?? json['chat'])?.toString() ?? '',
-      sender: User.fromJson(json['sender'] as Map<String, dynamic>),
+      // Unlike every other field here, this used to do an unguarded cast.
+      // A message whose sender is null/omitted (e.g. a deactivated account,
+      // or a lighter-weight payload from a WebSocket broadcast that doesn't
+      // carry the same full sender data the REST serializer does) threw a
+      // TypeError — silently dropped by websocket_service.dart's per-message
+      // catch, so the live push for that message just never arrived, or (via
+      // ChatApiService.fetchMessages' unguarded .map()) took the whole
+      // conversation's history down with it. Degrade to a placeholder sender
+      // instead of losing the message entirely.
+      sender: json['sender'] is Map<String, dynamic>
+          ? User.fromJson(json['sender'] as Map<String, dynamic>)
+          : User(id: 0, fullName: 'Unknown'),
       messageType: json['message_type']?.toString() ?? 'text',
       content: json['content']?.toString() ?? '',
       file: AppUtils.getAbsoluteUrl(json['file']?.toString()),

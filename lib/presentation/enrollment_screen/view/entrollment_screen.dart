@@ -53,6 +53,13 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   // the dialog's first frame renders can't fire a second order-creation /
   // EMI-confirm request.
   bool _isConfirmingPayment = false;
+  // Separate from _isConfirmingPayment (which only covers order-creation):
+  // stays true from the moment Razorpay's native checkout is asked to open
+  // until it actually reports success/error/wallet-selected. Without this,
+  // _isConfirmingPayment cleared as soon as the order-creation call
+  // returned — before Razorpay's UI had rendered — so a fast double-tap in
+  // that gap could fire two orders for the same enrollment.
+  bool _razorpayCheckoutInFlight = false;
   final PaymentDetailsApiService _apiService = PaymentDetailsApiService();
   late Razorpay _razorpay;
 
@@ -1721,10 +1728,10 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
                           ],
                         ),
                         child: ElevatedButton(
-                          onPressed: _isConfirmingPayment
+                          onPressed: (_isConfirmingPayment || _razorpayCheckoutInFlight)
                               ? null
                               : () async {
-                            if (_isConfirmingPayment) return;
+                            if (_isConfirmingPayment || _razorpayCheckoutInFlight) return;
                             setState(() => _isConfirmingPayment = true);
 
                             final enrollmentUid = provider
@@ -1988,6 +1995,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   void handlePaymentErrorResponse(PaymentFailureResponse response) {
+    if (mounted) setState(() => _razorpayCheckoutInFlight = false);
     // Map known Razorpay error codes to friendly messages
     String userMessage;
     switch (response.code) {
@@ -2015,6 +2023,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   void handlePaymentSuccessResponse(PaymentSuccessResponse response) {
+    if (mounted) setState(() => _razorpayCheckoutInFlight = false);
     _showPaymentResultSheet(
       isSuccess: true,
       title: 'Payment Successful!',
@@ -2056,6 +2065,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   void handleExternalWalletSelected(ExternalWalletResponse response) {
+    if (mounted) setState(() => _razorpayCheckoutInFlight = false);
     _showPaymentResultSheet(
       isSuccess: null,
       title: 'Wallet Selected',
@@ -2216,7 +2226,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   Future<void> _openIciciPayment(String enrollmentId) async {
-    if (_isConfirmingPayment) return;
+    if (_isConfirmingPayment || _razorpayCheckoutInFlight) return;
     setState(() => _isConfirmingPayment = true);
     showDialog(
       context: context,
@@ -2256,6 +2266,7 @@ class _EnrollmentDetailsScreenState extends State<EnrollmentDetailsScreen> {
   }
 
   void _startRazorpayPayment(RazorpayPaymentDetails details) {
+    setState(() => _razorpayCheckoutInFlight = true);
     var options = {
       'key': details.key,
       'amount': details.amount,

@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
+import 'package:luminar_std/presentation/home_screen/widget/onam_attendance_dialog.dart'
+    show OnamRegistrationWindow;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Branch Event Data
@@ -675,7 +678,11 @@ class _OnamNoticeCardState extends State<OnamNoticeCard>
   final _rng = math.Random(55);
   late final List<_Confetti> _confetti;
 
-  static const _sectionCount = 5;
+  bool _launchingAttendance = false;
+
+  static const _attendanceUrl = 'https://student.luminartechnolab.com/onam';
+
+  static const _sectionCount = 6;
 
   static const _programs = [
     _ProgramItem(
@@ -770,6 +777,17 @@ class _OnamNoticeCardState extends State<OnamNoticeCard>
         opacity: _sectionFade[i],
         child: SlideTransition(position: _sectionSlide[i], child: child),
       );
+
+  Future<void> _markPresence() async {
+    if (_launchingAttendance) return;
+    setState(() => _launchingAttendance = true);
+    try {
+      final uri = Uri.parse(_attendanceUrl);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } finally {
+      if (mounted) setState(() => _launchingAttendance = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -878,23 +896,30 @@ class _OnamNoticeCardState extends State<OnamNoticeCard>
 
                       const SizedBox(height: 14),
 
-                      // Section 1: Animated divider
-                      _staggered(1, _buildWaveDivider()),
+                      // Section 1: Mark your presence (top of card) —
+                      // hidden after the registration deadline.
+                      if (OnamRegistrationWindow.isOpen) ...[
+                        _staggered(1, _buildAttendanceButton()),
+                        const SizedBox(height: 14),
+                      ],
+
+                      // Section 2: Animated divider
+                      _staggered(2, _buildWaveDivider()),
 
                       const SizedBox(height: 14),
 
-                      // Section 2: Date & time
-                      _staggered(2, _buildDateTimeRow(e)),
+                      // Section 3: Date & time
+                      _staggered(3, _buildDateTimeRow(e)),
 
                       const SizedBox(height: 10),
 
-                      // Section 3: Venue
-                      _staggered(3, _buildVenue(e)),
+                      // Section 4: Venue
+                      _staggered(4, _buildVenue(e)),
 
                       const SizedBox(height: 14),
 
-                      // Section 4: Programs
-                      _staggered(4, _buildPrograms()),
+                      // Section 5: Programs
+                      _staggered(5, _buildPrograms()),
                     ],
                   ),
                 ),
@@ -1127,6 +1152,79 @@ class _OnamNoticeCardState extends State<OnamNoticeCard>
           _AnimatedProgramRow(item: entry.value, delay: entry.key * 80)),
     ],
   );
+
+  // ── Mark your presence (glowing CTA) ──────────────────────────────────────────
+
+  Widget _buildAttendanceButton() {
+    return AnimatedBuilder(
+      animation: _glowCtrl,
+      builder: (_, child) => Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: _OnamColors.gold.withOpacity(0.45 + 0.4 * _glowCtrl.value),
+              blurRadius: 14 + 14 * _glowCtrl.value,
+              spreadRadius: 1 * _glowCtrl.value,
+            ),
+          ],
+        ),
+        child: child,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _launchingAttendance ? null : _markPresence,
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.6)),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            child: Center(
+              child: _launchingAttendance
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Color(0xFF6D1A00),
+                      ),
+                    )
+                  : const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.event_available_rounded,
+                          color: Color(0xFF6D1A00),
+                          size: 19,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Mark Your Presence',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF6D1A00),
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ── Animated program row (bounces in with delay) ──────────────────────────────

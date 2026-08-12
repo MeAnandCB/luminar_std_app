@@ -16,6 +16,7 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/repository/payment_screen/model.dart';
 import 'package:luminar_std/repository/payment_screen/service.dart';
 import 'package:luminar_std/repository/razorpay/model/emi_res_model.dart';
+import 'package:luminar_std/repository/razorpay/model/razorpay_model.dart';
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -49,6 +50,13 @@ class _PaymentScreenState extends State<PaymentScreen>
   // double-tap landing before the dialog's first frame renders can't fire a
   // second EMI/order-creation request.
   bool _isProcessingPayment = false;
+  // Separate from _isProcessingPayment (which only covers the order-creation
+  // API call): stays true from the moment Razorpay's native checkout is
+  // asked to open until it actually reports success/error/wallet-selected.
+  // _isProcessingPayment alone used to clear as soon as the order-creation
+  // call returned — well before Razorpay's UI had actually rendered — so a
+  // fast double-tap on "Pay Now" in that gap could fire two orders.
+  bool _razorpayCheckoutInFlight = false;
 
   @override
   void initState() {
@@ -393,7 +401,7 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   void _handlePayment(EmiInstallment emi) async {
-    if (_isProcessingPayment) return;
+    if (_isProcessingPayment || _razorpayCheckoutInFlight) return;
     setState(() => _isProcessingPayment = true);
 
     final provider = Provider.of<EnrollmentProvider>(context, listen: false);
@@ -453,6 +461,141 @@ class _PaymentScreenState extends State<PaymentScreen>
     } finally {
       if (mounted) setState(() => _isProcessingPayment = false);
     }
+  }
+
+  // ── Full-amount payment (no EMI) ────────────────────────────────────────
+  // Enrollments on a "Full Amount" plan can still carry a pending balance
+  // (e.g. only the admission fee was paid, or an earlier attempt failed) —
+  // this is the entry point that was previously missing entirely, leaving
+  // no way to pay it from this screen.
+  void _handleFullPayment(EnrollmentDetailResponse data) async {
+    if (_isProcessingPayment || _razorpayCheckoutInFlight) return;
+    setState(() => _isProcessingPayment = true);
+
+    final provider = Provider.of<EnrollmentProvider>(context, listen: false);
+    final enrollmentId = data.uid ?? widget.enrollmentId;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) =>
+          const Center(child: CircularProgressIndicator(color: Colors.purple)),
+    );
+
+    try {
+      final results = await Future.wait([
+        provider.getPaymentDetails(id: enrollmentId),
+        PaymentScreenService().fetchPaymentGateways(),
+      ]);
+
+      if (!mounted) return;
+      Navigator.pop(context); // dismiss loading
+
+      final gateways = results[1] as List<PaymentGateway>;
+
+      if (provider.paymentDetails == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppUtils.friendlyError(
+                provider.errorMessage ?? 'Failed to get payment details',
+              ),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      final hasOnlyRazorpay =
+          gateways.length == 1 && gateways.first.id == 'razorpay';
+
+      if (hasOnlyRazorpay) {
+        _startFullRazorpayPayment(provider.paymentDetails!);
+      } else {
+        _showFullPaymentGatewaySheet(
+          gateways,
+          provider.paymentDetails!,
+          enrollmentId,
+          data,
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isProcessingPayment = false);
+    }
+  }
+
+  void _showFullPaymentGatewaySheet(
+    List<PaymentGateway> gateways,
+    RazorpayPaymentDetails details,
+    String enrollmentId,
+    EnrollmentDetailResponse data,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _GatewaySheet(
+        // No real EmiInstallment for a full payment — this placeholder only
+        // feeds the sheet's amount/overdue display (it already falls back
+        // to a generic "Payment Due" label when there's no installment #).
+        gateways: gateways,
+        emi: EmiInstallment(
+          pendingAmount: _getNumericAmount(data.totalPendingAmount),
+          isOverdue: data.isPaymentOverdue,
+        ),
+        onSelect: (gateway) async {
+          Navigator.pop(context);
+          if (gateway.id == 'razorpay') {
+            _startFullRazorpayPayment(details);
+          } else if (gateway.id == 'icici') {
+            await _openIciciPayment(enrollmentId);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${gateway.label} integration coming soon.'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  void _startFullRazorpayPayment(RazorpayPaymentDetails details) {
+    setState(() => _razorpayCheckoutInFlight = true);
+    var options = {
+      'key': details.key,
+      'amount': details.amount,
+      "order_id": details.orderId,
+      'name': details.name,
+      'description': details.description,
+      'retry': {'enabled': true, 'max_count': 1},
+      'send_sms_hash': true,
+      'prefill': {
+        'contact': details.prefill?.contact,
+        'email': details.prefill?.email,
+      },
+      'external': {
+        'wallets': ['paytm'],
+      },
+    };
+    LoggerUtils.info(
+      'Razorpay checkout options (full payment): $options',
+      tag: 'Razorpay',
+    );
+    _razorpay.open(options);
   }
 
   void _showGatewaySheet(
@@ -739,10 +882,18 @@ class _PaymentScreenState extends State<PaymentScreen>
                             ),
                           ],
                         ),
-                        child: Material(
+                        child: Opacity(
+                          opacity:
+                              (_isProcessingPayment || _razorpayCheckoutInFlight)
+                                  ? 0.5
+                                  : 1.0,
+                          child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            onTap: () => _handlePayment(nextDueEmi!),
+                            onTap:
+                                (_isProcessingPayment || _razorpayCheckoutInFlight)
+                                    ? null
+                                    : () => _handlePayment(nextDueEmi!),
                             borderRadius: BorderRadius.circular(16),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
@@ -775,6 +926,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                             ),
                           ),
                         ),
+                        ),
                       ),
                   ],
                 ),
@@ -802,6 +954,127 @@ class _PaymentScreenState extends State<PaymentScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white.withValues(alpha: 0.05),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Full-Amount plan with a pending balance (e.g. only the admission fee
+  // was paid, or an earlier attempt failed) — mirrors _buildAttractiveNextDueCard's
+  // look, without the EMI-specific due-date lookup since a lump-sum payment
+  // has no installment schedule to read from.
+  Widget _buildFullPaymentDueCard(
+    EnrollmentDetailResponse data,
+    num remainingAmount,
+  ) {
+    final isOverdue = data.isPaymentOverdue ?? false;
+    final busy = _isProcessingPayment || _razorpayCheckoutInFlight;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      height: 140,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isOverdue
+              ? [Colors.red[400]!, Colors.orange[400]!, Colors.yellow[400]!]
+              : const [
+                  Color(0xFF4158D0),
+                  Color(0xFFC850C0),
+                  Color(0xFFFFCC70),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: (isOverdue ? Colors.red : Colors.purple)
+                .withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isOverdue ? 'Overdue Balance' : 'Remaining Balance',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '₹${NumberFormat('#,##0').format(remainingAmount)}',
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -1,
+                ),
+              ),
+            ],
+          ),
+          Opacity(
+            opacity: busy ? 0.5 : 1.0,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: busy ? null : () => _handleFullPayment(data),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isOverdue ? 'Pay Overdue' : 'Pay Now',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF4158D0),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.arrow_forward,
+                          size: 16,
+                          color: Color(0xFF4158D0),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -1044,8 +1317,12 @@ class _PaymentScreenState extends State<PaymentScreen>
             index == 0 ||
             sortedSchedule[index - 1].status?.toLowerCase() == 'paid';
 
+        final canTapToPay = isEnabled &&
+            emiStatus != EmiStatus.paid &&
+            !_isProcessingPayment &&
+            !_razorpayCheckoutInFlight;
         return InkWell(
-          onTap: isEnabled && emiStatus != EmiStatus.paid
+          onTap: canTapToPay
               ? () {
                   _handlePayment(emi);
                 }
@@ -1245,7 +1522,6 @@ class _PaymentScreenState extends State<PaymentScreen>
     final remainingAmount = _getNumericAmount(data.totalPendingAmount);
     final discount = _getNumericAmount(data.totalDiscountAmount);
     final admission = _getNumericAmount(data.originalAdmissionFees);
-    final progress = data.paymentCompletionPercentage ?? 0;
     final isOverdue = data.isPaymentOverdue ?? false;
 
     return SingleChildScrollView(
@@ -1372,7 +1648,9 @@ class _PaymentScreenState extends State<PaymentScreen>
           ),
           const SizedBox(height: 16),
           data.paymentTypeDisplay == "Full Amount"
-              ? SizedBox()
+              ? (remainingAmount > 0
+                  ? _buildFullPaymentDueCard(data, remainingAmount)
+                  : const SizedBox())
               : _buildAttractiveNextDueCard(data),
           const SizedBox(height: 16),
           Padding(
@@ -1424,79 +1702,6 @@ class _PaymentScreenState extends State<PaymentScreen>
             ),
           ),
           SizedBox(height: 16),
-
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.05),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Progress',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${progress.toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: (progress / 100).clamp(0.0, 1.0),
-                    backgroundColor: AppColors.surface,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isOverdue ? AppColors.error : AppColors.primary,
-                    ),
-                    minHeight: 8,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '₹${NumberFormat('#,##0').format(paidAmount)} of ₹${NumberFormat('#,##0').format(totalFee)}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
 
           if ((data.paymentType ?? '').toLowerCase().contains('emi'))
             Container(
@@ -1685,6 +1890,7 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   void handlePaymentErrorResponse(PaymentFailureResponse response) {
+    if (mounted) setState(() => _razorpayCheckoutInFlight = false);
     final error = response.error ?? {};
     final reason = error['reason'] as String? ?? '';
     final step = error['step'] as String? ?? '';
@@ -1744,6 +1950,7 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   void handlePaymentSuccessResponse(PaymentSuccessResponse response) {
+    if (mounted) setState(() => _razorpayCheckoutInFlight = false);
     _showPaymentResultDialog(
       icon: Icons.check_circle_outline_rounded,
       iconColor: AppColors.statsGreen,
@@ -1758,6 +1965,7 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   void handleExternalWalletSelected(ExternalWalletResponse response) {
+    if (mounted) setState(() => _razorpayCheckoutInFlight = false);
     _showPaymentResultDialog(
       icon: Icons.account_balance_wallet_outlined,
       iconColor: AppColors.primary,
@@ -1948,6 +2156,7 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   void _startEmiRazorpayPayment(EmiResponseData details) {
+    setState(() => _razorpayCheckoutInFlight = true);
     var options = {
       'key': details.key,
       'amount': details.amount,

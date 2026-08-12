@@ -25,6 +25,7 @@ import 'package:luminar_std/repository/nactet_registration/model/nactet_check_di
 import 'package:luminar_std/presentation/jobs_screen/jobs_screen.dart';
 import 'package:luminar_std/presentation/referral_screen/referral_screen.dart';
 import 'package:luminar_std/presentation/home_screen/widget/onam_event_card.dart';
+import 'package:luminar_std/presentation/home_screen/widget/onam_attendance_dialog.dart';
 import 'package:luminar_std/presentation/home_screen/widget/birthday_card.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -47,6 +48,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     // Only load the display name once the frame is ready.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUserName();
+      if (mounted) OnamAttendanceDialogHelper.maybeShow(context);
     });
   }
 

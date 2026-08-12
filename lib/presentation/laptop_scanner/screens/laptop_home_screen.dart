@@ -1,4 +1,78 @@
 import 'package:flutter/material.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TEMPORARILY DISABLED — the Laptop Manager screen is under maintenance.
+// The original implementation is preserved as a comment below; to restore,
+// delete this placeholder widget and uncomment the block.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class LaptopHomeScreen extends StatelessWidget {
+  const LaptopHomeScreen({
+    super.key,
+    this.prefillName = '',
+    this.prefillStudentId = '',
+    this.prefillBatch = '',
+  });
+
+  final String prefillName;
+  final String prefillStudentId;
+  final String prefillBatch;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Laptop Manager',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        ),
+        elevation: 0,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.build_circle_rounded,
+                  size: 44,
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Under Maintenance',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'The laptop take/return feature is temporarily unavailable. '
+                'Please check back later.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/*
+import 'package:flutter/material.dart';
 import '../api/laptop_api.dart';
 import '../config.dart';
 import '../time_ago.dart';
@@ -892,3 +966,4 @@ class _ScanFab extends StatelessWidget {
     );
   }
 }
+*/

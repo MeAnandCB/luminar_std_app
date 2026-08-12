@@ -11,6 +11,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:luminar_std/presentation/chat_screen/widgets/audio_player.dart';
 import 'package:luminar_std/presentation/chat_screen/widgets/forward_message.dart';
+import 'package:luminar_std/presentation/chat_screen/widgets/video_preview_screen.dart';
+import 'package:luminar_std/presentation/chat_screen/widgets/video_thumbnail_preview.dart';
 
 import 'package:record/record.dart';
 import 'dart:math' as _math;
@@ -64,6 +66,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   StreamSubscription<Message>? _messageSubscription;
   StreamSubscription<Map<String, dynamic>>? _statusSubscription;
   StreamSubscription<Map<String, dynamic>>? _deleteSubscription;
+  bool _isSocketConnected = false;
+  VoidCallback? _priorOnConnected;
+  VoidCallback? _priorOnDisconnected;
 
   // ── Emoji picker state ────────────────────────────────────────────────────
   bool _showEmojiPicker = false;
@@ -270,8 +275,31 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           apiService: widget.apiService,
         );
 
-    _webSocketService.onConnected = () =>
-        _webSocketService.updateUserStatus(true);
+    // When using the shared instance (normal navigation from the chat list),
+    // ChatProvider already owns onConnected — it flips isWsConnected and
+    // calls updateUserStatus(true) itself. Overwriting it here (even with an
+    // equivalent-looking callback) is single-assignment, not multi-listener,
+    // so it would silently clobber ChatProvider's handler: the next time the
+    // socket reconnects, isWsConnected would never flip back to true and the
+    // chat list's "Online" indicator would get stuck showing disconnected.
+    // Only set our own handler when we own a private, unshared instance.
+    if (widget.webSocketService == null) {
+      _webSocketService.onConnected = () =>
+          _webSocketService.updateUserStatus(true);
+    }
+    // Live connection badge for this screen — chains onto whatever handler
+    // is already set (ChatProvider's, above) instead of replacing it.
+    _isSocketConnected = _webSocketService.isConnected;
+    _priorOnConnected = _webSocketService.onConnected;
+    _webSocketService.onConnected = () {
+      _priorOnConnected?.call();
+      if (mounted) setState(() => _isSocketConnected = true);
+    };
+    _priorOnDisconnected = _webSocketService.onDisconnected;
+    _webSocketService.onDisconnected = () {
+      _priorOnDisconnected?.call();
+      if (mounted) setState(() => _isSocketConnected = false);
+    };
 
     _messageSubscription = _webSocketService.messageStream.listen((message) {
       if (message.chatId == widget.chat.uid && mounted) {
@@ -347,6 +375,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _statusSubscription?.cancel();
     _messageSubscription?.cancel();
     _deleteSubscription?.cancel();
+    // Undo the onConnected/onDisconnected chaining from initState so this
+    // disposed screen's closures don't stay attached to a long-lived shared
+    // WebSocketService instance.
+    _webSocketService.onConnected = _priorOnConnected;
+    _webSocketService.onDisconnected = _priorOnDisconnected;
     if (widget.webSocketService == null) _webSocketService.disconnect();
     _messageController.dispose();
     _captionController.dispose();
@@ -2555,6 +2588,59 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
+  // ── Live connection indicator ───────────────────────────────────────────────
+  // Only shown while reconnecting — silent when the socket is up, matching
+  // the unobtrusive pattern most chat apps use for this.
+  Widget _buildConnectionIndicator() {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: _isSocketConnected
+          ? const SizedBox.shrink(key: ValueKey('connected'))
+          : Padding(
+              key: const ValueKey('reconnecting'),
+              padding: const EdgeInsets.only(right: 4),
+              child: Tooltip(
+                message: 'Reconnecting — messages may be delayed',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.orange.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 10,
+                        height: 10,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.6,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Reconnecting',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
   // ── Selection-mode app bar (long-press a message to enter) ────────────────
   PreferredSizeWidget _buildSelectionAppBar() {
     final count = _selectedMessageUids.length;
@@ -3088,14 +3174,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         if (hasCaption)
           Padding(
             padding: const EdgeInsets.only(top: 6, left: 2, right: 2),
-            child: Text(
-              message.content,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textPrimary,
-                height: 1.4,
-              ),
-            ),
+            child: _buildHyperlinkText(message.content, false, fontSize: 14),
           ),
       ],
     );
@@ -3652,20 +3731,38 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildMessageContent(Message message, bool isMe) {
+    final hasText = message.content.trim().isNotEmpty;
+
+    Widget? mediaWidget;
     if (message.isImage) {
-      return _buildImageContent(message);
+      mediaWidget = _buildImageContent(message);
     } else if (message.isAudio) {
-      return _buildAudioContent(message, isMe);
-    } else if (message.messageType == 'video') {
-      return _buildVideoContent(message, isMe);
+      mediaWidget = _buildAudioContent(message, isMe);
+    } else if (message.isVideoFile) {
+      mediaWidget = _buildVideoContent(message, isMe);
     } else if (message.isFile) {
-      return _buildFileContent(message, isMe);
-    } else {
-      return _buildHyperlinkText(message.content, isMe);
+      mediaWidget = _buildFileContent(message, isMe);
     }
+
+    if (mediaWidget != null) {
+      if (hasText) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            mediaWidget,
+            const SizedBox(height: 6),
+            _buildHyperlinkText(message.content, isMe),
+          ],
+        );
+      }
+      return mediaWidget;
+    }
+
+    return _buildHyperlinkText(message.content, isMe);
   }
 
-  Widget _buildHyperlinkText(String text, bool isMe) {
+  Widget _buildHyperlinkText(String text, bool isMe, {double fontSize = 15}) {
     final urlRegex = RegExp(
       r'((https?:\/\/)|(www\.))[^\s]+',
       caseSensitive: false,
@@ -3676,7 +3773,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       return RichText(
         text: TextSpan(
           style: TextStyle(
-            fontSize: 15,
+            fontSize: fontSize,
             color: AppColors.textPrimary,
             height: 1.45,
           ),
@@ -3730,7 +3827,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     return RichText(
       text: TextSpan(
         style: TextStyle(
-          fontSize: 15,
+          fontSize: fontSize,
           color: AppColors.textPrimary,
           height: 1.45,
         ),
@@ -3771,86 +3868,160 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   // ── Video bubble — play icon + tap to open ─────────────────────────────────
+  void _openVideoPreview(Message message) {
+    final url = message.mediaUrl;
+    if (url == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VideoPreviewScreen(
+          url: url,
+          fileName: message.fileName,
+          onDownload: () => _downloadFile(url, message.fileName ?? 'video.mp4'),
+          isDownloading: _isDownloading && _downloadingUrl == url,
+        ),
+      ),
+    );
+  }
+
   Widget _buildVideoContent(Message message, bool isMe) {
     final isUploading =
         message.uid.startsWith('upload_') && message.mediaUrl == null;
     final url = message.mediaUrl;
+    final isThisDownloading = _isDownloading && _downloadingUrl == url;
 
+    // Single overlay bubble, WhatsApp-style — thumbnail fills the whole
+    // bubble, play button centered, size/download pill bottom-left.
     return GestureDetector(
-      onTap: url != null
-          ? () async {
-              final uri = Uri.parse(url);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
-            }
+      onTap: (!isUploading && url != null)
+          ? () => _openVideoPreview(message)
           : null,
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 160, maxWidth: 240),
-        height: 140,
-        decoration: BoxDecoration(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 200, maxWidth: 240),
+          height: 200,
           color: Colors.black87,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                color: Colors.black54,
-                child: Center(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (url != null)
+                VideoThumbnailPreview(url: url, width: 240, height: 200)
+              else
+                Center(
                   child: Icon(
                     Icons.movie_outlined,
                     color: Colors.white.withValues(alpha: 0.3),
                     size: 48,
                   ),
                 ),
-              ),
-            ),
-            if (isUploading)
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: CircularProgressIndicator(
-                  value: _uploadProgress > 0 ? _uploadProgress : null,
-                  strokeWidth: 3,
-                  color: Colors.white,
-                ),
-              )
-            else
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.play_arrow_rounded,
-                  color: isMe
-                      ? const Color(0xFF4A7FA5)
-                      : const Color(0xFF7B9FD4),
-                  size: 32,
+              // Bottom scrim for legibility of the size/download pill.
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 56,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.55),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            // File name at bottom
-            Positioned(
-              bottom: 8,
-              left: 10,
-              right: 10,
-              child: Text(
-                message.fileName ?? 'Video',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
+              // Center play / upload-progress button.
+              Center(
+                child: isUploading
+                    ? SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          value: _uploadProgress > 0 ? _uploadProgress : null,
+                          strokeWidth: 3,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.play_arrow_rounded,
+                          color: isMe
+                              ? const Color(0xFF4A7FA5)
+                              : const Color(0xFF7B9FD4),
+                          size: 32,
+                        ),
+                      ),
               ),
-            ),
-          ],
+              // Bottom-left pill: uploading % or download + size.
+              Positioned(
+                left: 8,
+                bottom: 8,
+                child: isUploading
+                    ? _VideoInfoPill(
+                        child: Text(
+                          'Uploading ${(_uploadProgress * 100).toInt()}%',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
+                    : (url != null
+                          ? GestureDetector(
+                              onTap: isThisDownloading
+                                  ? null
+                                  : () => _downloadFile(
+                                      url,
+                                      message.fileName ?? 'video.mp4',
+                                    ),
+                              child: _VideoInfoPill(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    isThisDownloading
+                                        ? const SizedBox(
+                                            width: 12,
+                                            height: 12,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 1.8,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.file_download_outlined,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                    if (message.fileSizeLabel != null) ...[
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        message.fileSizeLabel!,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink()),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -4940,6 +5111,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           ],
         ),
         actions: [
+          _buildConnectionIndicator(),
           if (widget.chat.chatType == ChatType.individual &&
               widget.chat.otherParticipant != null)
             PopupMenuButton<String>(
@@ -5305,6 +5477,24 @@ class _AttachItem {
     required this.color,
     required this.onTap,
   });
+}
+
+// ── Small dark pill overlaid on the video thumbnail (size/progress) ────────────
+class _VideoInfoPill extends StatelessWidget {
+  final Widget child;
+  const _VideoInfoPill({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: child,
+    );
+  }
 }
 
 // ── File type style data ───────────────────────────────────────────────────────
