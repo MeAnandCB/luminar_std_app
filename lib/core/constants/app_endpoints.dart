@@ -112,7 +112,7 @@ class AppEndpoints {
 }
 
 class GlobalLinks {
-  static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
+  static const String baseUrl = 'https://api.crm.luminartechnohub.com';
   // static const String baseUrl = 'http://192.168.1.53:8000';
   // This DOES work on prod (confirmed with a real HTTP/1.1 WebSocket
   // handshake — a plain `curl` test without --http1.1 negotiates HTTP/2 by
@@ -123,7 +123,7 @@ class GlobalLinks {
   // this back to the dev host based on a plain curl 404 — force HTTP/1.1
   // (`curl --http1.1 ...`) before concluding the route is missing.
   static const String websocketUrl =
-      'wss://api.crm.dev.luminartechnohub.com/ws/';
+      'wss://api.crm.luminartechnohub.com/ws/';
 }
 
 class LaptopApiConfig {
