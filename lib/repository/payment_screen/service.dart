@@ -25,9 +25,18 @@ class PaymentScreenService {
   Future<({String url, double amount, bool discountApplied, double discountAmount})?> getIciciSession(String enrollmentId) async {
     try {
       final token = await AppUtils.getAccessKey();
+      final endpoint = '${AppEndpoints.iciciFull}$enrollmentId/';
+      const body = <String, dynamic>{};
+
+      LoggerUtils.info(
+        'REQUEST : ${GlobalLinks.baseUrl}$endpoint\n'
+        'PAYLOAD : $body',
+        tag: 'ICICI',
+      );
+
       final response = await _apiService.post(
-        endpoint: '${AppEndpoints.iciciFull}$enrollmentId/',
-        body: {},
+        endpoint: endpoint,
+        body: body,
         token: token,
       );
 
@@ -69,9 +78,18 @@ class PaymentScreenService {
   Future<({String url, double amount, bool discountApplied, double discountAmount})?> getIciciEmiSession(String emiId) async {
     try {
       final token = await AppUtils.getAccessKey();
+      final endpoint = '${AppEndpoints.iciciEmi}$emiId/';
+      const body = <String, dynamic>{};
+
+      LoggerUtils.info(
+        'REQUEST : ${GlobalLinks.baseUrl}$endpoint\n'
+        'PAYLOAD : $body',
+        tag: 'ICICI-EMI',
+      );
+
       final response = await _apiService.post(
-        endpoint: '${AppEndpoints.iciciEmi}$emiId/',
-        body: {},
+        endpoint: endpoint,
+        body: body,
         token: token,
       );
 

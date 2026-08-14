@@ -484,15 +484,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final provider = context.watch<ChatProvider>();
     context.watch<ThemeProvider>();
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _buildHeader(provider),
-            Expanded(child: _buildBody(provider)),
-          ],
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _searchFocusNode.unfocus(),
+      child: Scaffold(
+        backgroundColor: AppColors.scaffoldBackground,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _buildHeader(provider),
+              Expanded(child: _buildBody(provider)),
+            ],
+          ),
         ),
       ),
     );
