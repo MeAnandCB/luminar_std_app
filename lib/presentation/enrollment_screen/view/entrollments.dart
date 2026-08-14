@@ -7,6 +7,8 @@ import 'package:luminar_std/presentation/course_screen/course_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/widget/enrollment_card.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
+import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart'
+    show EnrollmentAccessX;
 import 'package:provider/provider.dart';
 
 class EnrollmentScreen extends StatefulWidget {
@@ -90,7 +92,11 @@ class _EnrollmentScreenState extends State<EnrollmentScreen>
             );
           }
 
-          final enrollments = dashboard.enrollmentsFromDashboard;
+          // Dropped/removed enrollments no longer belong to the student —
+          // only active ones show here.
+          final enrollments = dashboard.enrollmentsFromDashboard
+              .where((e) => !e.isBlockedForStudent)
+              .toList();
 
           // Empty state
           if (enrollments.isEmpty) {

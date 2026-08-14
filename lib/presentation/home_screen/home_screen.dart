@@ -485,7 +485,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
   // ============== COURSE CARD SECTION ==============
 
   Widget _buildCourseCard(Dashboard dashboard) {
-    final enrollmentsList = dashboard.enrollmentDetails?.enrollments ?? [];
+    final enrollmentsList = (dashboard.enrollmentDetails?.enrollments ?? [])
+        .where((e) => !e.isBlockedForStudent)
+        .toList();
 
     if (enrollmentsList.isEmpty) {
       return Container(
@@ -1193,7 +1195,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
     required ProfileController profileProvider,
   }) {
     final financial = dashboard?.financialSummary?.overview;
-    final enrollments = dashboard?.enrollmentDetails?.enrollments ?? [];
+    final enrollments = (dashboard?.enrollmentDetails?.enrollments ?? [])
+        .where((e) => !e.isBlockedForStudent)
+        .toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 32),

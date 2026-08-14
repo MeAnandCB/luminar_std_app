@@ -18,6 +18,8 @@ import 'package:luminar_std/presentation/jobs_screen/jobs_screen.dart';
 import 'package:luminar_std/presentation/laptop_scanner/screens/laptop_home_screen.dart';
 import 'package:luminar_std/presentation/class_task/views/class_task_screen.dart';
 import 'package:luminar_std/repository/class_task/class_task_service.dart';
+import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart'
+    show EnrollmentAccessX;
 import 'package:luminar_std/repository/exam_screen/service.dart';
 
 // ─── palette ─────────────────────────────────────────────────────────────────
@@ -157,7 +159,11 @@ class _MoreEnrollmentScreenState extends State<MoreEnrollmentScreen>
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
     final dashboard = context.watch<DashboardController>();
-    final enrollments = dashboard.enrollmentsFromDashboard;
+    // Dropped/removed enrollments keep showing in "My Enrollments" as status
+    // history, but must not grant a tab/tab-view into their batch here.
+    final enrollments = dashboard.enrollmentsFromDashboard
+        .where((e) => !e.isBlockedForStudent)
+        .toList();
     final unreadExams = dashboard.unreadExamsCount;
     final unviewedJobs = dashboard.unviewedJobNotificationsCount;
     _rebuildTabControllerIfNeeded(enrollments.length);

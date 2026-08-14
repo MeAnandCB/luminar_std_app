@@ -468,6 +468,20 @@ class CurrentStatus {
   Map<String, dynamic> toJson() => {"name": name, "value": value, "description": description, "color": color};
 }
 
+/// A dropped/removed enrollment no longer grants the student access to its
+/// batch (class task, attendance, live class, etc.) — only its status-history
+/// entry in "My Enrollments" should still show it.
+extension EnrollmentAccessX on Enrollment {
+  bool get isBlockedForStudent {
+    final value = (status?.value ?? '').toLowerCase();
+    final name = (status?.name ?? '').toLowerCase();
+    return value == 'dropped' ||
+        value == 'removed' ||
+        name == 'dropped' ||
+        name == 'removed';
+  }
+}
+
 class EnrollmentBasicInfo {
   String? uid;
   String? enrollmentNumber;
