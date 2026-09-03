@@ -12,7 +12,6 @@ import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/home_screen/widget/header_card.dart';
-import 'package:luminar_std/presentation/global_widget/festival_overlay.dart';
 import 'package:luminar_std/presentation/home_screen/widget/top_status_card.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -24,8 +23,6 @@ import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 import 'package:luminar_std/repository/nactet_registration/model/nactet_check_display_model.dart';
 import 'package:luminar_std/presentation/jobs_screen/jobs_screen.dart';
 import 'package:luminar_std/presentation/referral_screen/referral_screen.dart';
-import 'package:luminar_std/presentation/home_screen/widget/onam_event_card.dart';
-import 'package:luminar_std/presentation/home_screen/widget/onam_attendance_dialog.dart';
 import 'package:luminar_std/presentation/home_screen/widget/birthday_card.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -48,7 +45,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
     // Only load the display name once the frame is ready.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUserName();
-      if (mounted) OnamAttendanceDialogHelper.maybeShow(context);
     });
   }
 
@@ -90,14 +86,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
             ? authProvider.studentData!.profile.fullName
             : _displayName;
 
-        final themeInfo = FestivalDateManager.getCurrentThemeInfo();
-
-        return FestivalOverlay(
-          theme: themeInfo.theme,
-          titleOverride: themeInfo.titleOverride,
-          defaultBackgroundColor: AppColors.scaffoldBackground,
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
+        return Scaffold(
+            backgroundColor: AppColors.scaffoldBackground,
             body: dashboardProvider.isLoading
                 ? const DashboardShimmer()
                 : dashboardProvider.error != null
@@ -198,37 +188,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               'Active',
                         ),
 
-                        // ── ONAM EVENT NOTICE CARD ─────────────────────────────────
-                        Builder(builder: (_) {
-                          // Detect branch from active enrollment's batch location
-                          final enrollments = dashboard
-                              ?.enrollmentDetails?.enrollments;
-                          String? locationValue;
-                          if (enrollments != null && enrollments.isNotEmpty) {
-                            // Prefer first active/payment_completed enrollment
-                            final active = enrollments.firstWhere(
-                              (e) =>
-                                  e.status?.value == 'active' ||
-                                  e.status?.value == 'payment_completed' ||
-                                  e.status?.value == 'admission_fee_paid' ||
-                                  (e.batchInfo?.isActive ?? false),
-                              orElse: () => enrollments.first,
-                            );
-                            locationValue =
-                                active.batchInfo?.location?.value ??
-                                active.batchInfo?.location?.name;
-                          }
-                          final branch =
-                              OnamEventHelper.detectBranch(locationValue);
-                          final eventInfo =
-                              OnamEventHelper.getEventForBranch(branch);
-                          if (eventInfo == null) return const SizedBox.shrink();
-                          return Column(children: [
-                            const SizedBox(height: 16),
-                            OnamNoticeCard(event: eventInfo),
-                          ]);
-                        }),
-
                         // ── BIRTHDAY CARD ──────────────────────────────────────────
                         // Dashboard data is always loaded on this screen; the
                         // ProfileController's copy only gets fetched once the
@@ -316,7 +275,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       ],
                     ),
                   ),
-          ),
         );
       },
     );

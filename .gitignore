@@ -33,6 +33,12 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Local-only debug session token (never commit — see main.dart's debug
+# token injection). Pass to `flutter run` via:
+#   --dart-define-from-file=debug_token.local.json
+# to have a debug build log straight into that account, no login needed.
+debug_token.local.json
+
 # Symbolication related
 app.*.symbols
 

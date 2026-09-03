@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:luminar_std/core/services/app_update_service.dart';
@@ -27,6 +28,7 @@ import 'package:luminar_std/repository/FCM/fcm_service.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/blocked_users_service.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/theme_provider.dart';
 import 'package:luminar_std/core/theme/app_theme.dart';
 
@@ -49,6 +51,20 @@ void main() async {
     LoggerUtils.info('✅ Firebase initialized', tag: 'Main');
   } catch (e, st) {
     LoggerUtils.error('❌ Firebase init failed', tag: 'Main', error: e, stackTrace: st);
+  }
+
+  // Debug-only: reproduce a specific account's session by passing
+  // --dart-define=DEBUG_ACCESS_TOKEN=<token> at launch (e.g. an
+  // admin-issued impersonation token). Never set in release builds and
+  // never committed anywhere — the token only ever lives in the run
+  // command / shell history.
+  if (kDebugMode) {
+    const debugToken = String.fromEnvironment('DEBUG_ACCESS_TOKEN');
+    if (debugToken.isNotEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('access_token', debugToken);
+      LoggerUtils.info('Debug access token injected via --dart-define', tag: 'Main');
+    }
   }
 
   // Pre-load token for chat service

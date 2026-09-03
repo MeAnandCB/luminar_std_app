@@ -48,9 +48,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   String _getEffectiveStatus(StudentAssignment a) {
     final status = a.status.toUpperCase();
-    final lastVer = (a.lastVerificationResult ??
-            a.latestSubmission?.verificationStatus ??
-            '')
+    // The latest submission's own verification result is authoritative once
+    // one exists — a resubmission resets verification to pending, but the
+    // assignment-level `lastVerificationResult` can keep carrying an earlier
+    // attempt's PASS/FAIL verdict until the new attempt is itself verified,
+    // which made a fresh resubmission still show the previous attempt's
+    // status. Only fall back to `lastVerificationResult` when there is no
+    // submission at all to read from.
+    final lastVer = (a.latestSubmission != null
+            ? a.latestSubmission?.verificationStatus ?? ''
+            : a.lastVerificationResult ?? '')
         .toUpperCase();
 
     if (status == 'PASSED' ||
@@ -328,40 +335,46 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Reference / Sample Files shared by the instructor
-            if (task.attachments.isNotEmpty) ...[
-              _buildReferenceAttachmentsCard(task.attachments),
+      body: RefreshIndicator(
+        onRefresh: _refreshTaskDetail,
+        color: AppColors.primary,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Reference / Sample Files shared by the instructor
+              if (task.attachments.isNotEmpty) ...[
+                _buildReferenceAttachmentsCard(task.attachments),
+                const SizedBox(height: 16),
+              ],
+
+              // Task Header Card
+              _buildTaskHeaderCard(task),
+
               const SizedBox(height: 16),
-            ],
 
-            // Task Header Card
-            _buildTaskHeaderCard(task),
+              // Attempt Progress & Status Bar
+              _buildStatusOverviewCard(effectiveStatus),
 
-            const SizedBox(height: 16),
+              // Latest Submission & Feedback section
+              if (latestSub != null || effectiveStatus != 'NOT_SUBMITTED') ...[
+                const SizedBox(height: 18),
+                _buildLatestSubmissionCard(latestSub, effectiveStatus),
+              ],
 
-            // Attempt Progress & Status Bar
-            _buildStatusOverviewCard(effectiveStatus),
-
-            // Latest Submission & Feedback section
-            if (latestSub != null || effectiveStatus != 'NOT_SUBMITTED') ...[
               const SizedBox(height: 18),
-              _buildLatestSubmissionCard(latestSub, effectiveStatus),
+
+              // Form or Status Lock Banner
+              if (canSubmit)
+                _buildSubmissionFormCard(isOverdue: isOverdue)
+              else
+                _buildSubmissionLockedBanner(effectiveStatus, isOverdue),
             ],
-
-            const SizedBox(height: 18),
-
-            // Form or Status Lock Banner
-            if (canSubmit)
-              _buildSubmissionFormCard(isOverdue: isOverdue)
-            else
-              _buildSubmissionLockedBanner(effectiveStatus, isOverdue),
-          ],
+          ),
         ),
       ),
     );

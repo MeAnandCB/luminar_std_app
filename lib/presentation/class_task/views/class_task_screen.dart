@@ -59,9 +59,16 @@ class _ClassTaskScreenState extends State<ClassTaskScreen> {
 
   String _getEffectiveStatus(StudentAssignment a) {
     final status = a.status.toUpperCase();
-    final lastVer =
-        (a.lastVerificationResult ?? a.latestSubmission?.verificationStatus ?? '')
-            .toUpperCase();
+    // The latest submission's own verification result is authoritative once
+    // one exists — a resubmission resets verification to pending, but the
+    // assignment-level `lastVerificationResult` can keep carrying an earlier
+    // attempt's PASS/FAIL verdict until the new attempt is itself verified.
+    // Only fall back to `lastVerificationResult` when there's no submission
+    // at all to read from.
+    final lastVer = (a.latestSubmission != null
+            ? a.latestSubmission?.verificationStatus ?? ''
+            : a.lastVerificationResult ?? '')
+        .toUpperCase();
 
     if (status == 'PASSED' ||
         status == 'PASS' ||
