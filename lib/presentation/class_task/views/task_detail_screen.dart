@@ -292,6 +292,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
+  // Shared card chrome so every section reads as one consistent design
+  // language instead of ad hoc shadows/radii per widget.
+  BoxDecoration _cardDecoration({Color? borderColor}) {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      border: borderColor != null ? Border.all(color: borderColor) : null,
+      boxShadow: [
+        BoxShadow(
+          color: const Color(0xFF64748B).withValues(alpha: 0.08),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final task = _currentAssignment.task;
@@ -352,13 +369,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // Task Header Card
-              _buildTaskHeaderCard(task),
-
-              const SizedBox(height: 16),
-
-              // Attempt Progress & Status Bar
-              _buildStatusOverviewCard(effectiveStatus),
+              // Task overview: title, instructions, status, due date, attempts
+              _buildTaskOverviewCard(task, effectiveStatus, isOverdue),
 
               // Latest Submission & Feedback section
               if (latestSub != null || effectiveStatus != 'NOT_SUBMITTED') ...[
@@ -668,21 +680,47 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  Widget _buildTaskHeaderCard(StudentTaskInfo task) {
+  Widget _buildTaskOverviewCard(
+    StudentTaskInfo task,
+    String effectiveStatus,
+    bool isOverdue,
+  ) {
+    Color statusColor;
+    String statusText;
+    IconData statusIcon;
+
+    switch (effectiveStatus) {
+      case 'PASSED':
+        statusColor = const Color(0xFF10B981);
+        statusText = 'Passed';
+        statusIcon = Icons.check_circle_rounded;
+        break;
+      case 'SUBMITTED':
+        statusColor = const Color(0xFF3B82F6);
+        statusText = 'Under Review';
+        statusIcon = Icons.hourglass_top_rounded;
+        break;
+      case 'FAILED':
+        statusColor = const Color(0xFFEF4444);
+        statusText = 'Needs Resubmission';
+        statusIcon = Icons.error_rounded;
+        break;
+      case 'NOT_SUBMITTED':
+      default:
+        statusColor = const Color(0xFFF59E0B);
+        statusText = 'Not Submitted';
+        statusIcon = Icons.pending_actions_rounded;
+        break;
+    }
+
+    // Only flag the due date itself red when nothing has been turned in yet —
+    // once submitted, "overdue" is just a fact, not something to warn about.
+    final flagDueDate = isOverdue && effectiveStatus == 'NOT_SUBMITTED';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF64748B).withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -747,10 +785,113 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               ),
             ],
           ),
+
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+          ),
+
+          // Status + attempts, side by side so the two "where do I stand"
+          // facts read together instead of in separate cards.
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, color: statusColor, size: 18),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          statusText,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_currentAssignment.attemptsUsed}/${_currentAssignment.maxAttempts} attempts',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF475569),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          Row(
+            children: [
+              Icon(
+                Icons.event_rounded,
+                size: 16,
+                color: flagDueDate
+                    ? const Color(0xFFEF4444)
+                    : const Color(0xFF94A3B8),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Due ${_formatDate(task.dueAt)}',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: flagDueDate
+                        ? const Color(0xFFEF4444)
+                        : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+              if (flagDueDate)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'OVERDUE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFB91C1C),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
           if (task.description.isNotEmpty) ...[
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 14),
-              child: Divider(color: Color(0xFFF1F5F9)),
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Divider(height: 1, color: Color(0xFFF1F5F9)),
             ),
             Row(
               children: const [
@@ -761,7 +902,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 ),
                 SizedBox(width: 6),
                 Text(
-                  'Instructions:',
+                  'Instructions',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -794,137 +935,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  Widget _buildStatusOverviewCard(String effectiveStatus) {
-    Color statusColor;
-    String statusText;
-    IconData statusIcon;
-
-    switch (effectiveStatus) {
-      case 'PASSED':
-        statusColor = const Color(0xFF10B981);
-        statusText = 'Passed';
-        statusIcon = Icons.check_circle_rounded;
-        break;
-      case 'SUBMITTED':
-        statusColor = const Color(0xFF3B82F6);
-        statusText = 'Submitted (Under Review)';
-        statusIcon = Icons.hourglass_top_rounded;
-        break;
-      case 'FAILED':
-        statusColor = const Color(0xFFEF4444);
-        statusText = 'Failed / Needs Resubmission';
-        statusIcon = Icons.error_rounded;
-        break;
-      case 'NOT_SUBMITTED':
-      default:
-        statusColor = const Color(0xFFF59E0B);
-        statusText = 'Pending Submission';
-        statusIcon = Icons.pending_actions_rounded;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF64748B).withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(statusIcon, color: statusColor, size: 20),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          statusText,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.bold,
-                            color: statusColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Text(
-                  'Attempts: ${_currentAssignment.attemptsUsed}/${_currentAssignment.maxAttempts}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.event_rounded,
-                  size: 18,
-                  color: Color(0xFF64748B),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Due Date: ${_formatDate(_currentAssignment.task.dueAt)}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF475569),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildLatestSubmissionCard(
     TaskSubmissionInfo? submission,
     String effectiveStatus,
@@ -933,10 +943,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
+        decoration: _cardDecoration(),
         child: const Text(
           'No submission details recorded yet.',
           style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
@@ -955,17 +962,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF64748B).withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -983,7 +980,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Latest Submission (Attempt #${submission.attemptNumber})',
+                        'Attempt #${submission.attemptNumber}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -1000,21 +997,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               if (verStatus.isNotEmpty)
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: isPassedVer
                         ? const Color(0xFFDCFCE7)
                         : isFailedVer
                             ? const Color(0xFFFEE2E2)
                             : const Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isPassedVer
-                          ? const Color(0xFF86EFAC)
-                          : isFailedVer
-                              ? const Color(0xFFFCA5A5)
-                              : const Color(0xFF7DD3FC),
-                    ),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     verStatus,
@@ -1266,17 +1256,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF64748B).withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1308,12 +1288,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Upload your solution files (ZIP, PDF, images, source code, etc.). Maximum 10 files allowed.',
+            'Upload your solution (up to 10 files, 20MB total) and add an optional note.',
             style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // Overdue / Late Submission Warning Banner
+          // Overdue / Late Submission Warning — the only alert-level banner
+          // here; the 20MB/10-file limits are shown as plain captions below
+          // instead of a second competing warning box.
           if (isOverdue) ...[
             Container(
               width: double.infinity,
@@ -1336,7 +1318,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Late Submission Notice: This assignment is past its due date. Your submission will be recorded as overdue.',
+                      'Past due date — this submission will be recorded as overdue.',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -1348,40 +1330,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
           ],
-
-          // 20MB Limit Warning Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFFBEB),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFCD34D)),
-            ),
-            child: Row(
-              children: const [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  size: 20,
-                  color: Color(0xFFD97706),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Note: Maximum total size limit is 20MB for all selected files combined (up to 10 files max).',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF92400E),
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
 
           const SizedBox(height: 16),
 
@@ -1664,18 +1614,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF64748B).withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      decoration: _cardDecoration(),
       child: Row(
         children: [
           Container(
