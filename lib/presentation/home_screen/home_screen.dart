@@ -11,6 +11,7 @@ import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
+import 'package:luminar_std/presentation/home_screen/widget/batch_review_card.dart';
 import 'package:luminar_std/presentation/home_screen/widget/header_card.dart';
 import 'package:luminar_std/presentation/home_screen/widget/top_status_card.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
@@ -226,6 +227,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         const SizedBox(height: 14),
                         if (dashboard != null) ...[
                           _buildCourseCard(dashboard),
+
+                          const SizedBox(height: 28),
+                          _buildSectionHeading(
+                            'Batch Feedback',
+                            'Tell us how classes are going',
+                          ),
+                          const SizedBox(height: 14),
+                          const BatchReviewCard(),
 
                           const SizedBox(height: 28),
                           _buildSectionHeading(

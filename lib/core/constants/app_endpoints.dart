@@ -109,6 +109,12 @@ class AppEndpoints {
   static const String studentTasksMy = '/api/student-tasks/my/';
   static const String studentTaskSubmit =
       '/api/student-tasks/assignments/'; // Suffix with {assignment_uid}/submissions/create/
+
+  // Batch Student Feedback
+  static const String feedbackOptions = '/api/feedback/batch/options/';
+  static const String feedbackMyBatches = '/api/feedback/batch/my/';
+  static const String feedbackSubmit =
+      '/api/feedback/batch/'; // Suffix with {batch_uid}/submit/
 }
 
 class GlobalLinks {
