@@ -17,6 +17,7 @@ import 'package:luminar_std/presentation/referral_status_screen/referral_status_
 import 'package:luminar_std/presentation/jobs_screen/jobs_screen.dart';
 import 'package:luminar_std/presentation/laptop_scanner/screens/laptop_home_screen.dart';
 import 'package:luminar_std/presentation/class_task/views/class_task_screen.dart';
+import 'package:luminar_std/presentation/job_community/views/community_list_screen.dart';
 import 'package:luminar_std/repository/class_task/class_task_service.dart';
 import 'package:luminar_std/repository/enrollment_screen/model/enrollemnt_screen.dart'
     show EnrollmentAccessX;
@@ -119,6 +120,13 @@ const _kFeatures = [
     'Scan a QR code to check out or return a laptop',
     Color(0xFF0369A1),
     Color(0xFF0EA5E9),
+  ),
+  _Feature(
+    Icons.groups_rounded,
+    'Job Community',
+    'Chat, network & apply to shared jobs',
+    Color(0xFF14555A),
+    Color(0xFF1B7A80),
   ),
 ];
 
@@ -732,6 +740,15 @@ class _EnrollmentPageState extends State<_EnrollmentPage> {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const JobsScreen()),
+                ),
+              ),
+              // Job Community — same entry point as the home dashboard card.
+              SizedBox(height: 12),
+              _FeatureCard(
+                feature: _kFeatures[10],
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CommunityListScreen()),
                 ),
               ),
               if (!AppConfig.hidePayments) ...[

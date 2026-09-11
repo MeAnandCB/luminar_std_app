@@ -13,6 +13,7 @@ import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/home_screen/widget/batch_review_card.dart';
 import 'package:luminar_std/presentation/home_screen/widget/header_card.dart';
+import 'package:luminar_std/presentation/job_community/widgets/community_home_card.dart';
 import 'package:luminar_std/presentation/home_screen/widget/top_status_card.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/controller.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
@@ -252,6 +253,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           _buildJobsCard(
                             dashboardProvider.unviewedJobNotificationsCount,
                           ),
+                          const SizedBox(height: 28),
+                          _buildSectionHeading(
+                            'Job Community',
+                            'Chat, network & apply with your batch',
+                          ),
+                          const SizedBox(height: 14),
+                          const CommunityHomeCard(),
                           const SizedBox(height: 28),
                           _buildSectionHeading('Referral', 'Earn rewards'),
                           const SizedBox(height: 14),

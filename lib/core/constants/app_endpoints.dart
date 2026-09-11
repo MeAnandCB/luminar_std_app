@@ -115,6 +115,16 @@ class AppEndpoints {
   static const String feedbackMyBatches = '/api/feedback/batch/my/';
   static const String feedbackSubmit =
       '/api/feedback/batch/'; // Suffix with {batch_uid}/submit/
+
+  // Job Communities
+  static const String jobCommunities =
+      '/api/student_portal/job-communities/'; // Suffix with {uid}/ for detail
+  // Suffix with {community_uid}/jobs/
+  static const String jobCommunityJobs =
+      '/api/student_portal/job-communities/';
+  // Suffix with {community_uid}/jobs/{job_uid}/apply/
+  static const String jobCommunityApply =
+      '/api/student_portal/job-communities/';
 }
 
 class GlobalLinks {

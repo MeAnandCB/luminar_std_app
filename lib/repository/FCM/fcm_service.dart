@@ -7,6 +7,7 @@ import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/main.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:luminar_std/presentation/jobs_screen/job_detail_screen.dart';
+import 'package:luminar_std/presentation/job_community/views/community_list_screen.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/repository/jobs/model/job_notification_model.dart';
 import 'package:provider/provider.dart';
@@ -396,6 +397,25 @@ class FCMService {
             notification: notification,
           ),
         ),
+      );
+      AppUtils.isDeepLinking = false;
+      return;
+    }
+
+    // ─── Special Type: job_broadcast (job shared to a community) ─────────────
+    // Payload only carries job_uid/broadcast_uid/company_uid, not a
+    // community_uid, so the safest deep link is the community list — the
+    // student picks the community from there (per API notes: "open
+    // Community → that community chat / shared jobs → job detail / apply").
+    if (type == 'job_broadcast') {
+      final context = navigatorKey.currentContext;
+      if (context == null) {
+        _pendingNavData = data;
+        LoggerUtils.warning('Job community nav deferred: context not ready', tag: 'FCM');
+        return;
+      }
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const CommunityListScreen()),
       );
       AppUtils.isDeepLinking = false;
       return;
