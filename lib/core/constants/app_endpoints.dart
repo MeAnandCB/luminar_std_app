@@ -104,6 +104,9 @@ class AppEndpoints {
       '/api/student_portal/jobs/'; // Suffix with {uid}/apply/
   static const String jobApplicationDetail =
       '/api/student_portal/jobs/applications/'; // Suffix with {application_uid}/
+  // GET list; PATCH edit at {uid}/; POST {uid}/withdraw/
+  static const String jobApplications =
+      '/api/student_portal/jobs/applications/';
 
   // Student Tasks
   static const String studentTasksMy = '/api/student-tasks/my/';

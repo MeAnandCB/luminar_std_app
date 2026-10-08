@@ -154,6 +154,7 @@ class JobDetail {
   final JobCompany company;
   final String? customFieldTemplateUid;
   final List<JobCustomField> customFields;
+  final JobSourcedBy? sourcedBy;
 
   JobDetail({
     required this.uid,
@@ -166,6 +167,7 @@ class JobDetail {
     required this.company,
     this.customFieldTemplateUid,
     required this.customFields,
+    this.sourcedBy,
   });
 
   factory JobDetail.fromJson(Map<String, dynamic> json) {
@@ -190,6 +192,35 @@ class JobDetail {
           .map(JobCustomField.fromJson)
           .toList()
         ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
+      sourcedBy: json['sourced_by'] is Map<String, dynamic>
+          ? JobSourcedBy.fromJson(json['sourced_by'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+class JobSourcedBy {
+  final int id;
+  final String uid;
+  final String fullName;
+  final String? phone;
+  final String? email;
+
+  JobSourcedBy({
+    required this.id,
+    required this.uid,
+    required this.fullName,
+    this.phone,
+    this.email,
+  });
+
+  factory JobSourcedBy.fromJson(Map<String, dynamic> json) {
+    return JobSourcedBy(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      uid: json['uid']?.toString() ?? '',
+      fullName: json['full_name']?.toString() ?? '',
+      phone: json['phone']?.toString(),
+      email: json['email']?.toString(),
     );
   }
 }
@@ -234,7 +265,7 @@ class JobCustomField {
       key: json['key'] ?? '',
       fieldType: json['field_type'] ?? 'text',
       isRequired: json['is_required'] ?? false,
-      options: List<String>.from(json['options'] as List? ?? []),
+      options: (json['options'] as List? ?? []).map((e) => e.toString()).toList(),
       sortOrder: json['sort_order'] ?? 0,
     );
   }
@@ -356,6 +387,10 @@ class JobApplicationDetail {
   final List<ApplicationAnswer> answers;
   final String? resumeUrl;
   final String? resumeFile;
+  final JobSourcedBy? sourcedBy;
+  final List<JobCustomField> customFields;
+
+  bool get isActive => status == 'active';
 
   JobApplicationDetail({
     required this.applicationUid,
@@ -369,6 +404,8 @@ class JobApplicationDetail {
     required this.answers,
     this.resumeUrl,
     this.resumeFile,
+    this.sourcedBy,
+    this.customFields = const [],
   });
 
   static DateTime? _date(dynamic v) => v is String ? DateTime.tryParse(v) : null;
@@ -402,6 +439,18 @@ class JobApplicationDetail {
           .toList(),
       resumeUrl: json['resume_url']?.toString(),
       resumeFile: json['resume_file']?.toString(),
+      sourcedBy: (json['job'] is Map<String, dynamic> &&
+              json['job']['sourced_by'] is Map<String, dynamic>)
+          ? JobSourcedBy.fromJson(
+              json['job']['sourced_by'] as Map<String, dynamic>)
+          : null,
+      customFields: json['job'] is Map<String, dynamic>
+          ? ((json['job']['custom_fields'] as List? ?? [])
+              .whereType<Map<String, dynamic>>()
+              .map(JobCustomField.fromJson)
+              .toList()
+            ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)))
+          : const [],
     );
   }
 
@@ -555,4 +604,101 @@ class ApplicationAnswer {
           : const [],
     );
   }
+}
+
+
+// ─── My Applications (list) ───────────────────────────────────────────────────
+
+class MyApplicationsResponse {
+  final int page;
+  final int totalPages;
+  final int count;
+  final List<MyApplicationItem> results;
+
+  MyApplicationsResponse({
+    required this.page,
+    required this.totalPages,
+    required this.count,
+    required this.results,
+  });
+
+  factory MyApplicationsResponse.fromJson(Map<String, dynamic> json) {
+    return MyApplicationsResponse(
+      page: json['page'] ?? 1,
+      totalPages: json['total_pages'] ?? 1,
+      count: json['count'] ?? 0,
+      results: (json['results'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(MyApplicationItem.fromJson)
+          .toList(),
+    );
+  }
+}
+
+class MyApplicationItem {
+  final String applicationUid;
+  final String jobUid;
+  final String jobTitle;
+  final String companyName;
+  final String companyUid;
+  final String status;
+  final DateTime? appliedAt;
+  final String? currentStageName;
+  final int interviewsCount;
+  final int upcomingInterviewsCount;
+
+  MyApplicationItem({
+    required this.applicationUid,
+    required this.jobUid,
+    required this.jobTitle,
+    required this.companyName,
+    required this.companyUid,
+    required this.status,
+    this.appliedAt,
+    this.currentStageName,
+    required this.interviewsCount,
+    required this.upcomingInterviewsCount,
+  });
+
+  bool get isActive => status == 'active';
+
+  static int _int(dynamic v) =>
+      v is int ? v : int.tryParse(v?.toString() ?? '') ?? 0;
+
+  factory MyApplicationItem.fromJson(Map<String, dynamic> json) {
+    final stage = json['current_stage'];
+    return MyApplicationItem(
+      applicationUid: json['application_uid']?.toString() ?? '',
+      jobUid: json['job_uid']?.toString() ?? '',
+      jobTitle: json['job_title']?.toString() ?? '',
+      companyName: json['company_name']?.toString() ?? '',
+      companyUid: json['company_uid']?.toString() ?? '',
+      status: json['status']?.toString() ?? '',
+      appliedAt: json['applied_at'] is String
+          ? DateTime.tryParse(json['applied_at'])
+          : null,
+      currentStageName: stage is Map ? stage['name']?.toString() : null,
+      interviewsCount: _int(json['interviews_count']),
+      upcomingInterviewsCount: _int(json['upcoming_interviews_count']),
+    );
+  }
+
+  /// Minimal notification so [JobDetailScreen] can open from this list.
+  JobNotification toNotification() => JobNotification(
+        uid: '',
+        jobUid: jobUid,
+        jobTitle: jobTitle,
+        companyName: companyName,
+        companyUid: companyUid,
+        batchName: '',
+        isViewed: true,
+        createdAt: appliedAt ?? DateTime.now(),
+        timesShared: 0,
+        application: JobApplication(
+          hasApplication: true,
+          applicationUid: applicationUid,
+          applicationStatus: status,
+          currentStage: currentStageName,
+        ),
+      );
 }

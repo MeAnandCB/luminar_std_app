@@ -236,8 +236,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         _buildDropdownField(
                           'Any Arrears',
                           ['Yes', 'No'],
-                          editController.anyArrears ? 'No' : 'Yes',
-                          (value) => editController.anyArrears = value == 'No',
+                          editController.anyArrears ? 'Yes' : 'No',
+                          (value) => editController.anyArrears = value == 'Yes',
                         ),
                         _buildDatePicker('Admission Date', editController.admissionDateController, () async {
                           final date = await showDatePicker(

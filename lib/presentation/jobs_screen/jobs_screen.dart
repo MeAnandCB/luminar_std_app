@@ -1,3 +1,4 @@
+import 'package:luminar_std/presentation/jobs_screen/applied_jobs_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:shimmer/shimmer.dart';
@@ -111,6 +112,17 @@ class _JobsScreenState extends State<JobsScreen> {
         'Jobs',
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
+      actions: [
+        TextButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AppliedJobsScreen()),
+          ).then((_) => _loadJobs()),
+          icon: const Icon(Icons.assignment_turned_in_rounded,
+              color: Colors.white, size: 18),
+          label: const Text('Applied', style: TextStyle(color: Colors.white)),
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(

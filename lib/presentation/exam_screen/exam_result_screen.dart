@@ -8,6 +8,20 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/repository/exam_screen/model.dart';
 import 'package:luminar_std/repository/exam_screen/service.dart';
 
+// ── Number formatting (shows exact marks, never rounds) ────────────────────────
+String _formatScore(double value) {
+  if (value.isNaN) return '0';
+  if (value == value.roundToDouble()) {
+    return value.toInt().toString();
+  }
+  var s = value.toStringAsFixed(2);
+  if (s.contains('.')) {
+    s = s.replaceFirst(RegExp(r'0+$'), '');
+    s = s.replaceFirst(RegExp(r'\.$'), '');
+  }
+  return s;
+}
+
 // ── Grade configuration ────────────────────────────────────────────────────────
 class _GradeConfig {
   final String label;
@@ -457,13 +471,16 @@ class _HeroHeader extends StatelessWidget {
                                     style: const TextStyle(fontSize: 32),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    '${counterValue.value.round()}%',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 44,
-                                      fontWeight: FontWeight.w800,
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      '${_formatScore(counterValue.value)}%',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 44,
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                     ),
                                   ),
                                   const Text(
@@ -483,26 +500,28 @@ class _HeroHeader extends StatelessWidget {
                       const SizedBox(height: 20),
 
                       // Grade pill
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 28, vertical: 9),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(30),
-                          border:
-                              Border.all(color: Colors.white54, width: 1.5),
-                        ),
-                        child: Text(
-                          grade.toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
+                      if (grade.trim().isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 28, vertical: 9),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(30),
+                            border:
+                                Border.all(color: Colors.white54, width: 1.5),
+                          ),
+                          child: Text(
+                            grade.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
+                        const SizedBox(height: 12),
+                      ],
 
                       // Motivational message
                       Padding(
@@ -619,7 +638,7 @@ class _TemplateBandsCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        '${band.minPercent.round()}–${band.maxPercent.round()}%',
+                        '${_formatScore(band.minPercent)}–${_formatScore(band.maxPercent)}%',
                         style: TextStyle(fontSize: 8, color: AppColors.textHint),
                         textAlign: TextAlign.center,
                       ),
@@ -720,7 +739,7 @@ class _CriterionScoresCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Total  ${overallScore!.toStringAsFixed(1)}',
+                      'Total  ${_formatScore(overallScore!)}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.white,
@@ -813,8 +832,10 @@ class _CriterionScoresCard extends StatelessWidget {
                               ),
                               child: Text(
                                 s.scoreValue != null && s.maxScore != null
-                                    ? '${s.scoreValue!.toStringAsFixed(0)} / ${s.maxScore!.toStringAsFixed(0)}'
-                                    : s.scoreValue?.toStringAsFixed(0) ?? '—',
+                                    ? '${_formatScore(s.scoreValue!)} / ${_formatScore(s.maxScore!)}'
+                                    : s.scoreValue != null
+                                        ? _formatScore(s.scoreValue!)
+                                        : '—',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
@@ -877,7 +898,7 @@ class _CriterionScoresCard extends StatelessWidget {
                               ),
                             const Spacer(),
                             Text(
-                              '${(progress * 100).round()}%',
+                              '${_formatScore(progress * 100)}%',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: barColor,

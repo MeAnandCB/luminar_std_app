@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart'
+    show UserScript, UserScriptInjectionTime;
 import 'package:luminar_std/repository/gallery_details_screen/models/gallery_detail_model.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -27,8 +31,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   int _likeCount = 0;
   bool _isLiking = false;
 
-  // Pause state
-  bool _isPaused = false;
+  PlayerState _playerState = PlayerState.unknown;
+
+  // Controls bar: always shown under the video. In fullscreen it only appears for
+  // a few seconds after a tap, so it never covers a paused frame.
+  bool _showFullScreenBar = false;
+  Timer? _barTimer;
+
+  // Horizontal drag to seek
+  double _dragStartX = 0;
+  Duration _dragBase = Duration.zero;
+  Duration? _dragSeekTo;
+
+  bool _youtubeUiHidden = false;
 
   // Double-tap seek indicators
   bool _showForwardIndicator = false;
@@ -114,11 +129,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         loop: false,
         isLive: false,
         forceHD: false,
-        enableCaption: true,
+        enableCaption: false,
         hideThumbnail: true,
-        hideControls: false,
+        // The built-in controls draw a dark tint and a centre play icon over the
+        // video, so the screen draws its own bar (see _buildControlsBar).
+        hideControls: true,
         useHybridComposition: true,
-        controlsVisibleAtStart: true,
+        controlsVisibleAtStart: false,
       ),
     );
 
@@ -126,7 +143,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   void _listener() {
+    _hideYoutubeUi();
+
     if (_controller.value.isReady && !_isPlayerReady) {
+      _disableCaptions();
       if (mounted) {
         setState(() {
           _isPlayerReady = true;
@@ -134,10 +154,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
     }
 
-    // Track paused state
-    final isPaused = _controller.value.playerState == PlayerState.paused;
-    if (isPaused != _isPaused && mounted) {
-      setState(() => _isPaused = isPaused);
+    // Rebuild when the player state changes (drives the buffering spinner)
+    final state = _controller.value.playerState;
+    if (state != _playerState && mounted) {
+      setState(() => _playerState = state);
     }
 
     // Detect fullscreen changes
@@ -160,6 +180,125 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         ]);
       }
     }
+  }
+
+  // YouTube still shows captions with enableCaption: false (that flag only stops
+  // forcing them on), and its captions module loads shortly *after* onReady, so
+  // unloading it once at ready does nothing. This hook unloads the module on every
+  // API/state change and polls for a few seconds in case an event was missed.
+  static const String _noCaptionsJs = r'''
+(function () {
+  if (window.__noCaptions) return 'already';
+  window.__noCaptions = true;
+  window.__ccOff = function () {
+    try { player.unloadModule('captions'); } catch (e) {}
+    try { player.setOption('captions', 'track', {}); } catch (e) {}
+  };
+  player.addEventListener('onApiChange', '__ccOff');
+  player.addEventListener('onStateChange', '__ccOff');
+  window.__ccOff();
+  var n = 0;
+  var t = setInterval(function () {
+    window.__ccOff();
+    if (++n >= 20) clearInterval(t);
+  }, 500);
+  return 'installed';
+})();
+''';
+
+  Future<void> _disableCaptions() async {
+    final result = await _controller.value.webViewController
+        ?.evaluateJavascript(source: _noCaptionsJs);
+    debugPrint('[Video] captions hook: $result');
+  }
+
+  // YouTube draws its own paused screen (dark gradient, title, logo, share and a
+  // play button) inside a cross-origin iframe, so the page cannot style it. A
+  // document-start script limited to youtube.com runs inside that iframe instead.
+  static const String _hideYoutubeUiJs = r'''
+(function () {
+  function add() {
+    var root = document.head || document.documentElement;
+    if (!root) return false;
+    var s = document.createElement('style');
+    s.textContent = '#player-controls, .ytp-chrome-top, .ytp-gradient-top, .ytp-gradient-bottom, .ytp-pause-overlay { display: none !important; }';
+    root.appendChild(s);
+    return true;
+  }
+  if (!add()) {
+    var o = new MutationObserver(function () { if (add()) o.disconnect(); });
+    o.observe(document, { childList: true });
+  }
+})();
+''';
+
+  void _hideYoutubeUi() {
+    final web = _controller.value.webViewController;
+    if (_youtubeUiHidden || web == null) return;
+    _youtubeUiHidden = true;
+    web
+        .addUserScript(
+          userScript: UserScript(
+            source: _hideYoutubeUiJs,
+            injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+            forMainFrameOnly: false,
+            allowedOriginRules: {'https://www.youtube.com'},
+          ),
+        )
+        .catchError(
+          (Object e) => debugPrint('[Video] hide YouTube UI failed: $e'),
+        );
+  }
+
+  // Tap anywhere on the video to play/pause (no icon is shown).
+  void _togglePlayPause() {
+    if (!_isPlayerReady) return;
+    if (_controller.value.isPlaying) {
+      _controller.pause();
+    } else {
+      _controller.play();
+    }
+    _flashFullScreenBar();
+  }
+
+  void _flashFullScreenBar() {
+    if (!_isFullScreen) return;
+    _barTimer?.cancel();
+    setState(() => _showFullScreenBar = true);
+    _barTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _showFullScreenBar = false);
+    });
+  }
+
+  // Drag sideways to scrub (same behaviour as the player's built-in gesture).
+  void _onDragStart(DragStartDetails details) {
+    _dragStartX = details.globalPosition.dx;
+    _dragBase = _controller.value.position;
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    final deltaMs = ((details.globalPosition.dx - _dragStartX) * 1000).round();
+    final target = _dragBase + Duration(milliseconds: deltaMs);
+    setState(
+      () => _dragSeekTo = target < Duration.zero ? Duration.zero : target,
+    );
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    final target = _dragSeekTo;
+    if (target != null) _controller.seekTo(target);
+    setState(() => _dragSeekTo = null);
+    _flashFullScreenBar();
+  }
+
+  void _onDragCancel() {
+    setState(() => _dragSeekTo = null);
+  }
+
+  String _formatClock(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return d.inHours > 0 ? '${d.inHours}:$m:$s' : '$m:$s';
   }
 
   void _seekForward() {
@@ -276,6 +415,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   @override
   void dispose() {
+    _barTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     if (_controller.value.isReady) {
       _controller.removeListener(_listener);
@@ -334,119 +474,159 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                     ? _buildErrorView()
                     : Container(
                         color: Colors.black,
-                        child: Stack(
-                          children: [
-                            Center(
-                              child: YoutubePlayer(
-                                controller: _controller,
-                                aspectRatio: 16 / 9,
-                                onReady: () {
-                                  debugPrint('Player is ready');
-                                },
-                                onEnded: (metaData) {
-                                  debugPrint('Video ended');
-                                  _showVideoEndedDialog();
-                                },
-                                actionsPadding: const EdgeInsets.all(8),
-                                bottomActions: [
-                                  CurrentPosition(),
-                                  const SizedBox(width: 10),
-                                  ProgressBar(
-                                    isExpanded: true,
-                                    colors: ProgressBarColors(
-                                      playedColor: AppColors.primary,
-                                      handleColor: AppColors.primary,
-                                      backgroundColor: Colors.grey,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  RemainingDuration(),
-                                  const PlaybackSpeedButton(),
-                                  FullScreenButton(),
-                                ],
-                              ),
-                            ),
-                            // Double-tap seek overlays — always present in both normal and full screen
-                            Positioned.fill(
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: GestureDetector(
-                                      behavior: HitTestBehavior.translucent,
-                                      onDoubleTap: _seekBackward,
-                                      child: const SizedBox.expand(),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: GestureDetector(
-                                      behavior: HitTestBehavior.translucent,
-                                      onDoubleTap: _seekForward,
-                                      child: const SizedBox.expand(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Backward indicator
-                            if (_showBackwardIndicator)
-                              _buildSeekIndicator(isForward: false),
-                            // Forward indicator
-                            if (_showForwardIndicator)
-                              _buildSeekIndicator(isForward: true),
-                            // Pause overlay — hides YouTube thumbnail, tap to resume
-                            // bottom: 48 leaves the controls bar visible
-                            if (_isPaused)
-                              Positioned(
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 48,
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => _controller.play(),
-                                  child: Container(
-                                    color: Colors.black.withValues(alpha: 0.6),
-                                    child: Center(
-                                      child: Container(
-                                        width: 68,
-                                        height: 68,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.92),
-                                          shape: BoxShape.circle,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withValues(alpha: 0.4),
-                                              blurRadius: 16,
-                                              spreadRadius: 2,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Icon(
-                                          Icons.play_arrow_rounded,
-                                          color: AppColors.primary,
-                                          size: 42,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            if (!_isPlayerReady)
-                              Container(
-                                color: Colors.black,
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                          ],
+                        child: LayoutBuilder(
+                          builder: (context, constraints) =>
+                              _buildPlayerStack(constraints),
                         ),
                       ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPlayerStack(BoxConstraints constraints) {
+    // In portrait the controls sit just under the video so they never cover the
+    // picture; in fullscreen they overlay the bottom edge for a few seconds after
+    // a tap.
+    final videoHeight = constraints.maxWidth * 9 / 16;
+    final barTop = (constraints.maxHeight + videoHeight) / 2;
+
+    return Stack(
+      children: [
+        Center(
+          child: YoutubePlayer(
+            controller: _controller,
+            aspectRatio: 16 / 9,
+            onReady: () {
+              debugPrint('Player is ready');
+            },
+            onEnded: (metaData) {
+              debugPrint('Video ended');
+              _showVideoEndedDialog();
+            },
+          ),
+        ),
+        // Tap anywhere to play/pause, double-tap to jump 10s, drag sideways to
+        // scrub. Nothing is drawn over the video, so a paused frame stays readable.
+        Positioned.fill(
+          child: Row(
+            children: [
+              _buildTapZone(onDoubleTap: _seekBackward),
+              _buildTapZone(onDoubleTap: _seekForward),
+            ],
+          ),
+        ),
+        // Backward indicator
+        if (_showBackwardIndicator) _buildSeekIndicator(isForward: false),
+        // Forward indicator
+        if (_showForwardIndicator) _buildSeekIndicator(isForward: true),
+        if (_playerState == PlayerState.buffering)
+          const IgnorePointer(
+            child: Center(
+              child: SizedBox(
+                width: 34,
+                height: 34,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+          ),
+        if (_dragSeekTo != null)
+          IgnorePointer(
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _formatClock(_dragSeekTo!),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (_isFullScreen)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              ignoring: !_showFullScreenBar,
+              child: AnimatedOpacity(
+                opacity: _showFullScreenBar ? 1 : 0,
+                duration: const Duration(milliseconds: 200),
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  child: _buildControlsBar(),
+                ),
+              ),
+            ),
+          )
+        else
+          Positioned(
+            top: barTop,
+            left: 0,
+            right: 0,
+            child: _buildControlsBar(),
+          ),
+        if (!_isPlayerReady)
+          Container(
+            color: Colors.black,
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTapZone({required VoidCallback onDoubleTap}) {
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _togglePlayPause,
+        onDoubleTap: onDoubleTap,
+        onHorizontalDragStart: _onDragStart,
+        onHorizontalDragUpdate: _onDragUpdate,
+        onHorizontalDragEnd: _onDragEnd,
+        onHorizontalDragCancel: _onDragCancel,
+        child: const SizedBox.expand(),
+      ),
+    );
+  }
+
+  Widget _buildControlsBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          CurrentPosition(controller: _controller),
+          const SizedBox(width: 10),
+          ProgressBar(
+            controller: _controller,
+            isExpanded: true,
+            colors: ProgressBarColors(
+              playedColor: AppColors.primary,
+              handleColor: AppColors.primary,
+              backgroundColor: Colors.grey,
+            ),
+          ),
+          const SizedBox(width: 10),
+          RemainingDuration(controller: _controller),
+          PlaybackSpeedButton(controller: _controller),
+          FullScreenButton(controller: _controller),
+        ],
       ),
     );
   }

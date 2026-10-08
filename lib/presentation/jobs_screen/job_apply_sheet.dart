@@ -273,7 +273,7 @@ class _JobApplySheetState extends State<_JobApplySheet> {
                       padding: EdgeInsets.fromLTRB(16, 0, 16, bottom + 100),
                       children: [
                         const SizedBox(height: 16),
-                        _SectionLabel(label: 'Personal Information'),
+                        SectionLabel(label: 'Personal Information'),
                         const SizedBox(height: 12),
                         _ApplyField(
                           controller: _nameCtrl,
@@ -303,9 +303,9 @@ class _JobApplySheetState extends State<_JobApplySheet> {
                           errorText: _errors['phone'],
                         ),
                         const SizedBox(height: 20),
-                        _SectionLabel(label: 'Resume *'),
+                        SectionLabel(label: 'Resume *'),
                         const SizedBox(height: 12),
-                        _ResumeSection(
+                        ResumeSection(
                           resumeUrl: _resumeUrl,
                           pickedFileName: _pickedFileName,
                           gradient: widget.gradient,
@@ -318,12 +318,12 @@ class _JobApplySheetState extends State<_JobApplySheet> {
                         ),
                         if (widget.jobDetail.customFields.isNotEmpty) ...[
                           const SizedBox(height: 20),
-                          _SectionLabel(label: 'Application Questions'),
+                          SectionLabel(label: 'Application Questions'),
                           const SizedBox(height: 12),
                           ...widget.jobDetail.customFields.map(
                             (f) => Padding(
                               padding: const EdgeInsets.only(bottom: 16),
-                              child: _CustomFieldInput(
+                              child: CustomFieldInput(
                                 field: f,
                                 textController: _textAnswers[f.uid],
                                 selected: _selectAnswers[f.uid] ?? {},
@@ -545,8 +545,8 @@ class _SheetHeader extends StatelessWidget {
 
 // ─── Section label ────────────────────────────────────────────────────────────
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.label});
+class SectionLabel extends StatelessWidget {
+  const SectionLabel({required this.label});
 
   final String label;
 
@@ -669,8 +669,8 @@ class _ApplyField extends StatelessWidget {
 
 // ─── Resume section ───────────────────────────────────────────────────────────
 
-class _ResumeSection extends StatelessWidget {
-  const _ResumeSection({
+class ResumeSection extends StatelessWidget {
+  const ResumeSection({
     required this.resumeUrl,
     required this.pickedFileName,
     required this.gradient,
@@ -804,8 +804,8 @@ class _ResumeSection extends StatelessWidget {
 
 // ─── Custom field input ───────────────────────────────────────────────────────
 
-class _CustomFieldInput extends StatelessWidget {
-  const _CustomFieldInput({
+class CustomFieldInput extends StatelessWidget {
+  const CustomFieldInput({
     required this.field,
     required this.textController,
     required this.selected,

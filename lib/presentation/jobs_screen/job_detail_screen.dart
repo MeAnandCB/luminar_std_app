@@ -4,8 +4,11 @@ import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/jobs_screen/job_apply_sheet.dart';
+import 'package:luminar_std/presentation/jobs_screen/job_application_edit_sheet.dart';
 import 'package:luminar_std/repository/jobs/model/job_notification_model.dart';
 import 'package:luminar_std/repository/jobs/service/jobs_service.dart';
+import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
+import 'package:luminar_std/repository/chat_list_screen/models/chat.dart';
 import 'package:provider/provider.dart';
 
 final _historyDateFmt = DateFormat('MMM d, y • h:mm a');
@@ -126,6 +129,63 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     }
   }
 
+  Future<void> _openEditSheet() async {
+    final app = _appDetail;
+    if (app == null) return;
+    final saved = await showJobApplicationEditSheet(
+      context,
+      application: app,
+      jobTitle: widget.notification.jobTitle,
+      gradient: _gradient,
+    );
+    if (!mounted || !saved) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Application updated successfully.'),
+        backgroundColor: Color(0xFF10B981),
+      ),
+    );
+    _loadApplicationDetail(app.applicationUid);
+  }
+
+  Future<void> _confirmWithdraw() async {
+    final app = _appDetail;
+    if (app == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Withdraw application?'),
+        content: const Text(
+          'Your application will be withdrawn and the company will no longer '
+          'consider it. This cannot be undone from the app.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Withdraw'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final res = await _service.withdrawApplication(app.applicationUid);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(res.success
+            ? 'Application withdrawn.'
+            : (res.message ?? 'Failed to withdraw application.')),
+        backgroundColor: res.success ? const Color(0xFF10B981) : Colors.red,
+      ),
+    );
+    if (res.success) _loadApplicationDetail(app.applicationUid);
+  }
+
   @override
   Widget build(BuildContext context) {
     final notification = widget.notification;
@@ -155,6 +215,13 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   _buildInfoChips(_detail!.job, gradient),
                   const SizedBox(height: 16),
                   _buildDescriptionCard(_detail!.job),
+                  if ((_detail!.job.sourcedBy ?? _appDetail?.sourcedBy) != null) ...[
+                    const SizedBox(height: 16),
+                    _buildSourcedByCard(
+                      (_detail!.job.sourcedBy ?? _appDetail?.sourcedBy)!,
+                      gradient,
+                    ),
+                  ],
                   if (applied) ...[
                     // 2. Application Status
                     const SizedBox(height: 16),
@@ -369,6 +436,102 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         ),
       ),
     );
+  }
+
+  // ── Sourced-by (HR) card ──────────────────────────────────────────────────
+
+  Widget _buildSourcedByCard(JobSourcedBy hr, List<Color> gradient) {
+    final initial = hr.fullName.isEmpty ? '?' : hr.fullName[0].toUpperCase();
+    return _SectionCard(
+      title: 'Sourced By',
+      icon: Icons.person_pin_rounded,
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: gradient.first,
+            child: Text(
+              initial,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hr.fullName,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (hr.email != null && hr.email!.isNotEmpty)
+                  Text(
+                    hr.email!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                if (hr.phone != null && hr.phone!.isNotEmpty)
+                  Text(
+                    hr.phone!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: () => _openHrChat(hr),
+            style: FilledButton.styleFrom(backgroundColor: gradient.first),
+            icon: const Icon(Icons.chat_bubble_rounded, size: 16),
+            label: const Text('Message'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openHrChat(JobSourcedBy hr) async {
+    final provider = context.read<ChatProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    Chat? findChat() {
+      for (final c in provider.chats) {
+        if (c.chatType != ChatType.individual) continue;
+        if (c.otherParticipant?.id == hr.id ||
+            c.participant1 == hr.id ||
+            c.participant2 == hr.id) {
+          return c;
+        }
+      }
+      return null;
+    }
+
+    if (provider.apiService == null) await provider.init();
+    var chat = findChat();
+    if (chat == null) {
+      await provider.loadChats(showLoading: false);
+      chat = findChat();
+    }
+    if (!mounted) return;
+    if (chat == null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('No chat with ${hr.fullName} yet.')),
+      );
+      return;
+    }
+    provider.navigateToChat(chat.uid);
   }
 
   // ── Rich application status section ───────────────────────────────────────
@@ -1055,7 +1218,55 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
     final isExpired = _detail?.job.isExpired ?? false;
 
+    final app = _appDetail;
+    if (applied && app != null && app.isActive) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          border: Border(
+            top: BorderSide(color: AppColors.borderColor.withValues(alpha: 0.5)),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _confirmWithdraw,
+                icon: const Icon(Icons.undo_rounded, size: 18),
+                label: const Text('Withdraw'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: _openEditSheet,
+                icon: const Icon(Icons.edit_rounded, size: 18),
+                label: const Text('Edit'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: gradient.first,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (applied) {
+      final withdrawn = app?.status == 'withdrawn';
       return Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         decoration: BoxDecoration(
@@ -1067,14 +1278,16 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.task_alt_rounded,
-              color: Color(0xFF10B981),
+            Icon(
+              withdrawn ? Icons.block_rounded : Icons.task_alt_rounded,
+              color: withdrawn ? Colors.orange : const Color(0xFF10B981),
               size: 18,
             ),
             const SizedBox(width: 8),
             Text(
-              'You have already applied for this position',
+              withdrawn
+                  ? 'You withdrew this application'
+                  : 'You have already applied for this position',
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,

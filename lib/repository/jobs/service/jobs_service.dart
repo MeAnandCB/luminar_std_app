@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
@@ -14,6 +18,7 @@ class JobsService {
         endpoint: '${AppEndpoints.jobDetail}$jobUid/',
         token: token,
       );
+      debugPrint('[JobDetail] ${response.statusCode} ${jsonEncode(response.data)}');
       if (response.success && response.data != null) {
         final model = JobDetailResponse.fromJson(
           response.data as Map<String, dynamic>,
@@ -151,6 +156,106 @@ class JobsService {
         data: null,
         message: response.message ?? 'Failed to load jobs',
         statusCode: response.statusCode,
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        data: null,
+        message: 'Error: $e',
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ApiResponse<MyApplicationsResponse>> getMyApplications({
+    int page = 1,
+    int pageSize = 50,
+    String? status,
+  }) async {
+    try {
+      final token = await SharedPrefService.getAccessToken();
+      final response = await _api.get(
+        endpoint: AppEndpoints.jobApplications,
+        queryParams: {
+          'page': '$page',
+          'page_size': '$pageSize',
+          if (status != null) 'status': status,
+        },
+        token: token,
+      );
+      if (response.success && response.data != null) {
+        return ApiResponse(
+          success: true,
+          data: MyApplicationsResponse.fromJson(
+            response.data as Map<String, dynamic>,
+          ),
+          message: response.message,
+          statusCode: response.statusCode,
+        );
+      }
+      return ApiResponse(
+        success: false,
+        data: null,
+        message: response.message ?? 'Failed to load applications',
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        data: null,
+        message: 'Error: $e',
+        statusCode: 500,
+      );
+    }
+  }
+
+  /// PATCH an active application. Only changed pieces need to be sent.
+  /// [resumePath] uploads a new file; [resumeUrl] keeps/sets an existing URL.
+  Future<ApiResponse<dynamic>> updateApplication(
+    String applicationUid, {
+    String? resumePath,
+    String? resumeUrl,
+    List<Map<String, dynamic>>? answers,
+  }) async {
+    try {
+      final token = await SharedPrefService.getAccessToken();
+      final endpoint = '${AppEndpoints.jobApplications}$applicationUid/';
+      if (resumePath != null) {
+        return await _api.multipart(
+          endpoint: endpoint,
+          method: 'PATCH',
+          fields: {if (answers != null) 'answers': jsonEncode(answers)},
+          files: [await http.MultipartFile.fromPath('resume', resumePath)],
+          token: token,
+        );
+      }
+      return await _api.patch(
+        endpoint: endpoint,
+        body: {
+          if (resumeUrl != null) 'resume_url': resumeUrl,
+          if (answers != null) 'answers': answers,
+        },
+        token: token,
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        data: null,
+        message: 'Error: $e',
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ApiResponse<dynamic>> withdrawApplication(
+    String applicationUid,
+  ) async {
+    try {
+      final token = await SharedPrefService.getAccessToken();
+      return await _api.post(
+        endpoint: '${AppEndpoints.jobApplications}$applicationUid/withdraw/',
+        body: {},
+        token: token,
       );
     } catch (e) {
       return ApiResponse(
