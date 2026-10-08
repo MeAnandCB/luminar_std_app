@@ -36,19 +36,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   bool _isLoadingApp = false;
   String? _error;
 
-  static const List<List<Color>> _gradients = [
-    [Color(0xFF533483), Color(0xFF7B52AB)],
-    [Color(0xFF0F3460), Color(0xFF1A6FA0)],
-    [Color(0xFF1B4332), Color(0xFF2D6A4F)],
-    [Color(0xFF6D1E1E), Color(0xFFA03434)],
-    [Color(0xFF1A1A5E), Color(0xFF2D2DA0)],
-  ];
-
-  List<Color> get _gradient {
-    final name = widget.notification.companyName;
-    final idx = name.isEmpty ? 0 : name.codeUnitAt(0) % _gradients.length;
-    return _gradients[idx];
-  }
+  List<Color> get _gradient => [AppColors.primary, AppColors.primaryLight];
 
   @override
   void initState() {
@@ -197,7 +185,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       backgroundColor: AppColors.scaffoldBackground,
       body: CustomScrollView(
         slivers: [
-          _buildAppBar(notification, gradient),
+          _buildAppBar(),
           if (_isLoading)
             const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
@@ -211,6 +199,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  const SizedBox(height: 4),
+                  _buildHeroCard(notification, gradient),
                   const SizedBox(height: 16),
                   _buildInfoChips(_detail!.job, gradient),
                   const SizedBox(height: 16),
@@ -250,134 +240,90 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     );
   }
 
-  Widget _buildAppBar(JobNotification notification, List<Color> gradient) {
+  Widget _buildAppBar() {
     return SliverAppBar(
-      expandedHeight: 200,
       pinned: true,
-      backgroundColor: const Color(0xFF1A1A2E),
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: AppColors.scaffoldBackground,
+      surfaceTintColor: Colors.transparent,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+        icon: Icon(Icons.arrow_back_ios_new_rounded,
+            color: AppColors.textPrimary, size: 20),
         onPressed: () => Navigator.pop(context),
       ),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      title: Text(
+        'Job Details',
+        style: TextStyle(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroCard(JobNotification notification, List<Color> gradient) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _CompanyAvatar(
+            logoUrl: _detail?.job.company.logo,
+            name: notification.companyName,
+            gradient: gradient,
+            size: 72,
+            radius: 36,
+            fontSize: 24,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            notification.jobTitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.4,
             ),
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -40,
-                top: -40,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.03),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: -20,
-                bottom: -20,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: gradient[0].withValues(alpha: 0.2),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 80, 20, 20),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    _CompanyAvatar(
-                      logoUrl: _detail?.job.company.logo,
-                      name: notification.companyName,
-                      gradient: gradient,
-                      size: 64,
-                      radius: 18,
-                      fontSize: 22,
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            notification.companyName,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            notification.jobTitle,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: -0.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (!notification.isViewed)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF6B35).withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0xFFFF6B35).withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: const Text(
-                          'NEW',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFFF6B35),
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
+          const SizedBox(height: 4),
+          Text(
+            notification.companyName,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
-        ),
-        title: Text(
-          notification.jobTitle,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        titlePadding: const EdgeInsets.only(left: 56, bottom: 16, right: 16),
+          if (!notification.isViewed) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF6B35).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'NEW',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFFF6B35),
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -1339,11 +1285,11 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         height: 52,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: gradient),
-            borderRadius: BorderRadius.circular(14),
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(26),
             boxShadow: [
               BoxShadow(
-                color: gradient[0].withValues(alpha: 0.35),
+                color: AppColors.primary.withValues(alpha: 0.35),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -1353,7 +1299,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             onPressed: _openApplySheet,
             style: TextButton.styleFrom(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(26),
               ),
             ),
             child: const Row(
@@ -1490,33 +1436,41 @@ class _SectionCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: Row(
               children: [
-                Icon(icon, size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, size: 15, color: AppColors.primary),
+                ),
+                const SizedBox(width: 10),
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 0.3,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
             ),
-          ),
-          Divider(
-            color: AppColors.borderColor.withValues(alpha: 0.5),
-            height: 20,
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -1546,9 +1500,8 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

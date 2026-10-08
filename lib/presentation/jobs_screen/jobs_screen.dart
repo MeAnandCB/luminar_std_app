@@ -76,7 +76,7 @@ class _JobsScreenState extends State<JobsScreen> {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.only(bottom: 12),
                     child: _JobCard(
                       job: _jobs[i],
                       onTap: () => Navigator.push(
@@ -101,108 +101,83 @@ class _JobsScreenState extends State<JobsScreen> {
 
   Widget _buildAppBar() {
     return SliverAppBar(
-      expandedHeight: 160,
       pinned: true,
-      backgroundColor: const Color(0xFF1A1A2E),
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: AppColors.scaffoldBackground,
+      surfaceTintColor: Colors.transparent,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+        icon: Icon(Icons.arrow_back_ios_new_rounded,
+            color: AppColors.textPrimary, size: 20),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Text(
+      title: Text(
         'Jobs',
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w700,
+          fontSize: 20,
+        ),
       ),
       actions: [
-        TextButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AppliedJobsScreen()),
-          ).then((_) => _loadJobs()),
-          icon: const Icon(Icons.assignment_turned_in_rounded,
-              color: Colors.white, size: 18),
-          label: const Text('Applied', style: TextStyle(color: Colors.white)),
-        ),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AppliedJobsScreen()),
+            ).then((_) => _loadJobs()),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.assignment_turned_in_rounded,
+                      color: AppColors.primary, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Applied',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          child: Stack(
+        ),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(44),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Positioned(
-                right: -30,
-                top: -30,
-                child: Container(
-                  width: 160,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.04),
+              Text(
+                'Job Opportunities',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.4,
+                ),
+              ),
+              const Spacer(),
+              if (!_isLoading && _error == null)
+                Text(
+                  '${_jobs.length} Result${_jobs.length == 1 ? '' : 's'}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-              ),
-              Positioned(
-                right: 40,
-                bottom: 20,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFF533483).withValues(alpha: 0.3),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 20,
-                left: 20,
-                right: 20,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF533483).withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(
-                        Icons.work_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Job Opportunities',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        Text(
-                          '${_jobs.length} opening${_jobs.length == 1 ? '' : 's'} available',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.65),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
@@ -213,23 +188,54 @@ class _JobsScreenState extends State<JobsScreen> {
 
 // ─── Job Card ─────────────────────────────────────────────────────────────────
 
-class _JobCard extends StatelessWidget {
+class _JobCard extends StatefulWidget {
   const _JobCard({required this.job, required this.onTap});
   final JobNotification job;
   final VoidCallback onTap;
 
-  static const List<List<Color>> _gradients = [
-    [Color(0xFF533483), Color(0xFF7B52AB)],
-    [Color(0xFF0F3460), Color(0xFF1A6FA0)],
-    [Color(0xFF1B4332), Color(0xFF2D6A4F)],
-    [Color(0xFF6D1E1E), Color(0xFFA03434)],
-    [Color(0xFF1A1A5E), Color(0xFF2D2DA0)],
-  ];
+  @override
+  State<_JobCard> createState() => _JobCardState();
+}
 
-  List<Color> _gradientForCompany(String name) {
-    final idx = name.isEmpty ? 0 : name.codeUnitAt(0) % _gradients.length;
-    return _gradients[idx];
+class _JobCardState extends State<_JobCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  );
+
+  JobNotification get job => widget.job;
+  bool get _isNew => !job.isViewed;
+  bool get _applied => job.application.hasApplication;
+  bool get _glows => _isNew || _applied;
+
+  // Orange for new jobs, green for applied, matching their badges.
+  Color get _glowColor =>
+      _isNew ? const Color(0xFFFF6B35) : const Color(0xFF10B981);
+
+  @override
+  void initState() {
+    super.initState();
+    if (_glows) _pulse.repeat(reverse: true);
   }
+
+  @override
+  void didUpdateWidget(covariant _JobCard old) {
+    super.didUpdateWidget(old);
+    if (_glows && !_pulse.isAnimating) {
+      _pulse.repeat(reverse: true);
+    } else if (!_glows && _pulse.isAnimating) {
+      _pulse.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  List<Color> get _gradient => [AppColors.primary, AppColors.primaryLight];
 
   String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
@@ -242,186 +248,206 @@ class _JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradient = _gradientForCompany(job.companyName);
-    final applied = job.application.hasApplication;
     final status = job.application.applicationStatus;
     final stageName = job.application.currentStage;
 
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: gradient[0].withValues(alpha: 0.12),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
+      onTap: widget.onTap,
+      child: AnimatedBuilder(
+        animation: _pulse,
+        builder: (context, child) {
+          final t = _glows ? Curves.easeInOut.transform(_pulse.value) : 0.0;
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius: BorderRadius.circular(20),
+              border: _glows
+                  ? Border.all(
+                      color: _glowColor.withValues(alpha: 0.25 + 0.4 * t),
+                      width: 1.2,
+                    )
+                  : null,
+              boxShadow: [
+                if (_glows)
+                  BoxShadow(
+                    color: _glowColor.withValues(alpha: 0.12 + 0.28 * t),
+                    blurRadius: 10 + 14 * t,
+                    spreadRadius: 0.5 + 1.5 * t,
+                  )
+                else
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+              ],
             ),
-          ],
-          border: Border.all(
-            color: gradient[0].withValues(alpha: 0.15),
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              height: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: gradient),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            child: child,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      _CompanyAvatar(
-                        name: job.companyName,
-                        logoUrl: job.companyLogo,
-                        gradient: gradient,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              job.companyName,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              job.jobTitle,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                                letterSpacing: -0.2,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (!job.isViewed)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFF6B35)
-                                .withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'NEW',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFFF6B35),
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                    ],
+                  _CompanyAvatar(
+                    name: job.companyName,
+                    logoUrl: job.companyLogo,
+                    gradient: _gradient,
                   ),
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: [
-                      _Tag(
-                        icon: Icons.groups_2_rounded,
-                        label: job.batchName,
-                        color: gradient[0],
-                      ),
-                      _Tag(
-                        icon: Icons.access_time_rounded,
-                        label: _timeAgo(job.createdAt),
-                        color: AppColors.textSecondary,
-                      ),
-                      if (job.timesShared > 1)
-                        _Tag(
-                          icon: Icons.share_rounded,
-                          label: 'Shared ${job.timesShared}×',
-                          color: AppColors.textSecondary,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          job.jobTitle,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                    ],
+                        const SizedBox(height: 1),
+                        Text(
+                          job.companyName,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 14),
-                  Divider(
-                    color: AppColors.borderColor.withValues(alpha: 0.6),
-                    height: 1,
+                  if (_isNew) _NewBadge(animation: _pulse),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(Icons.groups_2_rounded,
+                      size: 14, color: AppColors.primary),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      job.batchName,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _StatusBadge(
-                        applied: applied,
-                        status: status,
-                        stageName: stageName,
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: gradient),
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: gradient[0].withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              applied
-                                  ? Icons.check_circle_rounded
-                                  : Icons.open_in_new_rounded,
-                              color: Colors.white,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              applied ? 'Applied' : 'View Job',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  const SizedBox(width: 10),
+                  Icon(Icons.access_time_rounded,
+                      size: 13, color: AppColors.textSecondary),
+                  const SizedBox(width: 3),
+                  Text(
+                    _timeAgo(job.createdAt),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        _StatusBadge(
+                          applied: _applied,
+                          status: status,
+                          stageName: stageName,
+                        ),
+                        if (job.timesShared > 1)
+                          _Tag(
+                            icon: Icons.share_rounded,
+                            label: 'Shared ${job.timesShared}×',
+                            color: AppColors.textSecondary,
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _NewBadge extends StatelessWidget {
+  const _NewBadge({required this.animation});
+  final Animation<double> animation;
+
+  @override
+  Widget build(BuildContext context) {
+    const color = Color(0xFFFF6B35);
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) {
+        final t = Curves.easeInOut.transform(animation.value);
+        return Container(
+          margin: const EdgeInsets.only(left: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12 + 0.1 * t),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.2 + 0.3 * t),
+                blurRadius: 4 + 8 * t,
+              ),
+            ],
+          ),
+          child: const Text(
+            'NEW',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: color,
+              letterSpacing: 0.5,
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -439,9 +465,8 @@ class _Tag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -510,20 +535,30 @@ class _StatusBadge extends StatelessWidget {
       }
     }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: color,
-            fontWeight: FontWeight.w600,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -553,11 +588,11 @@ class _CompanyAvatar extends StatelessWidget {
     final url = logoUrl;
     if (url != null && url.isNotEmpty) {
       return Container(
-        width: 48,
-        height: 48,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: gradient[0].withValues(alpha: 0.25),
@@ -567,11 +602,11 @@ class _CompanyAvatar extends StatelessWidget {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           child: Image.network(
             url,
-            width: 48,
-            height: 48,
+            width: 40,
+            height: 40,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => _buildInitials(),
           ),
@@ -583,15 +618,15 @@ class _CompanyAvatar extends StatelessWidget {
 
   Widget _buildInitials() {
     return Container(
-      width: 48,
-      height: 48,
+      width: 40,
+      height: 40,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: gradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: gradient[0].withValues(alpha: 0.35),
@@ -633,7 +668,7 @@ class _SliverLoadingSkeleton extends StatelessWidget {
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (_, __) => Padding(
-            padding: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.only(bottom: 12),
             child: Shimmer.fromColors(
               baseColor: baseColor,
               highlightColor: highlightColor,
@@ -664,11 +699,11 @@ class _SliverLoadingSkeleton extends StatelessWidget {
                           Row(
                             children: [
                               Container(
-                                width: 48,
-                                height: 48,
+                                width: 40,
+                                height: 40,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               const SizedBox(width: 12),
