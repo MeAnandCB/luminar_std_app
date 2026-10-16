@@ -5,6 +5,7 @@ import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/presentation/chat_screen/widgets/preseigner_url.dart';
 import '../models/chat.dart';
 import '../models/message.dart';
+import '../models/poll.dart';
 
 class ChatApiService {
   final ApiService _apiService = ApiService();
@@ -259,6 +260,91 @@ class ChatApiService {
       return ApiResponse.success(null, response.statusCode ?? 200);
     }
     return ApiResponse.error(response.message ?? "Failed to mark read", response.statusCode);
+  }
+
+  // ── Polls ──────────────────────────────────────────────────────────────────
+  /// Vote on a poll message
+  /// POST /api/chats/<chat_uid>/messages/<message_uid>/poll/vote/
+  Future<ApiResponse<Poll>> votePoll({
+    required String chatUid,
+    required String messageUid,
+    required List<String> optionUids,
+  }) async {
+    final response = await _apiService.post(
+      endpoint: '${AppEndpoints.chats}$chatUid/messages/$messageUid/poll/vote/',
+      token: token,
+      body: {'option_uids': optionUids},
+    );
+
+    if (response.success && response.data != null) {
+      final data = response.data;
+      final pollJson = (data is Map && data['poll'] is Map)
+          ? data['poll'] as Map<String, dynamic>
+          : (data is Map<String, dynamic> ? data : null);
+      if (pollJson != null) {
+        return ApiResponse.success(Poll.fromJson(pollJson), response.statusCode ?? 200);
+      }
+    }
+    return ApiResponse.error(response.message ?? "Failed to submit vote", response.statusCode);
+  }
+
+  /// Create a poll message (plain group chats only)
+  /// POST /api/chats/<chat_uid>/messages/send/
+  Future<ApiResponse<Message>> createPoll({
+    required String chatUid,
+    required String question,
+    required List<String> options,
+    bool allowMultiple = false,
+  }) async {
+    final body = <String, dynamic>{
+      'message_type': 'poll',
+      'question': question,
+      'options': options,
+      'allow_multiple': allowMultiple,
+      'content': question,
+    };
+
+    final response = await _apiService.post(
+      endpoint: '${AppEndpoints.sendMessage}$chatUid/messages/send/',
+      token: token,
+      body: body,
+    );
+
+    if (response.success) {
+      final data = response.data;
+      final messageJson = (data is Map && data.containsKey('message')) ? data['message'] : data;
+      if (messageJson is Map && !messageJson.containsKey('chat')) {
+        messageJson['chat'] = chatUid;
+      }
+      final message = Message.fromJson(messageJson as Map<String, dynamic>);
+      return ApiResponse.success(message, response.statusCode ?? 201);
+    }
+    return ApiResponse.error(response.message ?? "Failed to create poll", response.statusCode);
+  }
+
+  /// Close a poll message
+  /// POST /api/chats/<chat_uid>/messages/<message_uid>/poll/close/
+  Future<ApiResponse<Poll?>> closePoll({
+    required String chatUid,
+    required String messageUid,
+  }) async {
+    final response = await _apiService.post(
+      endpoint: '${AppEndpoints.chats}$chatUid/messages/$messageUid/poll/close/',
+      token: token,
+      body: {},
+    );
+
+    if (response.success) {
+      final data = response.data;
+      if (data is Map && data['poll'] is Map) {
+        return ApiResponse.success(
+          Poll.fromJson(data['poll'] as Map<String, dynamic>),
+          response.statusCode ?? 200,
+        );
+      }
+      return ApiResponse.success(null, response.statusCode ?? 200);
+    }
+    return ApiResponse.error(response.message ?? "Failed to close poll", response.statusCode);
   }
 }
 

@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
+import 'package:luminar_std/presentation/chat_screen/widgets/poll_bubble.dart';
 import 'package:luminar_std/presentation/job_community/views/community_apply_sheet.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/message.dart' as chat_models;
+import 'package:luminar_std/repository/chat_list_screen/models/poll.dart';
 import 'package:luminar_std/repository/job_community/job_community_model.dart';
 import 'package:luminar_std/repository/job_community/job_community_service.dart';
 import 'package:provider/provider.dart';
@@ -113,6 +115,7 @@ class _CommunityChatTabState extends State<_CommunityChatTab> {
   Timer? _pollTimer;
   final ScrollController _scrollController = ScrollController();
   StreamSubscription<chat_models.Message>? _wsSubscription;
+  StreamSubscription<Map<String, dynamic>>? _wsPollSubscription;
 
   @override
   void initState() {
@@ -132,6 +135,7 @@ class _CommunityChatTabState extends State<_CommunityChatTab> {
   void dispose() {
     _pollTimer?.cancel();
     _wsSubscription?.cancel();
+    _wsPollSubscription?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -142,6 +146,22 @@ class _CommunityChatTabState extends State<_CommunityChatTab> {
       final ws = context.read<ChatProvider>().webSocketService;
       if (ws == null) return;
       _wsSubscription = ws.messageStream.listen(_onSocketMessage);
+      _wsPollSubscription = ws.pollUpdatedStream.listen((event) {
+        final chatUid = event['chat_uid']?.toString();
+        final messageUid = event['message_uid']?.toString();
+        final poll = event['poll'] as Poll?;
+        if ((chatUid == null || chatUid.isEmpty || chatUid == widget.chatUid) &&
+            messageUid != null &&
+            poll != null &&
+            mounted) {
+          setState(() {
+            final index = _messages.indexWhere((m) => m.uid == messageUid);
+            if (index != -1) {
+              _messages[index] = _messages[index].copyWith(poll: poll);
+            }
+          });
+        }
+      });
     } catch (_) {
       // Best-effort enhancement only — polling above remains the source of truth.
     }
@@ -159,8 +179,30 @@ class _CommunityChatTabState extends State<_CommunityChatTab> {
           id: message.sender.id,
           fullName: message.sender.fullName,
         ),
+        poll: message.poll,
       ),
     ], markReadNew: true);
+  }
+
+  Future<void> _votePoll(String messageUid, List<String> optionUids) async {
+    final response = await widget.service.votePoll(
+      chatUid: widget.chatUid,
+      messageUid: messageUid,
+      optionUids: optionUids,
+    );
+
+    if (response.success && response.data != null) {
+      if (mounted) {
+        setState(() {
+          final index = _messages.indexWhere((m) => m.uid == messageUid);
+          if (index != -1) {
+            _messages[index] = _messages[index].copyWith(poll: response.data!);
+          }
+        });
+      }
+    } else {
+      throw Exception(response.message ?? 'Failed to submit vote');
+    }
   }
 
   void _onScroll() {
@@ -306,7 +348,11 @@ class _CommunityChatTabState extends State<_CommunityChatTab> {
             final message = _messages[_messages.length - 1 - index];
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: _MessageBubble(message: message),
+              child: _MessageBubble(
+                message: message,
+                chatUid: widget.chatUid,
+                onVote: (optionUids) => _votePoll(message.uid, optionUids),
+              ),
             );
           },
         ),
@@ -406,9 +452,15 @@ class _DisabledChatInputBar extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message});
+  const _MessageBubble({
+    required this.message,
+    required this.chatUid,
+    this.onVote,
+  });
 
   final CommunityMessage message;
+  final String chatUid;
+  final Future<void> Function(List<String> optionUids)? onVote;
 
   @override
   Widget build(BuildContext context) {
@@ -418,10 +470,15 @@ class _MessageBubble extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width *
+              (message.isPoll ? 0.85 : 0.8),
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: message.isPoll
+              ? (AppColors.isDark ? const Color(0xFF1E293B) : Colors.white)
+              : AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.borderColor.withValues(alpha: 0.5)),
         ),
@@ -441,10 +498,19 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ),
               ),
-            Text(
-              message.content,
-              style: TextStyle(fontSize: 13.5, color: AppColors.textPrimary, height: 1.35),
-            ),
+            if (message.isPoll && message.poll != null)
+              PollBubble(
+                poll: message.poll!,
+                messageUid: message.uid,
+                chatUid: chatUid,
+                canShowVoters: false,
+                onVote: onVote,
+              )
+            else
+              Text(
+                message.content,
+                style: TextStyle(fontSize: 13.5, color: AppColors.textPrimary, height: 1.35),
+              ),
             const SizedBox(height: 4),
             Text(
               DateFormat('dd MMM, hh:mm a').format(message.createdAt.toLocal()),

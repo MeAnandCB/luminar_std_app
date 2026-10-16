@@ -1,11 +1,12 @@
 import 'package:luminar_std/core/utils/app_utils.dart';
+import 'poll.dart';
 import 'user.dart';
 
 class Message {
   final String uid;
   final String chatId;
   final User sender;
-  final String messageType; // 'text' | 'image' | 'video' | 'file' | 'audio'
+  final String messageType; // 'text' | 'image' | 'video' | 'file' | 'audio' | 'poll'
   final String content;
   final String? file;
   final String? fileName;
@@ -22,6 +23,7 @@ class Message {
   final DateTime updatedAt;
   final List<int> readBy;
   final List<Reaction>? reactions;
+  final Poll? poll;
 
   const Message({
     required this.uid,
@@ -44,6 +46,7 @@ class Message {
     required this.updatedAt,
     required this.readBy,
     this.reactions,
+    this.poll,
   });
 
   bool get isImage => messageType == 'image';
@@ -51,6 +54,7 @@ class Message {
   bool get isAudio => messageType == 'audio';
   bool get isFile => messageType == 'file';
   bool get isText => messageType == 'text';
+  bool get isPoll => messageType == 'poll';
 
   static const _videoExtensions = {
     'mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi', '3gp', 'wmv',
@@ -116,6 +120,11 @@ class Message {
           .toList();
     }
 
+    Poll? poll;
+    if (json['poll'] is Map<String, dynamic>) {
+      poll = Poll.fromJson(json['poll'] as Map<String, dynamic>);
+    }
+
     return Message(
       uid: json['uid']?.toString() ?? '',
       chatId: (json['chat_uid'] ?? json['chat'])?.toString() ?? '',
@@ -148,6 +157,7 @@ class Message {
       updatedAt: _parseDate(json['updated_at']) ?? DateTime.now(),
       readBy: _parseIntList(json['read_by']),
       reactions: reactions,
+      poll: poll,
     );
   }
 
@@ -172,6 +182,7 @@ class Message {
     'read_by': readBy,
     if (reactions != null)
       'reactions': reactions!.map((r) => r.toJson()).toList(),
+    if (poll != null) 'poll': poll!.toJson(),
   };
 
   Message copyWith({
@@ -195,6 +206,7 @@ class Message {
     DateTime? updatedAt,
     List<int>? readBy,
     List<Reaction>? reactions,
+    Poll? poll,
   }) => Message(
     uid: uid ?? this.uid,
     chatId: chatId ?? this.chatId,
@@ -216,6 +228,7 @@ class Message {
     updatedAt: updatedAt ?? this.updatedAt,
     readBy: readBy ?? this.readBy,
     reactions: reactions ?? this.reactions,
+    poll: poll ?? this.poll,
   );
 
   static int? _parseInt(dynamic v) {

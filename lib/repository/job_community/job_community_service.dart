@@ -6,6 +6,7 @@ import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
+import 'package:luminar_std/repository/chat_list_screen/models/poll.dart';
 import 'package:luminar_std/repository/job_community/job_community_model.dart';
 
 class JobCommunityService {
@@ -168,6 +169,39 @@ class JobCommunityService {
       );
     } catch (_) {
       // Best-effort — not marking read shouldn't block the read-only view.
+    }
+  }
+
+  /// Vote on a poll within community chat
+  /// POST /api/chats/<chat_uid>/messages/<message_uid>/poll/vote/
+  Future<ApiResponse<Poll>> votePoll({
+    required String chatUid,
+    required String messageUid,
+    required List<String> optionUids,
+  }) async {
+    try {
+      final token = await AppUtils.getAccessKey();
+      final response = await _apiService.post(
+        endpoint: '${AppEndpoints.chats}$chatUid/messages/$messageUid/poll/vote/',
+        token: token,
+        body: {'option_uids': optionUids},
+      );
+
+      if (response.success && response.data != null) {
+        final data = response.data;
+        final pollJson = (data is Map && data['poll'] is Map)
+            ? data['poll'] as Map<String, dynamic>
+            : (data is Map<String, dynamic> ? data : null);
+        if (pollJson != null) {
+          return ApiResponse.success(Poll.fromJson(pollJson), response.statusCode ?? 200);
+        }
+      }
+      return ApiResponse.error(
+        response.message ?? 'Failed to submit vote',
+        response.statusCode,
+      );
+    } catch (e) {
+      return ApiResponse.error(e.toString(), null);
     }
   }
 

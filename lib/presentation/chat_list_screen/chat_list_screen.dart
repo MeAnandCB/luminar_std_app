@@ -467,6 +467,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
         case 'file':
           displayContent = '📎 Attachment';
           break;
+        case 'poll':
+          displayContent = '📊 $content';
+          break;
       }
     }
 

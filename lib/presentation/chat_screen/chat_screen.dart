@@ -17,9 +17,12 @@ import 'package:luminar_std/presentation/chat_screen/widgets/video_thumbnail_pre
 import 'package:record/record.dart';
 import 'dart:math' as _math;
 
+import 'package:luminar_std/presentation/chat_screen/widgets/create_poll_sheet.dart';
+import 'package:luminar_std/presentation/chat_screen/widgets/poll_bubble.dart';
 import 'package:luminar_std/presentation/chat_screen/widgets/preseigner_url.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/chat.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/message.dart';
+import 'package:luminar_std/repository/chat_list_screen/models/poll.dart';
 import 'package:luminar_std/repository/chat_list_screen/models/user.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/api_service.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/blocked_users_service.dart';
@@ -66,6 +69,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   StreamSubscription<Message>? _messageSubscription;
   StreamSubscription<Map<String, dynamic>>? _statusSubscription;
   StreamSubscription<Map<String, dynamic>>? _deleteSubscription;
+  StreamSubscription<Map<String, dynamic>>? _pollUpdatedSubscription;
   bool _isSocketConnected = false;
   VoidCallback? _priorOnConnected;
   VoidCallback? _priorOnDisconnected;
@@ -337,6 +341,24 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       }
     });
 
+    _pollUpdatedSubscription =
+        _webSocketService.pollUpdatedStream.listen((event) {
+      final chatUid = event['chat_uid']?.toString();
+      final messageUid = event['message_uid']?.toString();
+      final poll = event['poll'] as Poll?;
+      if ((chatUid == null || chatUid.isEmpty || chatUid == widget.chat.uid) &&
+          messageUid != null &&
+          poll != null &&
+          mounted) {
+        setState(() {
+          final index = _messages.indexWhere((m) => m.uid == messageUid);
+          if (index != -1) {
+            _messages[index] = _messages[index].copyWith(poll: poll);
+          }
+        });
+      }
+    });
+
     if (widget.chat.chatType == ChatType.individual &&
         widget.chat.otherParticipant != null) {
       _statusSubscription = _webSocketService.statusStream.listen((s) {
@@ -375,6 +397,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _statusSubscription?.cancel();
     _messageSubscription?.cancel();
     _deleteSubscription?.cancel();
+    _pollUpdatedSubscription?.cancel();
     // Undo the onConnected/onDisconnected chaining from initState so this
     // disposed screen's closures don't stay attached to a long-lived shared
     // WebSocketService instance.
@@ -528,6 +551,93 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
+  // ── Polls ──────────────────────────────────────────────────────────────────
+  Future<void> _votePoll(String messageUid, List<String> optionUids) async {
+    final response = await widget.apiService.votePoll(
+      chatUid: widget.chat.uid,
+      messageUid: messageUid,
+      optionUids: optionUids,
+    );
+
+    if (response.success && response.data != null) {
+      if (mounted) {
+        setState(() {
+          final index = _messages.indexWhere((m) => m.uid == messageUid);
+          if (index != -1) {
+            _messages[index] = _messages[index].copyWith(poll: response.data!);
+          }
+        });
+      }
+    } else {
+      throw Exception(response.message ?? 'Failed to submit vote');
+    }
+  }
+
+  Future<void> _closePoll(String messageUid) async {
+    final response = await widget.apiService.closePoll(
+      chatUid: widget.chat.uid,
+      messageUid: messageUid,
+    );
+
+    if (response.success) {
+      if (mounted) {
+        setState(() {
+          final index = _messages.indexWhere((m) => m.uid == messageUid);
+          if (index != -1) {
+            final oldPoll = _messages[index].poll;
+            if (response.data != null) {
+              _messages[index] = _messages[index].copyWith(poll: response.data!);
+            } else if (oldPoll != null) {
+              _messages[index] = _messages[index].copyWith(
+                poll: oldPoll.copyWith(isClosed: true),
+              );
+            }
+          }
+        });
+      }
+    } else {
+      throw Exception(response.message ?? 'Failed to close poll');
+    }
+  }
+
+  void _openCreatePollSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => CreatePollSheet(
+        onSubmit: ({
+          required String question,
+          required List<String> options,
+          required bool allowMultiple,
+        }) async {
+          final response = await widget.apiService.createPoll(
+            chatUid: widget.chat.uid,
+            question: question,
+            options: options,
+            allowMultiple: allowMultiple,
+          );
+
+          if (response.success && response.data != null) {
+            final message = response.data!;
+            if (mounted) {
+              setState(() {
+                final exists = _messages.any((m) => m.uid == message.uid);
+                if (!exists) {
+                  _messages.insert(0, message);
+                }
+              });
+              _webSocketService.broadcastLocalMessage(message);
+              _scrollToBottom();
+            }
+          } else {
+            throw Exception(response.message ?? 'Failed to create poll');
+          }
+        },
+      ),
+    );
+  }
+
   // ── Attach button ─────────────────────────────────────────────────────────
   void _onAttachPressed() {
     if (_isPicking || _isUploading) return;
@@ -644,6 +754,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           _pickAnyFile();
         },
       ),
+      if (widget.chat.chatType == ChatType.group)
+        _AttachItem(
+          icon: Icons.poll_rounded,
+          label: 'Poll',
+          sublabel: 'create a vote',
+          color: const Color(0xFF6366F1),
+          onTap: () {
+            Navigator.pop(context);
+            _openCreatePollSheet();
+          },
+        ),
     ];
 
     return Container(
@@ -3731,6 +3852,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildMessageContent(Message message, bool isMe) {
+    if (message.isPoll && message.poll != null) {
+      return PollBubble(
+        poll: message.poll!,
+        messageUid: message.uid,
+        chatUid: widget.chat.uid,
+        isMe: isMe,
+        canShowVoters: widget.chat.chatType == ChatType.group,
+        onVote: (optionUids) => _votePoll(message.uid, optionUids),
+        onClose: message.poll!.canClose ? () => _closePoll(message.uid) : null,
+      );
+    }
+
     final hasText = message.content.trim().isNotEmpty;
 
     Widget? mediaWidget;
@@ -4195,21 +4328,33 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   minWidth: 80,
                   maxWidth:
                       MediaQuery.of(context).size.width *
-                      (message.isImage ? 0.68 : 0.72),
+                      (message.isImage
+                          ? 0.68
+                          : (message.isPoll ? 0.85 : 0.72)),
                 ),
                 child: Container(
                   padding: EdgeInsets.fromLTRB(
-                    message.isImage ? 6 : 12,
-                    message.isImage ? 6 : 10,
-                    message.isImage ? 6 : 12,
+                    message.isImage
+                        ? 6
+                        : (message.isPoll ? 14 : 12),
+                    message.isImage
+                        ? 6
+                        : (message.isPoll ? 12 : 10),
+                    message.isImage
+                        ? 6
+                        : (message.isPoll ? 14 : 12),
                     8,
                   ),
                   decoration: BoxDecoration(
-                    color: isMe
+                    color: message.isPoll
                         ? (AppColors.isDark
-                              ? const Color(0xFF2D4A6A)
-                              : const Color(0xFFDDE7F5))
-                        : AppColors.cardBackground,
+                            ? const Color(0xFF1E293B)
+                            : Colors.white)
+                        : (isMe
+                            ? (AppColors.isDark
+                                ? const Color(0xFF2D4A6A)
+                                : const Color(0xFFDDE7F5))
+                            : AppColors.cardBackground),
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(18),
                       topRight: const Radius.circular(18),

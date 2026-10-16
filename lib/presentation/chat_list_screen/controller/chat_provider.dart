@@ -362,6 +362,8 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
       case 'file':
         final name = message.fileName;
         return name != null && name.isNotEmpty ? '📎 $name' : '📎 File';
+      case 'poll':
+        return '📊 ${message.content}';
       default:
         return message.content;
     }

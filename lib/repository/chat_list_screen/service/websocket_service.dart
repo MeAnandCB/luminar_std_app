@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/message.dart';
+import '../models/poll.dart';
 import '../models/user.dart';
 import 'api_service.dart';
 
@@ -20,6 +21,7 @@ class WebSocketService {
   final StreamController<String> _errorController = StreamController<String>.broadcast();
   final StreamController<Map<String, dynamic>> _deleteController = StreamController<Map<String, dynamic>>.broadcast();
   final StreamController<Map<String, dynamic>> _reactionController = StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _pollUpdatedController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Message> get messageStream => _messageController.stream;
   Stream<Message> get localMessageStream => _localMessageController.stream;
@@ -27,6 +29,7 @@ class WebSocketService {
   Stream<String> get errorStream => _errorController.stream;
   Stream<Map<String, dynamic>> get deleteStream => _deleteController.stream;
   Stream<Map<String, dynamic>> get reactionStream => _reactionController.stream;
+  Stream<Map<String, dynamic>> get pollUpdatedStream => _pollUpdatedController.stream;
 
   Function(Message)? onMessageReceived;
   Function()? onConnected;
@@ -35,6 +38,7 @@ class WebSocketService {
   Function(int userId, bool isOnline)? onUserStatusUpdate;
   Function(String chatUid, String messageUid)? onMessageDeleted;
   Function(String chatUid, String messageUid, String emoji, int userId)? onReaction;
+  Function(String chatUid, String messageUid, Poll poll)? onPollUpdated;
 
   WebSocketService({required this.url, required this.currentUser, required this.apiService});
 
@@ -184,6 +188,7 @@ class WebSocketService {
     _errorController.close();
     _deleteController.close();
     _reactionController.close();
+    _pollUpdatedController.close();
   }
 
   Future<Message> sendMessage(String content, {String? replyTo, String? chatUid}) async {
@@ -279,6 +284,27 @@ class WebSocketService {
           'created_at': data['created_at'],
         });
         onReaction?.call(data['chat_uid'], data['message_uid'], data['emoji'], data['user_id']);
+        return;
+      }
+
+      if (data is Map<String, dynamic> && data['type'] == 'poll_updated') {
+        final chatUid = data['chat_uid']?.toString() ?? '';
+        final messageUid = data['message_uid']?.toString() ?? '';
+        final pollData = data['poll'];
+        if (pollData is Map<String, dynamic> && messageUid.isNotEmpty) {
+          try {
+            final poll = Poll.fromJson(pollData);
+            debugPrint('[WS Poll Updated]: Chat: $chatUid, Msg: $messageUid, Poll: ${poll.uid}');
+            _pollUpdatedController.add({
+              'chat_uid': chatUid,
+              'message_uid': messageUid,
+              'poll': poll,
+            });
+            onPollUpdated?.call(chatUid, messageUid, poll);
+          } catch (e) {
+            debugPrint('[WS] Failed to parse updated poll: $e');
+          }
+        }
         return;
       }
 

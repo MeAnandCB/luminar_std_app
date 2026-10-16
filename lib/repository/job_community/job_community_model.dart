@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:luminar_std/repository/chat_list_screen/models/poll.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Community
@@ -320,6 +321,7 @@ class CommunityMessage {
   final String content;
   final DateTime createdAt;
   final CommunityMessageSender? sender;
+  final Poll? poll;
 
   CommunityMessage({
     required this.uid,
@@ -327,9 +329,11 @@ class CommunityMessage {
     required this.content,
     required this.createdAt,
     this.sender,
+    this.poll,
   });
 
   bool get isJobShare => messageType == 'job_share';
+  bool get isPoll => messageType == 'poll';
 
   JobShareContent? get jobShare => isJobShare ? JobShareContent.tryParse(content) : null;
 
@@ -343,8 +347,28 @@ class CommunityMessage {
       sender: json['sender'] == null
           ? null
           : CommunityMessageSender.fromJson(json['sender'] as Map<String, dynamic>),
+      poll: json['poll'] is Map<String, dynamic>
+          ? Poll.fromJson(json['poll'] as Map<String, dynamic>)
+          : null,
     );
   }
+
+  CommunityMessage copyWith({
+    String? uid,
+    String? messageType,
+    String? content,
+    DateTime? createdAt,
+    CommunityMessageSender? sender,
+    Poll? poll,
+  }) =>
+      CommunityMessage(
+        uid: uid ?? this.uid,
+        messageType: messageType ?? this.messageType,
+        content: content ?? this.content,
+        createdAt: createdAt ?? this.createdAt,
+        sender: sender ?? this.sender,
+        poll: poll ?? this.poll,
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
