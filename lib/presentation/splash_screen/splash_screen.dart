@@ -552,7 +552,7 @@ class _SplashScreenState extends State<SplashScreen>
               bottom: 24,
               right: 24,
               child: Text(
-                'V2 : 2.2.11',
+                'V2 : 2.2.12',
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.white.withValues(alpha: 0.38),
