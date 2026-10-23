@@ -1,5 +1,4 @@
 import 'dart:developer' as developer;
-import 'package:flutter/material.dart';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 import 'package:luminar_std/core/services/api_services.dart';
 import 'package:luminar_std/core/services/response.dart';
@@ -78,7 +77,6 @@ class NactetRegistrationService {
 
   Future<ApiResponse<dynamic>> fetchCheckDisplayStatus({String? enrollmentUid}) async {
     final token = await SharedPrefService.getAccessToken();
-    debugPrint('token: $token');
     if (token == null || token.isEmpty) {
       return ApiResponse.error('Authentication token not found.', 401);
     }

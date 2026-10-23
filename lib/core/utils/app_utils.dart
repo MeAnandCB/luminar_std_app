@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:luminar_std/core/constants/app_endpoints.dart';
 
 import 'package:flutter/material.dart';
+import 'package:luminar_std/repository/shared_pref.dart';
 import 'package:luminar_std/presentation/auth_screens/login_screen/login_screen.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,10 +16,7 @@ class AppUtils {
   /// Used to suppress automatic home-screen redirects during app resumption.
   static bool isDeepLinking = false;
 
-  static Future<String?> getAccessKey() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
-  }
+  static Future<String?> getAccessKey() => SharedPrefService.getAccessToken();
 
   static navigateToLogin(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {

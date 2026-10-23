@@ -40,16 +40,41 @@ class DashboardController extends ChangeNotifier {
         _nactetStatus!.enrollmentsWithCertificateData >= _nactetStatus!.totalEligibleEnrollments;
   }
 
+  // App-resume / More-tab refreshes run at most once per this interval.
+  static const Duration _autoRefreshMinInterval = Duration(seconds: 60);
+  DateTime? _lastFetchedAt;
+  Future<Dashboard?>? _inFlight;
+
   Future<Dashboard?> getDashboardData({
     required BuildContext context,
     bool forceRefresh = false,
-  }) async {
+  }) {
     // Return cached data unless a forced refresh is requested
-    if (!forceRefresh && _dashboard != null) return _dashboard;
+    if (!forceRefresh && _dashboard != null) return Future.value(_dashboard);
+    // Join a request already in progress instead of sending a duplicate
+    return _inFlight ??= _fetchDashboard(context).whenComplete(() => _inFlight = null);
+  }
 
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+  /// Silent refresh for app resume / tab switches, throttled to once a minute.
+  Future<void> refreshIfStale({required BuildContext context}) async {
+    final last = _lastFetchedAt;
+    if (_dashboard != null &&
+        last != null &&
+        DateTime.now().difference(last) < _autoRefreshMinInterval) {
+      return;
+    }
+    await getDashboardData(context: context, forceRefresh: true);
+  }
+
+  Future<Dashboard?> _fetchDashboard(BuildContext context) async {
+    // Shimmer only on the first load. Swapping visible data for the shimmer
+    // unmounted the home cards, and each re-fetched its own API on remount.
+    final hadData = _dashboard != null;
+    if (!hadData) {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+    }
 
     try {
       final response = await DashboardService().getDashboardData();
@@ -95,20 +120,25 @@ class DashboardController extends ChangeNotifier {
           }
           _skipProfileCompletionRedirect = false;
           _error = null;
+          _lastFetchedAt = DateTime.now();
         } else {
           _error = 'No dashboard data available';
         }
       } else {
-        _error = response.message;
+        // A failed background refresh keeps showing the data we already have
+        if (!hadData) _error = response.message;
         if (response.statusCode == 401) {
           await AppUtils.clearUserSession();
           if (context.mounted) AppUtils.navigateToLogin(context);
         }
       }
     } catch (e) {
-      _error = e.toString();
-      _dashboard = null;
-      _dashboardModel = null;
+      // e.g. weak network on resume: keep the current screen instead of an error page
+      if (!hadData) {
+        _error = e.toString();
+        _dashboard = null;
+        _dashboardModel = null;
+      }
     } finally {
       _isLoading = false;
       notifyListeners();

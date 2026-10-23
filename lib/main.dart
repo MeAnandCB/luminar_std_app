@@ -28,7 +28,7 @@ import 'package:luminar_std/repository/FCM/fcm_service.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:luminar_std/repository/chat_list_screen/service/blocked_users_service.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:luminar_std/repository/shared_pref.dart';
 import 'core/theme/theme_provider.dart';
 import 'package:luminar_std/core/theme/app_theme.dart';
 
@@ -61,8 +61,7 @@ void main() async {
   if (kDebugMode) {
     const debugToken = String.fromEnvironment('DEBUG_ACCESS_TOKEN');
     if (debugToken.isNotEmpty) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('access_token', debugToken);
+      await SharedPrefService.saveAccessToken(debugToken);
       LoggerUtils.info('Debug access token injected via --dart-define', tag: 'Main');
     }
   }

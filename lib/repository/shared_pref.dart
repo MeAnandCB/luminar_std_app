@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,11 +10,49 @@ class SharedPrefService {
   static const String keyIsLoggedIn = 'is_logged_in';
   static const String keyFullName = 'fullname';
 
+  // Auth tokens live in platform secure storage (Keychain / Keystore), not
+  // plaintext SharedPreferences. Tokens saved by older app versions are moved
+  // over on first read, so existing users stay logged in.
+  static const FlutterSecureStorage _secure = FlutterSecureStorage();
+
+  static Future<void> _writeToken(SharedPreferences prefs, String key, String value) async {
+    try {
+      await _secure.write(key: key, value: value);
+      await prefs.remove(key);
+    } catch (e) {
+      // Secure storage unavailable on this device: keep the old behaviour
+      LoggerUtils.error('Secure storage write failed, using SharedPreferences: $e', tag: 'SharedPref');
+      await prefs.setString(key, value);
+    }
+  }
+
+  static Future<String?> _readToken(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final value = await _secure.read(key: key);
+      if (value != null && value.isNotEmpty) return value;
+    } catch (e) {
+      LoggerUtils.error('Secure storage read failed: $e', tag: 'SharedPref');
+      return prefs.getString(key);
+    }
+    final legacy = prefs.getString(key);
+    if (legacy != null && legacy.isNotEmpty) {
+      await _writeToken(prefs, key, legacy);
+    }
+    return legacy;
+  }
+
+  /// Debug-only session injection (see main.dart).
+  static Future<void> saveAccessToken(String accessToken) async {
+    final prefs = await SharedPreferences.getInstance();
+    await _writeToken(prefs, keyAccessToken, accessToken);
+  }
+
   // Save tokens
   static Future<void> saveTokens(String accessToken, String refreshToken, String fullname) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(keyAccessToken, accessToken);
-    await prefs.setString(keyRefreshToken, refreshToken);
+    await _writeToken(prefs, keyAccessToken, accessToken);
+    await _writeToken(prefs, keyRefreshToken, refreshToken);
     await prefs.setString(keyFullName, fullname);
     await prefs.setBool(keyIsLoggedIn, true);
     LoggerUtils.info('✅ Tokens and name saved successfully | 👤 Saved name: $fullname', tag: 'SharedPref');
@@ -35,16 +74,10 @@ class SharedPrefService {
   }
 
   // Get access token
-  static Future<String?> getAccessToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(keyAccessToken);
-  }
+  static Future<String?> getAccessToken() => _readToken(keyAccessToken);
 
   // Get refresh token
-  static Future<String?> getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(keyRefreshToken);
-  }
+  static Future<String?> getRefreshToken() => _readToken(keyRefreshToken);
 
   // Get user data as Map
   static Future<Map<String, dynamic>?> getUserData() async {
@@ -81,6 +114,12 @@ class SharedPrefService {
     await prefs.remove(keyFullName);
     await prefs.remove(keyUserData);
     await prefs.remove(keyIsLoggedIn);
+    try {
+      await _secure.delete(key: keyAccessToken);
+      await _secure.delete(key: keyRefreshToken);
+    } catch (e) {
+      LoggerUtils.error('Secure storage delete failed: $e', tag: 'SharedPref');
+    }
     LoggerUtils.info('🚪 User logged out, auth data cleared', tag: 'SharedPref');
   }
 }

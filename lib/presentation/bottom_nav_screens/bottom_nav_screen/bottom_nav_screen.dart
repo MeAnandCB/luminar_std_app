@@ -72,7 +72,7 @@ class _BottomNavScreenState extends State<BottomNavScreen>
       // Refresh dashboard when app comes back to foreground so
       // new exams / jobs added on the backend are reflected immediately
       Provider.of<DashboardController>(context, listen: false)
-          .getDashboardData(context: context, forceRefresh: true);
+          .refreshIfStale(context: context);
     }
   }
 
@@ -308,7 +308,7 @@ class _BottomNavScreenState extends State<BottomNavScreen>
         // so new exams/jobs from the backend are reflected immediately
         if (index == 3) {
           Provider.of<DashboardController>(context, listen: false)
-              .getDashboardData(context: context, forceRefresh: true);
+              .refreshIfStale(context: context);
         }
       },
       behavior: HitTestBehavior.opaque,
