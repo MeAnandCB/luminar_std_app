@@ -332,7 +332,11 @@ class WebSocketService {
         switch (type) {
           case 'message':
           case 'new_message':
-            final messageData = data['data'] ?? data;
+          // Sent while we were offline; delivered once on (re)connect
+          case 'queued_message':
+            final messageData = type == 'queued_message'
+                ? data['message']
+                : (data['data'] ?? data);
             if (messageData is Map<String, dynamic>) {
               try {
                 if (messageData.containsKey('chat_uid')) {

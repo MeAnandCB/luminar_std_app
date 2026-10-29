@@ -241,7 +241,11 @@ class ChatProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       _setupListeners();
 
+      var hasConnectedBefore = false;
       _webSocketService!.onConnected = () {
+        // Reconnect after a drop: refresh previews/unread missed while offline
+        if (hasConnectedBefore) loadChats(showLoading: false);
+        hasConnectedBefore = true;
         _isWsConnected = true;
         // Broadcast that WE are online so other users see our status,
         // and trigger presence replies from the server for others

@@ -297,7 +297,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _priorOnConnected = _webSocketService.onConnected;
     _webSocketService.onConnected = () {
       _priorOnConnected?.call();
+      final wasDisconnected = !_isSocketConnected;
       if (mounted) setState(() => _isSocketConnected = true);
+      // Live events sent while the socket was down were lost: pull them
+      if (wasDisconnected && mounted) _catchUpMessages();
     };
     _priorOnDisconnected = _webSocketService.onDisconnected;
     _webSocketService.onDisconnected = () {
@@ -315,7 +318,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         } else {
           final exists = _messages.any((m) => m.uid == message.uid);
           if (!exists) {
-            setState(() => _messages.insert(0, message));
+            // Our own send can echo back before its HTTP response returns:
+            // take over the pending bubble rather than showing it twice.
+            final pendingIdx = message.sender.id == widget.currentUser.id
+                ? _messages.indexWhere(
+                    (m) => _isOptimistic(m) && m.content == message.content)
+                : -1;
+            setState(() {
+              if (pendingIdx != -1) {
+                _messages[pendingIdx] = message;
+              } else {
+                _messages.insert(0, message);
+              }
+            });
             _scrollToBottom();
           }
         }
@@ -1515,8 +1530,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         if (response.success && response.data != null) {
           final actual = response.data!;
           setState(() {
-            final idx = _messages.indexWhere((m) => m.uid == optimisticUid);
-            if (idx != -1) _messages[idx] = actual;
+            _replaceOptimistic(optimisticUid, actual);
             _isUploading = false;
             _uploadProgress = 0.0;
             _uploadingFileName = null;
@@ -2059,6 +2073,32 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
+  /// Merge the newest page into the list after a reconnect. Unlike
+  /// _loadMessages it keeps pending bubbles and already-loaded older pages.
+  Future<void> _catchUpMessages() async {
+    try {
+      final response = await widget.apiService.fetchMessages(
+        widget.chat.uid,
+        page: 1,
+        pageSize: _pageSize,
+      );
+      if (!mounted || !response.success || response.data == null) return;
+      setState(() {
+        for (final message in response.data!) {
+          final idx = _messages.indexWhere((m) => m.uid == message.uid);
+          if (idx != -1) {
+            _messages[idx] = message;
+          } else {
+            _messages.add(message);
+          }
+        }
+        _messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      });
+    } catch (e) {
+      debugPrint('[Chat] Catch-up after reconnect failed: $e');
+    }
+  }
+
   Future<void> _loadMoreMessages() async {
     if (_isLoadingMore || !_hasNextPage) return;
     setState(() => _isLoadingMore = true);
@@ -2149,9 +2189,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                   )
                                   .then((actual) {
                                     if (mounted) {
-                                      setState(
-                                        () => _messages.insert(0, actual),
-                                      );
+                                      setState(() {
+                                        if (!_messages.any(
+                                            (m) => m.uid == actual.uid)) {
+                                          _messages.insert(0, actual);
+                                        }
+                                      });
                                       _webSocketService.broadcastLocalMessage(
                                         actual,
                                       );
@@ -2531,15 +2574,23 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         chatUid: widget.chat.uid,
         replyTo: replyToUid,
       );
-      setState(() {
-        final idx = _messages.indexWhere((m) => m.uid == optimistic.uid);
-        if (idx != -1) _messages[idx] = actual;
-      });
+      setState(() => _replaceOptimistic(optimistic.uid, actual));
       _webSocketService.broadcastLocalMessage(actual);
     } catch (e) {
       setState(() => _messages.removeWhere((m) => m.uid == optimistic.uid));
       _showErrorSnackbar('Failed to send message. Please try again.');
     }
+  }
+
+  /// Swap an optimistic bubble for the saved message. If the WebSocket echo
+  /// already added the saved message, just drop the optimistic bubble.
+  void _replaceOptimistic(String optimisticUid, Message actual) {
+    if (_messages.any((m) => m.uid == actual.uid)) {
+      _messages.removeWhere((m) => m.uid == optimisticUid);
+      return;
+    }
+    final idx = _messages.indexWhere((m) => m.uid == optimisticUid);
+    if (idx != -1) _messages[idx] = actual;
   }
 
   bool _isOptimistic(Message m) =>
