@@ -119,6 +119,10 @@ class AppEndpoints {
   static const String feedbackSubmit =
       '/api/feedback/batch/'; // Suffix with {batch_uid}/submit/
 
+  // Certificate Requests (GET list of completed batches / POST a request)
+  static const String certificateRequests =
+      '/api/student_portal/certificate-requests/';
+
   // Job Communities
   static const String jobCommunities =
       '/api/student_portal/job-communities/'; // Suffix with {uid}/ for detail
@@ -130,8 +134,8 @@ class AppEndpoints {
 }
 
 class GlobalLinks {
-  static const String baseUrl = 'https://api.crm.luminartechnohub.com';
-  // static const String baseUrl = 'http://192.168.1.53:8000';
+ //static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
+   static const String baseUrl = 'http://192.168.1.41:8000';
   // This DOES work on prod (confirmed with a real HTTP/1.1 WebSocket
   // handshake — a plain `curl` test without --http1.1 negotiates HTTP/2 by
   // default against this server, which silently breaks the Connection/
@@ -140,7 +144,7 @@ class GlobalLinks {
   // uses HTTP/1.1, so the app is unaffected by that quirk. Do not switch
   // this back to the dev host based on a plain curl 404 — force HTTP/1.1
   // (`curl --http1.1 ...`) before concluding the route is missing.
-  static const String websocketUrl = 'wss://api.crm.luminartechnohub.com/ws/';
+  static const String websocketUrl = 'wss://api.crm.dev.luminartechnohub.com/ws/';
 }
 
 class LaptopApiConfig {
