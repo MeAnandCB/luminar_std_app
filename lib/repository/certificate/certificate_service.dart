@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:luminar_std/core/constants/app_endpoints.dart';
@@ -7,20 +9,31 @@ import 'package:luminar_std/core/services/response.dart';
 import 'package:luminar_std/core/utils/app_utils.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:luminar_std/repository/certificate/certificate_model.dart';
+import 'package:path_provider/path_provider.dart';
 
 class CertificateService {
-  final ApiService _apiService = ApiService();
+  CertificateService({
+    ApiService? apiService,
+    Future<String?> Function()? tokenReader,
+    Future<Directory> Function()? saveDirectory,
+  }) : _apiService = apiService ?? ApiService(),
+       _tokenReader = tokenReader ?? AppUtils.getAccessKey,
+       _saveDirectory = saveDirectory ?? getTemporaryDirectory;
+
+  final ApiService _apiService;
+  final Future<String?> Function() _tokenReader;
+  final Future<Directory> Function() _saveDirectory;
 
   /// Human-readable state of the token used by the last call (never the token
-  /// itself) — surfaced in the debug banner so "was a proper token sent?" can
-  /// be answered on screen.
+  /// itself) — logged so "was a proper token sent?" can be answered from the
+  /// console.
   String lastTokenNote = 'not checked yet';
 
   /// Reads the stored access token. A missing token must be caught here: this
   /// endpoint answers a missing/invalid token with a misleading
   /// `403 "User account is inactive"` rather than a 401.
   Future<String?> _readToken() async {
-    final token = await AppUtils.getAccessKey();
+    final token = await _tokenReader();
     if (token == null || token.isEmpty) {
       lastTokenNote = 'NO TOKEN stored — login again';
     } else {
@@ -79,23 +92,22 @@ class CertificateService {
   /// identifier the API uses to find the student's enrollment — from it the
   /// server resolves the course and batch, and it rejects numbers that are
   /// unknown or belong to another student (404 "Enrollment not found").
+  /// The certificate type is deliberately NOT sent: the server sets it from
+  /// the batch.
   @visibleForTesting
   static Map<String, dynamic> requestBody({
     required String enrollmentNumber,
-    required String certificateType,
     String? studentNote,
   }) {
     final note = studentNote?.trim() ?? '';
     return {
       'enrollment_number': enrollmentNumber.trim(),
-      'certificate_type': certificateType,
       if (note.isNotEmpty) 'student_note': note,
     };
   }
 
   Future<ApiResponse<CertificateRequestInfo>> requestCertificate({
     required String enrollmentNumber,
-    required String certificateType,
     String? studentNote,
   }) async {
     try {
@@ -108,7 +120,6 @@ class CertificateService {
       }
       final body = requestBody(
         enrollmentNumber: enrollmentNumber,
-        certificateType: certificateType,
         studentNote: studentNote,
       );
       LoggerUtils.debug(
@@ -135,6 +146,69 @@ class CertificateService {
         response.message ?? 'Failed to request certificate',
         response.statusCode,
       );
+    } catch (e) {
+      return ApiResponse.error(e.toString(), null);
+    }
+  }
+
+  /// `Certificate-<enrollment_number>.pdf`, safe to use as a file name.
+  @visibleForTesting
+  static String fileNameFor(String enrollmentNumber) {
+    final safe = enrollmentNumber.trim().replaceAll(
+      RegExp(r'[^A-Za-z0-9._-]'),
+      '_',
+    );
+    return 'Certificate-${safe.isEmpty ? 'download' : safe}.pdf';
+  }
+
+  /// A real PDF always starts with `%PDF`. Anything else (an HTML error page
+  /// behind a proxy, an empty body) must not be saved and opened as one.
+  static bool _looksLikePdf(Uint8List bytes) =>
+      bytes.length > 4 &&
+      bytes[0] == 0x25 && // %
+      bytes[1] == 0x50 && // P
+      bytes[2] == 0x44 && // D
+      bytes[3] == 0x46; // F
+
+  /// Downloads the issued certificate PDF and returns the saved file's path.
+  /// The server renders it fresh on every call, so nothing is cached; the same
+  /// file name is simply overwritten. Errors carry the server's own message
+  /// (e.g. "Certificate not found", "Certificate template image is missing").
+  Future<ApiResponse<String>> downloadCertificate({
+    required String requestUid,
+    required String enrollmentNumber,
+  }) async {
+    try {
+      if (requestUid.trim().isEmpty) {
+        return ApiResponse.error('Certificate not found', null);
+      }
+      final token = await _readToken();
+      if (token == null) {
+        return ApiResponse.error('Session expired. Please login again.', 401);
+      }
+      final response = await _apiService.getBytes(
+        endpoint: AppEndpoints.certificateDownload(requestUid.trim()),
+        token: token,
+      );
+      if (!response.success || response.data == null) {
+        return ApiResponse.error(
+          response.message ?? 'Could not download the certificate',
+          response.statusCode,
+        );
+      }
+      final bytes = response.data!;
+      if (!_looksLikePdf(bytes)) {
+        return ApiResponse.error(
+          'The certificate could not be downloaded. Please try again.',
+          response.statusCode,
+        );
+      }
+
+      final dir = await _saveDirectory();
+      if (!await dir.exists()) await dir.create(recursive: true);
+      final file = File('${dir.path}/${fileNameFor(enrollmentNumber)}');
+      await file.writeAsBytes(bytes, flush: true);
+      return ApiResponse.success(file.path, response.statusCode ?? 200);
     } catch (e) {
       return ApiResponse.error(e.toString(), null);
     }

@@ -11,6 +11,8 @@ import 'package:luminar_std/presentation/global_widget/shimmer.dart';
 import 'package:luminar_std/presentation/profile_screen/controller.dart';
 import 'package:luminar_std/presentation/profile_screen/profile_screen.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
+import 'package:luminar_std/presentation/certificate/batch_completion.dart';
+import 'package:luminar_std/presentation/certificate/certificate_controller.dart';
 import 'package:luminar_std/presentation/home_screen/widget/batch_review_card.dart';
 import 'package:luminar_std/presentation/home_screen/widget/certificate_card.dart';
 import 'package:luminar_std/presentation/home_screen/widget/header_card.dart';
@@ -22,7 +24,6 @@ import 'package:luminar_std/core/theme/app_text_styles.dart';
 import 'package:luminar_std/presentation/instagram_view_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:luminar_std/presentation/nactet_registration/view/nactet_registration_screen.dart';
-import 'package:luminar_std/repository/certificate/certificate_model.dart';
 import 'package:luminar_std/repository/home_screen/dashmoard_model.dart';
 import 'package:luminar_std/repository/nactet_registration/model/nactet_check_display_model.dart';
 import 'package:luminar_std/presentation/jobs_screen/jobs_screen.dart';
@@ -232,14 +233,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           _buildCourseCard(dashboard),
 
                           // Renders nothing (heading included) until the
-                          // student has at least one completed batch.
+                          // dashboard shows a completed course.
                           _buildCertificateCard(
                             dashboard,
                             _buildSectionHeading(
                               'Certificate',
-                              'Your batch is complete — claim it',
+                              'Your course is complete — claim it',
                             ),
-                            studentName,
                           ),
 
                           const SizedBox(height: 28),
@@ -472,119 +472,19 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   // ============== CERTIFICATE CARD ==============
 
-  /// A batch counts as completed when the dashboard flags it so, either via
-  /// `is_completed` or a "completed" status. Anything else (upcoming,
-  /// ongoing/active) is still in progress and cannot get a certificate.
-  bool _isBatchCompleted(BatchInfo? batch) =>
-      batch?.isCompleted == true ||
-      (batch?.status ?? '').toLowerCase() == 'completed';
-
-  /// Outstanding course fees for an enrollment: 0 when fully paid, the
-  /// pending amount otherwise, null when the dashboard doesn't say.
-  int? _pendingFees(Enrollment e) {
-    final b = e.paymentDetails?.financialBreakdown;
-    if (b == null) return null;
-    if (b.isFullyPaid == true) return 0;
-    return b.pendingAmount;
-  }
-
-  /// Feeds the certificate card every non-dropped enrollment with its batch
-  /// state and fee state, so each one is judged on its own: completed batch +
-  /// fees cleared can apply; a running batch or pending fees cannot.
-  Widget _buildCertificateCard(
-    Dashboard? dashboard,
-    Widget header,
-    String studentName,
-  ) {
-    final enrollments = (dashboard?.enrollmentDetails?.enrollments ?? [])
-        .where(
-          (e) =>
-              !e.isBlockedForStudent &&
-              (e.basicInfo?.enrollmentNumber ?? '').isNotEmpty,
-        )
-        .toList();
-
-    // EMI state is student-wide: the server restricts the whole portal while
-    // any instalment is overdue (403 `emi_payment_overdue`), so it blocks
-    // every enrollment, not just the one the EMI belongs to.
-    final emi = dashboard?.financialSummary?.emiInformation;
-    final overdueEntries = emi?.overdueEmis ?? const [];
-    final overdueCount = (emi?.totalOverdueEmis ?? 0) > overdueEntries.length
-        ? emi!.totalOverdueEmis!
-        : overdueEntries.length;
-    final overdueFor = <String>{
-      for (final x in overdueEntries)
-        if (x is Map)
-          for (final k in const ['enrollment_number', 'enrollmentNumber'])
-            if (x[k] != null) x[k].toString(),
-    };
-    bool? overdueHere(String number) => overdueCount == 0 || overdueFor.isEmpty
-        ? null
-        : overdueFor.contains(number);
-
-    final mapped = <CertificateEnrollment>[
-      for (final e in enrollments)
-        CertificateEnrollment(
-          enrollmentNumber: e.basicInfo!.enrollmentNumber!,
-          courseName: e.courseInfo?.courseName ?? '',
-          batchName: e.batchInfo?.batchName ?? '',
-          batchEndDate: e.batchInfo?.endDate == null
-              ? ''
-              : DateFormat('yyyy-MM-dd').format(e.batchInfo!.endDate!),
-          eligible: true,
-          batchCompleted: _isBatchCompleted(e.batchInfo),
-          pendingAmount: _pendingFees(e),
-          certificateAlreadyIssued: e.academicProgress?.certificateIssued == true,
-          emiOverdueCount: overdueCount,
-          emiOverdueAmount: emi?.totalOverdueAmount,
-          emiOverdueHere: overdueHere(e.basicInfo!.enrollmentNumber!),
-          details: _certificateFacts(e, emi),
-        ),
-    ];
-
+  /// Shows the certificate card when the dashboard says one of the student's
+  /// courses is completed (dropped/removed enrollments never count). The
+  /// student's request status itself comes from the server, via the shared
+  /// controller that More → Certificates also uses.
+  Widget _buildCertificateCard(Dashboard? dashboard, Widget header) {
     return CertificateHomeCard(
+      controller: context.read<CertificateController>(),
+      completedCourses: completedCourseNames(
+        dashboard?.enrollmentDetails?.enrollments ?? const [],
+      ),
       topSpacing: 28,
       header: header,
-      dashboardEnrollments: mapped,
-      studentName: studentName,
     );
-  }
-
-  /// Dashboard facts about one enrollment, used only to describe an
-  /// application in the debug console (never sent to the server).
-  Map<String, String> _certificateFacts(Enrollment e, EmiInformation? emi) {
-    final b = e.batchInfo;
-    final pay = e.paymentDetails;
-    final f = pay?.financialBreakdown;
-    String day(DateTime? d) =>
-        d == null ? '—' : DateFormat('yyyy-MM-dd').format(d);
-
-    return {
-      'Enrollment': '${e.status?.name ?? '—'} (${e.status?.value ?? '—'})',
-      'Batch status':
-          'status=${b?.status}, isCompleted=${b?.isCompleted}, '
-          'isActive=${b?.isActive}',
-      'Batch dates': '${day(b?.startDate)} → ${day(b?.endDate)}',
-      'Payment type': pay?.paymentType ?? '—',
-      'Fees': f == null
-          ? 'not available'
-          : 'net ${_formatCurrency(f.netAmount)} · '
-                'paid ${_formatCurrency(f.amountPaid)} · '
-                'pending ${_formatCurrency(f.pendingAmount)} · '
-                '${f.paymentCompletionPercentage ?? '—'}% · '
-                'fullyPaid=${f.isFullyPaid}',
-      'EMI (student)': emi == null
-          ? 'not available'
-          : 'overdue=${emi.totalOverdueEmis ?? 0} '
-                '(${_formatCurrency(emi.totalOverdueAmount)}) · '
-                'pending=${emi.totalPendingEmis ?? 0} '
-                '(${_formatCurrency(emi.totalPendingEmiAmount)}) · '
-                'next due ${emi.nextEmiDueDate ?? '—'}',
-      'Overdue EMI rows': (emi?.overdueEmis ?? const []).isEmpty
-          ? 'none'
-          : emi!.overdueEmis!.take(5).join(' | '),
-      'Attendance': '${e.academicProgress?.attendancePercentage ?? '—'}%',
-    };
   }
 
   // ============== COURSE CARD SECTION ==============
@@ -1359,13 +1259,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   ...enrollments.asMap().entries.map((entry) =>
                     _oceanEnrollmentTile(entry.value, entry.key)),
 
-                // Renders nothing (label included) until the student has
-                // at least one completed batch.
-                _buildCertificateCard(
-                  dashboard,
-                  _buildOceanLabel('Certificate'),
-                  studentName,
-                ),
+                // Renders nothing (label included) until the dashboard shows
+                // a completed course.
+                _buildCertificateCard(dashboard, _buildOceanLabel('Certificate')),
 
                 const SizedBox(height: 28),
 

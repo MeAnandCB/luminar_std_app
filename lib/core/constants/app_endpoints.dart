@@ -123,6 +123,10 @@ class AppEndpoints {
   static const String certificateRequests =
       '/api/student_portal/certificate-requests/';
 
+  /// GET the issued certificate as a PDF (only when `download_available`).
+  static String certificateDownload(String requestUid) =>
+      '/api/student_portal/certificate-requests/$requestUid/download/';
+
   // Job Communities
   static const String jobCommunities =
       '/api/student_portal/job-communities/'; // Suffix with {uid}/ for detail
@@ -134,8 +138,8 @@ class AppEndpoints {
 }
 
 class GlobalLinks {
- //static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
-   static const String baseUrl = 'http://192.168.1.41:8000';
+ static const String baseUrl = 'https://api.crm.dev.luminartechnohub.com';
+  // static const String baseUrl = 'http://192.168.1.41:8000';
   // This DOES work on prod (confirmed with a real HTTP/1.1 WebSocket
   // handshake — a plain `curl` test without --http1.1 negotiates HTTP/2 by
   // default against this server, which silently breaks the Connection/

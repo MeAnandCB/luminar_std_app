@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:http/http.dart' as http;
@@ -20,6 +21,8 @@ class ApiService {
   // File uploads legitimately take longer than a plain JSON call, but still
   // need a ceiling — this was previously completely unbounded.
   static const Duration _uploadTimeout = Duration(seconds: 60);
+  // Server-rendered files (certificate PDFs) are generated on each request.
+  static const Duration _downloadTimeout = Duration(seconds: 60);
 
   // Track the last time we redirected to Login due to session expiry
   // to avoid infinite loops from multiple concurrent requests.
@@ -49,6 +52,27 @@ class ApiService {
       final response =
           await http.get(uri, headers: _headers(token)).timeout(_timeout);
       return _handleResponse(response);
+    } catch (e) {
+      return ApiResponse.error(e.toString(), null);
+    }
+  }
+
+  // GET for a binary body (e.g. a PDF). Success returns the raw bytes; any
+  // non-2xx answer still carries the usual JSON error body, so it goes through
+  // the normal error handling (message extraction, session-expiry redirect).
+  Future<ApiResponse<Uint8List>> getBytes({
+    required String endpoint,
+    String? token,
+  }) async {
+    final uri = _buildUri(endpoint, null);
+    LoggerUtils.debug("GET (bytes): $uri", tag: 'API');
+    try {
+      final response =
+          await http.get(uri, headers: _headers(token)).timeout(_downloadTimeout);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return ApiResponse.success(response.bodyBytes, response.statusCode);
+      }
+      return _handleResponse(response).cast<Uint8List>();
     } catch (e) {
       return ApiResponse.error(e.toString(), null);
     }

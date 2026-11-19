@@ -4,6 +4,10 @@ import 'package:luminar_std/core/constants/app_config.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/core/theme/theme_provider.dart';
 import 'package:luminar_std/presentation/attandance_screen/attandance_screen.dart';
+import 'package:luminar_std/presentation/certificate/batch_completion.dart';
+import 'package:luminar_std/presentation/certificate/certificate_controller.dart';
+import 'package:luminar_std/presentation/certificate/certificate_not_ready_dialog.dart';
+import 'package:luminar_std/presentation/certificate/certificate_screen.dart';
 import 'package:luminar_std/presentation/interview_prep/interview_prep_screen.dart';
 import 'package:luminar_std/presentation/enrollment_screen/view/entrollment_screen.dart';
 import 'package:luminar_std/presentation/gallery_screen/views/gallery_screen.dart';
@@ -48,6 +52,10 @@ class _Feature {
     this.colorA,
     this.colorB,
   );
+
+  /// The same card with different helper text.
+  _Feature withSubtitle(String text) =>
+      _Feature(icon, title, text, colorA, colorB);
 }
 
 const _kFeatures = [
@@ -127,6 +135,13 @@ const _kFeatures = [
     'Chat, network & apply to shared jobs',
     Color(0xFF14555A),
     Color(0xFF1B7A80),
+  ),
+  _Feature(
+    Icons.verified_rounded,
+    'Certificates',
+    'Request and download your course certificates',
+    Color(0xFFEA580C),
+    Color(0xFFFB923C),
   ),
 ];
 
@@ -524,6 +539,13 @@ class _EnrollmentPageState extends State<_EnrollmentPage> {
     );
     final bool crmAccess = dashEnrollment?.basicInfo?.crmAccess ?? true;
 
+    // Same rule the Home certificate card uses (see batch_completion.dart).
+    final dashBatch = dashEnrollment?.batchInfo;
+    final bool batchCompleted = isBatchCompleted(
+      dashBatch,
+      fallbackStatus: enrollment.batch?.status,
+    );
+
     final bool toEnrollDetails =
         status == 'admission_fee_paid' ||
         status == 'not_set' ||
@@ -643,7 +665,7 @@ class _EnrollmentPageState extends State<_EnrollmentPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '${(AppConfig.hidePayments ? 9 : 10) - (kDebugMode ? 0 : 1)} features',
+                    '${10 + (AppConfig.hidePayments ? 0 : 1) + (kDebugMode ? 1 : 0)} features',
                     style: TextStyle(
                       fontSize: 11,
                       color: _kPrimary,
@@ -674,6 +696,37 @@ class _EnrollmentPageState extends State<_EnrollmentPage> {
                       builder: (_) => AttendanceScreen(
                         batchId: batchId,
                         batchName: batchName,
+                        courseName: courseName,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              // Certificates — right below Attendance. Always shown: a course
+              // that is still running explains when the certificate arrives
+              // instead of hiding the card.
+              SizedBox(height: 12),
+              _FeatureCard(
+                feature: batchCompleted
+                    ? _kFeatures[11]
+                    : _kFeatures[11].withSubtitle(
+                        'Available after you complete the course',
+                      ),
+                onTap: () {
+                  if (!batchCompleted) {
+                    showCertificateNotReadyDialog(
+                      context,
+                      courseName: courseName,
+                      batchName: batchName,
+                      expectedEnd: dashBatch?.endDate,
+                    );
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CertificateScreen(
+                        controller: context.read<CertificateController>(),
                         courseName: courseName,
                       ),
                     ),

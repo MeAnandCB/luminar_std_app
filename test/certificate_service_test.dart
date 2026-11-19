@@ -1,165 +1,212 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:luminar_std/repository/certificate/certificate_model.dart';
-import 'package:luminar_std/repository/certificate/certificate_report.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:luminar_std/repository/certificate/certificate_service.dart';
 
+// A minimal but real-looking PDF body: the service only trusts `%PDF`.
+final Uint8List _pdf = Uint8List.fromList(
+  utf8.encode('%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF'),
+);
+
+http.Response _json(int status, Map<String, dynamic> body) => http.Response(
+  jsonEncode(body),
+  status,
+  headers: {'content-type': 'application/json'},
+);
+
 void main() {
-  test('POST body carries the enrollment number from the list response', () {
-    // Shape taken from the API guide's GET example.
-    final list = CertificateListResponse.fromJson({
-      'status': 'success',
-      'certificate_types': [
-        {'value': 'completion', 'label': 'Course Completion'},
-      ],
-      'enrollments': [
-        {
-          'enrollment_number': 'ENR2026118595',
-          'course_name': 'Python Full Stack',
-          'batch_name': 'PY-1',
-          'batch_end_date': '2026-11-07',
-          'eligible': true,
-          'request': null,
-        },
-      ],
-    });
-    final enrollment = list.enrollments.single;
-    expect(enrollment.enrollmentNumber, 'ENR2026118595');
-
-    final body = CertificateService.requestBody(
-      enrollmentNumber: enrollment.enrollmentNumber,
-      certificateType: list.certificateTypes.first.value,
-      studentNote: '  Need it for a job application  ',
-    );
-
-    expect(body, {
-      'enrollment_number': 'ENR2026118595',
-      'certificate_type': 'completion',
-      'student_note': 'Need it for a job application',
-    });
-  });
-
-  test('blank note is omitted, number is trimmed', () {
-    final body = CertificateService.requestBody(
-      enrollmentNumber: ' ENR1 ',
-      certificateType: 'internship',
-      studentNote: '   ',
-    );
-    expect(body, {
-      'enrollment_number': 'ENR1',
-      'certificate_type': 'internship',
-    });
-  });
-
-  test('an empty enrollment number is never sent', () async {
-    final res = await CertificateService().requestCertificate(
-      enrollmentNumber: '  ',
-      certificateType: 'completion',
-    );
-    expect(res.success, isFalse);
-    expect(res.message, 'Enrollment not found');
-  });
-
-  _reportTests();
-  _emiReportTest();
-}
-
-// ── Application report (printed to the debug console on apply) ─────────────
-
-void _reportTests() {
-  test('report names the student, enrollment, course, batch and payment', () {
-    final report = certificateApplicationReport(
-      enrollment: const CertificateEnrollment(
+  group('POST body', () {
+    test('carries the enrollment number and note, never a certificate type', () {
+      final body = CertificateService.requestBody(
         enrollmentNumber: 'ENR2026118595',
-        courseName: 'Python Full Stack',
-        batchName: 'PY-1',
-        batchEndDate: '2026-11-07',
-        eligible: true,
-        batchCompleted: true,
-        pendingAmount: 0,
-        details: {
-          'Enrollment': 'Fully Paid (paid)',
-          'Batch status': 'status=completed, isCompleted=true, isActive=false',
-          'Fees': 'net ₹50,000 · paid ₹50,000 · pending ₹0 · 100%',
-        },
-      ),
-      studentName: 'Anu Raj',
-      typeValue: 'internship',
-      typeLabel: 'Internship',
-      note: ' for a job ',
-      dataSource: 'server list',
-    );
+        studentNote: '  Need it for a job application  ',
+      );
+      // The server sets the type from the batch; sending one is pointless.
+      expect(body, {
+        'enrollment_number': 'ENR2026118595',
+        'student_note': 'Need it for a job application',
+      });
+      expect(body.containsKey('certificate_type'), isFalse);
+    });
 
-    expect(report, contains('Student'));
-    expect(report, contains('Anu Raj'));
-    expect(report, contains('ENR2026118595'));
-    expect(report, contains('Python Full Stack'));
-    expect(report, contains('PY-1 · ends 2026-11-07'));
-    expect(report, contains('status=completed, isCompleted=true'));
-    expect(report, contains('net ₹50,000'));
-    expect(report, contains('Pending fees'));
-    expect(report, contains('batch completed ✔'));
-    expect(report, contains('course fees cleared ✔'));
-    expect(report, contains('Overdue EMI'));
-    expect(report, contains('Internship (internship)'));
-    expect(report, contains('"for a job"'));
-    expect(report, contains('Earlier request : none'));
-    expect(report, contains('server list'));
+    test('blank note is omitted, number is trimmed', () {
+      final body = CertificateService.requestBody(
+        enrollmentNumber: ' ENR1 ',
+        studentNote: '   ',
+      );
+      expect(body, {'enrollment_number': 'ENR1'});
+    });
+
+    test('an empty enrollment number is never sent', () async {
+      final res = await CertificateService().requestCertificate(
+        enrollmentNumber: '  ',
+      );
+      expect(res.success, isFalse);
+      expect(res.message, 'Enrollment not found');
+    });
   });
 
-  test('report flags a failing check and shows a rejected earlier request', () {
-    final report = certificateApplicationReport(
-      enrollment: CertificateEnrollment(
-        enrollmentNumber: 'ENR7',
-        courseName: 'Data Science',
-        batchName: 'DS-4',
-        batchEndDate: '',
-        eligible: true,
-        pendingAmount: 12500,
-        request: CertificateRequestInfo.fromJson({
-          'uid': 'u',
-          'certificate_type': 'completion',
-          'certificate_type_label': 'Course Completion',
-          'status': 'rejected',
-          'remark': 'Attendance below 75%',
+  test('file name follows the guide and is filesystem-safe', () {
+    expect(
+      CertificateService.fileNameFor('ENR2026118595'),
+      'Certificate-ENR2026118595.pdf',
+    );
+    expect(
+      CertificateService.fileNameFor('../ENR 1/2'),
+      'Certificate-.._ENR_1_2.pdf',
+    );
+    expect(CertificateService.fileNameFor('  '), 'Certificate-download.pdf');
+  });
+
+  group('downloadCertificate', () {
+    late Directory dir;
+
+    setUp(() => dir = Directory.systemTemp.createTempSync('cert_test_'));
+    tearDown(() => dir.deleteSync(recursive: true));
+
+    CertificateService service({String? token = 'tok'}) => CertificateService(
+      tokenReader: () async => token,
+      saveDirectory: () async => dir,
+    );
+
+    /// Runs [body] with every `package:http` call answered by [handler].
+    Future<T> withServer<T>(
+      http.Response Function(http.Request) handler,
+      Future<T> Function() body,
+    ) => http.runWithClient(
+      body,
+      () => MockClient((request) async => handler(request)),
+    );
+
+    test('saves the PDF as Certificate-<enrollment>.pdf and returns the path',
+        () async {
+      http.Request? seen;
+      final res = await withServer((req) {
+        seen = req;
+        return http.Response.bytes(
+          _pdf,
+          200,
+          headers: {
+            'content-type': 'application/pdf',
+            'content-disposition':
+                'attachment; filename="Certificate-ENR2026118595.pdf"',
+          },
+        );
+      }, () => service().downloadCertificate(
+        requestUid: '2a7ca5b1-10da',
+        enrollmentNumber: 'ENR2026118595',
+      ));
+
+      expect(res.success, isTrue, reason: res.message);
+      expect(res.data, '${dir.path}/Certificate-ENR2026118595.pdf');
+      expect(File(res.data!).readAsBytesSync(), _pdf);
+
+      expect(
+        seen!.url.path,
+        '/api/student_portal/certificate-requests/2a7ca5b1-10da/download/',
+      );
+      expect(seen!.method, 'GET');
+      expect(seen!.headers['Authorization'], 'Bearer tok');
+    });
+
+    test('downloading again overwrites the same file', () async {
+      Future<String> once(Uint8List bytes) async {
+        final res = await withServer(
+          (_) => http.Response.bytes(bytes, 200),
+          () => service().downloadCertificate(
+            requestUid: 'u1',
+            enrollmentNumber: 'ENR1',
+          ),
+        );
+        expect(res.success, isTrue, reason: res.message);
+        return res.data!;
+      }
+
+      final newer = Uint8List.fromList([..._pdf, 0x0A, 0x0A]);
+      final first = await once(_pdf);
+      final second = await once(newer);
+      expect(second, first);
+      expect(File(second).readAsBytesSync(), newer);
+      expect(dir.listSync(), hasLength(1));
+    });
+
+    test('404 surfaces the server message and writes nothing', () async {
+      final res = await withServer(
+        (_) => _json(404, {'status': 'error', 'message': 'Certificate not found'}),
+        () => service().downloadCertificate(
+          requestUid: 'u1',
+          enrollmentNumber: 'ENR1',
+        ),
+      );
+      expect(res.success, isFalse);
+      expect(res.message, 'Certificate not found');
+      expect(res.statusCode, 404);
+      expect(dir.listSync(), isEmpty);
+    });
+
+    test('500 template error is passed through to be shown', () async {
+      final res = await withServer(
+        (_) => _json(500, {
+          'status': 'error',
+          'message': 'Certificate template image is missing',
         }),
-      ),
-      studentName: '',
-      typeValue: 'completion',
-      typeLabel: 'Course Completion',
-      note: '',
-      dataSource: 'dashboard',
-    );
-    expect(report, contains('course fees cleared ✘'));
-    expect(report, contains('no overdue EMI ✔'));
-    expect(report, contains('₹12,500'));
-    expect(report, contains('rejected — "Attendance below 75%"'));
-    expect(report, contains('Note'));
-  });
-}
+        () => service().downloadCertificate(
+          requestUid: 'u1',
+          enrollmentNumber: 'ENR1',
+        ),
+      );
+      expect(res.success, isFalse);
+      expect(res.message, 'Certificate template image is missing');
+      expect(dir.listSync(), isEmpty);
+    });
 
-void _emiReportTest() {
-  test('report shows overdue EMI and whether it is on this enrollment', () {
-    final report = certificateApplicationReport(
-      enrollment: const CertificateEnrollment(
-        enrollmentNumber: 'ENR2026076877',
-        courseName: 'Flutter',
-        batchName: 'FL-2',
-        batchEndDate: '',
-        eligible: true,
-        pendingAmount: 0,
-        emiOverdueCount: 2,
-        emiOverdueAmount: 8000,
-        emiOverdueHere: false,
-      ),
-      studentName: 'Anu',
-      typeValue: 'completion',
-      typeLabel: 'Course Completion',
-      note: '',
-      dataSource: 'server list',
-    );
-    expect(report, contains('course fees cleared ✔'));
-    expect(report, contains('no overdue EMI ✘'));
-    expect(report, contains('2 instalment(s) · ₹8,000'));
-    expect(report, contains('no — on another enrollment'));
+    test('a 200 that is not a PDF is rejected, not saved', () async {
+      final res = await withServer(
+        (_) => http.Response(
+          '<html>Bad gateway</html>',
+          200,
+          headers: {'content-type': 'text/html'},
+        ),
+        () => service().downloadCertificate(
+          requestUid: 'u1',
+          enrollmentNumber: 'ENR1',
+        ),
+      );
+      expect(res.success, isFalse);
+      expect(res.message, isNotEmpty);
+      expect(dir.listSync(), isEmpty);
+    });
+
+    test('no stored token never reaches the network', () async {
+      var called = false;
+      final res = await withServer((_) {
+        called = true;
+        return http.Response.bytes(_pdf, 200);
+      }, () => service(token: null).downloadCertificate(
+        requestUid: 'u1',
+        enrollmentNumber: 'ENR1',
+      ));
+      expect(called, isFalse);
+      expect(res.success, isFalse);
+      expect(res.statusCode, 401);
+    });
+
+    test('a blank request uid is rejected before any call', () async {
+      var called = false;
+      final res = await withServer((_) {
+        called = true;
+        return http.Response.bytes(_pdf, 200);
+      }, () => service().downloadCertificate(
+        requestUid: '  ',
+        enrollmentNumber: 'ENR1',
+      ));
+      expect(called, isFalse);
+      expect(res.success, isFalse);
+      expect(res.message, 'Certificate not found');
+    });
   });
 }

@@ -4,6 +4,7 @@ import 'package:luminar_std/core/utils/logger_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:luminar_std/core/theme/app_colors.dart';
 import 'package:luminar_std/presentation/chat_list_screen/chat_list_screen.dart';
+import 'package:luminar_std/presentation/certificate/certificate_controller.dart';
 import 'package:luminar_std/presentation/chat_list_screen/controller/chat_provider.dart';
 import 'package:luminar_std/presentation/home_screen/controller.dart';
 import 'package:luminar_std/presentation/home_screen/home_screen.dart';
@@ -28,6 +29,11 @@ class _BottomNavScreenState extends State<BottomNavScreen>
   late int _currentIndex;
   late ChatProvider _chatProvider;
   bool _chatInitialized = false;
+
+  // The student's certificates, shared by the Home card and More →
+  // Certificates. Owned here (not app-wide) so it is dropped on logout and one
+  // student's list can never show for the next login.
+  final CertificateController _certificates = CertificateController();
 
   // Animation controller for FAB press feedback
   late AnimationController _fabController;
@@ -63,6 +69,7 @@ class _BottomNavScreenState extends State<BottomNavScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _fabController.dispose();
+    _certificates.dispose();
     super.dispose();
   }
 
@@ -167,10 +174,13 @@ class _BottomNavScreenState extends State<BottomNavScreen>
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      body: SafeArea(
-        child: IndexedStack(
-          index: _currentIndex,
-          children: pages,
+      body: ChangeNotifierProvider<CertificateController>.value(
+        value: _certificates,
+        child: SafeArea(
+          child: IndexedStack(
+            index: _currentIndex,
+            children: pages,
+          ),
         ),
       ),
 
